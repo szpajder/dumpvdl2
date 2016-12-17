@@ -172,13 +172,21 @@ void demod(vdl2_state_t *v) {
 void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 	int i, available;
 	static int idle_skips = 0, not_idle_skips = 0;
-	static int bufnum = 0, samplenum = 0;
+	static int bufnum = 0, samplenum = 0, cnt = 0;
 	float re, im, mag;
 	vdl2_state_t *v = (vdl2_state_t *)ctx;
 	if(len == 0) return;
 	samplenum = -1;
 	for(i = 0; i < len;) {
 		samplenum++;
+
+// decimation
+		cnt %= RTL_OVERSAMPLE;
+		if(cnt++ != 0) {
+			i += 2;
+			continue;
+		}
+
 		re = (float)buf[i] - 127.5f; i++;
 		im = (float)buf[i] - 127.5f; i++;
 		mag = hypotf(re, im);
