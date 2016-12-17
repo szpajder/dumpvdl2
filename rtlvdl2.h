@@ -1,5 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
+
+#define RTLVDL2_VERSION "0.1.0rc"
 #define RS_K 249        // Reed-Solomon vector dimension (bytes)
 #define RS_N 255        // Reed-Solomon code length (bytes)
 #define RW 0

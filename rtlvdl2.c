@@ -233,6 +233,10 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 	bufnum++;
 }
 
+void init_rtl(int device, int freq, int gain, int correction) {
+	return;
+}
+
 void process_file(char *path, void *ctx) {
 	FILE *f;
 	uint32_t len;
@@ -263,11 +267,48 @@ vdl2_state_t *vdl2_init() {
 	return v;
 }
 
+void usage() {
+	fprintf(stderr, "RTLVDL2 version %s\n", RTLVDL2_VERSION);
+	fprintf(stderr, "Usage: rtlvdl2 -f <file> | ( [-d <device_id>] [-g gain] [-p ppm_correction] frequency )\n");
+	_exit(1);
+}
+
 int main(int argc, char **argv) {
 	vdl2_state_t *ctx;
-	if(argc < 2) {
-		fprintf(stderr, "Usage: rtlvdl2 <file>\n");
-		_exit(1);
+	int device = 0;
+	int freq = 0;
+	int gain = -1;
+	int correction = 0;
+	int opt;
+	char *filename = NULL;
+
+	while((opt = getopt(argc, argv, "f:d:g:p:")) != -1) {
+		switch(opt) {
+		case 'f':
+			filename = strdup(optarg);
+			break;
+		case 'd':
+			device = atoi(optarg);
+			break;
+		case 'g':
+			gain = (int)(10 * atof(optarg));
+			break;
+		case 'p':
+			correction = atoi(optarg);
+			break;
+		default:
+			usage();
+		}
+	}
+	if(optind < argc)
+		freq = atoi(argv[optind]);
+
+	if(freq != 0 && filename != NULL) {
+		fprintf(stderr, "Error: frequency and -f <file> options are exclusive\n");
+		usage();
+	} else if(freq == 0 && filename == NULL) {
+		fprintf(stderr, "Error: either frequency or -f <file> option is required\n");
+		usage();
 	}
 	if((ctx = vdl2_init()) == NULL) {
 		fprintf(stderr, "Failed to initialize VDL state\n");
@@ -277,7 +318,11 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Failed to initialize RS codec\n");
 		_exit(3);
 	}
-	process_file(argv[1], ctx);
+	if(filename != NULL) {
+		process_file(filename, ctx);
+	} else {
+		init_rtl(device, freq, gain, correction);
+	}
 	return(0);
 }
 
