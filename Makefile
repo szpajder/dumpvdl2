@@ -1,7 +1,7 @@
 CC = gcc
 # TODO: -O3, -ffast-math?
 CFLAGS = -std=c11 -g -Wall -march=native -DDEBUG=1
-LDFLAGS = -lfec -lm
+LDFLAGS = -lfec -lm -lrtlsdr
 .PHONY = all clean
 
 all: rtlvdl2

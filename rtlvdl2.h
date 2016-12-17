@@ -19,9 +19,11 @@
 #define PREAMBLE_SYMS 16
 #define PREAMBLE_LEN (PREAMBLE_SYMS * BPS)		// preamble length in bits
 #define RTL_BUFSIZE 320000
+#define RTL_BUFCNT 15
 #define SYMBOL_RATE 10500
 #define RTL_OVERSAMPLE 10
 #define RTL_RATE (SYMBOL_RATE * SPS * RTL_OVERSAMPLE)
+#define RTL_AUTO_GAIN -100
 // FIXME
 #define BUFSIZE (1000 * SPS)
 #define MAG_LPSLOW 0.9f

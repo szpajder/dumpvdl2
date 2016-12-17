@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <math.h>
 #include <errno.h>
+#include <rtl-sdr.h>
 #include "rtlvdl2.h"
 
 const uint8_t graycode[ARITY] = { 0, 1, 3, 2, 6, 7, 5, 4 };
@@ -233,11 +234,65 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 	bufnum++;
 }
 
-void init_rtl(int device, int freq, int gain, int correction) {
-	return;
+void init_rtl(void *ctx, uint32_t device, int freq, int gain, int correction) {
+	rtlsdr_dev_t *rtl;
+	int r;
+
+	r = rtlsdr_open(&rtl, device);
+	if(rtl == NULL) {
+		fprintf(stderr, "Failed to open rtlsdr device #%u: error %d\n", device, r);
+		exit(1);
+	}
+	r = rtlsdr_set_sample_rate(rtl, RTL_RATE);
+	if (r < 0) {
+		fprintf(stderr, "Failed to set sample rate for device #%d: error %d\n", device, r);
+		exit(1);
+	}
+	r = rtlsdr_set_center_freq(rtl, freq);
+	if (r < 0) {
+		fprintf(stderr, "Failed to set frequency for device #%d: error %d\n", device, r);
+		exit(1);
+	}
+	r = rtlsdr_set_freq_correction(rtl, correction);
+	if (r < 0 && r != -2 ) {
+		fprintf(stderr, "Failed to set freq correction for device #%d error %d\n", device, r);
+		exit(1);
+	}
+
+	if(gain == RTL_AUTO_GAIN) {
+		r = rtlsdr_set_tuner_gain_mode(rtl, 0);
+		if (r < 0) {
+			fprintf(stderr, "Failed to set automatic gain for device #%d: error %d\n", device, r);
+			exit(1);
+		} else
+			fprintf(stderr, "Device #%d: gain set to automatic\n", device);
+	} else {
+		r = rtlsdr_set_tuner_gain_mode(rtl, 1);
+		r |= rtlsdr_set_tuner_gain(rtl, gain);
+		if (r < 0) {
+			fprintf(stderr, "Failed to set gain to %0.2f for device #%d: error %d\n",
+				(float)rtlsdr_get_tuner_gain(rtl) / 10.0, device, r);
+			exit(1);
+		} else
+			fprintf(stderr, "Device #%d: gain set to %0.2f dB\n", device,
+				(float)rtlsdr_get_tuner_gain(rtl) / 10.0);
+	}
+
+	r = rtlsdr_set_agc_mode(rtl, 0);
+	if (r < 0) {
+		fprintf(stderr, "Failed to disable AGC for device #%d: error %d\n", device, r);
+		exit(1);
+	}
+	rtlsdr_reset_buffer(rtl);
+	fprintf(stderr, "Device %d started\n", device);
+	if(rtlsdr_read_async(rtl, process_samples, ctx, RTL_BUFCNT, RTL_BUFSIZE) < 0) {
+		fprintf(stderr, "Device #%d: async read failed\n", device);
+		exit(1);
+	}
+// FIXME: rtlsdr_close on exit
 }
 
-void process_file(char *path, void *ctx) {
+void process_file(void *ctx, char *path) {
 	FILE *f;
 	uint32_t len;
 	unsigned char buf[RTL_BUFSIZE];
@@ -275,9 +330,9 @@ void usage() {
 
 int main(int argc, char **argv) {
 	vdl2_state_t *ctx;
-	int device = 0;
-	int freq = 0;
-	int gain = -1;
+	uint32_t device = 0;
+	uint32_t freq = 0;
+	int gain = RTL_AUTO_GAIN;
 	int correction = 0;
 	int opt;
 	char *filename = NULL;
@@ -288,7 +343,7 @@ int main(int argc, char **argv) {
 			filename = strdup(optarg);
 			break;
 		case 'd':
-			device = atoi(optarg);
+			device = strtoul(optarg, NULL, 10);
 			break;
 		case 'g':
 			gain = (int)(10 * atof(optarg));
@@ -301,7 +356,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	if(optind < argc)
-		freq = atoi(argv[optind]);
+		freq = strtoul(argv[optind], NULL, 10);
 
 	if(freq != 0 && filename != NULL) {
 		fprintf(stderr, "Error: frequency and -f <file> options are exclusive\n");
@@ -319,9 +374,9 @@ int main(int argc, char **argv) {
 		_exit(3);
 	}
 	if(filename != NULL) {
-		process_file(filename, ctx);
+		process_file(ctx, filename);
 	} else {
-		init_rtl(device, freq, gain, correction);
+		init_rtl(ctx, device, freq, gain, correction);
 	}
 	return(0);
 }
