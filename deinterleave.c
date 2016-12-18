@@ -5,6 +5,7 @@ int deinterleave(uint8_t *in, uint32_t len, uint32_t rows, uint32_t cols, uint8_
 	if(rows == 0 || cols == 0 || fillwidth == 0)
 		return -1;
 	uint32_t last_row_len = len % fillwidth;
+	if(last_row_len == 0) last_row_len = fillwidth;
 	if(fillwidth + offset > cols)					// fillwidth or offset too large
 		return -2;
 	if(len > rows * fillwidth)					// result won't fit
