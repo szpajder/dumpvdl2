@@ -14,21 +14,18 @@ int rs_init() {
 int rs_verify(uint8_t *data, int fec_octets) {
 	if(fec_octets == 0)
 		return 0;
-//	for(int i = 0; i < RS_N; i++) printf("%02x ", data[i]); printf("\n");
 	debug_print_buf_hex(data, RS_N, "%s", "Input data:\n");
-	int no_eras = RS_N - RS_K - fec_octets;
-	int errlocs[RS_N];
+	int erasure_cnt = RS_N - RS_K - fec_octets;
 	int ret;
-	debug_print("no_eras=%d\n", no_eras);
-	if(no_eras > 0) {
-		memset(errlocs, 0, sizeof(errlocs));
-		for(int i = RS_N - no_eras; i < RS_N; i++)
-			errlocs[i] = 1;
-//		for(int i = 0; i < RS_N; i++) printf("%d ", errlocs[i]); printf("\n");
-		debug_print_buf_hex(errlocs, RS_N, "%s", "Errlocs:\n");
-		ret = decode_rs_char(rs, data, errlocs, no_eras);
+	debug_print("erasure_cnt=%d\n", erasure_cnt);
+	if(erasure_cnt > 0) {
+		int erasures[erasure_cnt];
+		for(int i = 0; i < erasure_cnt; i++)
+			erasures[i] = RS_K + fec_octets + i;
+		debug_print_buf_hex(erasures, erasure_cnt, "%s", "Erasures:\n");
+		ret = decode_rs_char(rs, data, erasures, erasure_cnt);
 	} else {
-		ret = decode_rs_char(rs, data, NULL, no_eras);
+		ret = decode_rs_char(rs, data, NULL, erasure_cnt);
 	}
 	return ret;
 }
