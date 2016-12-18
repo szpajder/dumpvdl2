@@ -120,7 +120,7 @@ void decode_vdl_frame(vdl2_state_t *v) {
 			v->decoder_state = DEC_IDLE;
 			return;
 		}
-		v->requested_bits = v->datalen + 8 * v->fec_octets;
+		v->requested_bits = 8 * (v->datalen_octets + v->fec_octets);
 		v->decoder_state = DEC_DATA;
 		return;
 	case DEC_DATA:
@@ -130,7 +130,7 @@ void decode_vdl_frame(vdl2_state_t *v) {
 			fprintf(stderr, "%s", "calloc(data) failed\n");
 			_exit(1);
 		}
-		if(bitstream_read_msbfirst2(v->bs, data, v->datalen, 8) < 0) {
+		if(bitstream_read_lsbfirst(v->bs, data, v->datalen_octets, 8) < 0) {
 			debug_print("%s", "Frame data truncated\n");
 			goto cleanup;
 		}
@@ -139,17 +139,12 @@ void decode_vdl_frame(vdl2_state_t *v) {
 			fprintf(stderr, "%s", "calloc(fec) failed\n");
 			_exit(1);
 		}
-		if(bitstream_read_msbfirst(v->bs, fec, v->fec_octets, 8) < 0) {		// no padding allowed
+		if(bitstream_read_lsbfirst(v->bs, fec, v->fec_octets, 8) < 0) {		// no padding allowed
 			debug_print("%s", "FEC data truncated\n");
 			goto cleanup;
 		}
 		debug_print_buf_hex(data, v->datalen_octets, "%s", "Data:\n");
-//		for(int i = 0; i < v->datalen_octets; i++)
-//			printf("%02x ", data[i]);
 		debug_print_buf_hex(fec, v->fec_octets, "%s", "FEC:\n") ;
-//		for(int i = 0; i < v->fec_octets; i++)
-//			printf("%02x ", fec[i]);
-//		printf("\n");
 		{
 			uint8_t rs_tab[v->num_blocks][RS_N];
 			memset(rs_tab, 0, sizeof(uint8_t[v->num_blocks][RS_N]));
@@ -165,9 +160,6 @@ void decode_vdl_frame(vdl2_state_t *v) {
 			}
 			debug_print("%s", "Deinterleaved blocks:\n");
 			for(int r = 0; r < v->num_blocks; r++) {
-/*				for(int c = 0; c < RS_N; c++)
-					printf("%02x ", rs_tab[r][c]);
-				printf("\n"); */
 				debug_print_buf_hex(rs_tab[r], RS_N, "Block %d:\n", r);
 			}
 			bitstream_reset(v->bs);
@@ -181,31 +173,24 @@ void decode_vdl_frame(vdl2_state_t *v) {
 					debug_print("%s", "FEC check failed\n");
 //					goto cleanup;
 				} else if(ret > 0) {
-//					debug_print("Corrected block %d:\n", r);
-/*					for(int c = 0; c < RS_N; c++)
-						printf("%02x ", rs_tab[r][c]);
-					printf("\n"); */
 					debug_print_buf_hex(rs_tab[r], RS_N, "Corrected block %d:\n", r);
 				}
 				uint8_t rs_parity[RS_N-RS_K];
 				memset(rs_parity, 0, sizeof(parity));
 				rs_encode((uint8_t *)&rs_tab[r], rs_parity);
 				debug_print_buf_hex(rs_parity, sizeof(rs_parity), "%s", "Calculated FEC:\n");
-/*				for(int i = 0; i < sizeof(rs_parity); i++)
-					printf("%02x ", rs_parity[i]);
-				printf("\n"); */
 				
 				if(r != v->num_blocks - 1)
-					ret = bitstream_append_msbfirst(v->bs, (uint8_t *)&rs_tab[r], RS_N - RS_K, 8);
+					ret = bitstream_append_lsbfirst(v->bs, (uint8_t *)&rs_tab[r], RS_N - RS_K, 8);
 				else
-					ret = bitstream_append_msbfirst(v->bs, (uint8_t *)&rs_tab[r], v->last_block_len_octets, 8);
+					ret = bitstream_append_lsbfirst(v->bs, (uint8_t *)&rs_tab[r], v->last_block_len_octets, 8);
 				if(ret < 0) {
-					debug_print("%s", "bitstream_append_msbfirst failed\n");
+					debug_print("%s", "bitstream_append_lsbfirst failed\n");
 					goto cleanup;
 				}
 			}
 		}
-// bitstream_append_msbfirst() reads whole bytes, but datalen usually isn't a multiple of 8 due to bit stuffing.
+// bitstream_append_lsbfirst() reads whole bytes, but datalen usually isn't a multiple of 8 due to bit stuffing.
 // So we need to truncate the padding bits from the end of the bit stream.
 		if(v->datalen < v->bs->end - v->bs->start) {
 			debug_print("Cut last %u bits from bitstream, bs->end was %u now is %u\n",

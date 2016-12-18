@@ -126,7 +126,6 @@ void demod(vdl2_state_t *v) {
 //			debug_print("sclk: %d bufs: %d bufe: %d dphi: %f * pi/4 idx: %d bits: %d\n", v->sclk, v->bufs, v->bufe, dphi, idx, graycode[idx]);
 //			printf("%d ", graycode[idx]);
 //			v->symcnt++;
-// FIXME: msb czy lsb?
 			if(bitstream_append_msbfirst(v->bs, &(graycode[idx]), 1, BPS) < 0) {
 				debug_print("%s", "bitstream_append_msbfirst failed\n");
 				v->demod_state = DM_IDLE;
