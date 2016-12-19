@@ -105,7 +105,7 @@ void decode_vdl_frame(vdl2_state_t *v) {
 		if(v->datalen % 8 != 0)
 			v->datalen_octets++;
 		v->num_blocks = v->datalen_octets / RS_K;
-		v->fec_octets = v->num_blocks * 6;
+		v->fec_octets = v->num_blocks * (RS_N - RS_K);
 		v->last_block_len_octets = v->datalen_octets % RS_K;
 		if(v->last_block_len_octets != 0)
 			v->num_blocks++;
@@ -153,8 +153,13 @@ void decode_vdl_frame(vdl2_state_t *v) {
 				debug_print("Deinterleaver failed with error %d\n", ret);
 				goto cleanup;
 			}
-// FIXME: if last block is < 3 bytes, we should fill num_blocks - 1 rows
-			if((ret = deinterleave(fec, v->fec_octets, v->num_blocks, RS_N, rs_tab, RS_N - RS_K, RS_K)) < 0) {
+
+// if last block is < 3 bytes long, no FEC is done on it, so we should not write FEC bytes into the last row
+			uint32_t fec_rows = v->num_blocks;
+			if(get_fec_octetcount(v->last_block_len_octets) == 0)
+				fec_rows--;
+
+			if((ret = deinterleave(fec, v->fec_octets, fec_rows, RS_N, rs_tab, RS_N - RS_K, RS_K)) < 0) {
 				debug_print("Deinterleaver failed with error %d\n", ret);
 				goto cleanup;
 			}
