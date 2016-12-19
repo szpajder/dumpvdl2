@@ -181,7 +181,7 @@ void decode_vdl_frame(vdl2_state_t *v) {
 				debug_print_buf_hex(rs_parity, sizeof(rs_parity), "%s", "Calculated FEC:\n");
 				
 				if(r != v->num_blocks - 1)
-					ret = bitstream_append_lsbfirst(v->bs, (uint8_t *)&rs_tab[r], RS_N - RS_K, 8);
+					ret = bitstream_append_lsbfirst(v->bs, (uint8_t *)&rs_tab[r], RS_K, 8);
 				else
 					ret = bitstream_append_lsbfirst(v->bs, (uint8_t *)&rs_tab[r], v->last_block_len_octets, 8);
 				if(ret < 0) {
