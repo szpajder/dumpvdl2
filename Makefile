@@ -1,6 +1,6 @@
 CC = gcc
 # TODO: -O3, -ffast-math?
-CFLAGS = -std=c11 -g -Wall -march=native -DDEBUG=1
+CFLAGS = -std=c99 -g -Wall -DDEBUG=1
 LDFLAGS = -lfec -lm -lrtlsdr
 .PHONY = all clean
 
