@@ -62,20 +62,17 @@ void parse_avlc(uint8_t *buf, uint32_t len) {
 	uint8_t *ptr = buf;
 	avlc_addr_t src, dst;
 	if(parse_dlc_addr(ptr, &dst, 0) < 0) return;
-	ptr += 4;
+	ptr += 4; len -= 4;
 	if(parse_dlc_addr(ptr, &src, 1) < 0) return;
-	ptr += 4;
+	ptr += 4; len -= 4;
 	lcf_t lcf;
 	lcf.val = *ptr++;
+	len--;
 	print_header_data(&src, &dst, lcf);
-	uint8_t *end = buf + len;
-	if(ptr + 1 < end) {
-		printf("     ");
-		for(uint8_t *i = ptr; i < end; i++)
-			printf("%02x ", *i);
-		printf("\n"); 
-	}
-	printf("\n"); 
+	printf("     ");
+	for(int i = 0; i < len; i++)
+		printf("%02x ", ptr[i]);
+	printf("\n\n");
 }
 
 void parse_avlc_frames(uint8_t *buf, uint32_t len) {
