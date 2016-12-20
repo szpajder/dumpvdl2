@@ -79,14 +79,14 @@ typedef union {
 #define XID		0x2b
 #define TEST	0x38
 
-enum avlc_protocols { ISO_8208, ACARS };
+enum avlc_protocols { PROTO_ISO_8208, PROTO_ACARS, PROTO_UNKNOWN };
 typedef struct {
 	avlc_addr_t src;
 	avlc_addr_t dst;
 	lcf_t lcf;
 	enum avlc_protocols proto;
 	uint32_t datalen;
-	uint8_t *data;
+	void  *data;
 } avlc_frame_t;
 
 // output.c

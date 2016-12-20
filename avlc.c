@@ -3,6 +3,7 @@
 #include <string.h>
 #include "rtlvdl2.h"
 #include "avlc.h"
+#include "acars.h"
 
 /* Link layer address parsing routine
  * buf - data buffer pointer
@@ -48,8 +49,14 @@ void parse_avlc(uint8_t *buf, uint32_t len) {
 	ptr += 4; len -= 4;
 	frame.lcf.val = *ptr++;
 	len--;
-	frame.data = ptr;
-	frame.datalen = len;
+	if(len > 3 && ptr[0] == 0xff && ptr[1] == 0xff && ptr[2] == 0x01) {
+		frame.proto = PROTO_ACARS;
+		frame.data = parse_acars(ptr + 3, len - 3);
+	} else {
+		frame.proto = PROTO_UNKNOWN;
+		frame.data = ptr;
+		frame.datalen = len;
+	}
 	output_avlc(&frame);
 }
 

@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <assert.h>
 #include "avlc.h"
+#include "acars.h"
 
 const char *status_ag_descr[] = {
 	"Airborne",
@@ -40,6 +42,21 @@ const char *U_cmd[] = {
 	"TEST"
 };
 
+void output_acars(const acars_msg_t *msg) {
+	assert(msg);
+	if(msg->mode < 0x5d) {
+		printf("Aircraft reg: %s ", msg->reg);
+		printf("Flight id: %s", msg->fid);
+		printf("\n");
+	}
+	printf("Mode: %1c ", msg->mode);
+	printf("Msg. label: %s\n", msg->label);
+	printf("Block id: %c ", msg->bid);
+	printf("Ack: %c\n", msg->ack);
+	printf("Msg. no: %s\n", msg->no);
+	printf("Message :\n%s\n", msg->txt);
+}
+
 void output_avlc(const avlc_frame_t *f) {
 	if(f == NULL) return;
 	printf("%06X (%s, %s) -> %06X (%s): %s, CF: 0x%02x\n",
@@ -58,9 +75,17 @@ void output_avlc(const avlc_frame_t *f) {
 	} else {	// IS_U == true
 		printf("  I: sseq=0x%x rseq=0x%x poll=%x\n", f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
 	}
-	printf("     ");
-	for(int i = 0; i < f->datalen; i++)
-		printf("%02x ", f->data[i]);
-	printf("\n\n");
+	switch(f->proto) {
+	case PROTO_ACARS:
+		output_acars((acars_msg_t *)f->data);
+		break;
+	case PROTO_ISO_8208:
+	default:
+		printf("     ");
+		uint8_t *ptr = (uint8_t *)f->data;
+		for(int i = 0; i < f->datalen; i++)
+			printf("%02x ", ptr[i]);
+		printf("\n\n");
+	}
 }
 // vim: ts=4
