@@ -4,25 +4,6 @@
 #include "rtlvdl2.h"
 #include "avlc.h"
 
-void print_header_data(avlc_addr_t *s, avlc_addr_t *d, lcf_t lcf) {
-	printf("%06X (%s, %s) -> %06X (%s): %s, CF: 0x%02x\n",
-		s->a_addr.addr,
-		addrtype_descr[s->a_addr.type],
-		status_ag_descr[d->a_addr.status],	// A/G
-		d->a_addr.addr,
-		addrtype_descr[d->a_addr.type],
-		status_cr_descr[s->a_addr.status],	// C/R
-		lcf.val
-	);
-	if(IS_S(lcf)) {
-		printf("  S: sfunc=0x%x (%s) P/F=%x rseq=0x%x\n", lcf.S.sfunc, S_cmd[lcf.S.sfunc], lcf.S.pf, lcf.S.recv_seq);
-	} else if(IS_U(lcf)) {
-		printf("  U: mfunc=%02x (%s) P/F=%x\n", U_MFUNC(lcf), U_cmd[U_MFUNC(lcf)], U_PF(lcf));
-	} else {	// IS_U == true
-		printf("  I: sseq=0x%x rseq=0x%x poll=%x\n", lcf.I.send_seq, lcf.I.recv_seq, lcf.I.poll);
-	}
-}
-		
 /* Link layer address parsing routine
  * buf - data buffer pointer
  * final - shall be set to 1 if this is the source address (ie. the final field
@@ -60,19 +41,16 @@ void parse_avlc(uint8_t *buf, uint32_t len) {
 		return;
 	}
 	uint8_t *ptr = buf;
-	avlc_addr_t src, dst;
-	if(parse_dlc_addr(ptr, &dst, 0) < 0) return;
+	avlc_frame_t frame;
+	if(parse_dlc_addr(ptr, &frame.dst, 0) < 0) return;
 	ptr += 4; len -= 4;
-	if(parse_dlc_addr(ptr, &src, 1) < 0) return;
+	if(parse_dlc_addr(ptr, &frame.src, 1) < 0) return;
 	ptr += 4; len -= 4;
-	lcf_t lcf;
-	lcf.val = *ptr++;
+	frame.lcf.val = *ptr++;
 	len--;
-	print_header_data(&src, &dst, lcf);
-	printf("     ");
-	for(int i = 0; i < len; i++)
-		printf("%02x ", ptr[i]);
-	printf("\n\n");
+	frame.data = ptr;
+	frame.datalen = len;
+	output_avlc(&frame);
 }
 
 void parse_avlc_frames(uint8_t *buf, uint32_t len) {

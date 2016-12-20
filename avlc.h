@@ -26,27 +26,6 @@ typedef union {
 	} a_addr;
 } avlc_addr_t;
 
-const char *status_ag_descr[] = {
-	"Airborne",
-	"On ground"
-};
-
-const char *status_cr_descr[] = {
-	"Command frame",
-	"Response frame"
-};
-
-const char *addrtype_descr[] = {
-	"reserved",
-	"Aircraft",
-	"reserved",
-	"reserved",
-	"Ground station",
-	"Ground station",
-	"reserved",
-	"All stations"
-};
-
 // X.25 control field
 typedef union {
 	uint8_t val;
@@ -93,24 +72,6 @@ typedef union {
 #define U_MFUNC(lcf) (lcf).U.mfunc & 0x3b
 #define U_PF(lcf) ((lcf).U.mfunc >> 2) & 0x1
 
-const char *S_cmd[] = {
-	"Receive Ready",
-	"Receive not Ready",
-	"Reject",
-	"Selective Reject"
-};
-
-const char *U_cmd[] = {
-	"UI",     "(0x01)", "(0x02)", "DM",     "(0x04)", "(0x05)", "(0x06)", "(0x07)",
-	"(0x08)", "(0x09)", "(0x0a)", "(0x0b)", "(0x0c)", "(0x0d)", "(0x0e)", "(0x0f)",
-	"DISC",   "(0x11)", "(0x12)", "(0x13)", "(0x14)", "(0x15)", "(0x16)", "(0x17)",
-	"(0x18)", "(0x19)", "(0x1a)", "(0x1b)", "(0x1c)", "(0x1d)", "(0x1e)", "(0x1f)",
-	"(0x20)", "FRMR",   "(0x22)", "(0x23)", "(0x24)", "(0x25)", "(0x26)", "(0x27)",
-	"(0x28)", "(0x29)", "(0x2a)", "XID",    "(0x2c)", "(0x2d)", "(0x2e)", "(0x2f)",
-	"(0x30)", "(0x31)", "(0x32)", "(0x33)", "(0x34)", "(0x35)", "(0x36)", "(0x37)",
-	"TEST"
-};
-
 #define UI		0x00
 #define DM		0x03
 #define DISC	0x10
@@ -118,4 +79,16 @@ const char *U_cmd[] = {
 #define XID		0x2b
 #define TEST	0x38
 
+enum avlc_protocols { ISO_8208, ACARS };
+typedef struct {
+	avlc_addr_t src;
+	avlc_addr_t dst;
+	lcf_t lcf;
+	enum avlc_protocols proto;
+	uint32_t datalen;
+	uint8_t *data;
+} avlc_frame_t;
+
+// output.c
+void output_avlc(const avlc_frame_t *f);
 // vim: ts=4
