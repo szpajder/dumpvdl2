@@ -42,7 +42,7 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len) {
 	memset(msg, 0, sizeof(acars_msg_t));
 // FIXME: check CRC and parity
 
-	for(i = 0; i < len - 1; i++)
+	for(i = 0; i < len; i++)
 		buf[i] &= 0x7f;
 
 	uint32_t k = 0;
@@ -83,30 +83,41 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len) {
 //			return;
 //	}
 
+	if(k >= len) {		// empty txt
+		msg->txt[0] = '\0';
+		return msg;
+	}
+
 	if (msg->bs != 0x03) {
 //#ifdef WITH_STATSD
 //		increment(blk->chn, "msg->air2ground");
 //#endif
 		if (msg->mode <= 'Z' && msg->bid <= '9') {
 			/* message no */
-			for (i = 0; i < 4 && k < len - 1; i++, k++) {
+			for (i = 0; i < 4 && k < len; i++, k++) {
 				msg->no[i] = buf[k];
 			}
 			msg->no[i] = '\0';
 
 			/* Flight id */
-			for (i = 0; i < 6 && k < len - 1; i++, k++) {
+			for (i = 0; i < 6 && k < len; i++, k++) {
 				msg->fid[i] = buf[k];
 			}
 			msg->fid[i] = '\0';
 		}
 
 		/* Message txt */
-		for (i = 0; k < len - 1; i++, k++)
-			msg->txt[i] = buf[k];
-		msg->txt[i] = 0;
+		debug_print("len=%u k=%u\n", len, k);
+		len -= k;
+		if(len > ACARSMSG_BUFSIZE) {
+			debug_print("message truncated to buffer size (%u > %u)", len, ACARSMSG_BUFSIZE);
+			len = ACARSMSG_BUFSIZE - 1;		// leave space for terminating '\0'
+		}
+		if(len > 0)
+			memcpy(msg->txt, buf + k, len);
+		msg->txt[len] = '\0';
 	}
 	/* txt end */
 	return msg;
 }
-// vim: ts=4
+// vim: ts=6
