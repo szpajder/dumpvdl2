@@ -107,7 +107,6 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len) {
 		}
 
 		/* Message txt */
-		debug_print("len=%u k=%u\n", len, k);
 		len -= k;
 		if(len > ACARSMSG_BUFSIZE) {
 			debug_print("message truncated to buffer size (%u > %u)", len, ACARSMSG_BUFSIZE);
