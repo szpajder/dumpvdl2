@@ -1,5 +1,6 @@
 #include <endian.h>
 #include <stdint.h>
+#include <time.h>
 #define MIN_AVLC_LEN 11
 #define AVLC_FLAG 0x7e
 
@@ -81,6 +82,7 @@ typedef union {
 
 enum avlc_protocols { PROTO_ISO_8208, PROTO_ACARS, PROTO_UNKNOWN };
 typedef struct {
+	time_t t;
 	avlc_addr_t src;
 	avlc_addr_t dst;
 	lcf_t lcf;

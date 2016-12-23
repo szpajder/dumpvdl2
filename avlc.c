@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <time.h>
 #include "rtlvdl2.h"
 #include "avlc.h"
 #include "acars.h"
@@ -43,6 +44,7 @@ void parse_avlc(uint8_t *buf, uint32_t len) {
 	}
 	uint8_t *ptr = buf;
 	avlc_frame_t frame;
+	frame.t = time(NULL);
 	if(parse_dlc_addr(ptr, &frame.dst, 0) < 0) return;
 	ptr += 4; len -= 4;
 	if(parse_dlc_addr(ptr, &frame.src, 1) < 0) return;

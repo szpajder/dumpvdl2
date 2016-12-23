@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
+#include <time.h>
 #include "avlc.h"
 #include "acars.h"
 
@@ -59,6 +60,9 @@ void output_acars(const acars_msg_t *msg) {
 
 void output_avlc(const avlc_frame_t *f) {
 	if(f == NULL) return;
+	char ftime[24];
+	strftime(ftime, sizeof(ftime), "%F %T", localtime(&f->t));
+	printf("[%s]\n", ftime);
 	printf("%06X (%s, %s) -> %06X (%s): %s, CF: 0x%02x\n",
 		f->src.a_addr.addr,
 		addrtype_descr[f->src.a_addr.type],
