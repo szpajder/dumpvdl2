@@ -45,17 +45,14 @@ const char *U_cmd[] = {
 
 void output_acars(const acars_msg_t *msg) {
 	assert(msg);
-	if(msg->mode < 0x5d) {
-		printf("Aircraft reg: %s ", msg->reg);
-		printf("Flight id: %s", msg->fid);
+	printf("ACARS:\n");
+	if(msg->mode < 0x5d)
+		printf("Aircraft reg: %s Flight: %s\n", msg->reg, msg->fid);
+	printf("Mode: %1c Label: %s Blk id: %c Ack: %c Msg no.: %s\n",
+		msg->mode, msg->label, msg->bid, msg->ack, msg->no);
+	printf("Message:\n%s\n", msg->txt);
+	if(msg->txt[0] != '\0')
 		printf("\n");
-	}
-	printf("Mode: %1c ", msg->mode);
-	printf("Msg. label: %s\n", msg->label);
-	printf("Block id: %c ", msg->bid);
-	printf("Ack: %c\n", msg->ack);
-	printf("Msg. no: %s\n", msg->no);
-	printf("Message :\n%s\n", msg->txt);
 }
 
 void output_avlc(const avlc_frame_t *f) {
@@ -73,11 +70,11 @@ void output_avlc(const avlc_frame_t *f) {
 		f->lcf.val
 	);
 	if(IS_S(f->lcf)) {
-		printf("  S: sfunc=0x%x (%s) P/F=%x rseq=0x%x\n", f->lcf.S.sfunc, S_cmd[f->lcf.S.sfunc], f->lcf.S.pf, f->lcf.S.recv_seq);
+		printf("S: sfunc=0x%x (%s) P/F=%x rseq=0x%x\n", f->lcf.S.sfunc, S_cmd[f->lcf.S.sfunc], f->lcf.S.pf, f->lcf.S.recv_seq);
 	} else if(IS_U(f->lcf)) {
-		printf("  U: mfunc=%02x (%s) P/F=%x\n", U_MFUNC(f->lcf), U_cmd[U_MFUNC(f->lcf)], U_PF(f->lcf));
+		printf("U: mfunc=%02x (%s) P/F=%x\n", U_MFUNC(f->lcf), U_cmd[U_MFUNC(f->lcf)], U_PF(f->lcf));
 	} else {	// IS_U == true
-		printf("  I: sseq=0x%x rseq=0x%x poll=%x\n", f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
+		printf("I: sseq=0x%x rseq=0x%x poll=%x\n", f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
 	}
 	switch(f->proto) {
 	case PROTO_ACARS:
@@ -85,8 +82,12 @@ void output_avlc(const avlc_frame_t *f) {
 		break;
 	case PROTO_ISO_8208:
 	default:
-		printf("     ");
+		printf("   ");
 		uint8_t *ptr = (uint8_t *)f->data;
+		if(f->datalen == 0) {
+			printf("\n");
+			break;
+		}
 		for(int i = 0; i < f->datalen; i++)
 			printf("%02x ", ptr[i]);
 		printf("\n\n");
