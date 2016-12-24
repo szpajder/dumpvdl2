@@ -1,3 +1,5 @@
+#ifndef _AVLC_H
+#define _AVLC_H 1
 #include <endian.h>
 #include <stdint.h>
 #include <time.h>
@@ -91,6 +93,5 @@ typedef struct {
 	void  *data;
 } avlc_frame_t;
 
-// output.c
-void output_avlc(const avlc_frame_t *f);
+#endif // !_AVLC_H
 // vim: ts=4

@@ -323,7 +323,7 @@ vdl2_state_t *vdl2_init() {
 
 void usage() {
 	fprintf(stderr, "RTLVDL2 version %s\n", RTLVDL2_VERSION);
-	fprintf(stderr, "Usage: rtlvdl2 -f <file> | ( [-d <device_id>] [-g gain] [-p ppm_correction] frequency )\n");
+	fprintf(stderr, "Usage: rtlvdl2 [-o output_file] (-f <input_file> | ( [-d <device_id>] [-g gain] [-p ppm_correction] frequency ))\n");
 	_exit(1);
 }
 
@@ -334,12 +334,12 @@ int main(int argc, char **argv) {
 	int gain = RTL_AUTO_GAIN;
 	int correction = 0;
 	int opt;
-	char *filename = NULL;
+	char *infile = NULL, *outfile = NULL;
 
-	while((opt = getopt(argc, argv, "f:d:g:p:")) != -1) {
+	while((opt = getopt(argc, argv, "d:f:g:o:p:")) != -1) {
 		switch(opt) {
 		case 'f':
-			filename = strdup(optarg);
+			infile = strdup(optarg);
 			break;
 		case 'd':
 			device = strtoul(optarg, NULL, 10);
@@ -347,6 +347,8 @@ int main(int argc, char **argv) {
 		case 'g':
 			gain = (int)(10 * atof(optarg));
 			break;
+		case 'o':
+			outfile = strdup(optarg);
 		case 'p':
 			correction = atoi(optarg);
 			break;
@@ -357,12 +359,18 @@ int main(int argc, char **argv) {
 	if(optind < argc)
 		freq = strtoul(argv[optind], NULL, 10);
 
-	if(freq != 0 && filename != NULL) {
+	if(freq != 0 && infile != NULL) {
 		fprintf(stderr, "Error: frequency and -f <file> options are exclusive\n");
 		usage();
-	} else if(freq == 0 && filename == NULL) {
+	} else if(freq == 0 && infile == NULL) {
 		fprintf(stderr, "Error: either frequency or -f <file> option is required\n");
 		usage();
+	}
+	if(outfile == NULL)
+		outfile = strdup("-");		// output to stdout by default
+	if(init_output_file(outfile) < 0) {
+		fprintf(stderr, "Failed to initialize output - aborting\n");
+		_exit(4);
 	}
 	if((ctx = vdl2_init()) == NULL) {
 		fprintf(stderr, "Failed to initialize VDL state\n");
@@ -372,8 +380,8 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Failed to initialize RS codec\n");
 		_exit(3);
 	}
-	if(filename != NULL) {
-		process_file(ctx, filename);
+	if(infile != NULL) {
+		process_file(ctx, infile);
 	} else {
 		init_rtl(ctx, device, freq, gain, correction);
 	}

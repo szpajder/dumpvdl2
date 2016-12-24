@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <stdint.h>
+#include "avlc.h"
 
 #define RTLVDL2_VERSION "0.1.0rc"
 #define RS_K 249        // Reed-Solomon vector dimension (bytes)
@@ -117,5 +118,9 @@ void parse_avlc_frames(uint8_t *buf, uint32_t len);
 int rs_init();
 int rs_verify(uint8_t *data, int fec_octets);
 void rs_encode(uint8_t *data, uint8_t *parity);
+
+// output.c
+int init_output_file(char *file);
+void output_avlc(const avlc_frame_t *f);
 
 // vim: ts=4

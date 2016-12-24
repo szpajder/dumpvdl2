@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 #include <time.h>
+#include <errno.h>
 #include "avlc.h"
 #include "acars.h"
 
@@ -43,24 +45,37 @@ const char *U_cmd[] = {
 	"TEST"
 };
 
+static FILE *outf;
+
+int init_output_file(char *file) {
+	assert(file);
+	if(!strcmp(file, "-")) {
+		outf = stdout;
+	} else if((outf = fopen(file, "a+")) == NULL) {
+		fprintf(stderr, "Could not open output file %s: %s\n", file, strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
 void output_acars(const acars_msg_t *msg) {
 	assert(msg);
-	printf("ACARS:\n");
+	fprintf(outf, "ACARS:\n");
 	if(msg->mode < 0x5d)
-		printf("Aircraft reg: %s Flight: %s\n", msg->reg, msg->fid);
-	printf("Mode: %1c Label: %s Blk id: %c Ack: %c Msg no.: %s\n",
+		fprintf(outf, "Aircraft reg: %s Flight: %s\n", msg->reg, msg->fid);
+	fprintf(outf, "Mode: %1c Label: %s Blk id: %c Ack: %c Msg no.: %s\n",
 		msg->mode, msg->label, msg->bid, msg->ack, msg->no);
-	printf("Message:\n%s\n", msg->txt);
+	fprintf(outf, "Message:\n%s\n", msg->txt);
 	if(msg->txt[0] != '\0')
-		printf("\n");
+		fprintf(outf, "\n");
 }
 
 void output_avlc(const avlc_frame_t *f) {
 	if(f == NULL) return;
 	char ftime[24];
 	strftime(ftime, sizeof(ftime), "%F %T", localtime(&f->t));
-	printf("[%s]\n", ftime);
-	printf("%06X (%s, %s) -> %06X (%s): %s, CF: 0x%02x\n",
+	fprintf(outf, "[%s]\n", ftime);
+	fprintf(outf, "%06X (%s, %s) -> %06X (%s): %s, CF: 0x%02x\n",
 		f->src.a_addr.addr,
 		addrtype_descr[f->src.a_addr.type],
 		status_ag_descr[f->dst.a_addr.status],	// A/G
@@ -70,11 +85,11 @@ void output_avlc(const avlc_frame_t *f) {
 		f->lcf.val
 	);
 	if(IS_S(f->lcf)) {
-		printf("S: sfunc=0x%x (%s) P/F=%x rseq=0x%x\n", f->lcf.S.sfunc, S_cmd[f->lcf.S.sfunc], f->lcf.S.pf, f->lcf.S.recv_seq);
+		fprintf(outf, "S: sfunc=0x%x (%s) P/F=%x rseq=0x%x\n", f->lcf.S.sfunc, S_cmd[f->lcf.S.sfunc], f->lcf.S.pf, f->lcf.S.recv_seq);
 	} else if(IS_U(f->lcf)) {
-		printf("U: mfunc=%02x (%s) P/F=%x\n", U_MFUNC(f->lcf), U_cmd[U_MFUNC(f->lcf)], U_PF(f->lcf));
+		fprintf(outf, "U: mfunc=%02x (%s) P/F=%x\n", U_MFUNC(f->lcf), U_cmd[U_MFUNC(f->lcf)], U_PF(f->lcf));
 	} else {	// IS_U == true
-		printf("I: sseq=0x%x rseq=0x%x poll=%x\n", f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
+		fprintf(outf, "I: sseq=0x%x rseq=0x%x poll=%x\n", f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
 	}
 	switch(f->proto) {
 	case PROTO_ACARS:
@@ -82,15 +97,16 @@ void output_avlc(const avlc_frame_t *f) {
 		break;
 	case PROTO_ISO_8208:
 	default:
-		printf("   ");
+		fprintf(outf, "   ");
 		uint8_t *ptr = (uint8_t *)f->data;
 		if(f->datalen == 0) {
-			printf("\n");
+			fprintf(outf, "\n");
 			break;
 		}
 		for(int i = 0; i < f->datalen; i++)
-			printf("%02x ", ptr[i]);
-		printf("\n\n");
+			fprintf(outf, "%02x ", ptr[i]);
+		fprintf(outf, "\n\n");
 	}
+	fflush(outf);
 }
 // vim: ts=4
