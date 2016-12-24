@@ -70,6 +70,17 @@ void output_acars(const acars_msg_t *msg) {
 		fprintf(outf, "\n");
 }
 
+void output_raw(uint8_t *buf, uint32_t len) {
+	if(len == 0) {
+		fprintf(outf, "\n");
+		return;
+	}
+	fprintf(outf, "   ");
+	for(int i = 0; i < len; i++)
+		fprintf(outf, "%02x ", buf[i]);
+	fprintf(outf, "\n\n");
+}
+
 void output_avlc(const avlc_frame_t *f) {
 	if(f == NULL) return;
 	char ftime[24];
@@ -86,26 +97,20 @@ void output_avlc(const avlc_frame_t *f) {
 	);
 	if(IS_S(f->lcf)) {
 		fprintf(outf, "S: sfunc=0x%x (%s) P/F=%x rseq=0x%x\n", f->lcf.S.sfunc, S_cmd[f->lcf.S.sfunc], f->lcf.S.pf, f->lcf.S.recv_seq);
+		output_raw((uint8_t *)f->data, f->datalen);
 	} else if(IS_U(f->lcf)) {
 		fprintf(outf, "U: mfunc=%02x (%s) P/F=%x\n", U_MFUNC(f->lcf), U_cmd[U_MFUNC(f->lcf)], U_PF(f->lcf));
-	} else {	// IS_U == true
+		output_raw((uint8_t *)f->data, f->datalen);
+	} else {	// IS_I == true
 		fprintf(outf, "I: sseq=0x%x rseq=0x%x poll=%x\n", f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
-	}
-	switch(f->proto) {
-	case PROTO_ACARS:
-		output_acars((acars_msg_t *)f->data);
-		break;
-	case PROTO_ISO_8208:
-	default:
-		fprintf(outf, "   ");
-		uint8_t *ptr = (uint8_t *)f->data;
-		if(f->datalen == 0) {
-			fprintf(outf, "\n");
+		switch(f->proto) {
+		case PROTO_ACARS:
+			output_acars((acars_msg_t *)f->data);
 			break;
+		case PROTO_ISO_8208:
+		default:
+			output_raw((uint8_t *)f->data, f->datalen);
 		}
-		for(int i = 0; i < f->datalen; i++)
-			fprintf(outf, "%02x ", ptr[i]);
-		fprintf(outf, "\n\n");
 	}
 	fflush(outf);
 }
