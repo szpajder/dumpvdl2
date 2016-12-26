@@ -220,6 +220,7 @@ xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len) {
 	} else {
 		tlv_list_free(msg->pub_params);
 		tlv_list_free(msg->vdl_params);
+		msg->pub_params = msg->vdl_params = NULL;
 	}
 	uint8_t *ptr = buf;
 	while(len >= XID_MIN_GROUPLEN) {
