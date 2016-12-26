@@ -4,6 +4,7 @@
 #include <time.h>
 #include "rtlvdl2.h"
 #include "avlc.h"
+#include "xid.h"
 #include "acars.h"
 
 /* Link layer address parsing routine
@@ -51,11 +52,24 @@ void parse_avlc(uint8_t *buf, uint32_t len) {
 	ptr += 4; len -= 4;
 	frame.lcf.val = *ptr++;
 	len--;
-	if(len > 3 && ptr[0] == 0xff && ptr[1] == 0xff && ptr[2] == 0x01) {
-		frame.proto = PROTO_ACARS;
-		frame.data = parse_acars(ptr + 3, len - 3);
-	} else {
-		frame.proto = PROTO_UNKNOWN;
+	frame.data = NULL;
+	if(IS_S(frame.lcf)) {
+
+	} else if(IS_U(frame.lcf)) {
+		switch(U_MFUNC(frame.lcf)) {
+		case XID:
+			frame.data = parse_xid(frame.src.a_addr.status, U_PF(frame.lcf), ptr, len);
+			break;
+		}
+	} else { 	// IS_I(frame.lcf) == true
+		if(len > 3 && ptr[0] == 0xff && ptr[1] == 0xff && ptr[2] == 0x01) {
+			frame.proto = PROTO_ACARS;
+			frame.data = parse_acars(ptr + 3, len - 3);
+		} else {
+			frame.proto = PROTO_UNKNOWN;
+		}
+	}
+	if(frame.data == NULL) {	// unparseable frame
 		frame.data = ptr;
 		frame.datalen = len;
 	}

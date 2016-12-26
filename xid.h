@@ -1,3 +1,4 @@
+#include "tlv.h"
 #define XID_FMT_ID 0x82
 #define XID_GID_PUBLIC 0x80
 #define XID_GID_PRIVATE 0xF0

@@ -5,18 +5,19 @@
 #include <errno.h>
 #include "avlc.h"
 #include "acars.h"
+#include "xid.h"
 
-const char *status_ag_descr[] = {
+static const char *status_ag_descr[] = {
 	"Airborne",
 	"On ground"
 };
 
-const char *status_cr_descr[] = {
+static const char *status_cr_descr[] = {
 	"Command frame",
 	"Response frame"
 };
 
-const char *addrtype_descr[] = {
+static const char *addrtype_descr[] = {
 	"reserved",
 	"Aircraft",
 	"reserved",
@@ -27,14 +28,14 @@ const char *addrtype_descr[] = {
 	"All stations"
 };
 
-const char *S_cmd[] = {
+static const char *S_cmd[] = {
 	"Receive Ready",
 	"Receive not Ready",
 	"Reject",
 	"Selective Reject"
 };
 
-const char *U_cmd[] = {
+static const char *U_cmd[] = {
 	"UI",     "(0x01)", "(0x02)", "DM",     "(0x04)", "(0x05)", "(0x06)", "(0x07)",
 	"(0x08)", "(0x09)", "(0x0a)", "(0x0b)", "(0x0c)", "(0x0d)", "(0x0e)", "(0x0f)",
 	"DISC",   "(0x11)", "(0x12)", "(0x13)", "(0x14)", "(0x15)", "(0x16)", "(0x17)",
@@ -58,7 +59,7 @@ int init_output_file(char *file) {
 	return 0;
 }
 
-void output_acars(const acars_msg_t *msg) {
+static void output_acars(const acars_msg_t *msg) {
 	assert(msg);
 	fprintf(outf, "ACARS:\n");
 	if(msg->mode < 0x5d)
@@ -70,7 +71,7 @@ void output_acars(const acars_msg_t *msg) {
 		fprintf(outf, "\n");
 }
 
-void output_raw(uint8_t *buf, uint32_t len) {
+static void output_raw(uint8_t *buf, uint32_t len) {
 	if(len == 0) {
 		fprintf(outf, "\n");
 		return;
@@ -79,6 +80,16 @@ void output_raw(uint8_t *buf, uint32_t len) {
 	for(int i = 0; i < len; i++)
 		fprintf(outf, "%02x ", buf[i]);
 	fprintf(outf, "\n\n");
+}
+
+static void output_avlc_U(const avlc_frame_t *f) {
+	switch(U_MFUNC(f->lcf)) {
+	case XID:
+		output_xid((xid_msg_t *)f->data);
+		break;
+	default:
+		output_raw((uint8_t *)f->data, f->datalen);
+	}
 }
 
 void output_avlc(const avlc_frame_t *f) {
@@ -100,7 +111,7 @@ void output_avlc(const avlc_frame_t *f) {
 		output_raw((uint8_t *)f->data, f->datalen);
 	} else if(IS_U(f->lcf)) {
 		fprintf(outf, "U: mfunc=%02x (%s) P/F=%x\n", U_MFUNC(f->lcf), U_cmd[U_MFUNC(f->lcf)], U_PF(f->lcf));
-		output_raw((uint8_t *)f->data, f->datalen);
+		output_avlc_U(f);
 	} else {	// IS_I == true
 		fprintf(outf, "I: sseq=0x%x rseq=0x%x poll=%x\n", f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
 		switch(f->proto) {
