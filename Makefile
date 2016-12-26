@@ -6,7 +6,7 @@ LDFLAGS = -lfec -lm -lrtlsdr
 
 all: rtlvdl2
 
-rtlvdl2: crc.o decode.o bitstream.o deinterleave.o rs.o avlc.o acars.o output.o rtlvdl2.o
+rtlvdl2: crc.o decode.o bitstream.o deinterleave.o rs.o avlc.o acars.o output.o util.o rtlvdl2.o
 
 decode.o: rtlvdl2.h
 

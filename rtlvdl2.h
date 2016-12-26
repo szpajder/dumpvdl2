@@ -57,6 +57,10 @@
 			fprintf(stderr, "\n"); \
 		} \
 	} while(0)
+
+#define XCALLOC(nmemb, size) xcalloc((nmemb), (size), __FILE__, __LINE__, __func__)
+#define XREALLOC(ptr, size) xrealloc((ptr), (size), __FILE__, __LINE__, __func__)
+
 typedef struct {
 	uint8_t *buf;
 	uint32_t start, end, len, descrambler_pos;
@@ -122,5 +126,9 @@ void rs_encode(uint8_t *data, uint8_t *parity);
 // output.c
 int init_output_file(char *file);
 void output_avlc(const avlc_frame_t *f);
+
+// util.c
+void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func);
+void *xrealloc(void *ptr, size_t size, const char *file, const int line, const char *func);
 
 // vim: ts=4
