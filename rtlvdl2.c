@@ -123,7 +123,8 @@ void demod(vdl2_state_t *v) {
 			if(dphi < 0) dphi += 2.0 * M_PI;
 			dphi /= M_PI_4;
 			idx = (int)roundf(dphi) % ARITY;
-//			debug_print("sclk: %d bufs: %d bufe: %d dphi: %f * pi/4 idx: %d bits: %d\n", v->sclk, v->bufs, v->bufe, dphi, idx, graycode[idx]);
+			debug_print("sclk: %d bufs: %d bufe: %d dphi: %f * pi/4 idx: %d bits: %d phierr=%f\n",
+				v->sclk, v->bufs, v->bufe, dphi, idx, graycode[idx], dphi - roundf(dphi));
 //			printf("%d ", graycode[idx]);
 //			v->symcnt++;
 			if(bitstream_append_msbfirst(v->bs, &(graycode[idx]), 1, BPS) < 0) {

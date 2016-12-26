@@ -77,6 +77,8 @@ void decode_vdl_frame(vdl2_state_t *v) {
 	case DEC_PREAMBLE:
 		if(skip_preamble(v->bs) == NULL) {
 			debug_print("%s", "No preamble found\n");
+			uint8_t *tmp = v->bs->buf + v->bs->start;
+			debug_print_buf_hex(tmp, v->bs->end - v->bs->start, "%s", "Searched bitstream:\n");
 			v->decoder_state = DEC_IDLE;
 			return;
 		}
