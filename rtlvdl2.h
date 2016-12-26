@@ -117,6 +117,7 @@ int deinterleave(uint8_t *in, uint32_t len, uint32_t rows, uint32_t cols, uint8_
 
 // avlc.c
 void parse_avlc_frames(uint8_t *buf, uint32_t len);
+int parse_dlc_addr(uint8_t *buf, avlc_addr_t *a, uint8_t final);
 
 // rs.c
 int rs_init();
