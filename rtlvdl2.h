@@ -28,6 +28,7 @@
 // FIXME
 #define BUFSIZE (1000 * SPS)
 #define MAG_LPSLOW 0.9f
+#define M_PI_8 0.39269908169872415481
 
 /* #define debug_print(fmt, ...) \
 	do { if (DEBUG) fprintf(debugf, "%s(): " fmt, __func__, __VA_ARGS__); fflush(debugf); } while (0) */

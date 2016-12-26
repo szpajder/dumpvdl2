@@ -120,6 +120,7 @@ void demod(vdl2_state_t *v) {
 		for(;;) {
 			multiply(v->I[v->sclk], v->Q[v->sclk], v->pI, -(v->pQ), &dI, &dQ);
 			dphi = atan2(dQ, dI);
+			dphi -= M_PI_8;		// derotate constellation
 			if(dphi < 0) dphi += 2.0 * M_PI;
 			dphi /= M_PI_4;
 			idx = (int)roundf(dphi) % ARITY;
