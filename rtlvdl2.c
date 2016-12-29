@@ -372,6 +372,7 @@ int main(int argc, char **argv) {
 			break;
 		case 'o':
 			outfile = strdup(optarg);
+			break;
 		case 'p':
 			correction = atoi(optarg);
 			break;
