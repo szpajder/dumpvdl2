@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
 #include "avlc.h"
@@ -125,6 +126,7 @@ int rs_verify(uint8_t *data, int fec_octets);
 void rs_encode(uint8_t *data, uint8_t *parity);
 
 // output.c
+extern FILE *outf;
 int init_output_file(char *file);
 void output_avlc(const avlc_frame_t *f);
 

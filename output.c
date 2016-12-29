@@ -46,7 +46,7 @@ static const char *U_cmd[] = {
 	"TEST"
 };
 
-static FILE *outf;
+FILE *outf;
 
 int init_output_file(char *file) {
 	assert(file);
