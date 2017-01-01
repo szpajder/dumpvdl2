@@ -198,7 +198,7 @@ void demod(vdl2_state_t *v) {
 void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 	int i, available;
 	static int idle_skips = 0, not_idle_skips = 0;
-	static int bufnum = 0, samplenum = 0, cnt = 0;
+	static int bufnum = 0, samplenum = 0, cnt = 0, nfcnt = 0;
 	float re, im, mag;
 	vdl2_state_t *v = (vdl2_state_t *)ctx;
 	if(len == 0) return;
@@ -217,7 +217,13 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 		im = (float)buf[i] - 127.5f; i++;
 		mag = hypotf(re, im);
 		v->mag_lp = v->mag_lp * MAG_LPSLOW + mag * (1.0f - MAG_LPSLOW);
-		if(v->mag_lp > 3.0f) {
+		nfcnt %= 1000;
+// update noise floor estimate
+		if(nfcnt++ == 0) {
+			v->mag_nf = NF_LP * v->mag_nf + (1.0f - NF_LP) * fminf(v->mag_lp, v->mag_nf) + 0.0001f;
+//			debug_print("mag_lp: %f noise_floor: %f\n", v->mag_lp, v->mag_nf);
+		}
+		if(v->mag_lp > 3.0f * v->mag_nf) {
 			if(v->demod_state == DM_IDLE) {
 				idle_skips++;
 				continue;
@@ -227,7 +233,7 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 				v->sq = 1;
 				idle_skips = not_idle_skips = 0;
 			}
-		} else if(v->mag_lp < 3.0f) {
+		} else {
 			if(v->sq == 1 && v->demod_state == DM_IDLE) {	// close squelch only when decoder finished work or errored
 															// FIXME: time-limit this, because reading obvious trash does not make sense
 				debug_print("*** off at (%d:%d) *** after %d idle_skips, %d not_idle_skips\n", bufnum, samplenum, idle_skips, not_idle_skips);
@@ -257,6 +263,7 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 		}
 	}
 	bufnum++;
+	debug_print("noise_floor: %f\n", v->mag_nf);
 }
 
 void init_rtl(void *ctx, uint32_t device, int freq, int gain, int correction) {
@@ -341,6 +348,7 @@ vdl2_state_t *vdl2_init() {
 		free(v);
 		return NULL;
 	}
+	v->mag_nf = 100.0f;
 	demod_reset(v);
 	return v;
 }
