@@ -52,6 +52,34 @@ void parse_avlc(uint8_t *buf, uint32_t len) {
 	ptr += 4; len -= 4;
 	if(parse_dlc_addr(ptr, &frame.src, 1) < 0) return;
 	ptr += 4; len -= 4;
+#if USE_STATSD
+	uint8_t st = frame.src.a_addr.type;
+	uint8_t dt = frame.dst.a_addr.type;
+	if(st == ADDRTYPE_AIRCRAFT) {
+		switch(dt) {
+		case ADDRTYPE_GS_ADM:
+		case ADDRTYPE_GS_DEL:
+			statsd_increment("avlc.msg.air2gnd");
+			break;
+		case ADDRTYPE_ALL:
+			statsd_increment("avlc.msg.air2all");
+			break;
+		}
+	} else if(st == ADDRTYPE_GS_ADM || st == ADDRTYPE_GS_DEL) {
+		switch(dt) {
+		case ADDRTYPE_AIRCRAFT:
+			statsd_increment("avlc.msg.gnd2air");
+			break;
+		case ADDRTYPE_GS_ADM:
+		case ADDRTYPE_GS_DEL:
+			statsd_increment("avlc.msg.gnd2gnd");
+			break;
+		case ADDRTYPE_ALL:
+			statsd_increment("avlc.msg.gnd2all");
+			break;
+		}
+	}
+#endif
 	frame.lcf.val = *ptr++;
 	len--;
 	frame.data = NULL;
