@@ -29,6 +29,7 @@
 // FIXME
 #define BUFSIZE (1000 * SPS)
 #define MAG_LPSLOW 0.9f
+#define DPHI_LP 0.9f
 
 /* #define debug_print(fmt, ...) \
 	do { if (DEBUG) fprintf(debugf, "%s(): " fmt, __func__, __VA_ARGS__); fflush(debugf); } while (0) */
@@ -76,6 +77,7 @@ typedef struct {
 	float Q[BUFSIZE];
 	float pI, pQ;
 	float mag_lp;
+	float dphi;
 	int sq;							// potrzebne?
 	int bufs, bufe;
 	int sclk;

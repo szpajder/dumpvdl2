@@ -109,12 +109,10 @@ void demod_reset(vdl2_state_t *v) {
 	v->bufe = v->bufs = v->sclk = 0;
 	v->demod_state = DM_INIT;
 	v->requested_samples = SYNC_SYMS * SPS;
-/*	if(v->symcnt > 0) printf("[%d symbols]\n\n", v->symcnt);
-	v->symcnt = 0; */
 }
 
 void demod(vdl2_state_t *v) {
-	float dI, dQ, dphi;
+	float dI, dQ, dphi, phierr;
 	int idx, samples_available, samples_needed;
 
 	if(v->decoder_state == DEC_IDLE) {
@@ -132,6 +130,7 @@ void demod(vdl2_state_t *v) {
 			return;
 		}
 		statsd_increment("demod.sync.good");
+		v->dphi = 0.0f;
 		v->pI = v->I[v->sclk];
 		v->pQ = v->Q[v->sclk];
 		v->demod_state = DM_SYNC;
@@ -145,13 +144,14 @@ void demod(vdl2_state_t *v) {
 		for(;;) {
 			multiply(v->I[v->sclk], v->Q[v->sclk], v->pI, -(v->pQ), &dI, &dQ);
 			dphi = atan2(dQ, dI);
-			if(dphi < 0) dphi += 2.0 * M_PI;
+			dphi -= v->dphi;
+			if(dphi < 0) dphi += 2.0f * M_PI;
 			dphi /= M_PI_4;
+			phierr = (dphi - roundf(dphi)) * M_PI_4;
+			v->dphi = DPHI_LP * v->dphi + (1.0f - DPHI_LP) * phierr;
 			idx = (int)roundf(dphi) % ARITY;
-			debug_print("sclk: %d bufs: %d bufe: %d dphi: %f * pi/4 idx: %d bits: %d phierr=%f\n",
-				v->sclk, v->bufs, v->bufe, dphi, idx, graycode[idx], dphi - roundf(dphi));
-//			printf("%d ", graycode[idx]);
-//			v->symcnt++;
+			debug_print("sclk: %d I: %f Q: %f dphi: %f * pi/4 idx: %d bits: %d phierr: %f v->dphi: %f\n",
+				v->sclk, v->I[v->sclk], v->Q[v->sclk], dphi, idx, graycode[idx], phierr, v->dphi);
 			if(bitstream_append_msbfirst(v->bs, &(graycode[idx]), 1, BPS) < 0) {
 				debug_print("%s", "bitstream_append_msbfirst failed\n");
 				v->demod_state = DM_IDLE;
@@ -183,7 +183,7 @@ void demod(vdl2_state_t *v) {
 			}
 
 			if(samples_available <= 0) {
-				debug_print("avail: %d bufs: %d bufe: %d sclk: %d\n", samples_available, v->bufs, v->bufe, v->sclk);
+//				debug_print("avail: %d bufs: %d bufe: %d sclk: %d\n", samples_available, v->bufs, v->bufe, v->sclk);
 				v->bufs = v->bufe;
 				break;
 			}
