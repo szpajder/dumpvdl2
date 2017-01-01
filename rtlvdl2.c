@@ -4,12 +4,36 @@
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 #include <math.h>
 #include <errno.h>
 #include <rtl-sdr.h>
 #include "rtlvdl2.h"
 
 const uint8_t graycode[ARITY] = { 0, 1, 3, 2, 6, 7, 5, 4 };
+static rtlsdr_dev_t *rtl = NULL;
+int do_exit = 0;
+
+void sighandler(int sig) {
+	fprintf(stderr, "Got signal %d, exiting\n", sig);
+	do_exit = 1;
+	if(rtl != NULL)
+		rtlsdr_cancel_async(rtl);
+}
+
+void setup_signals() {
+	struct sigaction sigact, pipeact;
+
+	memset(&sigact, 0, sizeof(sigact));
+	memset(&pipeact, 0, sizeof(pipeact));
+	pipeact.sa_handler = SIG_IGN;
+	sigact.sa_handler = &sighandler;
+	sigaction(SIGPIPE, &pipeact, NULL);
+	sigaction(SIGHUP, &sigact, NULL);
+	sigaction(SIGINT, &sigact, NULL);
+	sigaction(SIGQUIT, &sigact, NULL);
+	sigaction(SIGTERM, &sigact, NULL);
+}
 
 /* crude correlator */
 int correlate_and_sync(float *buf, uint32_t len) {
@@ -123,7 +147,8 @@ void demod(vdl2_state_t *v) {
 			if(dphi < 0) dphi += 2.0 * M_PI;
 			dphi /= M_PI_4;
 			idx = (int)roundf(dphi) % ARITY;
-//			debug_print("sclk: %d bufs: %d bufe: %d dphi: %f * pi/4 idx: %d bits: %d\n", v->sclk, v->bufs, v->bufe, dphi, idx, graycode[idx]);
+			debug_print("sclk: %d bufs: %d bufe: %d dphi: %f * pi/4 idx: %d bits: %d phierr=%f\n",
+				v->sclk, v->bufs, v->bufe, dphi, idx, graycode[idx], dphi - roundf(dphi));
 //			printf("%d ", graycode[idx]);
 //			v->symcnt++;
 			if(bitstream_append_msbfirst(v->bs, &(graycode[idx]), 1, BPS) < 0) {
@@ -234,7 +259,6 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 }
 
 void init_rtl(void *ctx, uint32_t device, int freq, int gain, int correction) {
-	rtlsdr_dev_t *rtl;
 	int r;
 
 	r = rtlsdr_open(&rtl, device);
@@ -288,7 +312,6 @@ void init_rtl(void *ctx, uint32_t device, int freq, int gain, int correction) {
 		fprintf(stderr, "Device #%d: async read failed\n", device);
 		exit(1);
 	}
-// FIXME: rtlsdr_close on exit
 }
 
 void process_file(void *ctx, char *path) {
@@ -303,7 +326,7 @@ void process_file(void *ctx, char *path) {
 	do {
 		len = fread(buf, 1, RTL_BUFSIZE, f);
 		process_samples(buf, len, ctx);
-	} while(len == RTL_BUFSIZE);
+	} while(len == RTL_BUFSIZE && !do_exit);
 	fclose(f);
 }
 
@@ -349,6 +372,7 @@ int main(int argc, char **argv) {
 			break;
 		case 'o':
 			outfile = strdup(optarg);
+			break;
 		case 'p':
 			correction = atoi(optarg);
 			break;
@@ -380,6 +404,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Failed to initialize RS codec\n");
 		_exit(3);
 	}
+	setup_signals();
 	if(infile != NULL) {
 		process_file(ctx, infile);
 	} else {

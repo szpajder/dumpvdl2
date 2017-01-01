@@ -103,7 +103,7 @@ static char *fmt_dlc_addrs(uint8_t *data, uint8_t len) {
 	while(len > 0) {
 		avlc_addr_t a;
 		if(parse_dlc_addr(ptr, &a, 0) < 0) {
-			fprintf(stderr, "Unparseable address\n");
+			debug_print("%s", "Unparseable address\n");
 			strcat(buf, "<err> ");
 		} else {
 			sprintf(addrstring, "%06X ", a.a_addr.addr);
@@ -207,11 +207,11 @@ xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len) {
 	static xid_msg_t *msg = NULL;
 
 	if(len < XID_MIN_LEN) {
-		fprintf(stderr, "XID too short\n");
+		debug_print("%s", "XID too short\n");
 		return NULL;
 	}
 	if(buf[0] != XID_FMT_ID) {
-		fprintf(stderr, "Unknown XID format\n");
+		debug_print("%s", "Unknown XID format\n");
 		return NULL;
 	}
 	buf++; len--;
@@ -229,33 +229,33 @@ xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len) {
 		uint16_t grouplen = (ptr[0] << 8) | ptr[1];
 		ptr += 2; len -= 2;
 		if(grouplen > len) {
-			fprintf(stderr, "XID group %02x truncated: grouplen=%u buflen=%u\n", gid, grouplen, len);
+			debug_print("XID group %02x truncated: grouplen=%u buflen=%u\n", gid, grouplen, len);
 			return NULL;
 		}
 		switch(gid) {
 		case XID_GID_PUBLIC:
 			if(msg->pub_params != NULL) {
-				fprintf(stderr, "Duplicate XID group 0x%02x\n", XID_GID_PUBLIC);
+				debug_print("Duplicate XID group 0x%02x\n", XID_GID_PUBLIC);
 				return NULL;
 			}
 			msg->pub_params = tlv_deserialize(ptr, grouplen);
 			break;
 		case XID_GID_PRIVATE:
 			if(msg->vdl_params != NULL) {
-				fprintf(stderr, "Duplicate XID group 0x%02x\n", XID_GID_PRIVATE);
+				debug_print("Duplicate XID group 0x%02x\n", XID_GID_PRIVATE);
 				return NULL;
 			}
 			msg->vdl_params = tlv_deserialize(ptr, grouplen);
 			break;
 		default:
-			fprintf(stderr, "Unknown XID Group ID 0x%x, ignored\n", gid);
+			debug_print("Unknown XID Group ID 0x%x, ignored\n", gid);
 		}
 		ptr += grouplen; len -= grouplen;
 	}
 	if(len > 0)
-		fprintf(stderr, "Warning: %u unparsed octets left at end of XID message\n", len);
+		debug_print("Warning: %u unparsed octets left at end of XID message\n", len);
 	if(msg->pub_params == NULL || msg->vdl_params == NULL) {
-		fprintf(stderr, "Incomplete XID message\n");
+		fprintf(outf, "-- Incomplete XID message\n");
 		return NULL;
 	}
 // find connection management parameter to figure out the XID type
@@ -271,24 +271,23 @@ xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len) {
 
 static void output_xid_params(tlv_list_t *params, const xid_param_descr_t *descriptions) {
 	for(tlv_list_t *p = params; p != NULL; p = p->next) {
-//		printf("ID :\t%02x\nLen:\t%02x\nVal:\t", p->type, p->len);
 		xid_param_descr_t *descr = get_param_descr(descriptions, p->type);
 		char *str = NULL;
 		if(descr != NULL) {
 			str = (*(descr->stringify))(p->val, p->len);
-			printf(" %s: %s\n", descr->description, str);
+			fprintf(outf, " %s: %s\n", descr->description, str);
 		} else {
 			str = fmt_hexstring(p->val, p->len);
-			printf(" Unknown parameter (0x%02x): %s\n", p->type, str);
+			fprintf(outf, " Unknown parameter (0x%02x): %s\n", p->type, str);
 		}
 		free(str);
 	}
 }
 
 void output_xid(xid_msg_t *msg) {
-	printf("XID: type=0x%02x (%s - %s)\n", msg->type, xid_names[msg->type].name, xid_names[msg->type].description);
-	printf("Public parameters:\n");
+	fprintf(outf, "XID: type=0x%02x (%s - %s)\n", msg->type, xid_names[msg->type].name, xid_names[msg->type].description);
+	fprintf(outf, "Public parameters:\n");
 	output_xid_params(msg->pub_params, xid_pub_params);
-	printf("VDL parameters:\n");
+	fprintf(outf, "VDL parameters:\n");
 	output_xid_params(msg->vdl_params, xid_vdl_params);
 }

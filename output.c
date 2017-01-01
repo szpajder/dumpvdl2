@@ -46,7 +46,7 @@ static const char *U_cmd[] = {
 	"TEST"
 };
 
-static FILE *outf;
+FILE *outf;
 
 int init_output_file(char *file) {
 	assert(file);
@@ -67,19 +67,15 @@ static void output_acars(const acars_msg_t *msg) {
 	fprintf(outf, "Mode: %1c Label: %s Blk id: %c Ack: %c Msg no.: %s\n",
 		msg->mode, msg->label, msg->bid, msg->ack, msg->no);
 	fprintf(outf, "Message:\n%s\n", msg->txt);
-	if(msg->txt[0] != '\0')
-		fprintf(outf, "\n");
 }
 
 static void output_raw(uint8_t *buf, uint32_t len) {
-	if(len == 0) {
-		fprintf(outf, "\n");
+	if(len == 0)
 		return;
-	}
 	fprintf(outf, "   ");
 	for(int i = 0; i < len; i++)
 		fprintf(outf, "%02x ", buf[i]);
-	fprintf(outf, "\n\n");
+	fprintf(outf, "\n");
 }
 
 static void output_avlc_U(const avlc_frame_t *f) {
@@ -96,7 +92,7 @@ void output_avlc(const avlc_frame_t *f) {
 	if(f == NULL) return;
 	char ftime[24];
 	strftime(ftime, sizeof(ftime), "%F %T", localtime(&f->t));
-	fprintf(outf, "[%s]\n", ftime);
+	fprintf(outf, "\n[%s]\n", ftime);
 	fprintf(outf, "%06X (%s, %s) -> %06X (%s): %s, CF: 0x%02x\n",
 		f->src.a_addr.addr,
 		addrtype_descr[f->src.a_addr.type],
