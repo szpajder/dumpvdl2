@@ -130,6 +130,14 @@ extern FILE *outf;
 int init_output_file(char *file);
 void output_avlc(const avlc_frame_t *f);
 
+// statsd.c
+#if USE_STATSD
+int statsd_initialize(char *statsd_addr);
+void statsd_initialize_counters(uint32_t freq);
+#endif
+void statsd_counter_increment(char *counter);
+#define statsd_increment(counter) do { if(USE_STATSD) statsd_counter_increment(counter); } while(0)
+
 // util.c
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func);
 void *xrealloc(void *ptr, size_t size, const char *file, const int line, const char *func);

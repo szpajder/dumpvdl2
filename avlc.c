@@ -41,8 +41,10 @@ void parse_avlc(uint8_t *buf, uint32_t len) {
 		debug_print("%s", "FCS check OK\n");
 	} else {
 		debug_print("%s", "FCS check failed\n");
+		statsd_increment("avlc.errors.bad_fcs");
 		return;
 	}
+	statsd_increment("avlc.frames.good");
 	uint8_t *ptr = buf;
 	avlc_frame_t frame;
 	frame.t = time(NULL);
@@ -79,6 +81,7 @@ void parse_avlc(uint8_t *buf, uint32_t len) {
 void parse_avlc_frames(uint8_t *buf, uint32_t len) {
 	if(buf[0] != AVLC_FLAG) {
 		debug_print("%s", "No AVLC frame delimiter at the start\n");
+		statsd_increment("avlc.errors.no_flag_start");
 		return;
 	}
 	uint32_t fcnt = 0, goodfcnt = 0;
@@ -87,13 +90,16 @@ void parse_avlc_frames(uint8_t *buf, uint32_t len) {
 	uint8_t *buf_end = buf + len;
 	uint32_t flen;
 	while(frame_start < buf_end - 1) {
+		statsd_increment("avlc.frames.processed");
 		if((frame_end = memchr(frame_start, AVLC_FLAG, buf_end - frame_start)) == NULL) {
 			debug_print("Frame %u: truncated\n", fcnt);
+			statsd_increment("avlc.errors.no_flag_end");
 			return;
 		}
 		flen = frame_end - frame_start;
 		if(flen < MIN_AVLC_LEN) {
 			debug_print("Frame %u: too short (len=%u required=%d)\n", fcnt, flen, MIN_AVLC_LEN);
+			statsd_increment("avlc.errors.too_short");
 			goto next;
 		}
 		debug_print("Frame %u: len=%u\n", fcnt, flen);
