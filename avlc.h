@@ -82,6 +82,11 @@ typedef union {
 #define XID		0x2b
 #define TEST	0x38
 
+#define ADDRTYPE_AIRCRAFT 1
+#define ADDRTYPE_GS_ADM 4
+#define ADDRTYPE_GS_DEL 5
+#define ADDRTYPE_ALL 7
+
 enum avlc_protocols { PROTO_ISO_8208, PROTO_ACARS, PROTO_UNKNOWN };
 typedef struct {
 	time_t t;
