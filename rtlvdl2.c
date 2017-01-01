@@ -263,7 +263,8 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 		}
 	}
 	bufnum++;
-	debug_print("noise_floor: %f\n", v->mag_nf);
+	if(DEBUG && bufnum % 10 == 0)
+		debug_print("noise_floor: %f\n", v->mag_nf);
 }
 
 void init_rtl(void *ctx, uint32_t device, int freq, int gain, int correction) {
