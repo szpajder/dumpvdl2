@@ -131,6 +131,7 @@ void demod(vdl2_state_t *v) {
 			debug_print("%s", "no sync, DM_IDLE\n");
 			return;
 		}
+		statsd_increment("demod.sync.good");
 		v->pI = v->I[v->sclk];
 		v->pQ = v->Q[v->sclk];
 		v->demod_state = DM_SYNC;
@@ -346,7 +347,17 @@ vdl2_state_t *vdl2_init() {
 
 void usage() {
 	fprintf(stderr, "RTLVDL2 version %s\n", RTLVDL2_VERSION);
-	fprintf(stderr, "Usage: rtlvdl2 [-o output_file] (-f <input_file> | ( [-d <device_id>] [-g gain] [-p ppm_correction] frequency ))\n");
+	fprintf(stderr, "Usage: rtlvdl2 [common_options] [rtlsdr_options] frequency_hz\n");
+	fprintf(stderr, "       rtlvdl2 [common_options] -f <input_file>\n");
+	fprintf(stderr, "\ncommon_options:\n");
+	fprintf(stderr, "\t-o <output_file>\tOutput decoded frames to <output_file> (default: stdout)\n");
+#if USE_STATSD
+	fprintf(stderr, "\t-S <host>:<port>\tSend statistics to Etsy StatsD server <host>:<port> (default: disabled)\n");
+#endif
+	fprintf(stderr, "\nrtlsdr_options:\n");
+	fprintf(stderr, "\t-d <device_id>\t\tUse specified device (default: 0)\n");
+	fprintf(stderr, "\t-g <gain>\t\tSet RTL gain (decibels)\n");
+	fprintf(stderr, "\t-p <correction>\t\tSet RTL freq correction (ppm)\n");
 	_exit(1);
 }
 
@@ -357,9 +368,17 @@ int main(int argc, char **argv) {
 	int gain = RTL_AUTO_GAIN;
 	int correction = 0;
 	int opt;
+	char *optstring = 
+#if USE_STATSD
+	"d:f:g:o:p:S:";
+	char *statsd_addr;
+	int statsd_enabled = 0;
+#else
+	"d:f:g:o:p:";
+#endif
 	char *infile = NULL, *outfile = NULL;
 
-	while((opt = getopt(argc, argv, "d:f:g:o:p:")) != -1) {
+	while((opt = getopt(argc, argv, optstring)) != -1) {
 		switch(opt) {
 		case 'f':
 			infile = strdup(optarg);
@@ -376,6 +395,12 @@ int main(int argc, char **argv) {
 		case 'p':
 			correction = atoi(optarg);
 			break;
+#if USE_STATSD
+		case 'S':
+			statsd_addr = strdup(optarg);
+			statsd_enabled = 1;
+			break;
+#endif
 		default:
 			usage();
 		}
@@ -404,6 +429,17 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Failed to initialize RS codec\n");
 		_exit(3);
 	}
+#if USE_STATSD
+    if(statsd_enabled && freq != 0) {
+		if(statsd_initialize(statsd_addr) < 0) {
+				fprintf(stderr, "Failed to initialize statsd client\n");
+				_exit(4);
+		}
+		statsd_initialize_counters(freq);
+	} else {
+		statsd_enabled = 0;
+	}
+#endif
 	setup_signals();
 	if(infile != NULL) {
 		process_file(ctx, infile);
