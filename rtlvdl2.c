@@ -199,30 +199,30 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 	int i, available;
 	static int idle_skips = 0, not_idle_skips = 0;
 	static int bufnum = 0, samplenum = 0, cnt = 0, nfcnt = 0;
-	float re, im, mag;
+	float re, im, lp_re, lp_im, mag;
+	float iq_lp2 = 1.0f - IQ_LP;
 	vdl2_state_t *v = (vdl2_state_t *)ctx;
 	if(len == 0) return;
 	samplenum = -1;
 	for(i = 0; i < len;) {
 		samplenum++;
 
-// decimation
-		cnt %= RTL_OVERSAMPLE;
-		if(cnt++ != 0) {
-			i += 2;
-			continue;
-		}
-
 		re = (float)buf[i] - 127.5f; i++;
 		im = (float)buf[i] - 127.5f; i++;
-		mag = hypotf(re, im);
-		v->mag_lp = v->mag_lp * MAG_LPSLOW + mag * (1.0f - MAG_LPSLOW);
+// lowpass IIR
+		lp_re = IQ_LP * lp_re + iq_lp2 * re;
+		lp_im = IQ_LP * lp_im + iq_lp2 * im;
+// decimation
+		cnt %= RTL_OVERSAMPLE;
+		if(cnt++ != 0)
+			continue;
+
+		mag = hypotf(lp_re, lp_im);
+		v->mag_lp = v->mag_lp * MAG_LP + mag * (1.0f - MAG_LP);
 		nfcnt %= 1000;
 // update noise floor estimate
-		if(nfcnt++ == 0) {
+		if(nfcnt++ == 0)
 			v->mag_nf = NF_LP * v->mag_nf + (1.0f - NF_LP) * fminf(v->mag_lp, v->mag_nf) + 0.0001f;
-//			debug_print("mag_lp: %f noise_floor: %f\n", v->mag_lp, v->mag_nf);
-		}
 		if(v->mag_lp > 3.0f * v->mag_nf) {
 			if(v->demod_state == DM_IDLE) {
 				idle_skips++;
@@ -244,8 +244,8 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 			}
 		}
 		if(v->sq == 1) {
-			v->I[v->bufe] = re;
-			v->Q[v->bufe] = im;
+			v->I[v->bufe] = lp_re;
+			v->Q[v->bufe] = lp_im;
 			v->mag_buf[v->bufe] = mag;
 			v->mag_lpbuf[v->bufe] = v->mag_lp;
 			v->bufe++; v->bufe %= BUFSIZE;

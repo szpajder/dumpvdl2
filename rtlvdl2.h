@@ -28,9 +28,10 @@
 #define RTL_AUTO_GAIN -100
 // FIXME
 #define BUFSIZE (1000 * SPS)
-#define MAG_LPSLOW 0.9f
+#define MAG_LP 0.9f
 #define DPHI_LP 0.9f
 #define NF_LP 0.97f
+#define IQ_LP 0.95f
 
 /* #define debug_print(fmt, ...) \
 	do { if (DEBUG) fprintf(debugf, "%s(): " fmt, __func__, __VA_ARGS__); fflush(debugf); } while (0) */
