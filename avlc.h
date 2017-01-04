@@ -95,6 +95,7 @@ typedef struct {
 	lcf_t lcf;
 	enum avlc_protocols proto;
 	uint32_t datalen;
+	uint8_t data_valid;
 	void  *data;
 } avlc_frame_t;
 

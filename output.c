@@ -81,7 +81,12 @@ static void output_raw(uint8_t *buf, uint32_t len) {
 static void output_avlc_U(const avlc_frame_t *f) {
 	switch(U_MFUNC(f->lcf)) {
 	case XID:
-		output_xid((xid_msg_t *)f->data);
+		if(f->data_valid)
+			output_xid((xid_msg_t *)f->data);
+		else {
+			fprintf(outf, "-- Unparseable XID\n");
+			output_raw((uint8_t *)f->data, f->datalen);
+		}
 		break;
 	default:
 		output_raw((uint8_t *)f->data, f->datalen);
@@ -112,7 +117,12 @@ void output_avlc(const avlc_frame_t *f) {
 		fprintf(outf, "I: sseq=0x%x rseq=0x%x poll=%x\n", f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
 		switch(f->proto) {
 		case PROTO_ACARS:
-			output_acars((acars_msg_t *)f->data);
+			if(f->data_valid)
+				output_acars((acars_msg_t *)f->data);
+			else {
+				fprintf(outf, "-- Unparseable ACARS payload\n");
+				output_raw((uint8_t *)f->data, f->datalen);
+			}
 			break;
 		case PROTO_ISO_8208:
 		default:

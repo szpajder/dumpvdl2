@@ -82,6 +82,7 @@ void parse_avlc(uint8_t *buf, uint32_t len) {
 #endif
 	frame.lcf.val = *ptr++;
 	len--;
+	frame.data_valid = 0;
 	frame.data = NULL;
 	if(IS_S(frame.lcf)) {
 
@@ -102,6 +103,8 @@ void parse_avlc(uint8_t *buf, uint32_t len) {
 	if(frame.data == NULL) {	// unparseable frame
 		frame.data = ptr;
 		frame.datalen = len;
+	} else {
+		frame.data_valid = 1;
 	}
 	output_avlc(&frame);
 }
