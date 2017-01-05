@@ -199,8 +199,9 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 	int i, available;
 	static int idle_skips = 0, not_idle_skips = 0;
 	static int bufnum = 0, samplenum = 0, cnt = 0, nfcnt = 0;
-	float re, im, lp_re, lp_im, mag;
-	float iq_lp2 = 1.0f - IQ_LP;
+	float re, im, mag;
+	static float lp_re = 0.0f, lp_im = 0.0f;
+	static const float iq_lp2 = 1.0f - IQ_LP;
 	vdl2_state_t *v = (vdl2_state_t *)ctx;
 	if(len == 0) return;
 	samplenum = -1;
