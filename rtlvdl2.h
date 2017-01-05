@@ -20,6 +20,7 @@
 #define SYNC_SYMS 11							// number of symbols searched by correlate_and_sync()
 #define PREAMBLE_SYMS 16
 #define PREAMBLE_LEN (PREAMBLE_SYMS * BPS)		// preamble length in bits
+#define MAX_PREAMBLE_ERRORS 3
 #define RTL_BUFSIZE 320000
 #define RTL_BUFCNT 15
 #define SYMBOL_RATE 10500
