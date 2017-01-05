@@ -206,7 +206,7 @@ void decode_vdl_frame(vdl2_state_t *v) {
 				if(ret < 0) {
 					debug_print("%s", "FEC check failed\n");
 					statsd_increment("decoder.errors.fec_bad");
-//					goto cleanup;
+					goto cleanup;
 				} else {
 					statsd_increment("decoder.blocks.fec_ok");
 					if(ret > 0)
