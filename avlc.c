@@ -29,7 +29,7 @@ int parse_dlc_addr(uint8_t *buf, avlc_addr_t *a, uint8_t final) {
 	return 0;
 }
 
-void parse_avlc(uint8_t *buf, uint32_t len) {
+void parse_avlc(vdl2_state_t *v, uint8_t *buf, uint32_t len) {
 	debug_print_buf_hex(buf, len, "%s", "Frame data:\n");
 // FCS check
 	len -= 2;
@@ -106,10 +106,10 @@ void parse_avlc(uint8_t *buf, uint32_t len) {
 	} else {
 		frame.data_valid = 1;
 	}
-	output_avlc(&frame);
+	output_avlc(v, &frame);
 }
 
-void parse_avlc_frames(uint8_t *buf, uint32_t len) {
+void parse_avlc_frames(vdl2_state_t *v, uint8_t *buf, uint32_t len) {
 	if(buf[0] != AVLC_FLAG) {
 		debug_print("%s", "No AVLC frame delimiter at the start\n");
 		statsd_increment("avlc.errors.no_flag_start");
@@ -135,7 +135,7 @@ void parse_avlc_frames(uint8_t *buf, uint32_t len) {
 		}
 		debug_print("Frame %u: len=%u\n", fcnt, flen);
 		goodfcnt++;
-		parse_avlc(frame_start, flen);
+		parse_avlc(v, frame_start, flen);
 next:
 		frame_start = frame_end + 1;
 		fcnt++;

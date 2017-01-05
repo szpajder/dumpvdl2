@@ -36,9 +36,11 @@ void setup_signals() {
 }
 
 /* crude correlator */
-int correlate_and_sync(float *buf, uint32_t len) {
+void correlate_and_sync(vdl2_state_t *v) {
 	int i, min1, min2, min_dist, pos;
 	float avgmax, minv1, minv2;
+	float *buf = v->mag_buf;
+	v->sclk = -1;
 /* Average power over first 3 symbol periods */
 	for(avgmax = 0, i = 0; i < 3 * SPS; i++) {
 		avgmax += buf[i];
@@ -56,7 +58,7 @@ int correlate_and_sync(float *buf, uint32_t len) {
 	}
 	if(3 * minv1 >= avgmax) {
 		debug_print("min1=%f at pos %d too high (avgmax=%f)\n", minv1, min1, avgmax);
-		return -1;
+		return;
 	}
 /* Search for a notch over 8-11 symbol periods */
 	minv2 = avgmax;
@@ -68,18 +70,18 @@ int correlate_and_sync(float *buf, uint32_t len) {
 	}
 	if(3 * minv2 >= avgmax) {
 		debug_print("min2=%f at pos %d too high (avgmax=%f)\n", minv2, min2, avgmax);
-		return -1;
+		return;
 	}
 /* Get notch distance (shall equal 4 symbol periods) */
 /* Allow some clock variance */
 	min_dist = min2 - min1;
 	if((float)min_dist > 1.1f * 4.0f * (float)SPS) {
 		debug_print("min_dist %d too high\n", min_dist);
-		return -1;
+		return;
 	}
 	if((float)min_dist < 0.9f * 4.0f * (float)SPS) {
 		debug_print("min_dist %d too low\n", min_dist);
-		return -1;
+		return;
 	}
 /* Steady transmitter state starts 5.5 symbol periods before first notch. */
 /* Skip one symbol if pos is slightly negative (ie. squelch opened a bit too late) */
@@ -87,10 +89,12 @@ int correlate_and_sync(float *buf, uint32_t len) {
 	if(pos < 0) pos += SPS;
 	if(pos < 0) {
 		debug_print("pos is negative: %d\n", pos-SPS);
-		return -1;
+		return;
 	}
-	debug_print("avgmax: %f, min1: %f @ %d, min2: %f @ %d, min_dist: %d pos; %d\n", avgmax, minv1, min1, minv2, min2, min_dist, pos);
-	return pos;
+	debug_print("avgmax: %f, min1: %f @ %d, min2: %f @ %d, min_dist: %d pos: %d mag_nf: %f\n",
+		avgmax, minv1, min1, minv2, min2, min_dist, pos, v->mag_nf);
+	v->mag_frame = avgmax;
+	v->sclk = v->bufs = pos;
 }
 
 void multiply(float ar, float aj, float br, float bj, float *cr, float *cj) {
@@ -123,7 +127,7 @@ void demod(vdl2_state_t *v) {
 
 	switch(v->demod_state) {
 	case DM_INIT:
-		v->sclk = v->bufs = correlate_and_sync(v->mag_buf, v->bufe);
+		correlate_and_sync(v);
 		if(v->sclk < 0) {		/* no sync */
 			v->demod_state = DM_IDLE;
 			debug_print("%s", "no sync, DM_IDLE\n");

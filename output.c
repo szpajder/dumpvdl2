@@ -3,6 +3,8 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
+#include <math.h>
+#include "rtlvdl2.h"
 #include "avlc.h"
 #include "acars.h"
 #include "xid.h"
@@ -93,11 +95,12 @@ static void output_avlc_U(const avlc_frame_t *f) {
 	}
 }
 
-void output_avlc(const avlc_frame_t *f) {
+void output_avlc(vdl2_state_t *v, const avlc_frame_t *f) {
 	if(f == NULL) return;
 	char ftime[24];
 	strftime(ftime, sizeof(ftime), "%F %T", localtime(&f->t));
-	fprintf(outf, "\n[%s]\n", ftime);
+	float snr = 20.0f * log10f(v->mag_frame / (v->mag_nf + 0.001f));
+	fprintf(outf, "\n[%s] [%.2f:%.2f] [%.1f dB]\n", ftime, v->mag_frame, v->mag_nf, snr);
 	fprintf(outf, "%06X (%s, %s) -> %06X (%s): %s, CF: 0x%02x\n",
 		f->src.a_addr.addr,
 		addrtype_descr[f->src.a_addr.type],

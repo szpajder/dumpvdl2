@@ -255,7 +255,7 @@ void decode_vdl_frame(vdl2_state_t *v) {
 			goto cleanup;
 		}
 		statsd_increment("decoder.msg.good");
-		parse_avlc_frames(data, v->datalen_octets);
+		parse_avlc_frames(v, data, v->datalen_octets);
 cleanup:
 		if(data) free(data);
 		if(fec) free(fec);
