@@ -20,6 +20,7 @@
 #define SYNC_SYMS 11							// number of symbols searched by correlate_and_sync()
 #define PREAMBLE_SYMS 16
 #define PREAMBLE_LEN (PREAMBLE_SYMS * BPS)		// preamble length in bits
+#define MAX_PREAMBLE_ERRORS 3
 #define RTL_BUFSIZE 320000
 #define RTL_BUFCNT 15
 #define SYMBOL_RATE 10500
@@ -28,7 +29,10 @@
 #define RTL_AUTO_GAIN -100
 // FIXME
 #define BUFSIZE (1000 * SPS)
-#define MAG_LPSLOW 0.9f
+#define MAG_LP 0.9f
+#define DPHI_LP 0.9f
+#define NF_LP 0.97f
+#define IQ_LP 0.95f
 
 /* #define debug_print(fmt, ...) \
 	do { if (DEBUG) fprintf(debugf, "%s(): " fmt, __func__, __VA_ARGS__); fflush(debugf); } while (0) */
@@ -76,6 +80,9 @@ typedef struct {
 	float Q[BUFSIZE];
 	float pI, pQ;
 	float mag_lp;
+	float mag_nf;
+	float mag_frame;
+	float dphi;
 	int sq;							// potrzebne?
 	int bufs, bufe;
 	int sclk;
@@ -117,7 +124,7 @@ uint16_t crc16_ccitt(uint8_t *data, uint32_t len);
 int deinterleave(uint8_t *in, uint32_t len, uint32_t rows, uint32_t cols, uint8_t out[][cols], uint32_t fillwidth, uint32_t offset);
 
 // avlc.c
-void parse_avlc_frames(uint8_t *buf, uint32_t len);
+void parse_avlc_frames(vdl2_state_t *v, uint8_t *buf, uint32_t len);
 int parse_dlc_addr(uint8_t *buf, avlc_addr_t *a, uint8_t final);
 
 // rs.c
@@ -128,7 +135,7 @@ void rs_encode(uint8_t *data, uint8_t *parity);
 // output.c
 extern FILE *outf;
 int init_output_file(char *file);
-void output_avlc(const avlc_frame_t *f);
+void output_avlc(vdl2_state_t *v, const avlc_frame_t *f);
 
 // statsd.c
 #if USE_STATSD

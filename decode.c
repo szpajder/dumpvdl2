@@ -7,8 +7,8 @@
 #include <unistd.h>
 #include "rtlvdl2.h"
 
-const uint32_t H[CRCLEN] = { 0x00FFF, 0x3F0FF, 0xC730F, 0xDB533, 0x69E55 };
-const uint8_t preamble_bits[PREAMBLE_SYMS*BPS] = {
+static const uint32_t H[CRCLEN] = { 0x00FFF, 0x3F0FF, 0xC730F, 0xDB533, 0x69E55 };
+static const uint8_t preamble_bits[PREAMBLE_SYMS*BPS] = {
 	0,0,0,
 	0,1,0,
 	0,1,1,
@@ -49,16 +49,35 @@ uint32_t check_crc(uint32_t v, uint32_t check) {
 	return (r == check ? 1 : 0);
 }
 
-uint8_t *skip_preamble(bitstream_t *bs) {
+static uint8_t *soft_preamble_search(bitstream_t *bs) {
 	if(bs == NULL) return NULL;
-	uint8_t *start = (uint8_t *)memmem(bs->buf + bs->start, bs->end - bs->start, preamble_bits, BPS*PREAMBLE_SYMS);
-	if(start != NULL) {
-		bs->start = start - bs->buf;
-		debug_print("Preamble found at %u\n", bs->start);
-		bs->start += BPS*PREAMBLE_SYMS;
-		debug_print("Now at %u\n", bs->start);
+	uint32_t pr_len = PREAMBLE_LEN;
+	uint32_t bs_len = bs->end - bs->start;
+	if(bs_len < pr_len) {
+		debug_print("%s", "haystack too short\n");
+		return NULL;
 	}
-	return start;
+	uint32_t min_distance, distance, best_match;
+	int i,j,k;
+	min_distance = pr_len;
+	for(i = 0; i <= bs_len - pr_len; i++) {
+		distance = 0;
+		for(j = bs->start + i, k = 0; k < pr_len; j++, k++)
+			distance += bs->buf[j] ^ preamble_bits[k];
+		if(distance < min_distance) {
+			best_match = i;
+			min_distance = distance;
+			if(distance == 0) break;	// exact match
+		}
+	}
+	if(min_distance > MAX_PREAMBLE_ERRORS) {
+		debug_print("Preamble not found (min_distance %u > %u)\n", min_distance, MAX_PREAMBLE_ERRORS);
+		return NULL;
+	}
+	debug_print("Preamble found at %u (distance %u)\n", best_match, min_distance);
+	bs->start = best_match + pr_len;
+	debug_print("Now at %u\n", bs->start);
+	return bs->buf + best_match;
 }
 
 int get_fec_octetcount(uint32_t len) {
@@ -75,11 +94,8 @@ int get_fec_octetcount(uint32_t len) {
 void decode_vdl_frame(vdl2_state_t *v) {
 	switch(v->decoder_state) {
 	case DEC_PREAMBLE:
-		if(skip_preamble(v->bs) == NULL) {
-			debug_print("%s", "No preamble found\n");
+		if(soft_preamble_search(v->bs) == NULL) {
 			statsd_increment("decoder.errors.no_preamble");
-			uint8_t *tmp = v->bs->buf + v->bs->start;
-			debug_print_buf_hex(tmp, v->bs->end - v->bs->start, "%s", "Searched bitstream:\n");
 			v->decoder_state = DEC_IDLE;
 			return;
 		}
@@ -190,7 +206,7 @@ void decode_vdl_frame(vdl2_state_t *v) {
 				if(ret < 0) {
 					debug_print("%s", "FEC check failed\n");
 					statsd_increment("decoder.errors.fec_bad");
-//					goto cleanup;
+					goto cleanup;
 				} else {
 					statsd_increment("decoder.blocks.fec_ok");
 					if(ret > 0)
@@ -239,7 +255,7 @@ void decode_vdl_frame(vdl2_state_t *v) {
 			goto cleanup;
 		}
 		statsd_increment("decoder.msg.good");
-		parse_avlc_frames(data, v->datalen_octets);
+		parse_avlc_frames(v, data, v->datalen_octets);
 cleanup:
 		if(data) free(data);
 		if(fec) free(fec);

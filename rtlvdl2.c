@@ -36,9 +36,11 @@ void setup_signals() {
 }
 
 /* crude correlator */
-int correlate_and_sync(float *buf, uint32_t len) {
+void correlate_and_sync(vdl2_state_t *v) {
 	int i, min1, min2, min_dist, pos;
 	float avgmax, minv1, minv2;
+	float *buf = v->mag_buf;
+	v->sclk = -1;
 /* Average power over first 3 symbol periods */
 	for(avgmax = 0, i = 0; i < 3 * SPS; i++) {
 		avgmax += buf[i];
@@ -56,7 +58,7 @@ int correlate_and_sync(float *buf, uint32_t len) {
 	}
 	if(3 * minv1 >= avgmax) {
 		debug_print("min1=%f at pos %d too high (avgmax=%f)\n", minv1, min1, avgmax);
-		return -1;
+		return;
 	}
 /* Search for a notch over 8-11 symbol periods */
 	minv2 = avgmax;
@@ -68,18 +70,18 @@ int correlate_and_sync(float *buf, uint32_t len) {
 	}
 	if(3 * minv2 >= avgmax) {
 		debug_print("min2=%f at pos %d too high (avgmax=%f)\n", minv2, min2, avgmax);
-		return -1;
+		return;
 	}
 /* Get notch distance (shall equal 4 symbol periods) */
 /* Allow some clock variance */
 	min_dist = min2 - min1;
 	if((float)min_dist > 1.1f * 4.0f * (float)SPS) {
 		debug_print("min_dist %d too high\n", min_dist);
-		return -1;
+		return;
 	}
 	if((float)min_dist < 0.9f * 4.0f * (float)SPS) {
 		debug_print("min_dist %d too low\n", min_dist);
-		return -1;
+		return;
 	}
 /* Steady transmitter state starts 5.5 symbol periods before first notch. */
 /* Skip one symbol if pos is slightly negative (ie. squelch opened a bit too late) */
@@ -87,10 +89,12 @@ int correlate_and_sync(float *buf, uint32_t len) {
 	if(pos < 0) pos += SPS;
 	if(pos < 0) {
 		debug_print("pos is negative: %d\n", pos-SPS);
-		return -1;
+		return;
 	}
-	debug_print("avgmax: %f, min1: %f @ %d, min2: %f @ %d, min_dist: %d pos; %d\n", avgmax, minv1, min1, minv2, min2, min_dist, pos);
-	return pos;
+	debug_print("avgmax: %f, min1: %f @ %d, min2: %f @ %d, min_dist: %d pos: %d mag_nf: %f\n",
+		avgmax, minv1, min1, minv2, min2, min_dist, pos, v->mag_nf);
+	v->mag_frame = avgmax;
+	v->sclk = v->bufs = pos;
 }
 
 void multiply(float ar, float aj, float br, float bj, float *cr, float *cj) {
@@ -109,12 +113,10 @@ void demod_reset(vdl2_state_t *v) {
 	v->bufe = v->bufs = v->sclk = 0;
 	v->demod_state = DM_INIT;
 	v->requested_samples = SYNC_SYMS * SPS;
-/*	if(v->symcnt > 0) printf("[%d symbols]\n\n", v->symcnt);
-	v->symcnt = 0; */
 }
 
 void demod(vdl2_state_t *v) {
-	float dI, dQ, dphi;
+	float dI, dQ, dphi, phierr;
 	int idx, samples_available, samples_needed;
 
 	if(v->decoder_state == DEC_IDLE) {
@@ -125,13 +127,14 @@ void demod(vdl2_state_t *v) {
 
 	switch(v->demod_state) {
 	case DM_INIT:
-		v->sclk = v->bufs = correlate_and_sync(v->mag_buf, v->bufe);
+		correlate_and_sync(v);
 		if(v->sclk < 0) {		/* no sync */
 			v->demod_state = DM_IDLE;
 			debug_print("%s", "no sync, DM_IDLE\n");
 			return;
 		}
 		statsd_increment("demod.sync.good");
+		v->dphi = 0.0f;
 		v->pI = v->I[v->sclk];
 		v->pQ = v->Q[v->sclk];
 		v->demod_state = DM_SYNC;
@@ -145,13 +148,14 @@ void demod(vdl2_state_t *v) {
 		for(;;) {
 			multiply(v->I[v->sclk], v->Q[v->sclk], v->pI, -(v->pQ), &dI, &dQ);
 			dphi = atan2(dQ, dI);
-			if(dphi < 0) dphi += 2.0 * M_PI;
+			dphi -= v->dphi;
+			if(dphi < 0) dphi += 2.0f * M_PI;
 			dphi /= M_PI_4;
+			phierr = (dphi - roundf(dphi)) * M_PI_4;
+			v->dphi = DPHI_LP * v->dphi + (1.0f - DPHI_LP) * phierr;
 			idx = (int)roundf(dphi) % ARITY;
-			debug_print("sclk: %d bufs: %d bufe: %d dphi: %f * pi/4 idx: %d bits: %d phierr=%f\n",
-				v->sclk, v->bufs, v->bufe, dphi, idx, graycode[idx], dphi - roundf(dphi));
-//			printf("%d ", graycode[idx]);
-//			v->symcnt++;
+			debug_print("sclk: %d I: %f Q: %f dphi: %f * pi/4 idx: %d bits: %d phierr: %f v->dphi: %f\n",
+				v->sclk, v->I[v->sclk], v->Q[v->sclk], dphi, idx, graycode[idx], phierr, v->dphi);
 			if(bitstream_append_msbfirst(v->bs, &(graycode[idx]), 1, BPS) < 0) {
 				debug_print("%s", "bitstream_append_msbfirst failed\n");
 				v->demod_state = DM_IDLE;
@@ -183,7 +187,7 @@ void demod(vdl2_state_t *v) {
 			}
 
 			if(samples_available <= 0) {
-				debug_print("avail: %d bufs: %d bufe: %d sclk: %d\n", samples_available, v->bufs, v->bufe, v->sclk);
+//				debug_print("avail: %d bufs: %d bufe: %d sclk: %d\n", samples_available, v->bufs, v->bufe, v->sclk);
 				v->bufs = v->bufe;
 				break;
 			}
@@ -198,26 +202,33 @@ void demod(vdl2_state_t *v) {
 void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 	int i, available;
 	static int idle_skips = 0, not_idle_skips = 0;
-	static int bufnum = 0, samplenum = 0, cnt = 0;
+	static int bufnum = 0, samplenum = 0, cnt = 0, nfcnt = 0;
 	float re, im, mag;
+	static float lp_re = 0.0f, lp_im = 0.0f;
+	static const float iq_lp2 = 1.0f - IQ_LP;
 	vdl2_state_t *v = (vdl2_state_t *)ctx;
 	if(len == 0) return;
 	samplenum = -1;
 	for(i = 0; i < len;) {
 		samplenum++;
 
-// decimation
-		cnt %= RTL_OVERSAMPLE;
-		if(cnt++ != 0) {
-			i += 2;
-			continue;
-		}
-
 		re = (float)buf[i] - 127.5f; i++;
 		im = (float)buf[i] - 127.5f; i++;
-		mag = hypotf(re, im);
-		v->mag_lp = v->mag_lp * MAG_LPSLOW + mag * (1.0f - MAG_LPSLOW);
-		if(v->mag_lp > 3.0f) {
+// lowpass IIR
+		lp_re = IQ_LP * lp_re + iq_lp2 * re;
+		lp_im = IQ_LP * lp_im + iq_lp2 * im;
+// decimation
+		cnt %= RTL_OVERSAMPLE;
+		if(cnt++ != 0)
+			continue;
+
+		mag = hypotf(lp_re, lp_im);
+		v->mag_lp = v->mag_lp * MAG_LP + mag * (1.0f - MAG_LP);
+		nfcnt %= 1000;
+// update noise floor estimate
+		if(nfcnt++ == 0)
+			v->mag_nf = NF_LP * v->mag_nf + (1.0f - NF_LP) * fminf(v->mag_lp, v->mag_nf) + 0.0001f;
+		if(v->mag_lp > 3.0f * v->mag_nf) {
 			if(v->demod_state == DM_IDLE) {
 				idle_skips++;
 				continue;
@@ -227,7 +238,7 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 				v->sq = 1;
 				idle_skips = not_idle_skips = 0;
 			}
-		} else if(v->mag_lp < 3.0f) {
+		} else {
 			if(v->sq == 1 && v->demod_state == DM_IDLE) {	// close squelch only when decoder finished work or errored
 															// FIXME: time-limit this, because reading obvious trash does not make sense
 				debug_print("*** off at (%d:%d) *** after %d idle_skips, %d not_idle_skips\n", bufnum, samplenum, idle_skips, not_idle_skips);
@@ -238,8 +249,8 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 			}
 		}
 		if(v->sq == 1) {
-			v->I[v->bufe] = re;
-			v->Q[v->bufe] = im;
+			v->I[v->bufe] = lp_re;
+			v->Q[v->bufe] = lp_im;
 			v->mag_buf[v->bufe] = mag;
 			v->mag_lpbuf[v->bufe] = v->mag_lp;
 			v->bufe++; v->bufe %= BUFSIZE;
@@ -257,6 +268,8 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 		}
 	}
 	bufnum++;
+	if(DEBUG && bufnum % 10 == 0)
+		debug_print("noise_floor: %f\n", v->mag_nf);
 }
 
 void init_rtl(void *ctx, uint32_t device, int freq, int gain, int correction) {
@@ -341,6 +354,7 @@ vdl2_state_t *vdl2_init() {
 		free(v);
 		return NULL;
 	}
+	v->mag_nf = 100.0f;
 	demod_reset(v);
 	return v;
 }

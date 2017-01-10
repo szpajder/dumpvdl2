@@ -256,6 +256,7 @@ xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len) {
 		debug_print("Warning: %u unparsed octets left at end of XID message\n", len);
 	if(msg->pub_params == NULL || msg->vdl_params == NULL) {
 		fprintf(outf, "-- Incomplete XID message\n");
+		debug_print("%s", "Incomplete XID message\n");
 		return NULL;
 	}
 // find connection management parameter to figure out the XID type

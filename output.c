@@ -3,6 +3,8 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
+#include <math.h>
+#include "rtlvdl2.h"
 #include "avlc.h"
 #include "acars.h"
 #include "xid.h"
@@ -81,18 +83,24 @@ static void output_raw(uint8_t *buf, uint32_t len) {
 static void output_avlc_U(const avlc_frame_t *f) {
 	switch(U_MFUNC(f->lcf)) {
 	case XID:
-		output_xid((xid_msg_t *)f->data);
+		if(f->data_valid)
+			output_xid((xid_msg_t *)f->data);
+		else {
+			fprintf(outf, "-- Unparseable XID\n");
+			output_raw((uint8_t *)f->data, f->datalen);
+		}
 		break;
 	default:
 		output_raw((uint8_t *)f->data, f->datalen);
 	}
 }
 
-void output_avlc(const avlc_frame_t *f) {
+void output_avlc(vdl2_state_t *v, const avlc_frame_t *f) {
 	if(f == NULL) return;
 	char ftime[24];
 	strftime(ftime, sizeof(ftime), "%F %T", localtime(&f->t));
-	fprintf(outf, "\n[%s]\n", ftime);
+	float snr = 20.0f * log10f(v->mag_frame / (v->mag_nf + 0.001f));
+	fprintf(outf, "\n[%s] [%.2f:%.2f] [%.1f dB]\n", ftime, v->mag_frame, v->mag_nf, snr);
 	fprintf(outf, "%06X (%s, %s) -> %06X (%s): %s, CF: 0x%02x\n",
 		f->src.a_addr.addr,
 		addrtype_descr[f->src.a_addr.type],
@@ -112,7 +120,12 @@ void output_avlc(const avlc_frame_t *f) {
 		fprintf(outf, "I: sseq=0x%x rseq=0x%x poll=%x\n", f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
 		switch(f->proto) {
 		case PROTO_ACARS:
-			output_acars((acars_msg_t *)f->data);
+			if(f->data_valid)
+				output_acars((acars_msg_t *)f->data);
+			else {
+				fprintf(outf, "-- Unparseable ACARS payload\n");
+				output_raw((uint8_t *)f->data, f->datalen);
+			}
 			break;
 		case PROTO_ISO_8208:
 		default:
