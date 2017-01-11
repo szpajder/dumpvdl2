@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/time.h>
 #include "avlc.h"
 
 #define RTLVDL2_VERSION "0.1.0rc"
@@ -95,6 +96,7 @@ typedef struct {
 	uint32_t datalen, datalen_octets, last_block_len_octets, fec_octets;
 	uint32_t num_blocks;
 	uint16_t lfsr;
+	struct timeval tstart;
 } vdl2_state_t;
 
 // bitstream.c
@@ -144,7 +146,9 @@ int statsd_initialize(char *statsd_addr);
 void statsd_initialize_counters(uint32_t freq);
 #endif
 void statsd_counter_increment(char *counter);
+void statsd_timing_delta_send(char *timer, struct timeval *ts);
 #define statsd_increment(counter) do { if(USE_STATSD) statsd_counter_increment(counter); } while(0)
+#define statsd_timing_delta(timer, start) do { if(USE_STATSD) statsd_timing_delta_send(timer, start); } while(0)
 
 // util.c
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func);

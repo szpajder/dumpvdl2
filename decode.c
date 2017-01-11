@@ -5,6 +5,9 @@
 #include <string.h>
 #include <limits.h>
 #include <unistd.h>
+#if USE_STATSD
+#include <sys/time.h>
+#endif
 #include "rtlvdl2.h"
 
 static const uint32_t H[CRCLEN] = { 0x00FFF, 0x3F0FF, 0xC730F, 0xDB533, 0x69E55 };
@@ -94,6 +97,9 @@ int get_fec_octetcount(uint32_t len) {
 void decode_vdl_frame(vdl2_state_t *v) {
 	switch(v->decoder_state) {
 	case DEC_PREAMBLE:
+#if USE_STATSD
+		gettimeofday(&v->tstart, NULL);
+#endif
 		if(soft_preamble_search(v->bs) == NULL) {
 			statsd_increment("decoder.errors.no_preamble");
 			v->decoder_state = DEC_IDLE;
@@ -256,6 +262,7 @@ void decode_vdl_frame(vdl2_state_t *v) {
 		}
 		statsd_increment("decoder.msg.good");
 		parse_avlc_frames(v, data, v->datalen_octets);
+		statsd_timing_delta("decoder.msg.processing_time", &v->tstart);
 cleanup:
 		if(data) free(data);
 		if(fec) free(fec);

@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/time.h>
 #include <statsd/statsd-client.h>
+#include "rtlvdl2.h"
 
 #define STATSD_NAMESPACE "rtlvdl2"
 static statsd_link *statsd = NULL;
@@ -73,4 +75,21 @@ void statsd_counter_increment(char *counter) {
 	char metric[256];
 	snprintf(metric, sizeof(metric), "%d.%s", frequency, counter);
 	statsd_inc(statsd, metric, 1.0);
+}
+
+void statsd_timing_delta_send(char *timer, struct timeval *ts) {
+	if(!statsd || !ts) return;
+	char metric[256];
+	struct timeval te;
+	uint32_t tdiff;
+	gettimeofday(&te, NULL);
+	if(te.tv_sec < ts->tv_sec || (te.tv_sec == ts->tv_sec && te.tv_usec < ts->tv_usec)) {
+		debug_print("timediff is negative: ts.tv_sec=%lu ts.tv_usec=%lu te.tv_sec=%lu te.tv_usec=%lu\n",
+			ts->tv_sec, ts->tv_usec, te.tv_sec, te.tv_usec);
+		return;
+	}
+	tdiff = ((te.tv_sec - ts->tv_sec) * 1000000UL + te.tv_usec - ts->tv_usec) / 1000;
+	debug_print("tdiff: %u ms\n", tdiff);
+	snprintf(metric, sizeof(metric), "%d.%s", frequency, timer);
+	statsd_timing(statsd, metric, tdiff);
 }
