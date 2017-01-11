@@ -136,6 +136,7 @@ void rs_encode(uint8_t *data, uint8_t *parity);
 extern FILE *outf;
 int init_output_file(char *file);
 void output_avlc(vdl2_state_t *v, const avlc_frame_t *f);
+void output_raw(uint8_t *buf, uint32_t len);
 
 // statsd.c
 #if USE_STATSD
@@ -148,5 +149,7 @@ void statsd_counter_increment(char *counter);
 // util.c
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func);
 void *xrealloc(void *ptr, size_t size, const char *file, const int line, const char *func);
+char *fmt_hexstring(uint8_t *data, uint8_t len);
+char *fmt_hexstring_with_ascii(uint8_t *data, uint8_t len);
 
 // vim: ts=4

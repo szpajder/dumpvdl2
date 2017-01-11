@@ -8,6 +8,7 @@
 #include "avlc.h"
 #include "acars.h"
 #include "xid.h"
+#include "x25.h"
 
 static const char *status_ag_descr[] = {
 	"Airborne",
@@ -71,7 +72,7 @@ static void output_acars(const acars_msg_t *msg) {
 	fprintf(outf, "Message:\n%s\n", msg->txt);
 }
 
-static void output_raw(uint8_t *buf, uint32_t len) {
+void output_raw(uint8_t *buf, uint32_t len) {
 	if(len == 0)
 		return;
 	fprintf(outf, "   ");
@@ -127,7 +128,14 @@ void output_avlc(vdl2_state_t *v, const avlc_frame_t *f) {
 				output_raw((uint8_t *)f->data, f->datalen);
 			}
 			break;
-		case PROTO_ISO_8208:
+		case PROTO_X25:
+			if(f->data_valid)
+				output_x25((x25_pkt_t *)f->data);
+			else {
+				fprintf(outf, "-- Unparseable X.25 packet\n");
+				output_raw((uint8_t *)f->data, f->datalen);
+			}
+			break;
 		default:
 			output_raw((uint8_t *)f->data, f->datalen);
 		}

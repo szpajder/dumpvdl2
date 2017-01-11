@@ -54,3 +54,33 @@ tlv_list_t *tlv_deserialize(uint8_t *buf, uint16_t len) {
 		fprintf(stderr, "Warning: %u unparsed octets left at end of TLV list\n", len);
 	return head;
 }
+
+dict *dict_search(const dict *list, uint8_t id) {
+	if(list == NULL) return NULL;
+	dict *ptr;
+	for(ptr = (dict *)list; ; ptr++) {
+		if(ptr->description == NULL) return NULL;
+		if(ptr->id == id) return ptr;
+	}
+}
+
+tlv_dict *tlv_dict_search(const tlv_dict *list, uint8_t id) {
+	if(list == NULL) return NULL;
+	tlv_dict *ptr;
+	for(ptr = (tlv_dict *)list; ; ptr++) {
+		if(ptr->description == NULL) return NULL;
+		if(ptr->id == id) return ptr;
+	}
+}
+
+void output_tlv(tlv_list_t *list, tlv_dict *d) {
+	if(list == NULL || d == NULL) return;
+	for(tlv_list_t *p = list; p != NULL; p = p->next) {
+		tlv_dict *entry = tlv_dict_search(d, p->type);
+		if(entry != NULL) {
+			printf(" %s: %s\n", entry->description, (*(entry->stringify))(p->val, p->len));
+		} else {
+			printf(" (Unknown code 0x%02x): %s\n", p->type, fmt_hexstring(p->val, p->len));
+		}
+	}
+}

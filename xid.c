@@ -56,43 +56,6 @@ static char *fmt_vdl_modulation(uint8_t *data, uint8_t len) {
 	return buf;
 }
 
-static char *fmt_hexstring(uint8_t *data, uint8_t len) {
-	static const char hex[] = "0123456789abcdef";
-	char *buf = NULL;
-	if(data == NULL) return strdup("<undef>");
-	if(len == 0) return strdup("<empty>");
-	buf = XCALLOC(3 * len + 1, sizeof(char));
-	char *ptr = buf;
-	for(int i = 0; i < len; i++) {
-		*ptr++ = hex[((data[i] >> 4) & 0xf)];
-		*ptr++ = hex[data[i] & 0xf];
-		*ptr++ = ' ';
-	}
-	if(ptr != buf)
-		ptr[-1] = '\0';		// trim trailing space
-	return buf;
-}
-
-static char *fmt_hexstring_with_ascii(uint8_t *data, uint8_t len) {
-	if(data == NULL) return strdup("<undef>");
-	if(len == 0) return strdup("<empty>");
-	char *buf = fmt_hexstring(data, len);
-	int buflen = strlen(buf);
-	buf = XREALLOC(buf, buflen + len + 4); // add tab, quotes, ascii dump and '\0'
-	char *ptr = buf + buflen;
-	*ptr++ = '\t';
-	*ptr++ = '"';
-	for(int i = 0; i < len; i++) {
-		if(data[i] < 32 || data[i] > 126)	// replace non-printable chars
-			*ptr++ = '.';
-		else
-			*ptr++ = data[i];
-	}
-	*ptr++ = '"';
-	*ptr = '\0';
-	return buf;
-}
-
 static char *fmt_dlc_addrs(uint8_t *data, uint8_t len) {
 	if(len % 4 != 0) return strdup("<field truncated>");
 	uint8_t *ptr = data;

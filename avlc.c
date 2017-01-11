@@ -6,6 +6,7 @@
 #include "avlc.h"
 #include "xid.h"
 #include "acars.h"
+#include "x25.h"
 
 /* Link layer address parsing routine
  * buf - data buffer pointer
@@ -97,7 +98,8 @@ void parse_avlc(vdl2_state_t *v, uint8_t *buf, uint32_t len) {
 			frame.proto = PROTO_ACARS;
 			frame.data = parse_acars(ptr + 3, len - 3);
 		} else {
-			frame.proto = PROTO_UNKNOWN;
+			frame.proto = PROTO_X25;
+			frame.data = parse_x25(ptr, len);
 		}
 	}
 	if(frame.data == NULL) {	// unparseable frame

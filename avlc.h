@@ -87,7 +87,7 @@ typedef union {
 #define ADDRTYPE_GS_DEL 5
 #define ADDRTYPE_ALL 7
 
-enum avlc_protocols { PROTO_ISO_8208, PROTO_ACARS, PROTO_UNKNOWN };
+enum avlc_protocols { PROTO_X25, PROTO_ACARS, PROTO_UNKNOWN };
 typedef struct {
 	time_t t;
 	avlc_addr_t src;

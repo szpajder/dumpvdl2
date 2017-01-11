@@ -1,0 +1,314 @@
+#include <stdio.h>
+#include <endian.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include "rtlvdl2.h"
+#include "x25.h"
+#include "tlv.h"
+
+dict x25_pkttype_names[] = {
+	{ X25_CALL_REQUEST,	"Call Request" },
+	{ X25_CALL_ACCEPTED,	"Call Accepted" },
+	{ X25_CLEAR_REQUEST,	"Clear Request" },
+	{ X25_CLEAR_CONFIRM,	"Clear Confirm" },
+	{ X25_DATA,		"Data" },
+	{ X25_RR,		"Receive Ready" },
+	{ X25_REJ,		"Receive Reject" },
+	{ X25_RESET_REQUEST,	"Reset Request" },
+	{ X25_RESET_CONFIRM,	"Reset Confirm" },
+	{ X25_RESTART_REQUEST,	"Restart Request" },
+	{ X25_RESTART_CONFIRM,	"Restart Confirm" },
+	{ X25_DIAG,		"Diagnostics" },
+	{ 0,			NULL }
+};
+
+tlv_dict x25_facility_names[] = {
+	{ 0x00, &fmt_hexstring, "Marker (non-X.25 facilities follow)" },
+	{ 0x01, &fmt_hexstring, "Fast Select" },
+	{ 0x08, &fmt_hexstring, "Called line address modified" },
+	{ 0x42, &fmt_hexstring, "Packet size" },
+	{ 0x43, &fmt_hexstring, "Window size" },
+	{ 0xc9, &fmt_hexstring, "Called address extension" },
+	{ 0,    NULL,		NULL }
+};
+
+static char *fmt_x25_addr(uint8_t *data, uint8_t len) {
+// len is in nibbles here
+	static const char hex[] = "0123456789abcdef";
+	char *buf = NULL;
+	if(len == 0) return strdup("none");
+	if(data == NULL) return strdup("<undef>");
+	uint8_t bytelen = (len >> 1) + (len & 1);
+	buf = XCALLOC(2 * bytelen + 1, sizeof(char));
+
+	char *ptr = buf;
+	int i, j;
+	for(i = 0, j = 0; i < bytelen; i++) {
+		*ptr++ = hex[((data[i] >> 4) & 0xf)];
+		if(++j == len) break;
+		*ptr++ = hex[data[i] & 0xf];
+		if(++j == len) break;
+	}
+	return buf;
+}
+
+
+static int parse_x25_address_block(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
+	assert(pkt);
+	if(len == 0) return -1;
+	uint8_t calling_len = (*buf & 0xf0) >> 4;	// nibbles
+	uint8_t called_len = *buf & 0x0f;		// nibbles
+	uint8_t called_len_bytes = (called_len >> 1) + (called_len & 1);	// bytes
+	uint8_t calling_len_bytes = (calling_len >> 1) + (calling_len & 1);	// bytes
+	uint8_t addr_len = (calling_len + called_len) >> 1;			// bytes
+	addr_len += (calling_len & 1) ^ (called_len & 1);	// add 1 byte if total nibble count is odd
+	buf++; len--;
+	debug_print("calling_len=%u called_len=%u total_len=%u len=%u\n", calling_len, called_len, addr_len, len);
+	if(len < addr_len) {
+		debug_print("Address block truncated (buf len %u < addr len %u)\n", len, addr_len);
+		return -1;
+	}
+	uint8_t *abuf = pkt->called.addr;
+	uint8_t *bbuf = pkt->calling.addr;
+	memcpy(abuf, buf, called_len_bytes * sizeof(uint8_t));
+	uint8_t calling_pos = called_len_bytes - (called_len & 1);
+	memcpy(bbuf, buf + calling_pos, (addr_len - calling_pos) * sizeof(uint8_t));
+	if(called_len & 1) {
+		abuf[called_len_bytes-1] &= 0xf0;
+// shift calling addr one nibble to the left if called addr nibble length is odd
+		int i = 0;
+		while(i < calling_len >> 1) {
+			bbuf[i] = (bbuf[i] << 4) | (bbuf[i+1] >> 4);
+			i++;
+		}
+		if(calling_len & 1)
+			bbuf[calling_len_bytes-1] <<= 4;
+	}
+	pkt->called.len = called_len;
+	pkt->calling.len = calling_len;
+	pkt->addr_block_present = 1;
+	return 1 + addr_len;	// return total number of bytes consumed
+}
+
+static int parse_x25_callreq_sndcf(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
+	assert(pkt);
+	if(len < 2) return -1;
+	if(*buf != X25_SNDCF_ID) {
+		debug_print("%s", "SNDCF identifier not found\n");
+		return -1;
+	}
+	buf++; len--;
+	uint8_t sndcf_len = *buf++; len--;
+	if(sndcf_len < MIN_X25_SNDCF_LEN || *buf != X25_SNDCF_VERSION) {
+		debug_print("Unsupported SNDCF field format or version (len=%u ver=%u)\n", sndcf_len, *buf);
+		return -1;
+	}
+	if(len < sndcf_len) {
+		debug_print("SNDCF field truncated (sndcf_len %u < buf_len %u)\n", sndcf_len, len);
+		return -1;
+	}
+	pkt->compression = buf[3];
+	return 2 + sndcf_len;
+}
+
+static int parse_x25_facility_field(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
+	assert(pkt);
+	if(len == 0) return -1;
+	uint8_t fac_len = *buf;
+	buf++; len--;
+	if(len < fac_len) {
+		debug_print("Facility field truncated (buf len %u < fac_len %u)\n", len, fac_len);
+		return -1;
+	}
+	uint8_t i = fac_len;
+	while(i > 0) {
+		uint8_t code = *buf;
+		uint8_t param_len = (code >> 6) & 3;
+		buf++; i--;
+		if(param_len < 3) {
+			param_len++;
+		} else {
+			if(i > 0) {
+				param_len = *buf++;
+				i--;
+			} else {
+				debug_print("Facility field truncated: code=0x%02x param_len=%u, length octet missing\n",
+					code, param_len);
+				return -1;
+			}
+		}
+		if(i < param_len) {
+			debug_print("Facility field truncated: code=%02x param_len=%u buf len=%u\n", code, param_len, i);
+			return -1;
+		}
+		tlv_list_append(&pkt->facilities, code, param_len, buf);
+		buf += param_len; i -= param_len;
+	}
+	return 1 + fac_len;
+}
+
+static void *parse_x25_user_data(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
+	if(buf == NULL || len == 0)
+		return NULL;
+	uint8_t proto = *buf++; len--;
+	if(proto == SN_PROTO_CLNP) {
+		pkt->proto = SN_PROTO_CLNP;
+//		return parse_clnp_pdu(pkt, buf, len);
+		return NULL;
+	}
+	uint8_t pdu_type = proto >> 4;
+	if(pdu_type < 4) {
+		pkt->proto = SN_PROTO_CLNP_INIT_COMPRESSED;
+//		return parse_clnp_compressed_init_pdu(pkt, buf, len);
+		return NULL;
+	}
+	pkt->proto = proto;
+	return NULL;
+}
+
+x25_pkt_t *parse_x25(uint8_t *buf, uint32_t len) {
+	static x25_pkt_t *pkt = NULL;
+	int ret;
+
+	if(len < X25_MIN_LEN) {
+		debug_print("Too short (len %u < min len %u)\n", len, X25_MIN_LEN);
+		return NULL;
+	}
+
+	x25_hdr_t *hdr = (x25_hdr_t *)buf;
+	debug_print("gfi=0x%02x group=0x%02x chan=0x%02x type=0x%02x\n", hdr->gfi, hdr->chan_group, hdr->chan_num, hdr->type.val);
+	if(hdr->gfi != GFI_X25_MOD8) {
+		debug_print("Unsupported GFI 0x%x\n", hdr->gfi);
+		return NULL;
+	}
+	if(pkt == NULL) {
+		pkt = XCALLOC(1, sizeof(x25_pkt_t));
+	} else {
+		if(pkt->facilities != NULL)
+			tlv_list_free(pkt->facilities);
+		memset(pkt, 0, sizeof(x25_pkt_t));
+	}
+
+	uint8_t *ptr = buf + sizeof(x25_hdr_t);
+	len -= sizeof(x25_hdr_t);
+
+	pkt->type = hdr->type.val;
+// Clear out insignificant bits in pkt->type to simplify comparisons later on
+// (hdr->type remains unchanged in case the original value is needed)
+	uint8_t pkttype = hdr->type.val;
+	if((pkttype & 1) == 0) {
+		pkt->type = X25_DATA;
+	} else {
+		pkttype &= 0x1f;
+		if(pkttype == X25_RR || pkttype == X25_REJ)
+			pkt->type = pkttype;
+	}
+	switch(pkt->type) {
+	case X25_CALL_REQUEST:
+	case X25_CALL_ACCEPTED:
+		if((ret = parse_x25_address_block(pkt, ptr, len)) < 0)
+			return NULL;
+		ptr += ret; len -= ret;
+		if((ret = parse_x25_facility_field(pkt, ptr, len)) < 0)
+			return NULL;
+		ptr += ret; len -= ret;
+		if(pkt->type == X25_CALL_REQUEST) {
+			if((ret = parse_x25_callreq_sndcf(pkt, ptr, len)) < 0)
+				return NULL;
+			ptr += ret; len -= ret;
+		} else if(pkt->type == X25_CALL_ACCEPTED) {
+			if(len > 0) {
+				pkt->compression = *ptr++;
+				len--;
+			} else {
+				debug_print("%s", "X25_CALL_ACCEPT: no payload\n");
+				return NULL;
+			}
+		}
+	/* FALLTHROUGH because Fast Select is on, so there might be a data PDU in call req or accept */
+	case X25_DATA:
+		pkt->data = parse_x25_user_data(pkt, ptr, len);
+		break;
+	case X25_CLEAR_REQUEST:
+		if(len > 0) {
+			pkt->clr_cause = *ptr++;
+			len--;
+		}
+		if(len > 0) {
+			pkt->diag_code = *ptr++;
+			len--;
+		}
+		break;
+	case X25_CLEAR_CONFIRM:
+	case X25_RR:
+	case X25_REJ:
+	case X25_RESET_REQUEST:
+	case X25_RESET_CONFIRM:
+	case X25_RESTART_REQUEST:
+	case X25_RESTART_CONFIRM:
+	case X25_DIAG:
+		break;
+	default:
+		debug_print("Unsupported packet identifier 0x%02x\n", pkt->type);
+		return NULL;
+	}
+	pkt->hdr = hdr;
+	if(pkt->data == NULL) {		// unparsed payload
+		pkt->data = ptr;
+		pkt->datalen = len;
+		pkt->data_valid = 0;
+	} else {
+		pkt->data_valid = 1;
+	}
+	return pkt;
+}
+
+void output_x25(x25_pkt_t *pkt) {
+	dict *d = dict_search(x25_pkttype_names, pkt->type);
+	assert(d);
+	fprintf(outf, "X.25: %s (grp=%u chan=%u)", d->description, pkt->hdr->chan_group, pkt->hdr->chan_num);
+	if(pkt->addr_block_present) {
+		fprintf(outf, ": %s -> %s",
+			fmt_x25_addr(pkt->calling.addr, pkt->calling.len),
+			fmt_x25_addr(pkt->called.addr, pkt->called.len)
+		);
+	} else if(pkt->type == X25_DATA) {
+		fprintf(outf, ": sseq=%u rseq=%u M=%u",
+			pkt->hdr->type.data.sseq, pkt->hdr->type.data.rseq, pkt->hdr->type.data.more);
+	}
+	fprintf(outf, "\n");
+	switch(pkt->type) {
+	case X25_CALL_REQUEST:
+	case X25_CALL_ACCEPTED:
+		fprintf(outf, "Facilities:\n");
+		output_tlv(pkt->facilities, x25_facility_names);
+		fprintf(outf, "Compression support: %02x\n", pkt->compression);
+		/* FALLTHROUGH because Fast Select is on, so there might be a data PDU in call req or accept */
+	case X25_DATA:
+		if(pkt->datalen == 0) break;
+		switch(pkt->proto) {
+		case SN_PROTO_CLNP_INIT_COMPRESSED:
+			fprintf(outf, "CLNP PDU with compressed header:\n");
+			break;
+		case SN_PROTO_CLNP:
+			fprintf(outf, "CLNP PDU:\n");
+			break;
+		case SN_PROTO_ESIS:
+			fprintf(outf, "ES-IS PDU:\n");
+			break;
+		case SN_PROTO_IDRP:
+			fprintf(outf, "IDRP PDU:\n");
+			break;
+		default:
+			fprintf(outf, "Unknown protocol 0x%02x PDU:\n", pkt->proto);
+			break;
+		}
+		break;
+	case X25_CLEAR_REQUEST:
+		fprintf(outf,  "Cause: %02x\nDiagnostic code: %02x\n", pkt->clr_cause, pkt->diag_code);
+		break;
+	}
+	output_raw(pkt->data, pkt->datalen);
+}
