@@ -434,8 +434,8 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Error: frequency and -f <file> options are exclusive\n");
 		usage();
 	} else if(freq == 0 && infile == NULL) {
-		fprintf(stderr, "Error: either frequency or -f <file> option is required\n");
-		usage();
+		fprintf(stderr, "Warning: frequency not set - using VDL2 Common Signalling Channel as a default (%u Hz)\n", CSC_FREQ);
+		freq = CSC_FREQ;
 	}
 	if(outfile == NULL) {
 		outfile = strdup("-");		// output to stdout by default
