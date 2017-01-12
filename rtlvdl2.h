@@ -136,6 +136,7 @@ void rs_encode(uint8_t *data, uint8_t *parity);
 
 // output.c
 extern FILE *outf;
+extern uint8_t hourly, daily;
 int init_output_file(char *file);
 void output_avlc(vdl2_state_t *v, const avlc_frame_t *f);
 void output_raw(uint8_t *buf, uint32_t len);

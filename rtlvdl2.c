@@ -365,6 +365,8 @@ void usage() {
 	fprintf(stderr, "       rtlvdl2 [common_options] -f <input_file>\n");
 	fprintf(stderr, "\ncommon_options:\n");
 	fprintf(stderr, "\t-o <output_file>\tOutput decoded frames to <output_file> (default: stdout)\n");
+	fprintf(stderr, "\t-H\t\t\tRotate output file hourly\n");
+	fprintf(stderr, "\t-D\t\t\tRotate output file daily\n");
 #if USE_STATSD
 	fprintf(stderr, "\t-S <host>:<port>\tSend statistics to Etsy StatsD server <host>:<port> (default: disabled)\n");
 #endif
@@ -384,11 +386,11 @@ int main(int argc, char **argv) {
 	int opt;
 	char *optstring = 
 #if USE_STATSD
-	"d:f:g:o:p:S:";
+	"d:f:HDg:o:p:S:";
 	char *statsd_addr;
 	int statsd_enabled = 0;
 #else
-	"d:f:g:o:p:";
+	"d:f:HDg:o:p:";
 #endif
 	char *infile = NULL, *outfile = NULL;
 
@@ -396,6 +398,12 @@ int main(int argc, char **argv) {
 		switch(opt) {
 		case 'f':
 			infile = strdup(optarg);
+			break;
+		case 'H':
+			hourly = 1;
+			break;
+		case 'D':
+			daily = 1;
 			break;
 		case 'd':
 			device = strtoul(optarg, NULL, 10);
@@ -429,8 +437,14 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Error: either frequency or -f <file> option is required\n");
 		usage();
 	}
-	if(outfile == NULL)
+	if(outfile == NULL) {
 		outfile = strdup("-");		// output to stdout by default
+		hourly = daily = 0;			// stdout is not rotateable - ignore silently
+	}
+	if(outfile != NULL && hourly && daily) {
+		fprintf(stderr, "Options: -H and -D are exclusive\n");
+		usage();
+	}
 	if(init_output_file(outfile) < 0) {
 		fprintf(stderr, "Failed to initialize output - aborting\n");
 		_exit(4);
