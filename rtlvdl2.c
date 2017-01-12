@@ -361,7 +361,7 @@ vdl2_state_t *vdl2_init() {
 
 void usage() {
 	fprintf(stderr, "RTLVDL2 version %s\n", RTLVDL2_VERSION);
-	fprintf(stderr, "Usage: rtlvdl2 [common_options] [rtlsdr_options] frequency_hz\n");
+	fprintf(stderr, "Usage: rtlvdl2 [common_options] [[rtlsdr_options] [<frequency_in_Hz>]]\n");
 	fprintf(stderr, "       rtlvdl2 [common_options] -f <input_file>\n");
 	fprintf(stderr, "\ncommon_options:\n");
 	fprintf(stderr, "\t-o <output_file>\tOutput decoded frames to <output_file> (default: stdout)\n");
@@ -374,7 +374,10 @@ void usage() {
 	fprintf(stderr, "\t-d <device_id>\t\tUse specified device (default: 0)\n");
 	fprintf(stderr, "\t-g <gain>\t\tSet RTL gain (decibels)\n");
 	fprintf(stderr, "\t-p <correction>\t\tSet RTL freq correction (ppm)\n");
-	_exit(1);
+	fprintf(stderr, "\t<frequency_in_Hz>\tIf omitted, will tune to VDL2 Common Signalling Channel (%u Hz)\n", CSC_FREQ);
+	fprintf(stderr, "\n\t-f <input_file>\t\tRead I/Q samples from file (must be sampled at %u samples/sec\n", RTL_RATE);
+	fprintf(stderr, "\t\t\t\twith desired channel frequency at baseband)\n");
+	_exit(0);
 }
 
 int main(int argc, char **argv) {
@@ -386,11 +389,11 @@ int main(int argc, char **argv) {
 	int opt;
 	char *optstring = 
 #if USE_STATSD
-	"d:f:HDg:o:p:S:";
+	"d:f:hHDg:o:p:S:";
 	char *statsd_addr;
 	int statsd_enabled = 0;
 #else
-	"d:f:HDg:o:p:";
+	"d:f:hHDg:o:p:";
 #endif
 	char *infile = NULL, *outfile = NULL;
 
@@ -423,6 +426,7 @@ int main(int argc, char **argv) {
 			statsd_enabled = 1;
 			break;
 #endif
+		case 'h':
 		default:
 			usage();
 		}
@@ -430,20 +434,22 @@ int main(int argc, char **argv) {
 	if(optind < argc)
 		freq = strtoul(argv[optind], NULL, 10);
 
-	if(freq != 0 && infile != NULL) {
-		fprintf(stderr, "Error: frequency and -f <file> options are exclusive\n");
-		usage();
-	} else if(freq == 0 && infile == NULL) {
-		fprintf(stderr, "Warning: frequency not set - using VDL2 Common Signalling Channel as a default (%u Hz)\n", CSC_FREQ);
-		freq = CSC_FREQ;
-	}
 	if(outfile == NULL) {
 		outfile = strdup("-");		// output to stdout by default
 		hourly = daily = 0;			// stdout is not rotateable - ignore silently
 	}
 	if(outfile != NULL && hourly && daily) {
 		fprintf(stderr, "Options: -H and -D are exclusive\n");
-		usage();
+		fprintf(stderr, "Use -h for help\n");
+		_exit(1);
+	}
+	if(freq != 0 && infile != NULL) {
+		fprintf(stderr, "Error: frequency and -f <file> options are exclusive\n");
+		fprintf(stderr, "Use -h for help\n");
+		_exit(1);
+	} else if(freq == 0 && infile == NULL) {
+		fprintf(stderr, "Warning: frequency not set - using VDL2 Common Signalling Channel as a default (%u Hz)\n", CSC_FREQ);
+		freq = CSC_FREQ;
 	}
 	if(init_output_file(outfile) < 0) {
 		fprintf(stderr, "Failed to initialize output - aborting\n");
