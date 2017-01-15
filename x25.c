@@ -267,7 +267,7 @@ x25_pkt_t *parse_x25(uint8_t *buf, uint32_t len) {
 void output_x25(x25_pkt_t *pkt) {
 	dict *d = dict_search(x25_pkttype_names, pkt->type);
 	assert(d);
-	fprintf(outf, "X.25: %s (grp=%u chan=%u)", d->description, pkt->hdr->chan_group, pkt->hdr->chan_num);
+	fprintf(outf, "X.25: %s (grp=%u chan=%u)", (char *)d->val, pkt->hdr->chan_group, pkt->hdr->chan_num);
 	if(pkt->addr_block_present) {
 		fprintf(outf, ": %s -> %s",
 			fmt_x25_addr(pkt->calling.addr, pkt->calling.len),

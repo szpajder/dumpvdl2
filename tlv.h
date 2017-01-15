@@ -12,7 +12,7 @@ typedef struct {
 
 typedef struct {
 	uint8_t id;
-	char *description;
+	void *val;
 } dict;
 
 typedef struct {

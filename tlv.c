@@ -59,7 +59,7 @@ dict *dict_search(const dict *list, uint8_t id) {
 	if(list == NULL) return NULL;
 	dict *ptr;
 	for(ptr = (dict *)list; ; ptr++) {
-		if(ptr->description == NULL) return NULL;
+		if(ptr->val == NULL) return NULL;
 		if(ptr->id == id) return ptr;
 	}
 }
