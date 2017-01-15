@@ -5,7 +5,20 @@ CC = gcc
 CFLAGS = -std=c99 -g -Wall -D_XOPEN_SOURCE=500 -DDEBUG=$(DEBUG) -DUSE_STATSD=$(USE_STATSD)
 LDLIBS = -lfec -lm -lrtlsdr
 BIN = rtlvdl2
-DEPS = crc.o decode.o bitstream.o deinterleave.o rs.o avlc.o xid.o acars.o x25.o output.o util.o tlv.o rtlvdl2.o
+DEPS =	acars.o \
+	avlc.o \
+	bitstream.o \
+	clnp.o \
+	crc.o \
+	decode.o \
+	deinterleave.o \
+	output.o \
+	rs.o \
+	rtlvdl2.o \
+	tlv.o \
+	x25.o \
+	xid.o \
+	util.o
 
 ifeq ($(USE_STATSD), 1)
   DEPS += statsd.o
@@ -17,6 +30,8 @@ endif
 all: $(BIN)
 
 $(BIN): $(DEPS)
+
+clnp.o: rtlvdl2.h clnp.h
 
 decode.o: rtlvdl2.h
 
@@ -38,7 +53,7 @@ tlv.o: tlv.h rtlvdl2.h
 
 xid.o: rtlvdl2.h tlv.h
 
-x25.o: rtlvdl2.h tlv.h x25.h
+x25.o: rtlvdl2.h clnp.h tlv.h x25.h
 
 clean:
 	rm -f *.o $(BIN)

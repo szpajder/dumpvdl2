@@ -6,6 +6,7 @@
 #include <assert.h>
 #include "rtlvdl2.h"
 #include "x25.h"
+#include "clnp.h"
 #include "tlv.h"
 
 dict x25_pkttype_names[] = {
@@ -152,17 +153,15 @@ static int parse_x25_facility_field(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) 
 static void *parse_x25_user_data(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
 	if(buf == NULL || len == 0)
 		return NULL;
-	uint8_t proto = *buf++; len--;
+	uint8_t proto = *buf;
 	if(proto == SN_PROTO_CLNP) {
 		pkt->proto = SN_PROTO_CLNP;
-//		return parse_clnp_pdu(pkt, buf, len);
-		return NULL;
+		return parse_clnp_pdu(buf, len);
 	}
 	uint8_t pdu_type = proto >> 4;
 	if(pdu_type < 4) {
 		pkt->proto = SN_PROTO_CLNP_INIT_COMPRESSED;
-//		return parse_clnp_compressed_init_pdu(pkt, buf, len);
-		return NULL;
+		return parse_clnp_compressed_init_pdu(buf, len);
 	}
 	pkt->proto = proto;
 	return NULL;
@@ -287,19 +286,30 @@ void output_x25(x25_pkt_t *pkt) {
 		fprintf(outf, "Compression support: %02x\n", pkt->compression);
 		/* FALLTHROUGH because Fast Select is on, so there might be a data PDU in call req or accept */
 	case X25_DATA:
-		if(pkt->datalen == 0) break;
 		switch(pkt->proto) {
 		case SN_PROTO_CLNP_INIT_COMPRESSED:
-			fprintf(outf, "CLNP PDU with compressed header:\n");
+			if(pkt->data_valid) {
+				output_clnp_compressed(pkt->data);
+			} else {
+				fprintf(outf, "-- Unparseable CLNP PDU\n");
+				output_raw(pkt->data, pkt->datalen);
+			}
 			break;
 		case SN_PROTO_CLNP:
-			fprintf(outf, "CLNP PDU:\n");
+			if(pkt->data_valid) {
+				output_clnp(pkt->data);
+			} else {
+				fprintf(outf, "-- Unparseable CLNP PDU\n");
+				output_raw(pkt->data, pkt->datalen);
+			}
 			break;
 		case SN_PROTO_ESIS:
 			fprintf(outf, "ES-IS PDU:\n");
+			output_raw(pkt->data, pkt->datalen);
 			break;
 		case SN_PROTO_IDRP:
 			fprintf(outf, "IDRP PDU:\n");
+			output_raw(pkt->data, pkt->datalen);
 			break;
 		default:
 			fprintf(outf, "Unknown protocol 0x%02x PDU:\n", pkt->proto);
@@ -310,5 +320,4 @@ void output_x25(x25_pkt_t *pkt) {
 		fprintf(outf,  "Cause: %02x\nDiagnostic code: %02x\n", pkt->clr_cause, pkt->diag_code);
 		break;
 	}
-	output_raw(pkt->data, pkt->datalen);
 }

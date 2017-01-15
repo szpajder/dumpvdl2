@@ -1,3 +1,5 @@
+#ifndef _X25_H
+#define _X25_H
 #include <endian.h>
 #include <stdint.h>
 #include "tlv.h"
@@ -87,3 +89,4 @@ typedef struct {
 // x25.c
 x25_pkt_t *parse_x25(uint8_t *buf, uint32_t len);
 void output_x25(x25_pkt_t *pkt);
+#endif // !_X25_H
