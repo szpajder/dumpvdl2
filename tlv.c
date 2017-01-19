@@ -77,10 +77,15 @@ void output_tlv(tlv_list_t *list, const tlv_dict *d) {
 	if(list == NULL || d == NULL) return;
 	for(tlv_list_t *p = list; p != NULL; p = p->next) {
 		tlv_dict *entry = tlv_dict_search(d, p->type);
+		char *str = NULL;
 		if(entry != NULL) {
-			printf(" %s: %s\n", entry->description, (*(entry->stringify))(p->val, p->len));
+			str = (*(entry->stringify))(p->val, p->len);
+			printf(" %s: %s\n", entry->description, str);
 		} else {
-			printf(" (Unknown code 0x%02x): %s\n", p->type, fmt_hexstring(p->val, p->len));
+			str = fmt_hexstring(p->val, p->len);
+			printf(" (Unknown code 0x%02x): %s\n", p->type, str);
 		}
+		if(str)
+			free(str);
 	}
 }
