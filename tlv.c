@@ -11,7 +11,7 @@ void tlv_list_free(tlv_list_t *p) {
 	free(p);
 }
 
-void tlv_list_append(tlv_list_t **head, uint8_t type, uint8_t len, uint8_t *value) {
+void tlv_list_append(tlv_list_t **head, uint8_t type, uint16_t len, uint8_t *value) {
 	tlv_list_t *ptr;
 	if(*head == NULL) {	// new list
 		*head = ptr = XCALLOC(1, sizeof(tlv_list_t));
@@ -41,7 +41,7 @@ tlv_list_t *tlv_deserialize(uint8_t *buf, uint16_t len) {
 	while(len >= TLV_MIN_PARAMLEN) {
 		uint8_t pid = *ptr;
 		ptr++; len--;
-		uint8_t paramlen = *ptr;
+		uint16_t paramlen = (uint16_t)(*ptr);
 		ptr++; len--;
 		if(paramlen > len) {
 			fprintf(stderr, "TLV param %02x truncated: paramlen=%u buflen=%u\n", pid, paramlen, len);

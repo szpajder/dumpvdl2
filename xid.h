@@ -30,7 +30,7 @@ typedef struct {
 
 typedef struct {
 	uint8_t pid;
-	char *(*stringify)(uint8_t *, uint8_t);
+	char *(*stringify)(uint8_t *, uint16_t);
 	char *description;
 } xid_param_descr_t;
 

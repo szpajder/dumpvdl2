@@ -38,7 +38,7 @@ static const vdl_modulation_descr_t modulation_names[] = {
 	{ 0x0, NULL }
 };
 
-static char *fmt_vdl_modulation(uint8_t *data, uint8_t len) {
+static char *fmt_vdl_modulation(uint8_t *data, uint16_t len) {
 	if(len < 1) return strdup("<empty>");
 	char *buf = XCALLOC(64, sizeof(char));
 	vdl_modulation_descr_t *ptr;
@@ -56,7 +56,7 @@ static char *fmt_vdl_modulation(uint8_t *data, uint8_t len) {
 	return buf;
 }
 
-static char *fmt_dlc_addrs(uint8_t *data, uint8_t len) {
+static char *fmt_dlc_addrs(uint8_t *data, uint16_t len) {
 	if(len % 4 != 0) return strdup("<field truncated>");
 	uint8_t *ptr = data;
 // raw DLC addr is 4 bytes, turn it into 6 hex digits + space, add 1 for \0 at the end
@@ -77,14 +77,14 @@ static char *fmt_dlc_addrs(uint8_t *data, uint8_t len) {
 	return buf;
 }
 
-static char *fmt_string(uint8_t *data, uint8_t len) {
+static char *fmt_string(uint8_t *data, uint16_t len) {
 	char *buf = XCALLOC(len + 1, sizeof(char));
 	memcpy(buf, data, len);
 	buf[len] = '\0';
 	return buf;
 }
 
-static char *fmt_loc(uint8_t *data, uint8_t len) {
+static char *fmt_loc(uint8_t *data, uint16_t len) {
 	if(len < 3) return strdup("<field truncated>");
 	char *buf = XCALLOC(64, sizeof(char));
 // shift to the left end and then back to propagate sign bit
@@ -100,7 +100,7 @@ static char *fmt_loc(uint8_t *data, uint8_t len) {
 	return buf;
 }
 
-static char *fmt_loc_alt(uint8_t *data, uint8_t len) {
+static char *fmt_loc_alt(uint8_t *data, uint16_t len) {
 	if(len < 4) return strdup("<field truncated>");
 	char *buf = fmt_loc(data, 3);
 	char *altbuf = XCALLOC(32, sizeof(char));

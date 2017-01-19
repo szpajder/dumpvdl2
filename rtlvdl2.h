@@ -155,7 +155,7 @@ void statsd_timing_delta_send(char *timer, struct timeval *ts);
 // util.c
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func);
 void *xrealloc(void *ptr, size_t size, const char *file, const int line, const char *func);
-char *fmt_hexstring(uint8_t *data, uint8_t len);
-char *fmt_hexstring_with_ascii(uint8_t *data, uint8_t len);
+char *fmt_hexstring(uint8_t *data, uint16_t len);
+char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len);
 
 // vim: ts=4

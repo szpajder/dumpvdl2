@@ -26,14 +26,14 @@ void *xrealloc(void *ptr, size_t size, const char *file, const int line, const c
 	return ptr;
 }
 
-char *fmt_hexstring(uint8_t *data, uint8_t len) {
+char *fmt_hexstring(uint8_t *data, uint16_t len) {
 	static const char hex[] = "0123456789abcdef";
 	char *buf = NULL;
 	if(data == NULL) return strdup("<undef>");
 	if(len == 0) return strdup("none");
 	buf = XCALLOC(3 * len + 1, sizeof(char));
 	char *ptr = buf;
-	for(int i = 0; i < len; i++) {
+	for(uint16_t i = 0; i < len; i++) {
 		*ptr++ = hex[((data[i] >> 4) & 0xf)];
 		*ptr++ = hex[data[i] & 0xf];
 		*ptr++ = ' ';
@@ -43,7 +43,7 @@ char *fmt_hexstring(uint8_t *data, uint8_t len) {
 	return buf;
 }
 
-char *fmt_hexstring_with_ascii(uint8_t *data, uint8_t len) {
+char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len) {
 	if(data == NULL) return strdup("<undef>");
 	if(len == 0) return strdup("none");
 	char *buf = fmt_hexstring(data, len);
@@ -52,7 +52,7 @@ char *fmt_hexstring_with_ascii(uint8_t *data, uint8_t len) {
 	char *ptr = buf + buflen;
 	*ptr++ = '\t';
 	*ptr++ = '"';
-	for(int i = 0; i < len; i++) {
+	for(uint16_t i = 0; i < len; i++) {
 		if(data[i] < 32 || data[i] > 126)	// replace non-printable chars
 			*ptr++ = '.';
 		else
