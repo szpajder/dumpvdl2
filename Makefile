@@ -12,6 +12,7 @@ DEPS =	acars.o \
 	crc.o \
 	decode.o \
 	deinterleave.o \
+	idrp.o \
 	output.o \
 	rs.o \
 	rtlvdl2.o \
@@ -31,13 +32,15 @@ all: $(BIN)
 
 $(BIN): $(DEPS)
 
-clnp.o: rtlvdl2.h clnp.h
+clnp.o: rtlvdl2.h clnp.h idrp.h
 
 decode.o: rtlvdl2.h
 
 bitstream.o: rtlvdl2.h
 
 deinterleave.o: rtlvdl2.h
+
+idrp.o: rtlvdl2.h idrp.h tlv.h
 
 rs.o: rtlvdl2.h
 

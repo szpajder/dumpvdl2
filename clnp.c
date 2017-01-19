@@ -3,6 +3,7 @@
 #include <string.h>
 #include "rtlvdl2.h"
 #include "clnp.h"
+#include "idrp.h"
 
 static void parse_clnp_pdu_payload(clnp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	if(len == 0)
@@ -13,7 +14,7 @@ static void parse_clnp_pdu_payload(clnp_pdu_t *pdu, uint8_t *buf, uint32_t len) 
 // not implemented yet
 		break;
 	case SN_PROTO_IDRP:
-// not implemented yet
+		pdu->data = parse_idrp_pdu(buf, len);
 		break;
 	case SN_PROTO_CLNP:
 		debug_print("%s", "CLNP inside CLNP? Bailing out to avoid loop\n");
@@ -94,10 +95,9 @@ static void output_clnp_pdu(clnp_pdu_t *pdu) {
 		break;
 	case SN_PROTO_IDRP:
 		if(pdu->data_valid) {
-//			output_idrp(pdu->data);
+			output_idrp(pdu->data);
 		} else {
-//			fprintf(outf, "-- Unparseable IDRP PDU\n");
-			fprintf(outf, "IDRP PDU:\n");
+			fprintf(outf, "-- Unparseable IDRP PDU\n");
 			output_raw(pdu->data, pdu->datalen);
 		}
 		break;
