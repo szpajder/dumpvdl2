@@ -29,12 +29,6 @@ typedef struct {
 } vdl_modulation_descr_t;
 
 typedef struct {
-	uint8_t pid;
-	char *(*stringify)(uint8_t *, uint16_t);
-	char *description;
-} xid_param_descr_t;
-
-typedef struct {
 	enum xid_types type;
 	tlv_list_t *pub_params;
 	tlv_list_t *vdl_params;

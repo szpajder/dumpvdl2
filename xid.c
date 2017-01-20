@@ -110,7 +110,7 @@ static char *fmt_loc_alt(uint8_t *data, uint16_t len) {
 	return buf;
 }
 
-static const xid_param_descr_t xid_pub_params[] = {
+static const tlv_dict xid_pub_params[] = {
 	{ 0x1, &fmt_string, "Parameter set ID" },
 	{ 0x2, &fmt_hexstring, "Procedure classes" },
 	{ 0x3, &fmt_hexstring, "HDLC options" },
@@ -124,7 +124,7 @@ static const xid_param_descr_t xid_pub_params[] = {
 	{ 0xFF, NULL, NULL }
 };
 
-static const xid_param_descr_t xid_vdl_params[] = {
+static const tlv_dict xid_vdl_params[] = {
 	{ 0x00, &fmt_string, "Parameter set ID" },
 	{ 0x01, &fmt_hexstring, "Connection management" },
 	{ 0x02, &fmt_hexstring, "SQP" },
@@ -156,15 +156,6 @@ static const xid_param_descr_t xid_vdl_params[] = {
 	{ 0xC8, &fmt_loc, "Ground station location" },
 	{ 0x00, NULL, NULL }
 };
-
-static xid_param_descr_t *get_param_descr(const xid_param_descr_t *list, uint8_t pid) {
-	if(list == NULL) return NULL;
-	xid_param_descr_t *ptr;
-	for(ptr = (xid_param_descr_t *)list; ; ptr++) {
-		if(ptr->pid == pid) return ptr;
-		if(ptr->description == NULL) return NULL;
-	}
-}
 
 xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len) {
 	static xid_msg_t *msg = NULL;
@@ -233,25 +224,10 @@ xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len) {
 	return msg;
 }
 
-static void output_xid_params(tlv_list_t *params, const xid_param_descr_t *descriptions) {
-	for(tlv_list_t *p = params; p != NULL; p = p->next) {
-		xid_param_descr_t *descr = get_param_descr(descriptions, p->type);
-		char *str = NULL;
-		if(descr != NULL) {
-			str = (*(descr->stringify))(p->val, p->len);
-			fprintf(outf, " %s: %s\n", descr->description, str);
-		} else {
-			str = fmt_hexstring(p->val, p->len);
-			fprintf(outf, " Unknown parameter (0x%02x): %s\n", p->type, str);
-		}
-		free(str);
-	}
-}
-
 void output_xid(xid_msg_t *msg) {
 	fprintf(outf, "XID: type=0x%02x (%s - %s)\n", msg->type, xid_names[msg->type].name, xid_names[msg->type].description);
 	fprintf(outf, "Public parameters:\n");
-	output_xid_params(msg->pub_params, xid_pub_params);
+	output_tlv(outf, msg->pub_params, xid_pub_params);
 	fprintf(outf, "VDL parameters:\n");
-	output_xid_params(msg->vdl_params, xid_vdl_params);
+	output_tlv(outf, msg->vdl_params, xid_vdl_params);
 }
