@@ -9,7 +9,7 @@
 #include "clnp.h"
 #include "tlv.h"
 
-dict x25_pkttype_names[] = {
+static const dict x25_pkttype_names[] = {
 	{ X25_CALL_REQUEST,	"Call Request" },
 	{ X25_CALL_ACCEPTED,	"Call Accepted" },
 	{ X25_CLEAR_REQUEST,	"Clear Request" },
@@ -25,7 +25,7 @@ dict x25_pkttype_names[] = {
 	{ 0,			NULL }
 };
 
-tlv_dict x25_facility_names[] = {
+static const tlv_dict x25_facility_names[] = {
 	{ 0x00, &fmt_hexstring, "Marker (non-X.25 facilities follow)" },
 	{ 0x01, &fmt_hexstring, "Fast Select" },
 	{ 0x08, &fmt_hexstring, "Called line address modified" },
@@ -35,11 +35,12 @@ tlv_dict x25_facility_names[] = {
 	{ 0,    NULL,		NULL }
 };
 
-dict x25_comp_algos[] = {
+static const dict x25_comp_algos[] = {
 	{ 0x40, "ACA" },
 	{ 0x20, "DEFLATE" },
 	{ 0x02, "LREF" },
-	{ 0x01, "LREF-CAN" }
+	{ 0x01, "LREF-CAN" },
+	{ 0x0,  NULL }
 };
 
 static char *fmt_x25_addr(uint8_t *data, uint8_t len) {
