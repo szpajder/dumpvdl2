@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include "rtlvdl2.h"
+#include "tlv.h"
 
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func) {
 	void *ptr = calloc(nmemb, size);
@@ -60,5 +61,22 @@ char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len) {
 	}
 	*ptr++ = '"';
 	*ptr = '\0';
+	return buf;
+}
+
+char *fmt_bitfield(uint8_t val, dict *d) {
+	if(val == 0) return strdup("none");
+	char *buf = XCALLOC(256, sizeof(char));
+	for(dict *ptr = d; ptr->val != NULL; ptr++) {
+		if((val & ptr->id) == ptr->id) {
+			strcat(buf, (char *)ptr->val);
+			strcat(buf, ", ");
+		}
+	}
+	int slen = strlen(buf);
+	if(slen == 0)
+		strcat(buf, "none");
+	else
+		buf[slen-2] = '\0';     // throw out trailing delimiter
 	return buf;
 }

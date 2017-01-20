@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <sys/time.h>
 #include "avlc.h"
+#include "tlv.h"
 
 #define RTLVDL2_VERSION "0.1.0rc"
 #define RS_K 249        // Reed-Solomon vector dimension (bytes)
@@ -157,5 +158,6 @@ void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const
 void *xrealloc(void *ptr, size_t size, const char *file, const int line, const char *func);
 char *fmt_hexstring(uint8_t *data, uint16_t len);
 char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len);
+char *fmt_bitfield(uint8_t val, dict *d);
 
 // vim: ts=4

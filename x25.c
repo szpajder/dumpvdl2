@@ -35,6 +35,13 @@ tlv_dict x25_facility_names[] = {
 	{ 0,    NULL,		NULL }
 };
 
+dict x25_comp_algos[] = {
+	{ 0x40, "ACA" },
+	{ 0x20, "DEFLATE" },
+	{ 0x02, "LREF" },
+	{ 0x01, "LREF-CAN" }
+};
+
 static char *fmt_x25_addr(uint8_t *data, uint8_t len) {
 // len is in nibbles here
 	static const char hex[] = "0123456789abcdef";
@@ -283,7 +290,9 @@ void output_x25(x25_pkt_t *pkt) {
 	case X25_CALL_ACCEPTED:
 		fprintf(outf, "Facilities:\n");
 		output_tlv(outf, pkt->facilities, x25_facility_names);
-		fprintf(outf, "Compression support: %02x\n", pkt->compression);
+		char *comp = fmt_bitfield(pkt->compression, x25_comp_algos);
+		fprintf(outf, "Compression support: %s\n", comp);
+		free(comp);
 		/* FALLTHROUGH because Fast Select is on, so there might be a data PDU in call req or accept */
 	case X25_DATA:
 		switch(pkt->proto) {
