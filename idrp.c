@@ -297,7 +297,7 @@ void output_idrp(idrp_pdu_t *pdu) {
 		}
 		if(pdu->path_attributes != NULL) {
 //			fprintf(outf, " Advertised path attributes:\n");
-			output_tlv(pdu->path_attributes, path_attribute_names);
+			output_tlv(outf, pdu->path_attributes, path_attribute_names);
 		}
 		if(pdu->datalen > 0) {
 			char *fmt = fmt_hexstring_with_ascii(pdu->data, pdu->datalen);

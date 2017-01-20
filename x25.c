@@ -282,7 +282,7 @@ void output_x25(x25_pkt_t *pkt) {
 	case X25_CALL_REQUEST:
 	case X25_CALL_ACCEPTED:
 		fprintf(outf, "Facilities:\n");
-		output_tlv(pkt->facilities, x25_facility_names);
+		output_tlv(outf, pkt->facilities, x25_facility_names);
 		fprintf(outf, "Compression support: %02x\n", pkt->compression);
 		/* FALLTHROUGH because Fast Select is on, so there might be a data PDU in call req or accept */
 	case X25_DATA:
