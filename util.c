@@ -64,10 +64,10 @@ char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len) {
 	return buf;
 }
 
-char *fmt_bitfield(uint8_t val, dict *d) {
+char *fmt_bitfield(uint8_t val, const dict *d) {
 	if(val == 0) return strdup("none");
 	char *buf = XCALLOC(256, sizeof(char));
-	for(dict *ptr = d; ptr->val != NULL; ptr++) {
+	for(dict *ptr = (dict *)d; ptr->val != NULL; ptr++) {
 		if((val & ptr->id) == ptr->id) {
 			strcat(buf, (char *)ptr->val);
 			strcat(buf, ", ");
