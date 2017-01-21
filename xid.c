@@ -192,14 +192,14 @@ xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len) {
 				debug_print("Duplicate XID group 0x%02x\n", XID_GID_PUBLIC);
 				return NULL;
 			}
-			msg->pub_params = tlv_deserialize(ptr, grouplen);
+			msg->pub_params = tlv_deserialize(ptr, grouplen, 1);
 			break;
 		case XID_GID_PRIVATE:
 			if(msg->vdl_params != NULL) {
 				debug_print("Duplicate XID group 0x%02x\n", XID_GID_PRIVATE);
 				return NULL;
 			}
-			msg->vdl_params = tlv_deserialize(ptr, grouplen);
+			msg->vdl_params = tlv_deserialize(ptr, grouplen, 1);
 			break;
 		default:
 			debug_print("Unknown XID Group ID 0x%x, ignored\n", gid);

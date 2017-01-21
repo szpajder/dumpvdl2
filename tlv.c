@@ -34,15 +34,21 @@ tlv_list_t *tlv_list_search(tlv_list_t *ptr, uint8_t type) {
 	return ptr;
 }
 
-tlv_list_t *tlv_deserialize(uint8_t *buf, uint16_t len) {
+tlv_list_t *tlv_deserialize(uint8_t *buf, uint16_t len, uint8_t len_octets) {
 	assert(buf);
 	tlv_list_t *head = NULL;
 	uint8_t *ptr = buf;
-	while(len >= TLV_MIN_PARAMLEN) {
+	uint8_t tlv_min_paramlen = 1 + len_octets;	/* code + <len_octets> length field + empty data field */
+	uint16_t paramlen;
+	while(len >= tlv_min_paramlen) {
 		uint8_t pid = *ptr;
 		ptr++; len--;
-		uint16_t paramlen = (uint16_t)(*ptr);
-		ptr++; len--;
+
+		paramlen = *ptr;
+		if(len_octets == 2)
+			paramlen = (paramlen << 8) | (uint16_t)ptr[1];
+
+		ptr += len_octets; len -= len_octets;
 		if(paramlen > len) {
 			fprintf(stderr, "TLV param %02x truncated: paramlen=%u buflen=%u\n", pid, paramlen, len);
 			return NULL;
