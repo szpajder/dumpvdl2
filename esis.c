@@ -44,6 +44,7 @@ esis_pdu_t *parse_esis_pdu(uint8_t *buf, uint32_t len) {
         if(pdu == NULL) {
                 pdu = XCALLOC(1, sizeof(esis_pdu_t));
         } else {
+		tlv_list_free(pdu->options);
                 memset(pdu, 0, sizeof(esis_pdu_t));
         }
         esis_hdr_t *hdr = (esis_hdr_t *)buf;
@@ -98,7 +99,7 @@ void output_esis(esis_pdu_t *pdu) {
 	}
 	free(str);
 	if(pdu->options != NULL) {
-		fprintf(outf, " Options: %s\n", str);
+		fprintf(outf, " Options:\n");
 		output_tlv(outf, pdu->options, esis_option_names);
 	}
 }
