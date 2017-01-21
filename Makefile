@@ -12,6 +12,7 @@ DEPS =	acars.o \
 	crc.o \
 	decode.o \
 	deinterleave.o \
+	esis.o \
 	idrp.o \
 	output.o \
 	rs.o \
@@ -39,6 +40,8 @@ decode.o: rtlvdl2.h
 bitstream.o: rtlvdl2.h
 
 deinterleave.o: rtlvdl2.h
+
+esis.o: rtlvdl2.h esis.h tlv.h
 
 idrp.o: rtlvdl2.h idrp.h tlv.h
 

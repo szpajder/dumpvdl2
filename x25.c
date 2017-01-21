@@ -7,6 +7,7 @@
 #include "rtlvdl2.h"
 #include "x25.h"
 #include "clnp.h"
+#include "esis.h"
 #include "tlv.h"
 
 static const dict x25_pkttype_names[] = {
@@ -165,6 +166,9 @@ static void *parse_x25_user_data(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
 	if(proto == SN_PROTO_CLNP) {
 		pkt->proto = SN_PROTO_CLNP;
 		return parse_clnp_pdu(buf, len);
+	} else if(proto == SN_PROTO_ESIS) {
+		pkt->proto = SN_PROTO_ESIS;
+		return parse_esis_pdu(buf, len);
 	}
 	uint8_t pdu_type = proto >> 4;
 	if(pdu_type < 4) {
@@ -314,8 +318,12 @@ void output_x25(x25_pkt_t *pkt) {
 			}
 			break;
 		case SN_PROTO_ESIS:
-			fprintf(outf, "ES-IS PDU:\n");
-			output_raw(pkt->data, pkt->datalen);
+			if(pkt->data_valid) {
+				output_esis(pkt->data);
+			} else {
+				fprintf(outf, "-- Unparseable ES-IS PDU\n");
+				output_raw(pkt->data, pkt->datalen);
+			}
 			break;
 		case SN_PROTO_IDRP:
 			fprintf(outf, "IDRP PDU:\n");
