@@ -36,7 +36,7 @@ void setup_signals() {
 
 /* crude correlator */
 void correlate_and_sync(vdl2_state_t *v) {
-	int i, min1, min2, min_dist, pos;
+	int i, min1 = 0, min2 = 0, min_dist, pos;
 	float avgmax, minv1, minv2;
 	float *buf = v->mag_buf;
 	v->sclk = -1;
