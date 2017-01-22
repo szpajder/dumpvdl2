@@ -59,7 +59,7 @@ static uint8_t *soft_preamble_search(bitstream_t *bs) {
 		debug_print("%s", "haystack too short\n");
 		return NULL;
 	}
-	uint32_t min_distance, distance, best_match;
+	uint32_t min_distance, distance, best_match = 0;
 	int i,j,k;
 	min_distance = pr_len;
 	for(i = 0; i <= bs_len - pr_len; i++) {

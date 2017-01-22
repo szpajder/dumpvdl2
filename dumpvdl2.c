@@ -380,7 +380,7 @@ int main(int argc, char **argv) {
 	char *optstring =
 #if USE_STATSD
 	"d:f:hHDg:o:p:S:";
-	char *statsd_addr;
+	char *statsd_addr = NULL;
 	int statsd_enabled = 0;
 #else
 	"d:f:hHDg:o:p:";
