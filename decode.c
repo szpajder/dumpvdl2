@@ -188,16 +188,18 @@ void decode_vdl_frame(vdl2_state_t *v) {
 				statsd_increment("decoder.errors.deinterleave_fec");
 				goto cleanup;
 			}
+#if DEBUG
 			debug_print("%s", "Deinterleaved blocks:\n");
 			for(int r = 0; r < v->num_blocks; r++) {
 				debug_print_buf_hex(rs_tab[r], RS_N, "Block %d:\n", r);
 			}
+#endif
 			bitstream_reset(v->bs);
 			for(int r = 0; r < v->num_blocks; r++) {
 				statsd_increment("decoder.blocks.processed");
-				if(r != v->num_blocks - 1)		// full block
+				if(r != v->num_blocks - 1)	// full block
 					ret = rs_verify((uint8_t *)&rs_tab[r], RS_N - RS_K);
-				else							// last, partial block
+				else				// last, partial block
 					ret = rs_verify((uint8_t *)&rs_tab[r], get_fec_octetcount(v->last_block_len_octets));
 				debug_print("Block %d FEC: %d\n", r, ret);
 				if(ret < 0) {
