@@ -36,7 +36,7 @@ int bitstream_append_msbfirst(bitstream_t *bs, const uint8_t *v, const uint32_t 
 	assert(numbits > 0 || numbits <= CHAR_BIT);
 	assert(numbytes > 0);
 	if(bs->end + numbits * numbytes > bs->len)
-		 return -1;
+		return -1;
 	for(int i = 0; i < numbytes; i++) {
 		uint8_t t = v[i];
 		for(int j = numbits - 1; j >= 0; j--)
@@ -94,8 +94,8 @@ void bitstream_descramble(bitstream_t *bs, uint16_t *lfsr) {
 		bs->descrambler_pos = bs->start;
 	for(i = bs->descrambler_pos; i < bs->end; i++) {
 		/* LFSR length: 15; feedback polynomial: x^15 + x + 1 */
-		bit  = ((*lfsr >> 0) ^ (*lfsr >> 14)) & 1;
-		*lfsr =  (*lfsr >> 1) | (bit << 14);
+		bit = ((*lfsr >> 0) ^ (*lfsr >> 14)) & 1;
+		*lfsr = (*lfsr >> 1) | (bit << 14);
 		bs->buf[i] ^= bit;
 	}
 	debug_print("descrambled from %u to %u\n", bs->descrambler_pos, bs->end-1);
@@ -130,13 +130,11 @@ uint32_t reverse(uint32_t v, int numbits) {
 	int s = sizeof(v) * CHAR_BIT - 1; // extra shift needed at end
 
 	for (v >>= 1; v; v >>= 1) {
-	  r <<= 1;
-	  r |= v & 1;
-	  s--;
+		r <<= 1;
+		r |= v & 1;
+		s--;
 	}
 	r <<= s; // shift when v's highest bits are zero
 	r >>= 32 - numbits;
 	return r;
 }
-
-// vim: ts=4

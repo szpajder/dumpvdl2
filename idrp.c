@@ -295,10 +295,9 @@ void output_idrp(idrp_pdu_t *pdu) {
 			for(tlv_list_t *p = pdu->withdrawn_routes; p != NULL; p = p->next)
 				output_raw(p->val, p->len);
 		}
-		if(pdu->path_attributes != NULL) {
-//			fprintf(outf, " Advertised path attributes:\n");
+		if(pdu->path_attributes != NULL)
 			output_tlv(outf, pdu->path_attributes, path_attribute_names);
-		}
+
 		if(pdu->datalen > 0) {
 			char *fmt = fmt_hexstring_with_ascii(pdu->data, pdu->datalen);
 			fprintf(outf, " NLRI: %s\n", fmt);

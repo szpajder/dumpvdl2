@@ -3,13 +3,13 @@
 #include <endian.h>
 #include <stdint.h>
 #include "tlv.h"
-#define X25_MIN_LEN 3
-#define GFI_X25_MOD8 0x1
-#define MAX_X25_ADDR_LEN 8	// bytes
-#define MAX_X25_EXT_ADDR_LEN 20	// bytes
-#define X25_SNDCF_ID 0xc1
-#define X25_SNDCF_VERSION 1
-#define MIN_X25_SNDCF_LEN 4
+#define X25_MIN_LEN		3
+#define GFI_X25_MOD8		1
+#define MAX_X25_ADDR_LEN	8	// bytes
+#define MAX_X25_EXT_ADDR_LEN	20	// bytes
+#define X25_SNDCF_ID		0xc1
+#define X25_SNDCF_VERSION	1
+#define MIN_X25_SNDCF_LEN	4
 
 #define SN_PROTO_CLNP_INIT_COMPRESSED	0x01
 #define	SN_PROTO_CLNP			0x81

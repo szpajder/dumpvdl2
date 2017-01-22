@@ -32,12 +32,12 @@ clnp_pdu_payload_unparsed:
 
 clnp_pdu_t *parse_clnp_pdu(uint8_t *buf, uint32_t len) {
 	static clnp_pdu_t *pdu = NULL;
-        if(len < CLNP_MIN_LEN) {
-                debug_print("Too short (len %u < min len %u)\n", len, CLNP_MIN_LEN);
-                return NULL;
-        }
-        if(pdu == NULL) {
-                pdu = XCALLOC(1, sizeof(clnp_pdu_t));
+	if(len < CLNP_MIN_LEN) {
+		debug_print("Too short (len %u < min len %u)\n", len, CLNP_MIN_LEN);
+		return NULL;
+	}
+	if(pdu == NULL) {
+		pdu = XCALLOC(1, sizeof(clnp_pdu_t));
 	} else {
 		memset(pdu, 0, sizeof(clnp_pdu_t));
 	}
@@ -54,12 +54,12 @@ clnp_pdu_t *parse_clnp_pdu(uint8_t *buf, uint32_t len) {
 
 clnp_pdu_t *parse_clnp_compressed_init_pdu(uint8_t *buf, uint32_t len) {
 	static clnp_pdu_t *pdu = NULL;
-        if(len < CLNP_COMPRESSED_INIT_MIN_LEN) {
-                debug_print("Too short (len %u < min len %u)\n", len, CLNP_COMPRESSED_INIT_MIN_LEN);
-                return NULL;
-        }
-        if(pdu == NULL) {
-                pdu = XCALLOC(1, sizeof(clnp_pdu_t));
+	if(len < CLNP_COMPRESSED_INIT_MIN_LEN) {
+		debug_print("Too short (len %u < min len %u)\n", len, CLNP_COMPRESSED_INIT_MIN_LEN);
+		return NULL;
+	}
+	if(pdu == NULL) {
+		pdu = XCALLOC(1, sizeof(clnp_pdu_t));
 	} else {
 		memset(pdu, 0, sizeof(clnp_pdu_t));
 	}

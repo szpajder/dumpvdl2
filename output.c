@@ -196,4 +196,3 @@ void output_avlc(vdl2_state_t *v, const avlc_frame_t *f) {
 	}
 	fflush(outf);
 }
-// vim: ts=4

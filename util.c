@@ -77,6 +77,6 @@ char *fmt_bitfield(uint8_t val, const dict *d) {
 	if(slen == 0)
 		strcat(buf, "none");
 	else
-		buf[slen-2] = '\0';     // throw out trailing delimiter
+		buf[slen-2] = '\0';	// throw out trailing delimiter
 	return buf;
 }

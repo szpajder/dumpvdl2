@@ -3,8 +3,8 @@
 #include <endian.h>
 #include <stdint.h>
 #include <time.h>
-#define MIN_AVLC_LEN 11
-#define AVLC_FLAG 0x7e
+#define MIN_AVLC_LEN	11
+#define AVLC_FLAG	0x7e
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #define BSHIFT 24
@@ -75,17 +75,17 @@ typedef union {
 #define U_MFUNC(lcf) (lcf).U.mfunc & 0x3b
 #define U_PF(lcf) ((lcf).U.mfunc >> 2) & 0x1
 
-#define UI		0x00
-#define DM		0x03
+#define UI	0x00
+#define DM	0x03
 #define DISC	0x10
 #define FRMR	0x21
-#define XID		0x2b
+#define XID	0x2b
 #define TEST	0x38
 
-#define ADDRTYPE_AIRCRAFT 1
-#define ADDRTYPE_GS_ADM 4
-#define ADDRTYPE_GS_DEL 5
-#define ADDRTYPE_ALL 7
+#define ADDRTYPE_AIRCRAFT	1
+#define ADDRTYPE_GS_ADM		4
+#define ADDRTYPE_GS_DEL		5
+#define ADDRTYPE_ALL		7
 
 enum avlc_protocols { PROTO_X25, PROTO_ACARS, PROTO_UNKNOWN };
 typedef struct {
@@ -96,8 +96,7 @@ typedef struct {
 	enum avlc_protocols proto;
 	uint32_t datalen;
 	uint8_t data_valid;
-	void  *data;
+	void *data;
 } avlc_frame_t;
 
 #endif // !_AVLC_H
-// vim: ts=4

@@ -6,12 +6,12 @@
 #include "dumpvdl2.h"
 #include "acars.h"
 
-//#define STX 0x02
 #define ETX 0x83
 #define ETB 0x97
 #define DEL 0x7f
 
-/* ACARS message decoder
+/*
+ * ACARS message decoder
  * Based on acarsdec by Thierry Leconte
  */
 acars_msg_t *parse_acars(uint8_t *buf, uint32_t len) {
@@ -40,7 +40,6 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len) {
 	}
 	len -= 4;
 	memset(msg, 0, sizeof(acars_msg_t));
-// FIXME: check CRC and parity
 
 	for(i = 0; i < len; i++)
 		buf[i] &= 0x7f;
@@ -75,23 +74,12 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len) {
 	msg->fid[0] = '\0';
 	msg->txt[0] = '\0';
 
-//	if (msg->bs == 0x03 || msg->mode > 'Z' || msg->bid > '9') {
-//#ifdef WITH_STATSD
-//		increment(blk->chn, "msg->ground2air");
-//#endif
-//		if(airflt)
-//			return;
-//	}
-
 	if(k >= len) {		// empty txt
 		msg->txt[0] = '\0';
 		return msg;
 	}
 
 	if (msg->bs != 0x03) {
-//#ifdef WITH_STATSD
-//		increment(blk->chn, "msg->air2ground");
-//#endif
 		if (msg->mode <= 'Z' && msg->bid <= '9') {
 			/* message no */
 			for (i = 0; i < 4 && k < len; i++, k++) {
@@ -119,4 +107,3 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len) {
 	/* txt end */
 	return msg;
 }
-// vim: ts=6

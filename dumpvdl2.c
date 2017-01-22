@@ -10,7 +10,6 @@
 #include <rtl-sdr.h>
 #include "dumpvdl2.h"
 
-const uint8_t graycode[ARITY] = { 0, 1, 3, 2, 6, 7, 5, 4 };
 static rtlsdr_dev_t *rtl = NULL;
 int do_exit = 0;
 
@@ -116,6 +115,7 @@ void demod_reset(vdl2_state_t *v) {
 }
 
 void demod(vdl2_state_t *v) {
+	static const uint8_t graycode[ARITY] = { 0, 1, 3, 2, 6, 7, 5, 4 };
 	float dI, dQ, dphi, phierr;
 	int idx, samples_available, samples_needed;
 
@@ -167,11 +167,10 @@ void demod(vdl2_state_t *v) {
 			v->sclk += SPS; v->sclk %= BUFSIZE;
 			samples_available -= SPS;
 
-//			debug_print("bs len: %u req bits: %u\n", v->bs->end - v->bs->start, v->requested_bits);
 			if(v->bs->end - v->bs->start >= v->requested_bits) {
 				debug_print("bitstream len=%u requested_bits=%u, launching frame decoder\n", v->bs->end - v->bs->start, v->requested_bits);
 				decode_vdl_frame(v);
-				if(v->decoder_state == DEC_IDLE) {		// decoding finished or failed
+				if(v->decoder_state == DEC_IDLE) {	// decoding finished or failed
 					v->demod_state = DM_IDLE;
 					return;
 				} else {
@@ -187,7 +186,6 @@ void demod(vdl2_state_t *v) {
 			}
 
 			if(samples_available <= 0) {
-//				debug_print("avail: %d bufs: %d bufe: %d sclk: %d\n", samples_available, v->bufs, v->bufe, v->sclk);
 				v->bufs = v->bufe;
 				break;
 			}
@@ -240,7 +238,7 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 			}
 		} else {
 			if(v->sq == 1 && v->demod_state == DM_IDLE) {	// close squelch only when decoder finished work or errored
-															// FIXME: time-limit this, because reading obvious trash does not make sense
+				// FIXME: time-limit this, because reading obvious trash does not make sense
 				debug_print("*** off at (%d:%d) *** after %d idle_skips, %d not_idle_skips\n", bufnum, samplenum, idle_skips, not_idle_skips);
 				v->sq = 0;
 				demod_reset(v);
@@ -258,10 +256,8 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 
 			available = v->bufe - v->bufs;
 			if(available < 0 ) available += BUFSIZE;
-			if(available < v->requested_samples) {
-//				debug_print("not enough available samples: %d (requested samples: %d)\n", available, v->requested_samples);
+			if(available < v->requested_samples)
 				continue;
-			}
 
 			debug_print("%d samples collected, doing demod\n", available);
 			demod(v);
@@ -387,7 +383,7 @@ int main(int argc, char **argv) {
 	int gain = RTL_AUTO_GAIN;
 	int correction = 0;
 	int opt;
-	char *optstring = 
+	char *optstring =
 #if USE_STATSD
 	"d:f:hHDg:o:p:S:";
 	char *statsd_addr;
@@ -464,7 +460,7 @@ int main(int argc, char **argv) {
 		_exit(3);
 	}
 #if USE_STATSD
-    if(statsd_enabled && freq != 0) {
+	if(statsd_enabled && freq != 0) {
 		if(statsd_initialize(statsd_addr) < 0) {
 				fprintf(stderr, "Failed to initialize statsd client\n");
 				_exit(4);
@@ -482,5 +478,3 @@ int main(int argc, char **argv) {
 	}
 	return(0);
 }
-
-// vim: ts=4

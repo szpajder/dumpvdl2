@@ -6,11 +6,9 @@
 #include "tlv.h"
 
 #define DUMPVDL2_VERSION "0.1.0rc"
-#define RS_K 249        // Reed-Solomon vector dimension (bytes)
-#define RS_N 255        // Reed-Solomon code length (bytes)
-#define RW 0
-#define BSLEN 32768UL		// FIXME
-#define OSLEN 8192UL		// FIXME
+#define RS_K 249        // Reed-Solomon vector length (bytes)
+#define RS_N 255        // Reed-Solomon codeword length (bytes)
+#define BSLEN 32768UL
 #define TRLEN 17
 #define CRCLEN 5
 #define HEADER_LEN (3+ TRLEN + CRCLEN)
@@ -19,9 +17,9 @@
 #define ONES(x) ~(~0 << x)
 #define ARITY 8
 #define SPS 10
-#define SYNC_SYMS 11							// number of symbols searched by correlate_and_sync()
+#define SYNC_SYMS 11				// number of symbols searched by correlate_and_sync()
 #define PREAMBLE_SYMS 16
-#define PREAMBLE_LEN (PREAMBLE_SYMS * BPS)		// preamble length in bits
+#define PREAMBLE_LEN (PREAMBLE_SYMS * BPS)	// preamble length in bits
 #define MAX_PREAMBLE_ERRORS 3
 #define RTL_BUFSIZE 320000
 #define RTL_BUFCNT 15
@@ -30,15 +28,12 @@
 #define RTL_RATE (SYMBOL_RATE * SPS * RTL_OVERSAMPLE)
 #define RTL_AUTO_GAIN -100
 #define CSC_FREQ 136975000U
-// FIXME
 #define BUFSIZE (1000 * SPS)
 #define MAG_LP 0.9f
 #define DPHI_LP 0.9f
 #define NF_LP 0.97f
 #define IQ_LP 0.95f
 
-/* #define debug_print(fmt, ...) \
-	do { if (DEBUG) fprintf(debugf, "%s(): " fmt, __func__, __VA_ARGS__); fflush(debugf); } while (0) */
 #define debug_print(fmt, ...) \
 	do { if (DEBUG) fprintf(stderr, "%s(): " fmt, __func__, __VA_ARGS__); } while (0)
 #define debug_print_buf_hex2(prefix, buf, len) \
@@ -78,7 +73,7 @@ enum demod_states { DM_INIT, DM_SYNC, DM_IDLE };
 enum decoder_states { DEC_PREAMBLE, DEC_HEADER, DEC_DATA, DEC_IDLE };
 typedef struct {
 	float mag_buf[BUFSIZE];
-	float mag_lpbuf[BUFSIZE];		// FIXME: skasowac po upewnieniu sie ze dziala poprawnie
+	float mag_lpbuf[BUFSIZE];		// temporary for testing
 	float I[BUFSIZE];
 	float Q[BUFSIZE];
 	float pI, pQ;
@@ -86,7 +81,7 @@ typedef struct {
 	float mag_nf;
 	float mag_frame;
 	float dphi;
-	int sq;							// potrzebne?
+	int sq;
 	int bufs, bufe;
 	int sclk;
 	enum demod_states demod_state;
@@ -94,7 +89,6 @@ typedef struct {
 	uint32_t requested_samples;
 	uint32_t requested_bits;
 	bitstream_t *bs;
-	uint32_t symcnt;				// skasowac po testach
 	uint32_t datalen, datalen_octets, last_block_len_octets, fec_octets;
 	uint32_t num_blocks;
 	uint16_t lfsr;
@@ -154,5 +148,3 @@ void *xrealloc(void *ptr, size_t size, const char *file, const int line, const c
 char *fmt_hexstring(uint8_t *data, uint16_t len);
 char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len);
 char *fmt_bitfield(uint8_t val, const dict *d);
-
-// vim: ts=4

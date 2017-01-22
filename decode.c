@@ -45,7 +45,6 @@ uint32_t check_crc(uint32_t v, uint32_t check) {
 	int i;
 	for(i = 0; i < CRCLEN; i++) {
 		row = v & H[i];
-//		debug_print("row %d: 0x%x sum=%d\n", i, row, parity(row));
 		r |= (parity(row)) << (CRCLEN - 1 - i);
 	}
 	debug_print("crc: read 0x%x calculated 0x%x\n", check, r);
@@ -170,7 +169,7 @@ void decode_vdl_frame(vdl2_state_t *v) {
 			fprintf(stderr, "%s", "calloc(fec) failed\n");
 			_exit(1);
 		}
-		if(bitstream_read_lsbfirst(v->bs, fec, v->fec_octets, 8) < 0) {		// no padding allowed
+		if(bitstream_read_lsbfirst(v->bs, fec, v->fec_octets, 8) < 0) {
 			debug_print("%s", "FEC data truncated\n");
 			statsd_increment("decoder.errors.fec_truncated");
 			goto cleanup;
@@ -250,7 +249,7 @@ void decode_vdl_frame(vdl2_state_t *v) {
 		debug_print("stream OK after unstuffing, datalen_octets was %u now is %u\n", v->datalen_octets, ((v->bs->end - v->bs->start) / 8));
 		v->datalen_octets = (v->bs->end - v->bs->start) / 8;
 
-		memset(data, 0, v->datalen_octets * sizeof(uint8_t));		// FIXME: is this really needed?
+		memset(data, 0, v->datalen_octets * sizeof(uint8_t));
 		if(bitstream_read_lsbfirst(v->bs, data, v->datalen_octets, 8) < 0) {
 			debug_print("%s", "bitstream_read_lsbfirst failed\n");
 			statsd_increment("decoder.errors.bitstream");
@@ -269,4 +268,3 @@ cleanup:
 		return;
 	}
 }
-// vim: ts=4

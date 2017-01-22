@@ -335,7 +335,7 @@ void output_x25(x25_pkt_t *pkt) {
 		}
 		break;
 	case X25_CLEAR_REQUEST:
-		fprintf(outf,  "Cause: %02x\nDiagnostic code: %02x\n", pkt->clr_cause, pkt->diag_code);
+		fprintf(outf, "Cause: %02x\nDiagnostic code: %02x\n", pkt->clr_cause, pkt->diag_code);
 		break;
 	}
 }

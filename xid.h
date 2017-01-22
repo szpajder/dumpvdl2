@@ -1,9 +1,10 @@
 #include "tlv.h"
-#define XID_FMT_ID 0x82
-#define XID_GID_PUBLIC 0x80
-#define XID_GID_PRIVATE 0xF0
-#define XID_MIN_GROUPLEN 3	// group_id + group_len (0)
+#define XID_FMT_ID		0x82
+#define XID_GID_PUBLIC		0x80
+#define XID_GID_PRIVATE		0xF0
+#define XID_MIN_GROUPLEN	3	// group_id + group_len (0)
 #define XID_MIN_LEN (1 + 2 * XID_MIN_GROUPLEN)	// XID fmt + empty pub group + empty priv group
+#define XID_PARAM_CONN_MGMT	1
 
 struct xid_descr {
 	char *name;

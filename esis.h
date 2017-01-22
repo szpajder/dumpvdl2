@@ -2,7 +2,7 @@
 #include <endian.h>
 #include "tlv.h"
 
-#define ESIS_HDR_LEN 9
+#define ESIS_HDR_LEN		9
 #define ESIS_PDU_TYPE_ESH	2
 #define ESIS_PDU_TYPE_ISH	4
 /* REDIRECT PDU not used in ATN (ICAO 9705 5.8.2.1.4) */

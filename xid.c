@@ -5,6 +5,7 @@
 #include "dumpvdl2.h"
 #include "tlv.h"
 #include "xid.h"
+
 // list indexed with a bitfield consisting of:
 // 4. C/R bit value
 // 3. P/F bit value
@@ -215,7 +216,7 @@ xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len) {
 	}
 // find connection management parameter to figure out the XID type
 	uint8_t cm;
-	tlv_list_t *tmp = tlv_list_search(msg->vdl_params, 0x1);	// FIXME: constant
+	tlv_list_t *tmp = tlv_list_search(msg->vdl_params, XID_PARAM_CONN_MGMT);
 	if(tmp != NULL && tmp->len > 0)
 		cm = (tmp->val)[0];
 	else

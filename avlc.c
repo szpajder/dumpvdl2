@@ -8,14 +8,16 @@
 #include "acars.h"
 #include "x25.h"
 
-/* Link layer address parsing routine
+/*
+ * Link layer address parsing routine
  * buf - data buffer pointer
  * final - shall be set to 1 if this is the source address (ie. the final field
  * in the address part of the frame), 0 otherwise
  */
 int parse_dlc_addr(uint8_t *buf, avlc_addr_t *a, uint8_t final) {
 	debug_print("%02x %02x %02x %02x\n", buf[0], buf[1], buf[2], buf[3]);
-/* Validate address field:
+/*
+ * Validate address field:
  * - LSBs of buf[0]-buf[2] must be 0
  * - LSB of buf[3] must be equal to final
  */
@@ -25,7 +27,6 @@ int parse_dlc_addr(uint8_t *buf, avlc_addr_t *a, uint8_t final) {
 		return -1;
 	}
 	a->val = reverse((buf[0] >> 1) | (buf[1] << 6) | (buf[2] << 13) | ((buf[3] & 0xfe) << 20), 28) & ONES(28);
-//	debug_print("   Raw:    addr : 0x%6x type=0x%x A/G=%x\n", a->val & ONES(24), (a->val & 0x7000000) >> 24, (a->val & 0x8000000) >> 27);
 	debug_print("Struct: addr : 0x%6x type=0x%x A/G=%x\n", a->a_addr.addr, a->a_addr.type, a->a_addr.status);
 	return 0;
 }
@@ -86,7 +87,7 @@ void parse_avlc(vdl2_state_t *v, uint8_t *buf, uint32_t len) {
 	frame.data_valid = 0;
 	frame.data = NULL;
 	if(IS_S(frame.lcf)) {
-
+		/* TODO */
 	} else if(IS_U(frame.lcf)) {
 		switch(U_MFUNC(frame.lcf)) {
 		case XID:
@@ -142,6 +143,5 @@ next:
 		frame_start = frame_end + 1;
 		fcnt++;
 	}
-	debug_print("%u/%u good frames parsed\n", goodfcnt, fcnt);
+	debug_print("%u/%u frames processed\n", goodfcnt, fcnt);
 }
-// vim: ts=4

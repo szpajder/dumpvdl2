@@ -46,4 +46,3 @@ uint16_t crc16_ccitt(uint8_t *data, uint32_t len) {
 	}
 	return crc ^ CRC_XOROUT;
 }
-// vim: ts=4

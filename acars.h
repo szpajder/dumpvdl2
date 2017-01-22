@@ -1,6 +1,6 @@
 #include <stdint.h>
-#define MIN_ACARS_LEN 16	// including CRC and DEL
-#define ACARSMSG_BUFSIZE 2048
+#define MIN_ACARS_LEN		16	// including CRC and DEL
+#define ACARSMSG_BUFSIZE	2048
 
 typedef struct {
 	uint8_t mode;
@@ -15,4 +15,3 @@ typedef struct {
 } acars_msg_t;
 
 acars_msg_t *parse_acars(uint8_t *buf, uint32_t len);
-// vim: ts=4
