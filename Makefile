@@ -14,7 +14,6 @@ OBJ =	acars.o \
 	clnp.o \
 	crc.o \
 	decode.o \
-	deinterleave.o \
 	esis.o \
 	idrp.o \
 	output.o \
@@ -45,8 +44,6 @@ clnp.o: dumpvdl2.h clnp.h idrp.h
 decode.o: dumpvdl2.h
 
 bitstream.o: dumpvdl2.h
-
-deinterleave.o: dumpvdl2.h
 
 esis.o: dumpvdl2.h esis.h tlv.h
 
