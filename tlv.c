@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <assert.h>
 #include <stdlib.h>
 #include "tlv.h"
 #include "dumpvdl2.h"
@@ -35,7 +34,6 @@ tlv_list_t *tlv_list_search(tlv_list_t *ptr, uint8_t type) {
 }
 
 tlv_list_t *tlv_deserialize(uint8_t *buf, uint16_t len, uint8_t len_octets) {
-	assert(buf);
 	tlv_list_t *head = NULL;
 	uint8_t *ptr = buf;
 	uint8_t tlv_min_paramlen = 1 + len_octets;	/* code + <len_octets> length field + empty data field */

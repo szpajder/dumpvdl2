@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include "esis.h"
 #include "dumpvdl2.h"
 #include "tlv.h"

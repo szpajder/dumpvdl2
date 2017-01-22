@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <string.h>
 #include <time.h>
 #include <errno.h>
@@ -58,7 +57,6 @@ static size_t prefix_len;
 static struct tm current_tm;
 
 static int open_outfile() {
-	assert(filename_prefix);
 	char *filename, *fmt;
 	size_t tlen;
 
@@ -92,7 +90,6 @@ static int open_outfile() {
 }
 
 int init_output_file(char *file) {
-	assert(file);
 	if(!strcmp(file, "-")) {
 		outf = stdout;
 	} else {
@@ -115,7 +112,6 @@ static int rotate_outfile() {
 }
 
 static void output_acars(const acars_msg_t *msg) {
-	assert(msg);
 	fprintf(outf, "ACARS:\n");
 	if(msg->mode < 0x5d)
 		fprintf(outf, "Aircraft reg: %s Flight: %s\n", msg->reg, msg->fid);

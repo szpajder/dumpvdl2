@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
-#include <assert.h>
 #include "idrp.h"
 #include "dumpvdl2.h"
 #include "tlv.h"
@@ -279,7 +278,6 @@ print_err_payload:
 void output_idrp(idrp_pdu_t *pdu) {
 	idrp_hdr_t *hdr = pdu->hdr;
 	char *bispdu_name = (char *)dict_search(bispdu_types, hdr->type);
-	assert(bispdu_name);
 	fprintf(outf, "IDRP %s: seq=%u ack=%u credit_offered=%u credit_avail=%u\n",
 		bispdu_name, ntohl(hdr->seq), ntohl(hdr->ack), hdr->coff, hdr->cavail);
 	switch(pdu->hdr->type) {

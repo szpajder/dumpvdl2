@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <assert.h>
 #include <string.h>
 #include <errno.h>
 #include "dumpvdl2.h"
@@ -23,9 +22,6 @@ void bitstream_reset(bitstream_t *bs) {
 }
 
 int bitstream_append_msbfirst(bitstream_t *bs, const uint8_t *v, const uint32_t numbytes, const uint32_t numbits) {
-	assert(bs);
-	assert(numbits > 0 || numbits <= CHAR_BIT);
-	assert(numbytes > 0);
 	if(bs->end + numbits * numbytes > bs->len)
 		return -1;
 	for(int i = 0; i < numbytes; i++) {
@@ -37,8 +33,6 @@ int bitstream_append_msbfirst(bitstream_t *bs, const uint8_t *v, const uint32_t 
 }
 
 int bitstream_append_lsbfirst(bitstream_t *bs, const uint8_t *bytes, const uint32_t numbytes, const uint32_t numbits) {
-	assert(bs);
-	assert(numbytes > 0);
 	if(bs->end + numbits * numbytes > bs->len)
 		 return -1;
 	for(int i = 0; i < numbytes; i++) {
@@ -50,8 +44,6 @@ int bitstream_append_lsbfirst(bitstream_t *bs, const uint8_t *bytes, const uint3
 }
 
 int bitstream_read_lsbfirst(bitstream_t *bs, uint8_t *bytes, const uint32_t numbytes, const uint32_t numbits) {
-	assert(bs);
-	assert(numbytes > 0);
 	if(bs->start + numbits * numbytes > bs->end)
 		 return -1;
 	for(uint32_t i = 0; i < numbytes; i++) {
@@ -64,7 +56,6 @@ int bitstream_read_lsbfirst(bitstream_t *bs, uint8_t *bytes, const uint32_t numb
 }
 
 int bitstream_read_word_msbfirst(bitstream_t *bs, uint32_t *ret, const uint32_t numbits) {
-	assert(bs);
 	if(bs->start + numbits > bs->end)
 		return -1;
 	*ret = 0;
@@ -79,8 +70,6 @@ void bitstream_descramble(bitstream_t *bs, uint16_t *lfsr) {
 	uint8_t bit;
 	int i;
 
-	assert(bs);
-	assert(bs->descrambler_pos < bs->end);
 	if(bs->descrambler_pos < bs->start)
 		bs->descrambler_pos = bs->start;
 	for(i = bs->descrambler_pos; i < bs->end; i++) {
@@ -102,7 +91,7 @@ int bitstream_hdlc_unstuff(bitstream_t *bs) {
 			ones++;
 			if(ones > 6)		// 7 ones - invalid bit sequence
 				return -1;
-		} else {				// bs->buf[i] == 0
+		} else {			// bs->buf[i] == 0
 			if(ones == 5) {		// stuffed 0 bit - skip it
 				ones = 0;
 				continue;

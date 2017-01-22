@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include "dumpvdl2.h"
 #include "x25.h"
 #include "clnp.h"
@@ -66,7 +65,6 @@ static char *fmt_x25_addr(uint8_t *data, uint8_t len) {
 
 
 static int parse_x25_address_block(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
-	assert(pkt);
 	if(len == 0) return -1;
 	uint8_t calling_len = (*buf & 0xf0) >> 4;	// nibbles
 	uint8_t called_len = *buf & 0x0f;		// nibbles
@@ -103,7 +101,6 @@ static int parse_x25_address_block(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
 }
 
 static int parse_x25_callreq_sndcf(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
-	assert(pkt);
 	if(len < 2) return -1;
 	if(*buf != X25_SNDCF_ID) {
 		debug_print("%s", "SNDCF identifier not found\n");
@@ -124,7 +121,6 @@ static int parse_x25_callreq_sndcf(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
 }
 
 static int parse_x25_facility_field(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
-	assert(pkt);
 	if(len == 0) return -1;
 	uint8_t fac_len = *buf;
 	buf++; len--;
@@ -278,7 +274,6 @@ x25_pkt_t *parse_x25(uint8_t *buf, uint32_t len) {
 
 void output_x25(x25_pkt_t *pkt) {
 	char *name = (char *)dict_search(x25_pkttype_names, pkt->type);
-	assert(name);
 	fprintf(outf, "X.25: %s (grp=%u chan=%u)", name, pkt->hdr->chan_group, pkt->hdr->chan_num);
 	if(pkt->addr_block_present) {
 		fprintf(outf, ": %s -> %s",
