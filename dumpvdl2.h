@@ -119,6 +119,7 @@ int deinterleave(uint8_t *in, uint32_t len, uint32_t rows, uint32_t cols, uint8_
 // avlc.c
 void parse_avlc_frames(vdl2_state_t *v, uint8_t *buf, uint32_t len);
 int parse_dlc_addr(uint8_t *buf, avlc_addr_t *a, uint8_t final);
+void output_avlc(vdl2_state_t *v, const avlc_frame_t *f);
 
 // rs.c
 int rs_init();
@@ -129,7 +130,7 @@ void rs_encode(uint8_t *data, uint8_t *parity);
 extern FILE *outf;
 extern uint8_t hourly, daily;
 int init_output_file(char *file);
-void output_avlc(vdl2_state_t *v, const avlc_frame_t *f);
+int rotate_outfile();
 void output_raw(uint8_t *buf, uint32_t len);
 
 // statsd.c

@@ -15,3 +15,4 @@ typedef struct {
 } acars_msg_t;
 
 acars_msg_t *parse_acars(uint8_t *buf, uint32_t len);
+void output_acars(const acars_msg_t *msg);
