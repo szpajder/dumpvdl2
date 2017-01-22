@@ -4,8 +4,11 @@ CC = gcc
 # TODO: -O3, -ffast-math?
 CFLAGS = -std=c99 -g -Wall -D_XOPEN_SOURCE=500 -DDEBUG=$(DEBUG) -DUSE_STATSD=$(USE_STATSD)
 LDLIBS = -lfec -lm -lrtlsdr
+LDFLAGS = -Llibfec
+SUBDIRS = libfec
+CLEANDIRS = $(SUBDIRS:%=clean-%)
 BIN = dumpvdl2
-DEPS =	acars.o \
+OBJ =	acars.o \
 	avlc.o \
 	bitstream.o \
 	clnp.o \
@@ -22,16 +25,20 @@ DEPS =	acars.o \
 	xid.o \
 	util.o
 
+FEC = libfec/libfec.a
+DEPS = $(OBJ) $(FEC)
 ifeq ($(USE_STATSD), 1)
   DEPS += statsd.o
   LDLIBS += -lstatsdclient
 endif
 
-.PHONY = all clean
+.PHONY: all clean $(SUBDIRS) $(CLEANDIRS)
 
 all: $(BIN)
 
 $(BIN): $(DEPS)
+
+$(FEC): libfec ;
 
 clnp.o: dumpvdl2.h clnp.h idrp.h
 
@@ -45,7 +52,7 @@ esis.o: dumpvdl2.h esis.h tlv.h
 
 idrp.o: dumpvdl2.h idrp.h tlv.h
 
-rs.o: dumpvdl2.h
+rs.o: dumpvdl2.h fec.h
 
 dumpvdl2.o: dumpvdl2.h
 
@@ -59,7 +66,13 @@ tlv.o: tlv.h dumpvdl2.h
 
 xid.o: dumpvdl2.h tlv.h
 
-x25.o: dumpvdl2.h clnp.h tlv.h x25.h
+x25.o: dumpvdl2.h clnp.h esis.h tlv.h x25.h
 
-clean:
+$(SUBDIRS):
+	$(MAKE) -C $@
+
+$(CLEANDIRS):
+	$(MAKE) -C $(@:clean-%=%) clean
+
+clean: $(CLEANDIRS)
 	rm -f *.o $(BIN)

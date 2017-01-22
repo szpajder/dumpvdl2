@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <fec.h>
+#include "fec.h"
 #include "dumpvdl2.h"
 
 void *rs;
