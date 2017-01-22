@@ -11,17 +11,8 @@
 bitstream_t *bitstream_init(uint32_t len) {
 	bitstream_t *ret;
 	if(len == 0) return NULL;
-	ret = calloc(1, sizeof(bitstream_t));
-	if(ret == NULL) {
-		debug_print("calloc 1 failed %s\n", strerror(errno));
-		return NULL;
-	}
-	ret->buf = calloc(len, sizeof(uint8_t));
-	if(ret->buf == NULL) {
-		free(ret);
-		debug_print("calloc 2 failed %s\n", strerror(errno));
-		return NULL;
-	}
+	ret = XCALLOC(1, sizeof(bitstream_t));
+	ret->buf = XCALLOC(len, sizeof(uint8_t));
 	ret->start = ret->end = ret->descrambler_pos = 0;
 	ret->len = len;
 	return ret;

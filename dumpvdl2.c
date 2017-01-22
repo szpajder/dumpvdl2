@@ -342,14 +342,8 @@ void process_file(void *ctx, char *path) {
 
 vdl2_state_t *vdl2_init() {
 	vdl2_state_t *v;
-	v = calloc(1, sizeof(vdl2_state_t));
-	if(v == NULL) return NULL;
+	v = XCALLOC(1, sizeof(vdl2_state_t));
 	v->bs = bitstream_init(BSLEN);
-	if(v->bs == NULL) {
-		debug_print("%s", "bitstream_init failed\n");
-		free(v);
-		return NULL;
-	}
 	v->mag_nf = 100.0f;
 	demod_reset(v);
 	return v;

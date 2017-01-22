@@ -154,21 +154,13 @@ void decode_vdl_frame(vdl2_state_t *v) {
 		return;
 	case DEC_DATA:
 		bitstream_descramble(v->bs, &v->lfsr);
-		uint8_t *data = (uint8_t *)calloc(v->datalen_octets, sizeof(uint8_t));
-		if(data == NULL) {
-			fprintf(stderr, "%s", "calloc(data) failed\n");
-			_exit(1);
-		}
+		uint8_t *data = XCALLOC(v->datalen_octets, sizeof(uint8_t));
 		if(bitstream_read_lsbfirst(v->bs, data, v->datalen_octets, 8) < 0) {
 			debug_print("%s", "Frame data truncated\n");
 			statsd_increment("decoder.errors.data_truncated");
 			goto cleanup;
 		}
-		uint8_t *fec = calloc(v->fec_octets, sizeof(uint8_t));
-		if(fec == NULL) {
-			fprintf(stderr, "%s", "calloc(fec) failed\n");
-			_exit(1);
-		}
+		uint8_t *fec = XCALLOC(v->fec_octets, sizeof(uint8_t));
 		if(bitstream_read_lsbfirst(v->bs, fec, v->fec_octets, 8) < 0) {
 			debug_print("%s", "FEC data truncated\n");
 			statsd_increment("decoder.errors.fec_truncated");

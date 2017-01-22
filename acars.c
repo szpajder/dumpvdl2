@@ -18,13 +18,6 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len) {
 	static acars_msg_t *msg = NULL;
 	int i;
 
-	if(msg == NULL) {
-		msg = calloc(1, sizeof(acars_msg_t));
-		if(msg == NULL) {
-			fprintf(stderr, "parse_acars: calloc failed\n");
-			_exit(1);
-		}
-	}
 	if(len < MIN_ACARS_LEN) {
 		debug_print("too short: %u < %u\n", len, MIN_ACARS_LEN);
 		return NULL;
@@ -39,7 +32,10 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len) {
 		return NULL;
 	}
 	len -= 4;
-	memset(msg, 0, sizeof(acars_msg_t));
+	if(msg == NULL)
+		msg = XCALLOC(1, sizeof(acars_msg_t));
+	else
+		memset(msg, 0, sizeof(acars_msg_t));
 
 	for(i = 0; i < len; i++)
 		buf[i] &= 0x7f;
