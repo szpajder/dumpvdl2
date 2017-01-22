@@ -218,10 +218,6 @@ void decode_vdl_frame(vdl2_state_t *v) {
 					if(ret > 0)
 						debug_print_buf_hex(rs_tab[r], RS_N, "Corrected block %d:\n", r);
 				}
-				uint8_t rs_parity[RS_N-RS_K];
-				memset(rs_parity, 0, sizeof(parity));
-				rs_encode((uint8_t *)&rs_tab[r], rs_parity);
-				debug_print_buf_hex(rs_parity, sizeof(rs_parity), "%s", "Calculated FEC:\n");
 				
 				if(r != v->num_blocks - 1)
 					ret = bitstream_append_lsbfirst(v->bs, (uint8_t *)&rs_tab[r], RS_K, 8);

@@ -29,7 +29,3 @@ int rs_verify(uint8_t *data, int fec_octets) {
 	}
 	return ret;
 }
-
-void rs_encode(uint8_t *data, uint8_t *parity) {
-	encode_rs_char(rs, data, parity);
-}
