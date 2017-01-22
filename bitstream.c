@@ -58,60 +58,9 @@ int bitstream_append_lsbfirst(bitstream_t *bs, const uint8_t *bytes, const uint3
 	return 0;
 }
 
-int bitstream_read_msbfirst(bitstream_t *bs, uint8_t *bytes, const uint32_t numbytes, const uint32_t numbits) {
-	assert(bs);
-	assert(numbytes > 0);
-	if(bs->start + numbits * numbytes > bs->end)
-		 return -1;
-	for(uint32_t i = 0; i < numbytes; i++) {
-		bytes[i] = 0x00;
-		for(uint32_t j = 0; j < numbits; j++) {
-			bytes[i] |= (0x01 & bs->buf[bs->start++]) << (numbits-j-1);
-		}
-	}
-	return 0;
-}
-
-int bitstream_read_msbfirst2(bitstream_t *bs, uint8_t *bytes, const uint32_t numreadbits, const uint32_t numbits) {
-	assert(bs);
-	assert(numreadbits > 0);
-	debug_print("start=%u + numreadbits=%u = %u (bs->end=%u)\n", bs->start , numreadbits, bs->start+numreadbits, bs->end);
-	if(bs->start + numreadbits > bs->end)
-		 return -1;
-	int n = 0, j = 0;
-	bytes[0] = 0x00;
-	for(uint32_t i = 0; i < numreadbits; i++) {
-		bytes[n] |= (0x01 & bs->buf[bs->start++]) << (numbits-j-1);
-		j++;
-		if(j == numbits) {
-			j = 0;
-			bytes[++n] = 0x00;
-		}
-	}
-	return 0;
-}
-
-int bitstream_read_msbfirst_pad(bitstream_t *bs, uint8_t *bytes, const uint32_t numbytes, const uint32_t numbits) {
-	assert(bs);
-	assert(numbytes > 0);
-	int npadding = numbits * numbytes - (bs->end - bs->start);
-	if(npadding < 0) npadding = 0;
-	for(uint32_t i = 0; i < numbytes; i++) {
-		bytes[i] = 0x00;
-		uint32_t j = 0;
-		while(bs->start < bs->end && j < numbits) {
-			bytes[i] |= (0x01 & bs->buf[bs->start++]) << (numbits-j-1);
-			j++;
-		}
-	}
-// FIXME: trzeba wyzerowac bajty wyjsciowe az do numbytes-1
-	return npadding;
-}
-
 int bitstream_read_lsbfirst(bitstream_t *bs, uint8_t *bytes, const uint32_t numbytes, const uint32_t numbits) {
 	assert(bs);
 	assert(numbytes > 0);
-// FIXME: padding zerami, gdy zabraknie danych?
 	if(bs->start + numbits * numbytes > bs->end)
 		 return -1;
 	for(uint32_t i = 0; i < numbytes; i++) {
@@ -147,7 +96,6 @@ void bitstream_descramble(bitstream_t *bs, uint16_t *lfsr) {
 		/* LFSR length: 15; feedback polynomial: x^15 + x + 1 */
 		bit  = ((*lfsr >> 0) ^ (*lfsr >> 14)) & 1;
 		*lfsr =  (*lfsr >> 1) | (bit << 14);
-//		debug_print("lfsr: bit: %u state: %x\n", bit, *lfsr);
 		bs->buf[i] ^= bit;
 	}
 	debug_print("descrambled from %u to %u\n", bs->descrambler_pos, bs->end-1);
@@ -178,18 +126,16 @@ int bitstream_hdlc_unstuff(bitstream_t *bs) {
 }
 
 uint32_t reverse(uint32_t v, int numbits) {
-	uint32_t vv = v;
 	uint32_t r = v; // r will be reversed bits of v; first get LSB of v
 	int s = sizeof(v) * CHAR_BIT - 1; // extra shift needed at end
 
-	for (v >>= 1; v; v >>= 1) {   
+	for (v >>= 1; v; v >>= 1) {
 	  r <<= 1;
 	  r |= v & 1;
 	  s--;
 	}
 	r <<= s; // shift when v's highest bits are zero
 	r >>= 32 - numbits;
-	debug_print("0x%x -> 0x%x\n", vv, r);
 	return r;
 }
 

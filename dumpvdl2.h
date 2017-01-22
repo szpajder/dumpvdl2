@@ -102,14 +102,9 @@ typedef struct {
 } vdl2_state_t;
 
 // bitstream.c
-// FIXME: wykasowac, czego nie uzywamy
 bitstream_t *bitstream_init(uint32_t len);
 int bitstream_append_msbfirst(bitstream_t *bs, const uint8_t *v, const uint32_t numbytes, const uint32_t numbits);
 int bitstream_append_lsbfirst(bitstream_t *bs, const uint8_t *bytes, const uint32_t numbytes, const uint32_t numbits);
-int bitstream_read_msbfirst(bitstream_t *bs, uint8_t *bytes, const uint32_t numbytes, const uint32_t numbits);
-// FIXME: rename
-int bitstream_read_msbfirst2(bitstream_t *bs, uint8_t *bytes, const uint32_t numreadbits, const uint32_t numbits);
-int bitstream_read_msbfirst_pad(bitstream_t *bs, uint8_t *bytes, const uint32_t numbytes, const uint32_t numbits);
 int bitstream_read_lsbfirst(bitstream_t *bs, uint8_t *bytes, const uint32_t numbytes, const uint32_t numbits);
 int bitstream_read_word_msbfirst(bitstream_t *bs, uint32_t *ret, const uint32_t numbits);
 int bitstream_hdlc_unstuff(bitstream_t *bs);
