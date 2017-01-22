@@ -8,7 +8,7 @@
 #include <math.h>
 #include <errno.h>
 #include <rtl-sdr.h>
-#include "rtlvdl2.h"
+#include "dumpvdl2.h"
 
 const uint8_t graycode[ARITY] = { 0, 1, 3, 2, 6, 7, 5, 4 };
 static rtlsdr_dev_t *rtl = NULL;
@@ -360,9 +360,9 @@ vdl2_state_t *vdl2_init() {
 }
 
 void usage() {
-	fprintf(stderr, "RTLVDL2 version %s\n", RTLVDL2_VERSION);
-	fprintf(stderr, "Usage: rtlvdl2 [common_options] [[rtlsdr_options] [<frequency_in_Hz>]]\n");
-	fprintf(stderr, "       rtlvdl2 [common_options] -f <input_file>\n");
+	fprintf(stderr, "DUMPVDL2 version %s\n", DUMPVDL2_VERSION);
+	fprintf(stderr, "Usage: dumpvdl2 [common_options] [[rtlsdr_options] [<frequency_in_Hz>]]\n");
+	fprintf(stderr, "       dumpvdl2 [common_options] -f <input_file>\n");
 	fprintf(stderr, "\ncommon_options:\n");
 	fprintf(stderr, "\t-o <output_file>\tOutput decoded frames to <output_file> (default: stdout)\n");
 	fprintf(stderr, "\t-H\t\t\tRotate output file hourly\n");

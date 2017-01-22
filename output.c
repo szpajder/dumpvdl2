@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <math.h>
 #include <unistd.h>
-#include "rtlvdl2.h"
+#include "dumpvdl2.h"
 #include "avlc.h"
 #include "acars.h"
 #include "xid.h"

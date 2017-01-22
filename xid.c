@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include "rtlvdl2.h"
+#include "dumpvdl2.h"
 #include "tlv.h"
 #include "xid.h"
 // list indexed with a bitfield consisting of:

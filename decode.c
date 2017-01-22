@@ -8,7 +8,7 @@
 #if USE_STATSD
 #include <sys/time.h>
 #endif
-#include "rtlvdl2.h"
+#include "dumpvdl2.h"
 
 static const uint32_t H[CRCLEN] = { 0x00FFF, 0x3F0FF, 0xC730F, 0xDB533, 0x69E55 };
 static const uint8_t preamble_bits[PREAMBLE_SYMS*BPS] = {

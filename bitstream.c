@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <string.h>
 #include <errno.h>
-#include "rtlvdl2.h"
+#include "dumpvdl2.h"
 
 bitstream_t *bitstream_init(uint32_t len) {
 	bitstream_t *ret;

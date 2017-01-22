@@ -4,7 +4,7 @@ CC = gcc
 # TODO: -O3, -ffast-math?
 CFLAGS = -std=c99 -g -Wall -D_XOPEN_SOURCE=500 -DDEBUG=$(DEBUG) -DUSE_STATSD=$(USE_STATSD)
 LDLIBS = -lfec -lm -lrtlsdr
-BIN = rtlvdl2
+BIN = dumpvdl2
 DEPS =	acars.o \
 	avlc.o \
 	bitstream.o \
@@ -16,7 +16,7 @@ DEPS =	acars.o \
 	idrp.o \
 	output.o \
 	rs.o \
-	rtlvdl2.o \
+	dumpvdl2.o \
 	tlv.o \
 	x25.o \
 	xid.o \
@@ -33,33 +33,33 @@ all: $(BIN)
 
 $(BIN): $(DEPS)
 
-clnp.o: rtlvdl2.h clnp.h idrp.h
+clnp.o: dumpvdl2.h clnp.h idrp.h
 
-decode.o: rtlvdl2.h
+decode.o: dumpvdl2.h
 
-bitstream.o: rtlvdl2.h
+bitstream.o: dumpvdl2.h
 
-deinterleave.o: rtlvdl2.h
+deinterleave.o: dumpvdl2.h
 
-esis.o: rtlvdl2.h esis.h tlv.h
+esis.o: dumpvdl2.h esis.h tlv.h
 
-idrp.o: rtlvdl2.h idrp.h tlv.h
+idrp.o: dumpvdl2.h idrp.h tlv.h
 
-rs.o: rtlvdl2.h
+rs.o: dumpvdl2.h
 
-rtlvdl2.o: rtlvdl2.h
+dumpvdl2.o: dumpvdl2.h
 
-avlc.o: rtlvdl2.h avlc.h
+avlc.o: dumpvdl2.h avlc.h
 
-acars.o: rtlvdl2.h acars.h
+acars.o: dumpvdl2.h acars.h
 
 output.o: avlc.h acars.h
 
-tlv.o: tlv.h rtlvdl2.h
+tlv.o: tlv.h dumpvdl2.h
 
-xid.o: rtlvdl2.h tlv.h
+xid.o: dumpvdl2.h tlv.h
 
-x25.o: rtlvdl2.h clnp.h tlv.h x25.h
+x25.o: dumpvdl2.h clnp.h tlv.h x25.h
 
 clean:
 	rm -f *.o $(BIN)

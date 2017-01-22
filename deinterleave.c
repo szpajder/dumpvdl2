@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "rtlvdl2.h"
+#include "dumpvdl2.h"
 
 int deinterleave(uint8_t *in, uint32_t len, uint32_t rows, uint32_t cols, uint8_t out[][cols], uint32_t fillwidth, uint32_t offset) {
 	if(rows == 0 || cols == 0 || fillwidth == 0)

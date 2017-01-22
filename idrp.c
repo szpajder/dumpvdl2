@@ -5,7 +5,7 @@
 #include <arpa/inet.h>
 #include <assert.h>
 #include "idrp.h"
-#include "rtlvdl2.h"
+#include "dumpvdl2.h"
 #include "tlv.h"
 
 static const dict bispdu_types[] = {

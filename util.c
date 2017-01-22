@@ -4,7 +4,7 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
-#include "rtlvdl2.h"
+#include "dumpvdl2.h"
 #include "tlv.h"
 
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func) {

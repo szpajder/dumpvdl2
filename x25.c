@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "rtlvdl2.h"
+#include "dumpvdl2.h"
 #include "x25.h"
 #include "clnp.h"
 #include "esis.h"

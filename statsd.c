@@ -5,9 +5,9 @@
 #include <string.h>
 #include <sys/time.h>
 #include <statsd/statsd-client.h>
-#include "rtlvdl2.h"
+#include "dumpvdl2.h"
 
-#define STATSD_NAMESPACE "rtlvdl2"
+#define STATSD_NAMESPACE "dumpvdl2"
 static statsd_link *statsd = NULL;
 static uint32_t frequency = 0;
 

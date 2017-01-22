@@ -5,7 +5,7 @@
 #include "avlc.h"
 #include "tlv.h"
 
-#define RTLVDL2_VERSION "0.1.0rc"
+#define DUMPVDL2_VERSION "0.1.0rc"
 #define RS_K 249        // Reed-Solomon vector dimension (bytes)
 #define RS_N 255        // Reed-Solomon code length (bytes)
 #define RW 0

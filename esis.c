@@ -4,7 +4,7 @@
 #include <string.h>
 #include <assert.h>
 #include "esis.h"
-#include "rtlvdl2.h"
+#include "dumpvdl2.h"
 #include "tlv.h"
 
 const dict atn_traffic_types[] = {
