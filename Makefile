@@ -1,8 +1,7 @@
 export DEBUG ?= 1
 export USE_STATSD ?= 0
 CC = gcc
-# TODO: -O3, -ffast-math?
-CFLAGS = -std=c99 -g -Wall -D_XOPEN_SOURCE=500 -DDEBUG=$(DEBUG) -DUSE_STATSD=$(USE_STATSD)
+CFLAGS = -std=c99 -g -Wall -D_XOPEN_SOURCE=500 -DDEBUG=$(DEBUG) -DUSE_STATSD=$(USE_STATSD) -O3 -ffast-math
 LDLIBS = -lfec -lm -lrtlsdr
 LDFLAGS = -Llibfec
 SUBDIRS = libfec
