@@ -11,6 +11,7 @@
 #include "dumpvdl2.h"
 
 static rtlsdr_dev_t *rtl = NULL;
+static float levels[256];
 int do_exit = 0;
 
 void sighandler(int sig) {
@@ -114,6 +115,12 @@ void demod_reset(vdl2_state_t *v) {
 	v->requested_samples = SYNC_SYMS * SPS;
 }
 
+void levels_init() {
+	for (int i=0; i<256; i++) {
+		levels[i] = i-127.5f;
+	}
+}
+
 void demod(vdl2_state_t *v) {
 	static const uint8_t graycode[ARITY] = { 0, 1, 3, 2, 6, 7, 5, 4 };
 	float dI, dQ, dphi, phierr;
@@ -208,10 +215,12 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 	if(len == 0) return;
 	samplenum = -1;
 	for(i = 0; i < len;) {
+#if DEBUG
 		samplenum++;
+#endif
 
-		re = (float)buf[i] - 127.5f; i++;
-		im = (float)buf[i] - 127.5f; i++;
+		re = levels[buf[i]]; i++;
+		im = levels[buf[i]]; i++;
 // lowpass IIR
 		lp_re = IQ_LP * lp_re + iq_lp2 * re;
 		lp_im = IQ_LP * lp_im + iq_lp2 * im;
@@ -465,6 +474,7 @@ int main(int argc, char **argv) {
 	}
 #endif
 	setup_signals();
+	levels_init();
 	if(infile != NULL) {
 		process_file(ctx, infile);
 	} else {
