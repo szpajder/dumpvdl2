@@ -226,9 +226,9 @@ xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len) {
 }
 
 void output_xid(xid_msg_t *msg) {
-	fprintf(outf, "XID: type=0x%02x (%s - %s)\n", msg->type, xid_names[msg->type].name, xid_names[msg->type].description);
-	fprintf(outf, "Public parameters:\n");
+	fprintf(outf, "XID: %s\n", xid_names[msg->type].description);
+	fprintf(outf, "Public params:\n");
 	output_tlv(outf, msg->pub_params, xid_pub_params);
-	fprintf(outf, "VDL parameters:\n");
+	fprintf(outf, "VDL params:\n");
 	output_tlv(outf, msg->vdl_params, xid_vdl_params);
 }

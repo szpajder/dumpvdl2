@@ -278,7 +278,7 @@ print_err_payload:
 void output_idrp(idrp_pdu_t *pdu) {
 	idrp_hdr_t *hdr = pdu->hdr;
 	char *bispdu_name = (char *)dict_search(bispdu_types, hdr->type);
-	fprintf(outf, "IDRP %s: seq=%u ack=%u credit_offered=%u credit_avail=%u\n",
+	fprintf(outf, "IDRP %s: seq: %u ack: %u credit_offered: %u credit_avail: %u\n",
 		bispdu_name, ntohl(hdr->seq), ntohl(hdr->ack), hdr->coff, hdr->cavail);
 	switch(pdu->hdr->type) {
 	case BISPDU_TYPE_OPEN:

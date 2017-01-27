@@ -274,14 +274,14 @@ x25_pkt_t *parse_x25(uint8_t *buf, uint32_t len) {
 
 void output_x25(x25_pkt_t *pkt) {
 	char *name = (char *)dict_search(x25_pkttype_names, pkt->type);
-	fprintf(outf, "X.25: %s (grp=%u chan=%u)", name, pkt->hdr->chan_group, pkt->hdr->chan_num);
+	fprintf(outf, "X.25 %s: grp: %u chan: %u", name, pkt->hdr->chan_group, pkt->hdr->chan_num);
 	if(pkt->addr_block_present) {
-		fprintf(outf, ": %s -> %s",
+		fprintf(outf, " src: %s dst: %s",
 			fmt_x25_addr(pkt->calling.addr, pkt->calling.len),
 			fmt_x25_addr(pkt->called.addr, pkt->called.len)
 		);
 	} else if(pkt->type == X25_DATA) {
-		fprintf(outf, ": sseq=%u rseq=%u M=%u",
+		fprintf(outf, " sseq: %u rseq: %u more: %u",
 			pkt->hdr->type.data.sseq, pkt->hdr->type.data.rseq, pkt->hdr->type.data.more);
 	}
 	fprintf(outf, "\n");

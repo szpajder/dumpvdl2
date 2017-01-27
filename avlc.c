@@ -16,8 +16,8 @@ static const char *status_ag_descr[] = {
 };
 
 static const char *status_cr_descr[] = {
-	"Command frame",
-	"Response frame"
+	"Command",
+	"Response"
 };
 
 static const char *addrtype_descr[] = {
@@ -210,23 +210,22 @@ void output_avlc(vdl2_state_t *v, const avlc_frame_t *f) {
 	strftime(ftime, sizeof(ftime), "%F %T", localtime(&f->t));
 	float snr = 20.0f * log10f(v->mag_frame / (v->mag_nf + 0.001f));
 	fprintf(outf, "\n[%s] [%.2f:%.2f] [%.1f dB]\n", ftime, v->mag_frame, v->mag_nf, snr);
-	fprintf(outf, "%06X (%s, %s) -> %06X (%s): %s, CF: 0x%02x\n",
+	fprintf(outf, "%06X (%s, %s) -> %06X (%s): %s\n",
 		f->src.a_addr.addr,
 		addrtype_descr[f->src.a_addr.type],
 		status_ag_descr[f->dst.a_addr.status],	// A/G
 		f->dst.a_addr.addr,
 		addrtype_descr[f->dst.a_addr.type],
-		status_cr_descr[f->src.a_addr.status],	// C/R
-		f->lcf.val
+		status_cr_descr[f->src.a_addr.status]	// C/R
 	);
 	if(IS_S(f->lcf)) {
-		fprintf(outf, "S: sfunc=0x%x (%s) P/F=%x rseq=0x%x\n", f->lcf.S.sfunc, S_cmd[f->lcf.S.sfunc], f->lcf.S.pf, f->lcf.S.recv_seq);
+		fprintf(outf, "AVLC: type: S (%s) P/F: %x rseq: %x\n", S_cmd[f->lcf.S.sfunc], f->lcf.S.pf, f->lcf.S.recv_seq);
 		output_raw((uint8_t *)f->data, f->datalen);
 	} else if(IS_U(f->lcf)) {
-		fprintf(outf, "U: mfunc=%02x (%s) P/F=%x\n", U_MFUNC(f->lcf), U_cmd[U_MFUNC(f->lcf)], U_PF(f->lcf));
+		fprintf(outf, "AVLC: type: U (%s) P/F: %x\n", U_cmd[U_MFUNC(f->lcf)], U_PF(f->lcf));
 		output_avlc_U(f);
 	} else {	// IS_I == true
-		fprintf(outf, "I: sseq=0x%x rseq=0x%x poll=%x\n", f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
+		fprintf(outf, "AVLC type: I sseq: %x rseq: %x poll: %x\n", f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
 		switch(f->proto) {
 		case PROTO_ACARS:
 			if(f->data_valid)

@@ -107,7 +107,7 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len) {
 void output_acars(const acars_msg_t *msg) {
 	fprintf(outf, "ACARS:\n");
 	if(msg->mode < 0x5d)
-		fprintf(outf, "Aircraft reg: %s Flight: %s\n", msg->reg, msg->fid);
+		fprintf(outf, "Reg: %s Flight: %s\n", msg->reg, msg->fid);
 	fprintf(outf, "Mode: %1c Label: %s Blk id: %c Ack: %c Msg no.: %s\n",
 		msg->mode, msg->label, msg->bid, msg->ack, msg->no);
 	fprintf(outf, "Message:\n%s\n", msg->txt);
