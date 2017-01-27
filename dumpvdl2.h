@@ -103,7 +103,7 @@ uint16_t crc16_ccitt(uint8_t *data, uint32_t len);
 
 // avlc.c
 void parse_avlc_frames(vdl2_state_t *v, uint8_t *buf, uint32_t len);
-int parse_dlc_addr(uint8_t *buf, avlc_addr_t *a, uint8_t final);
+uint32_t parse_dlc_addr(uint8_t *buf);
 void output_avlc(vdl2_state_t *v, const avlc_frame_t *f);
 
 // rs.c

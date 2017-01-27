@@ -66,13 +66,9 @@ static char *fmt_dlc_addrs(uint8_t *data, uint16_t len) {
 	char addrstring[7];	// single DLC addr = 6 hex digits + \0
 	while(len > 0) {
 		avlc_addr_t a;
-		if(parse_dlc_addr(ptr, &a, 0) < 0) {
-			debug_print("%s", "Unparseable address\n");
-			strcat(buf, "<err> ");
-		} else {
-			sprintf(addrstring, "%06X ", a.a_addr.addr);
-			strcat(buf, addrstring);
-		}
+		a.val = parse_dlc_addr(ptr);
+		sprintf(addrstring, "%06X ", a.a_addr.addr);
+		strcat(buf, addrstring);
 		ptr += 4; len -= 4;
 	}
 	return buf;

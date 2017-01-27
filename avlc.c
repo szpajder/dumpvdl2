@@ -49,27 +49,9 @@ static const char *U_cmd[] = {
 	"TEST"
 };
 
-/*
- * Link layer address parsing routine
- * buf - data buffer pointer
- * final - shall be set to 1 if this is the source address (ie. the final field
- * in the address part of the frame), 0 otherwise
- */
-int parse_dlc_addr(uint8_t *buf, avlc_addr_t *a, uint8_t final) {
+uint32_t parse_dlc_addr(uint8_t *buf) {
 	debug_print("%02x %02x %02x %02x\n", buf[0], buf[1], buf[2], buf[3]);
-/*
- * Validate address field:
- * - LSBs of buf[0]-buf[2] must be 0
- * - LSB of buf[3] must be equal to final
- */
-	uint32_t result = (uint32_t)(final & 0x1) << BSHIFT;
-	if((*((uint32_t *)buf) & 0x01010101) != result) {
-		debug_print("%s", "parse_dlc_addr: invalid address field\n");
-		return -1;
-	}
-	a->val = reverse((buf[0] >> 1) | (buf[1] << 6) | (buf[2] << 13) | ((buf[3] & 0xfe) << 20), 28) & ONES(28);
-	debug_print("Struct: addr : 0x%6x type=0x%x A/G=%x\n", a->a_addr.addr, a->a_addr.type, a->a_addr.status);
-	return 0;
+	return reverse((buf[0] >> 1) | (buf[1] << 6) | (buf[2] << 13) | ((buf[3] & 0xfe) << 20), 28) & ONES(28);
 }
 
 static void parse_avlc(vdl2_state_t *v, uint8_t *buf, uint32_t len) {
@@ -91,9 +73,9 @@ static void parse_avlc(vdl2_state_t *v, uint8_t *buf, uint32_t len) {
 	uint8_t *ptr = buf;
 	avlc_frame_t frame;
 	frame.t = time(NULL);
-	if(parse_dlc_addr(ptr, &frame.dst, 0) < 0) return;
+	frame.dst.val = parse_dlc_addr(ptr);
 	ptr += 4; len -= 4;
-	if(parse_dlc_addr(ptr, &frame.src, 1) < 0) return;
+	frame.src.val = parse_dlc_addr(ptr);
 	ptr += 4; len -= 4;
 #if USE_STATSD
 	uint8_t st = frame.src.a_addr.type;
