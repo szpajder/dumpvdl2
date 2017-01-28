@@ -70,6 +70,7 @@ typedef struct {
 	float mag_nf;
 	float mag_frame;
 	float dphi;
+	float dm_freq, dm_phi;
 	int sq;
 	int bufs, bufe;
 	int sclk;
