@@ -73,6 +73,7 @@ typedef struct {
 	int sq;
 	int bufs, bufe;
 	int sclk;
+	int offset_tuning;
 	enum demod_states demod_state;
 	enum decoder_states decoder_state;
 	uint32_t dm_phi, dm_dphi;

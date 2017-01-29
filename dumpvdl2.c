@@ -228,10 +228,12 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 		re = levels[buf[i]]; i++;
 		im = levels[buf[i]]; i++;
 // downmix
-		sincosf_lut(v->dm_phi, &swf, &cwf);
-		multiply(re, im, cwf, swf, &re, &im);
-		v->dm_phi += v->dm_dphi;
-		v->dm_phi &= 0xffffff;
+		if(v->offset_tuning) {
+			sincosf_lut(v->dm_phi, &swf, &cwf);
+			multiply(re, im, cwf, swf, &re, &im);
+			v->dm_phi += v->dm_dphi;
+			v->dm_phi &= 0xffffff;
+		}
 
 // lowpass IIR
 		lp_re = IQ_LP * lp_re + iq_lp2 * re;
@@ -369,6 +371,7 @@ vdl2_state_t *vdl2_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate
 	v->mag_nf = 100.0f;
 // Cast to signed first, because casting negative float to uint is not portable
 	v->dm_dphi = (uint32_t)(int)(((float)centerfreq - (float)freq) / (float)source_rate * 256.0f * 65536.0f);
+	v->offset_tuning = (centerfreq != freq);
 	debug_print("dm_dphi: 0x%x\n", v->dm_dphi);
 	demod_reset(v);
 	return v;
