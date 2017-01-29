@@ -217,7 +217,6 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 	float cwf, swf;
 	static float lp_re = 0.0f, lp_im = 0.0f;
 	static const float iq_lp2 = 1.0f - IQ_LP;
-	static const float twopi = 2.0f * M_PI;
 	vdl2_state_t *v = (vdl2_state_t *)ctx;
 	if(len == 0) return;
 	samplenum = -1;
@@ -229,10 +228,10 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 		re = levels[buf[i]]; i++;
 		im = levels[buf[i]]; i++;
 // downmix
-		sincosf(v->dm_phi, &swf, &cwf);
+		sincosf_lut(v->dm_phi, &swf, &cwf);
 		multiply(re, im, cwf, swf, &re, &im);
-		v->dm_phi += v->dm_freq;
-		if(v->dm_phi > twopi) v->dm_phi -= twopi;
+		v->dm_phi += v->dm_dphi;
+		v->dm_phi &= 0xffffff;
 
 // lowpass IIR
 		lp_re = IQ_LP * lp_re + iq_lp2 * re;
@@ -368,9 +367,8 @@ vdl2_state_t *vdl2_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate
 	v = XCALLOC(1, sizeof(vdl2_state_t));
 	v->bs = bitstream_init(BSLEN);
 	v->mag_nf = 100.0f;
-	v->dm_freq = ((float)centerfreq - (float)freq) / (float)source_rate;
-	debug_print("dm_freq: %f\n", v->dm_freq);
-	v->dm_freq *= 2.0f * M_PI;
+	v->dm_dphi = (uint32_t)(((float)centerfreq - (float)freq) / (float)source_rate * 256.0f * 65536.0f);
+	debug_print("dm_dphi: 0x%x\n", v->dm_dphi);
 	demod_reset(v);
 	return v;
 }
@@ -501,6 +499,7 @@ int main(int argc, char **argv) {
 #endif
 	setup_signals();
 	levels_init();
+	sincosf_lut_init();
 	if(infile != NULL) {
 		process_file(ctx, infile);
 	} else {

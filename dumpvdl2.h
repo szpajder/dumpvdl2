@@ -70,12 +70,12 @@ typedef struct {
 	float mag_nf;
 	float mag_frame;
 	float dphi;
-	float dm_freq, dm_phi;
 	int sq;
 	int bufs, bufe;
 	int sclk;
 	enum demod_states demod_state;
 	enum decoder_states decoder_state;
+	uint32_t dm_phi, dm_dphi;
 	uint32_t requested_samples;
 	uint32_t requested_bits;
 	bitstream_t *bs;
@@ -134,3 +134,5 @@ void *xrealloc(void *ptr, size_t size, const char *file, const int line, const c
 char *fmt_hexstring(uint8_t *data, uint16_t len);
 char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len);
 char *fmt_bitfield(uint8_t val, const dict *d);
+void sincosf_lut_init();
+void sincosf_lut(uint32_t phi, float *sine, float *cosine);
