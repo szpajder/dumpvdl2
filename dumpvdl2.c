@@ -328,7 +328,7 @@ void init_rtl(void *ctx, uint32_t device, int freq, int gain, int correction) {
 		r |= rtlsdr_set_tuner_gain(rtl, gain);
 		if (r < 0) {
 			fprintf(stderr, "Failed to set gain to %0.2f for device #%d: error %d\n",
-				(float)rtlsdr_get_tuner_gain(rtl) / 10.0, device, r);
+				(float)gain / 10.0, device, r);
 			exit(1);
 		} else
 			fprintf(stderr, "Device #%d: gain set to %0.2f dB\n", device,
