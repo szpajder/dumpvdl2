@@ -367,7 +367,8 @@ vdl2_state_t *vdl2_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate
 	v = XCALLOC(1, sizeof(vdl2_state_t));
 	v->bs = bitstream_init(BSLEN);
 	v->mag_nf = 100.0f;
-	v->dm_dphi = (uint32_t)(((float)centerfreq - (float)freq) / (float)source_rate * 256.0f * 65536.0f);
+// Cast to signed first, because casting negative float to uint is not portable
+	v->dm_dphi = (uint32_t)(int)(((float)centerfreq - (float)freq) / (float)source_rate * 256.0f * 65536.0f);
 	debug_print("dm_dphi: 0x%x\n", v->dm_dphi);
 	demod_reset(v);
 	return v;
