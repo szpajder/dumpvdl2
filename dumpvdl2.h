@@ -21,13 +21,10 @@
 #define PREAMBLE_SYMS 16
 #define PREAMBLE_LEN (PREAMBLE_SYMS * BPS)	// preamble length in bits
 #define MAX_PREAMBLE_ERRORS 3
-#define RTL_BUFSIZE 320000
-#define RTL_BUFCNT 15
 #define SYMBOL_RATE 10500
-#define RTL_OVERSAMPLE 10
-#define RTL_RATE (SYMBOL_RATE * SPS * RTL_OVERSAMPLE)
-#define RTL_AUTO_GAIN -100
 #define CSC_FREQ 136975000U
+#define FILE_BUFSIZE 320000U
+#define FILE_OVERSAMPLE 10
 #define BUFSIZE (1000 * SPS)
 #define MAG_LP 0.9f
 #define DPHI_LP 0.9f
@@ -60,6 +57,14 @@ typedef struct {
 
 enum demod_states { DM_INIT, DM_SYNC, DM_IDLE };
 enum decoder_states { DEC_PREAMBLE, DEC_HEADER, DEC_DATA, DEC_IDLE };
+enum input_types {
+#if WITH_RTLSDR
+	INPUT_RTLSDR,
+#endif
+	INPUT_FILE,
+	INPUT_UNDEF
+};
+
 typedef struct {
 	float mag_buf[BUFSIZE];
 	float mag_lpbuf[BUFSIZE];		// temporary for testing
@@ -73,14 +78,17 @@ typedef struct {
 	int sq;
 	int bufs, bufe;
 	int sclk;
+	int offset_tuning;
 	enum demod_states demod_state;
 	enum decoder_states decoder_state;
+	uint32_t dm_phi, dm_dphi;
 	uint32_t requested_samples;
 	uint32_t requested_bits;
 	bitstream_t *bs;
 	uint32_t datalen, datalen_octets, last_block_len_octets, fec_octets;
 	uint32_t num_blocks;
 	uint16_t lfsr;
+	uint16_t oversample;
 	struct timeval tstart;
 } vdl2_state_t;
 
@@ -97,6 +105,9 @@ uint32_t reverse(uint32_t v, int numbits);
 
 // decode.c
 void decode_vdl_frame(vdl2_state_t *v);
+
+// dumpvdl2.c
+void process_samples(unsigned char *buf, uint32_t len, void *ctx);
 
 // crc.c
 uint16_t crc16_ccitt(uint8_t *data, uint32_t len);
@@ -133,3 +144,5 @@ void *xrealloc(void *ptr, size_t size, const char *file, const int line, const c
 char *fmt_hexstring(uint8_t *data, uint16_t len);
 char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len);
 char *fmt_bitfield(uint8_t val, const dict *d);
+void sincosf_lut_init();
+void sincosf_lut(uint32_t phi, float *sine, float *cosine);

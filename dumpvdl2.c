@@ -7,18 +7,20 @@
 #include <signal.h>
 #include <math.h>
 #include <errno.h>
-#include <rtl-sdr.h>
+#if WITH_RTLSDR
+#include "rtl.h"
+#endif
 #include "dumpvdl2.h"
 
-static rtlsdr_dev_t *rtl = NULL;
 static float levels[256];
 int do_exit = 0;
 
 void sighandler(int sig) {
 	fprintf(stderr, "Got signal %d, exiting\n", sig);
 	do_exit = 1;
-	if(rtl != NULL)
-		rtlsdr_cancel_async(rtl);
+#if WITH_RTLSDR
+	rtl_cancel();
+#endif
 }
 
 void setup_signals() {
@@ -113,12 +115,17 @@ void demod_reset(vdl2_state_t *v) {
 	v->bufe = v->bufs = v->sclk = 0;
 	v->demod_state = DM_INIT;
 	v->requested_samples = SYNC_SYMS * SPS;
+	v->dm_phi = 0.f;
 }
 
 void levels_init() {
 	for (int i=0; i<256; i++) {
 		levels[i] = i-127.5f;
 	}
+}
+
+static uint32_t calc_centerfreq(uint32_t freq, uint32_t source_rate) {
+	return freq;
 }
 
 void demod(vdl2_state_t *v) {
@@ -209,6 +216,7 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 	static int idle_skips = 0, not_idle_skips = 0;
 	static int bufnum = 0, samplenum = 0, cnt = 0, nfcnt = 0;
 	float re, im, mag;
+	float cwf, swf;
 	static float lp_re = 0.0f, lp_im = 0.0f;
 	static const float iq_lp2 = 1.0f - IQ_LP;
 	vdl2_state_t *v = (vdl2_state_t *)ctx;
@@ -221,11 +229,19 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 
 		re = levels[buf[i]]; i++;
 		im = levels[buf[i]]; i++;
+// downmix
+		if(v->offset_tuning) {
+			sincosf_lut(v->dm_phi, &swf, &cwf);
+			multiply(re, im, cwf, swf, &re, &im);
+			v->dm_phi += v->dm_dphi;
+			v->dm_phi &= 0xffffff;
+		}
+
 // lowpass IIR
 		lp_re = IQ_LP * lp_re + iq_lp2 * re;
 		lp_im = IQ_LP * lp_im + iq_lp2 * im;
 // decimation
-		cnt %= RTL_OVERSAMPLE;
+		cnt %= v->oversample;
 		if(cnt++ != 0)
 			continue;
 
@@ -277,129 +293,92 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 		debug_print("noise_floor: %f\n", v->mag_nf);
 }
 
-void init_rtl(void *ctx, uint32_t device, int freq, int gain, int correction) {
-	int r;
-
-	r = rtlsdr_open(&rtl, device);
-	if(rtl == NULL) {
-		fprintf(stderr, "Failed to open rtlsdr device #%u: error %d\n", device, r);
-		exit(1);
-	}
-	r = rtlsdr_set_sample_rate(rtl, RTL_RATE);
-	if (r < 0) {
-		fprintf(stderr, "Failed to set sample rate for device #%d: error %d\n", device, r);
-		exit(1);
-	}
-	r = rtlsdr_set_center_freq(rtl, freq);
-	if (r < 0) {
-		fprintf(stderr, "Failed to set frequency for device #%d: error %d\n", device, r);
-		exit(1);
-	}
-	r = rtlsdr_set_freq_correction(rtl, correction);
-	if (r < 0 && r != -2 ) {
-		fprintf(stderr, "Failed to set freq correction for device #%d error %d\n", device, r);
-		exit(1);
-	}
-
-	if(gain == RTL_AUTO_GAIN) {
-		r = rtlsdr_set_tuner_gain_mode(rtl, 0);
-		if (r < 0) {
-			fprintf(stderr, "Failed to set automatic gain for device #%d: error %d\n", device, r);
-			exit(1);
-		} else
-			fprintf(stderr, "Device #%d: gain set to automatic\n", device);
-	} else {
-		r = rtlsdr_set_tuner_gain_mode(rtl, 1);
-		r |= rtlsdr_set_tuner_gain(rtl, gain);
-		if (r < 0) {
-			fprintf(stderr, "Failed to set gain to %0.2f for device #%d: error %d\n",
-				(float)rtlsdr_get_tuner_gain(rtl) / 10.0, device, r);
-			exit(1);
-		} else
-			fprintf(stderr, "Device #%d: gain set to %0.2f dB\n", device,
-				(float)rtlsdr_get_tuner_gain(rtl) / 10.0);
-	}
-
-	r = rtlsdr_set_agc_mode(rtl, 0);
-	if (r < 0) {
-		fprintf(stderr, "Failed to disable AGC for device #%d: error %d\n", device, r);
-		exit(1);
-	}
-	rtlsdr_reset_buffer(rtl);
-	fprintf(stderr, "Device %d started\n", device);
-	if(rtlsdr_read_async(rtl, process_samples, ctx, RTL_BUFCNT, RTL_BUFSIZE) < 0) {
-		fprintf(stderr, "Device #%d: async read failed\n", device);
-		exit(1);
-	}
-}
-
 void process_file(void *ctx, char *path) {
 	FILE *f;
 	uint32_t len;
-	unsigned char buf[RTL_BUFSIZE];
+	unsigned char buf[FILE_BUFSIZE];
 	
 	if((f = fopen(path, "r")) == NULL) {
 		perror("fopen()");
 		_exit(2);
 	}
 	do {
-		len = fread(buf, 1, RTL_BUFSIZE, f);
+		len = fread(buf, 1, FILE_BUFSIZE, f);
 		process_samples(buf, len, ctx);
-	} while(len == RTL_BUFSIZE && !do_exit);
+	} while(len == FILE_BUFSIZE && !do_exit);
 	fclose(f);
 }
 
-vdl2_state_t *vdl2_init() {
+vdl2_state_t *vdl2_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample) {
 	vdl2_state_t *v;
 	v = XCALLOC(1, sizeof(vdl2_state_t));
 	v->bs = bitstream_init(BSLEN);
 	v->mag_nf = 100.0f;
+// Cast to signed first, because casting negative float to uint is not portable
+	v->dm_dphi = (uint32_t)(int)(((float)centerfreq - (float)freq) / (float)source_rate * 256.0f * 65536.0f);
+	debug_print("dm_dphi: 0x%x\n", v->dm_dphi);
+	v->offset_tuning = (centerfreq != freq);
+	v->oversample = oversample;
 	demod_reset(v);
 	return v;
 }
 
 void usage() {
 	fprintf(stderr, "DUMPVDL2 version %s\n", DUMPVDL2_VERSION);
-	fprintf(stderr, "Usage: dumpvdl2 [common_options] [[rtlsdr_options] [<frequency_in_Hz>]]\n");
-	fprintf(stderr, "       dumpvdl2 [common_options] -f <input_file>\n");
-	fprintf(stderr, "\ncommon_options:\n");
+	fprintf(stderr, "Usage:\n\n");
+#if WITH_RTLSDR
+	fprintf(stderr, "RTLSDR receiver:\n");
+	fprintf(stderr, "\tdumpvdl2 [output_options] -R <device_id> [rtlsdr_options] [<channel_frequency>]\n");
+#endif
+	fprintf(stderr, "I/Q input from file:\n");
+	fprintf(stderr, "\tdumpvdl2 [output_options] -F <input_file> [file_options] [<channel_frequency>]\n");
+	fprintf(stderr, "\ncommon options:\n");
+	fprintf(stderr, "\t<channel_frequency>\tVDL2 channel to listen to, In Hz.\n");
+	fprintf(stderr, "\t\t\t\tIf omitted, will use VDL2 Common Signalling Channel (%u Hz)\n", CSC_FREQ);
+	fprintf(stderr, "\noutput_options:\n");
 	fprintf(stderr, "\t-o <output_file>\tOutput decoded frames to <output_file> (default: stdout)\n");
 	fprintf(stderr, "\t-H\t\t\tRotate output file hourly\n");
 	fprintf(stderr, "\t-D\t\t\tRotate output file daily\n");
 #if USE_STATSD
 	fprintf(stderr, "\t-S <host>:<port>\tSend statistics to Etsy StatsD server <host>:<port> (default: disabled)\n");
 #endif
+#if WITH_RTLSDR
 	fprintf(stderr, "\nrtlsdr_options:\n");
-	fprintf(stderr, "\t-d <device_id>\t\tUse specified device (default: 0)\n");
+	fprintf(stderr, "\t-R <device_id>\t\tUse RTL device with specified ID (default: 0)\n");
 	fprintf(stderr, "\t-g <gain>\t\tSet RTL gain (decibels)\n");
 	fprintf(stderr, "\t-p <correction>\t\tSet RTL freq correction (ppm)\n");
-	fprintf(stderr, "\t<frequency_in_Hz>\tIf omitted, will tune to VDL2 Common Signalling Channel (%u Hz)\n", CSC_FREQ);
-	fprintf(stderr, "\n\t-f <input_file>\t\tRead I/Q samples from file (must be sampled at %u samples/sec\n", RTL_RATE);
-	fprintf(stderr, "\t\t\t\twith desired channel frequency at baseband)\n");
+	fprintf(stderr, "\t-c <center_frequency>\tSet RTL center frequency in Hz (default: auto)\n");
+#endif
+	fprintf(stderr, "\nfile_options:\n");
+	fprintf(stderr, "\t-F <input_file>\t\tRead I/Q samples from file (must be sampled at %u samples/sec)\n", SYMBOL_RATE * SPS * FILE_OVERSAMPLE);
+	fprintf(stderr, "\t-c <center_frequency>\tCenter frequency of the input data, in Hz (default: 0)\n");
 	_exit(0);
 }
 
 int main(int argc, char **argv) {
 	vdl2_state_t *ctx;
+	uint32_t freq = 0, centerfreq = 0, sample_rate = 0, oversample = 0;
+	enum input_types input = INPUT_UNDEF;
+#if WITH_RTLSDR
 	uint32_t device = 0;
-	uint32_t freq = 0;
+// FIXME: default gain and correction depend on receiver type which is currently enabled
 	int gain = RTL_AUTO_GAIN;
 	int correction = 0;
+#endif
 	int opt;
-	char *optstring =
+	char *optstring = "c:DF:g:hHo:p:R:S:";
 #if USE_STATSD
-	"d:f:hHDg:o:p:S:";
 	char *statsd_addr = NULL;
 	int statsd_enabled = 0;
-#else
-	"d:f:hHDg:o:p:";
 #endif
 	char *infile = NULL, *outfile = NULL;
 
 	while((opt = getopt(argc, argv, optstring)) != -1) {
 		switch(opt) {
-		case 'f':
+		case 'F':
 			infile = strdup(optarg);
+			input = INPUT_FILE;
+			oversample = FILE_OVERSAMPLE;
 			break;
 		case 'H':
 			hourly = 1;
@@ -407,17 +386,24 @@ int main(int argc, char **argv) {
 		case 'D':
 			daily = 1;
 			break;
-		case 'd':
+		case 'c':
+			centerfreq = strtoul(optarg, NULL, 10);
+			break;
+#if WITH_RTLSDR
+		case 'R':
 			device = strtoul(optarg, NULL, 10);
+			input = INPUT_RTLSDR;
+			oversample = RTL_OVERSAMPLE;
 			break;
 		case 'g':
 			gain = (int)(10 * atof(optarg));
 			break;
-		case 'o':
-			outfile = strdup(optarg);
-			break;
 		case 'p':
 			correction = atoi(optarg);
+			break;
+#endif
+		case 'o':
+			outfile = strdup(optarg);
 			break;
 #if USE_STATSD
 		case 'S':
@@ -433,28 +419,31 @@ int main(int argc, char **argv) {
 	if(optind < argc)
 		freq = strtoul(argv[optind], NULL, 10);
 
+	if(input == INPUT_UNDEF)
+		usage();
 	if(outfile == NULL) {
 		outfile = strdup("-");		// output to stdout by default
-		hourly = daily = 0;			// stdout is not rotateable - ignore silently
+		hourly = daily = 0;		// stdout is not rotateable - ignore silently
 	}
 	if(outfile != NULL && hourly && daily) {
 		fprintf(stderr, "Options: -H and -D are exclusive\n");
 		fprintf(stderr, "Use -h for help\n");
 		_exit(1);
 	}
-	if(freq != 0 && infile != NULL) {
-		fprintf(stderr, "Error: frequency and -f <file> options are exclusive\n");
-		fprintf(stderr, "Use -h for help\n");
-		_exit(1);
-	} else if(freq == 0 && infile == NULL) {
+	if(freq == 0) {
 		fprintf(stderr, "Warning: frequency not set - using VDL2 Common Signalling Channel as a default (%u Hz)\n", CSC_FREQ);
 		freq = CSC_FREQ;
 	}
-	if(init_output_file(outfile) < 0) {
-		fprintf(stderr, "Failed to initialize output - aborting\n");
-		_exit(4);
+	sample_rate = SYMBOL_RATE * SPS * oversample;
+	fprintf(stderr, "Sampling rate set to %u symbols/sec\n", sample_rate);
+	if(centerfreq == 0) {
+		centerfreq = calc_centerfreq(freq, sample_rate);
+		if(centerfreq == 0) {
+			fprintf(stderr, "Failed to calculate center frequency\n");
+			_exit(2);
+		}
 	}
-	if((ctx = vdl2_init()) == NULL) {
+	if((ctx = vdl2_init(centerfreq, freq, sample_rate, oversample)) == NULL) {
 		fprintf(stderr, "Failed to initialize VDL state\n");
 		_exit(2);
 	}
@@ -473,12 +462,25 @@ int main(int argc, char **argv) {
 		statsd_enabled = 0;
 	}
 #endif
+	if(init_output_file(outfile) < 0) {
+		fprintf(stderr, "Failed to initialize output - aborting\n");
+		_exit(4);
+	}
 	setup_signals();
 	levels_init();
-	if(infile != NULL) {
+	sincosf_lut_init();
+	switch(input) {
+	case INPUT_FILE:
 		process_file(ctx, infile);
-	} else {
-		init_rtl(ctx, device, freq, gain, correction);
+		break;
+#if WITH_RTLSDR
+	case INPUT_RTLSDR:
+		rtl_init(ctx, device, centerfreq, gain, correction);
+		break;
+#endif
+	default:
+		fprintf(stderr, "Unknown input type\n");
+		_exit(5);
 	}
 	return(0);
 }

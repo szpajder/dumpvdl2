@@ -1,8 +1,9 @@
 export DEBUG ?= 1
 export USE_STATSD ?= 0
+export WITH_RTLSDR ?= 1
 CC = gcc
-CFLAGS = -std=c99 -g -Wall -D_XOPEN_SOURCE=500 -DDEBUG=$(DEBUG) -DUSE_STATSD=$(USE_STATSD) -O3 -ffast-math
-LDLIBS = -lfec -lm -lrtlsdr
+CFLAGS = -std=c99 -g -Wall -D_XOPEN_SOURCE=500 -DDEBUG=$(DEBUG) -DUSE_STATSD=$(USE_STATSD) -DWITH_RTLSDR=$(WITH_RTLSDR) -O3 -ffast-math
+LDLIBS = -lfec -lm
 LDFLAGS = -Llibfec
 SUBDIRS = libfec
 CLEANDIRS = $(SUBDIRS:%=clean-%)
@@ -29,6 +30,10 @@ ifeq ($(USE_STATSD), 1)
   DEPS += statsd.o
   LDLIBS += -lstatsdclient
 endif
+ifeq ($(WITH_RTLSDR), 1)
+  DEPS += rtl.o
+  LDLIBS += -lrtlsdr
+endif
 
 .PHONY: all clean $(SUBDIRS) $(CLEANDIRS)
 
@@ -50,13 +55,15 @@ idrp.o: dumpvdl2.h idrp.h tlv.h
 
 rs.o: dumpvdl2.h fec.h
 
-dumpvdl2.o: dumpvdl2.h
+dumpvdl2.o: dumpvdl2.h rtl.h
 
 avlc.o: dumpvdl2.h avlc.h
 
 acars.o: dumpvdl2.h acars.h
 
 output.o: avlc.h acars.h
+
+rtl.o: rtl.h
 
 tlv.o: tlv.h dumpvdl2.h
 
