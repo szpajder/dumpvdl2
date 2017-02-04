@@ -14,6 +14,7 @@ OBJ =	acars.o \
 	clnp.o \
 	crc.o \
 	decode.o \
+	demod.o \
 	esis.o \
 	idrp.o \
 	output.o \
@@ -46,6 +47,8 @@ $(FEC): libfec ;
 clnp.o: dumpvdl2.h clnp.h idrp.h
 
 decode.o: dumpvdl2.h
+
+demod.o: dumpvdl2.h
 
 bitstream.o: dumpvdl2.h
 

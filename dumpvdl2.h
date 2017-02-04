@@ -106,7 +106,10 @@ uint32_t reverse(uint32_t v, int numbits);
 // decode.c
 void decode_vdl_frame(vdl2_state_t *v);
 
-// dumpvdl2.c
+// demod.c
+vdl2_state_t *vdl2_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample);
+void levels_init();
+void sincosf_lut_init();
 void process_samples(unsigned char *buf, uint32_t len, void *ctx);
 
 // crc.c
@@ -144,5 +147,3 @@ void *xrealloc(void *ptr, size_t size, const char *file, const int line, const c
 char *fmt_hexstring(uint8_t *data, uint16_t len);
 char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len);
 char *fmt_bitfield(uint8_t val, const dict *d);
-void sincosf_lut_init();
-void sincosf_lut(uint32_t phi, float *sine, float *cosine);
