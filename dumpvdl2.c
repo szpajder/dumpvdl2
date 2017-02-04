@@ -120,7 +120,7 @@ void demod_reset(vdl2_state_t *v) {
 
 void levels_init() {
 	for (int i=0; i<256; i++) {
-		levels[i] = i-127.5f;
+		levels[i] = (i-127.5f)/127.5f;
 	}
 }
 
@@ -313,7 +313,7 @@ vdl2_state_t *vdl2_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate
 	vdl2_state_t *v;
 	v = XCALLOC(1, sizeof(vdl2_state_t));
 	v->bs = bitstream_init(BSLEN);
-	v->mag_nf = 100.0f;
+	v->mag_nf = 2.0f;
 // Cast to signed first, because casting negative float to uint is not portable
 	v->dm_dphi = (uint32_t)(int)(((float)centerfreq - (float)freq) / (float)source_rate * 256.0f * 65536.0f);
 	debug_print("dm_dphi: 0x%x\n", v->dm_dphi);

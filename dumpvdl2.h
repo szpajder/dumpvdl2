@@ -27,9 +27,9 @@
 #define FILE_OVERSAMPLE 10
 #define BUFSIZE (1000 * SPS)
 #define MAG_LP 0.9f
-#define DPHI_LP 0.9f
-#define NF_LP 0.97f
-#define IQ_LP 0.95f
+#define DPHI_LP 0.95f
+#define NF_LP 0.85f
+#define IQ_LP 0.92f
 
 #define debug_print(fmt, ...) \
 	do { if (DEBUG) fprintf(stderr, "%s(): " fmt, __func__, __VA_ARGS__); } while (0)
