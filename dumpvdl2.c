@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -39,7 +38,7 @@ static uint32_t calc_centerfreq(uint32_t freq, uint32_t source_rate) {
 	return freq;
 }
 
-void process_file(void *ctx, char *path) {
+void process_file(vdl2_state_t *ctx, char *path) {
 	FILE *f;
 	uint32_t len;
 	unsigned char buf[FILE_BUFSIZE];
@@ -48,9 +47,11 @@ void process_file(void *ctx, char *path) {
 		perror("fopen()");
 		_exit(2);
 	}
+	process_buf_uchar_init();
+	ctx->sbuf = XCALLOC(RTL_BUFSIZE, sizeof(float));
 	do {
 		len = fread(buf, 1, FILE_BUFSIZE, f);
-		process_samples(buf, len, ctx);
+		process_buf_uchar(buf, len, ctx);
 	} while(len == FILE_BUFSIZE && !do_exit);
 	fclose(f);
 }
@@ -199,7 +200,6 @@ int main(int argc, char **argv) {
 		_exit(4);
 	}
 	setup_signals();
-	levels_init();
 	sincosf_lut_init();
 	switch(input) {
 	case INPUT_FILE:

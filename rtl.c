@@ -34,7 +34,7 @@ static int nearest_gain(rtlsdr_dev_t *dev, int target_gain) {
 	return nearest;
 }
 
-void rtl_init(void *ctx, uint32_t device, int freq, int gain, int correction) {
+void rtl_init(vdl2_state_t *ctx, uint32_t device, int freq, int gain, int correction) {
 	int r;
 
 	r = rtlsdr_open(&rtl, device);
@@ -90,7 +90,9 @@ void rtl_init(void *ctx, uint32_t device, int freq, int gain, int correction) {
 	}
 	rtlsdr_reset_buffer(rtl);
 	fprintf(stderr, "Device %d started\n", device);
-	if(rtlsdr_read_async(rtl, process_samples, ctx, RTL_BUFCNT, RTL_BUFSIZE) < 0) {
+	ctx->sbuf = XCALLOC(RTL_BUFSIZE / sizeof(unsigned char), sizeof(float));
+	process_buf_uchar_init();
+	if(rtlsdr_read_async(rtl, process_buf_uchar, ctx, RTL_BUFCNT, RTL_BUFSIZE) < 0) {
 		fprintf(stderr, "Device #%d: async read failed\n", device);
 		_exit(1);
 	}

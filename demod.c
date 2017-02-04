@@ -187,7 +187,7 @@ static void demod(vdl2_state_t *v) {
 	}
 }
 
-void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
+static void process_samples(vdl2_state_t *v) {
 	int i, available;
 	static int idle_skips = 0, not_idle_skips = 0;
 	static int bufnum = 0, samplenum = 0, cnt = 0, nfcnt = 0;
@@ -195,16 +195,15 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 	float cwf, swf;
 	static float lp_re = 0.0f, lp_im = 0.0f;
 	static const float iq_lp2 = 1.0f - IQ_LP;
-	vdl2_state_t *v = (vdl2_state_t *)ctx;
-	if(len == 0) return;
+	uint32_t len = v->slen;
+	float *sbuf = v->sbuf;
 	samplenum = -1;
 	for(i = 0; i < len;) {
 #if DEBUG
 		samplenum++;
 #endif
-
-		re = levels[buf[i]]; i++;
-		im = levels[buf[i]]; i++;
+		re = sbuf[i++];
+		im = sbuf[i++];
 // downmix
 		if(v->offset_tuning) {
 			sincosf_lut(v->dm_phi, &swf, &cwf);
@@ -269,7 +268,17 @@ void process_samples(unsigned char *buf, uint32_t len, void *ctx) {
 		debug_print("noise_floor: %f\n", v->mag_nf);
 }
 
-void levels_init() {
+void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx) {
+	if(len == 0) return;
+	vdl2_state_t *v = (vdl2_state_t *)ctx;
+	float *sbuf = v->sbuf;
+	for(uint32_t i = 0; i < len; i++)
+		sbuf[i] = levels[buf[i]];
+	v->slen = len;
+	process_samples(v);
+}
+
+void process_buf_uchar_init() {
 	for (int i=0; i<256; i++) {
 		levels[i] = (i-127.5f)/127.5f;
 	}

@@ -1,3 +1,5 @@
+#ifndef _DUMPVDL2_H
+#define _DUMPVDL2_H 1
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -85,6 +87,8 @@ typedef struct {
 	uint32_t requested_samples;
 	uint32_t requested_bits;
 	bitstream_t *bs;
+	float *sbuf;
+	uint32_t slen;
 	uint32_t datalen, datalen_octets, last_block_len_octets, fec_octets;
 	uint32_t num_blocks;
 	uint16_t lfsr;
@@ -108,9 +112,9 @@ void decode_vdl_frame(vdl2_state_t *v);
 
 // demod.c
 vdl2_state_t *vdl2_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample);
-void levels_init();
 void sincosf_lut_init();
-void process_samples(unsigned char *buf, uint32_t len, void *ctx);
+void process_buf_uchar_init();
+void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx);
 
 // crc.c
 uint16_t crc16_ccitt(uint8_t *data, uint32_t len);
@@ -147,3 +151,4 @@ void *xrealloc(void *ptr, size_t size, const char *file, const int line, const c
 char *fmt_hexstring(uint8_t *data, uint16_t len);
 char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len);
 char *fmt_bitfield(uint8_t val, const dict *d);
+#endif // !_DUMPVDL2_H
