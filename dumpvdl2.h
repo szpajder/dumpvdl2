@@ -66,6 +66,7 @@ enum input_types {
 	INPUT_FILE,
 	INPUT_UNDEF
 };
+enum sample_formats { SFMT_U8, SFMT_S16_LE, SFMT_UNDEF };
 
 typedef struct {
 	float mag_buf[BUFSIZE];
@@ -115,6 +116,8 @@ vdl2_state_t *vdl2_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate
 void sincosf_lut_init();
 void process_buf_uchar_init();
 void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx);
+void process_buf_short_init();
+void process_buf_short(unsigned char *buf, uint32_t len, void *ctx);
 
 // crc.c
 uint16_t crc16_ccitt(uint8_t *data, uint32_t len);

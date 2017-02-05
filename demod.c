@@ -4,7 +4,7 @@
 #include <math.h>
 #include "dumpvdl2.h"
 
-static float levels[256];
+static float *levels;
 static float sin_lut[257], cos_lut[257];
 
 // phi range must be (0..1), rescaled to 0x0-0xFFFFFF
@@ -279,8 +279,29 @@ void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx) {
 }
 
 void process_buf_uchar_init() {
+	levels = XCALLOC(256, sizeof(float));
 	for (int i=0; i<256; i++) {
 		levels[i] = (i-127.5f)/127.5f;
+	}
+}
+
+void process_buf_short(unsigned char *buf, uint32_t len, void *ctx) {
+	if(len == 0) return;
+	vdl2_state_t *v = (vdl2_state_t *)ctx;
+	float *sbuf = v->sbuf;
+	int16_t *bbuf = (int16_t *)buf;
+	len /= 2;
+	for(uint32_t i = 0; i < len; i++)
+//		sbuf[i] = levels[(uint16_t)buf[i] & 0xffff];
+		sbuf[i] = (float)bbuf[i] / 32767.5f;
+	v->slen = len;
+	process_samples(v);
+}
+
+void process_buf_short_init() {
+	levels = XCALLOC(65536, sizeof(float));
+	for (int i=0; i<65536; i++) {
+		levels[(uint32_t)(i-32768) & 0xffff] = (i-32767.5f)/32767.5f;
 	}
 }
 

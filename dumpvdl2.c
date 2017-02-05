@@ -38,20 +38,34 @@ static uint32_t calc_centerfreq(uint32_t freq, uint32_t source_rate) {
 	return freq;
 }
 
-void process_file(vdl2_state_t *ctx, char *path) {
+void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
 	FILE *f;
 	uint32_t len;
 	unsigned char buf[FILE_BUFSIZE];
+	void (*process_buf)() = NULL;
 	
 	if((f = fopen(path, "r")) == NULL) {
 		perror("fopen()");
 		_exit(2);
 	}
-	process_buf_uchar_init();
-	ctx->sbuf = XCALLOC(RTL_BUFSIZE, sizeof(float));
+	switch(sfmt) {
+	case SFMT_U8:
+		process_buf_uchar_init();
+		ctx->sbuf = XCALLOC(FILE_BUFSIZE, sizeof(float));
+		process_buf = &process_buf_uchar;
+		break;
+	case SFMT_S16_LE:
+		process_buf_short_init();
+		ctx->sbuf = XCALLOC(FILE_BUFSIZE / 2, sizeof(float));
+		process_buf = &process_buf_short;
+		break;
+	default:
+		fprintf(stderr, "Unsupported sample format\n");
+		_exit(5);
+	}
 	do {
 		len = fread(buf, 1, FILE_BUFSIZE, f);
-		process_buf_uchar(buf, len, ctx);
+		(*process_buf)(buf, len, ctx);
 	} while(len == FILE_BUFSIZE && !do_exit);
 	fclose(f);
 }
@@ -83,8 +97,13 @@ void usage() {
 	fprintf(stderr, "\t-c <center_frequency>\tSet RTL center frequency in Hz (default: auto)\n");
 #endif
 	fprintf(stderr, "\nfile_options:\n");
-	fprintf(stderr, "\t-F <input_file>\t\tRead I/Q samples from file (must be sampled at %u samples/sec)\n", SYMBOL_RATE * SPS * FILE_OVERSAMPLE);
+	fprintf(stderr, "\t-F <input_file>\t\tRead I/Q samples from file\n");
 	fprintf(stderr, "\t-c <center_frequency>\tCenter frequency of the input data, in Hz (default: 0)\n");
+	fprintf(stderr, "\t-O <oversample_rate>\tOversampling rate for recorded data (default: %u)\n", FILE_OVERSAMPLE);
+	fprintf(stderr, "\t\t\t\t  (sampling rate will be set to %u * oversample_rate)\n", SYMBOL_RATE * SPS);
+	fprintf(stderr, "\t-m <sample_format>\tInput sample format. Supported formats:\n");
+	fprintf(stderr, "\t\t\t\t  U8\t\t8-bit unsigned (eg. recorded with rtl_sdr) (default)\n");
+	fprintf(stderr, "\t\t\t\t  S16_LE\t16-bit signed, little-endian (eg. recorded with miri_sdr)\n");
 	_exit(0);
 }
 
@@ -92,6 +111,7 @@ int main(int argc, char **argv) {
 	vdl2_state_t *ctx;
 	uint32_t freq = 0, centerfreq = 0, sample_rate = 0, oversample = 0;
 	enum input_types input = INPUT_UNDEF;
+	enum sample_formats sample_fmt = SFMT_UNDEF;
 #if WITH_RTLSDR
 	uint32_t device = 0;
 // FIXME: default gain and correction depend on receiver type which is currently enabled
@@ -99,7 +119,7 @@ int main(int argc, char **argv) {
 	int correction = 0;
 #endif
 	int opt;
-	char *optstring = "c:DF:g:hHo:p:R:S:";
+	char *optstring = "c:DF:g:hHm:o:O:p:R:S:";
 #if USE_STATSD
 	char *statsd_addr = NULL;
 	int statsd_enabled = 0;
@@ -112,6 +132,17 @@ int main(int argc, char **argv) {
 			infile = strdup(optarg);
 			input = INPUT_FILE;
 			oversample = FILE_OVERSAMPLE;
+			sample_fmt = SFMT_U8;
+			break;
+		case 'm':
+			if(!strcmp(optarg, "U8"))
+				sample_fmt = SFMT_U8;
+			else if(!strcmp(optarg, "S16_LE"))
+				sample_fmt = SFMT_S16_LE;
+			else {
+				fprintf(stderr, "Unknown sample format\n");
+				_exit(1);
+			}
 			break;
 		case 'H':
 			hourly = 1;
@@ -137,6 +168,9 @@ int main(int argc, char **argv) {
 #endif
 		case 'o':
 			outfile = strdup(optarg);
+			break;
+		case 'O':
+			oversample = atoi(optarg);
 			break;
 #if USE_STATSD
 		case 'S':
@@ -168,7 +202,7 @@ int main(int argc, char **argv) {
 		freq = CSC_FREQ;
 	}
 	sample_rate = SYMBOL_RATE * SPS * oversample;
-	fprintf(stderr, "Sampling rate set to %u symbols/sec\n", sample_rate);
+	fprintf(stderr, "Sampling rate set to %u sps\n", sample_rate);
 	if(centerfreq == 0) {
 		centerfreq = calc_centerfreq(freq, sample_rate);
 		if(centerfreq == 0) {
@@ -203,7 +237,7 @@ int main(int argc, char **argv) {
 	sincosf_lut_init();
 	switch(input) {
 	case INPUT_FILE:
-		process_file(ctx, infile);
+		process_file(ctx, infile, sample_fmt);
 		break;
 #if WITH_RTLSDR
 	case INPUT_RTLSDR:
