@@ -61,7 +61,6 @@ void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
 		process_buf = &process_buf_uchar;
 		break;
 	case SFMT_S16_LE:
-		process_buf_short_init();
 		ctx->sbuf = XCALLOC(FILE_BUFSIZE / 2, sizeof(float));
 		process_buf = &process_buf_short;
 		break;
