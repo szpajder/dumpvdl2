@@ -8,6 +8,9 @@
 #if WITH_RTLSDR
 #include "rtl.h"
 #endif
+#if WITH_MIRISDR
+#include "mirisdr.h"
+#endif
 #include "dumpvdl2.h"
 
 int do_exit = 0;
@@ -17,6 +20,9 @@ void sighandler(int sig) {
 	do_exit = 1;
 #if WITH_RTLSDR
 	rtl_cancel();
+#endif
+#if WITH_MIRISDR
+	mirisdr_cancel();
 #endif
 }
 
@@ -74,8 +80,12 @@ void usage() {
 	fprintf(stderr, "DUMPVDL2 version %s\n", DUMPVDL2_VERSION);
 	fprintf(stderr, "Usage:\n\n");
 #if WITH_RTLSDR
-	fprintf(stderr, "RTLSDR receiver:\n");
+	fprintf(stderr, "RTL-SDR receiver:\n");
 	fprintf(stderr, "\tdumpvdl2 [output_options] -R <device_id> [rtlsdr_options] [<channel_frequency>]\n");
+#endif
+#if WITH_MIRISDR
+	fprintf(stderr, "MIRI-SDR receiver:\n");
+	fprintf(stderr, "\tdumpvdl2 [output_options] -M <device_id> [mirisdr_options] [<channel_frequency>]\n");
 #endif
 	fprintf(stderr, "I/Q input from file:\n");
 	fprintf(stderr, "\tdumpvdl2 [output_options] -F <input_file> [file_options] [<channel_frequency>]\n");
@@ -92,9 +102,17 @@ void usage() {
 #if WITH_RTLSDR
 	fprintf(stderr, "\nrtlsdr_options:\n");
 	fprintf(stderr, "\t-R <device_id>\t\tUse RTL device with specified ID (default: 0)\n");
-	fprintf(stderr, "\t-g <gain>\t\tSet RTL gain (decibels)\n");
-	fprintf(stderr, "\t-p <correction>\t\tSet RTL freq correction (ppm)\n");
-	fprintf(stderr, "\t-c <center_frequency>\tSet RTL center frequency in Hz (default: auto)\n");
+	fprintf(stderr, "\t-g <gain>\t\tSet gain (decibels)\n");
+	fprintf(stderr, "\t-p <correction>\t\tSet freq correction (ppm)\n");
+	fprintf(stderr, "\t-c <center_frequency>\tSet center frequency in Hz (default: auto)\n");
+#endif
+#if WITH_MIRISDR
+	fprintf(stderr, "\nmirisdr_options:\n");
+	fprintf(stderr, "\t-M <device_id>\t\tUse Mirics device with specified ID (default: 0)\n");
+	fprintf(stderr, "\t-T <device_type>\t0 - default, 1 - SDRPlay\n");
+	fprintf(stderr, "\t-g <gain>\t\tSet gain (decibels)\n");
+	fprintf(stderr, "\t-p <correction>\t\tSet freq correction (in Hertz)\n");
+	fprintf(stderr, "\t-c <center_frequency>\tSet center frequency in Hz (default: auto)\n");
 #endif
 	fprintf(stderr, "\nfile_options:\n");
 	fprintf(stderr, "\t-F <input_file>\t\tRead I/Q samples from file\n");
@@ -112,14 +130,16 @@ int main(int argc, char **argv) {
 	uint32_t freq = 0, centerfreq = 0, sample_rate = 0, oversample = 0;
 	enum input_types input = INPUT_UNDEF;
 	enum sample_formats sample_fmt = SFMT_UNDEF;
-#if WITH_RTLSDR
+#if WITH_RTLSDR || WITH_MIRISDR
 	uint32_t device = 0;
-// FIXME: default gain and correction depend on receiver type which is currently enabled
-	int gain = RTL_AUTO_GAIN;
+	int gain = SDR_AUTO_GAIN;
 	int correction = 0;
 #endif
+#if WITH_MIRISDR
+	int mirisdr_hw_flavour = 0;
+#endif
 	int opt;
-	char *optstring = "c:DF:g:hHm:o:O:p:R:S:";
+	char *optstring = "c:DF:g:hHm:M:o:O:p:R:S:T:";
 #if USE_STATSD
 	char *statsd_addr = NULL;
 	int statsd_enabled = 0;
@@ -153,12 +173,24 @@ int main(int argc, char **argv) {
 		case 'c':
 			centerfreq = strtoul(optarg, NULL, 10);
 			break;
+#if WITH_MIRISDR
+		case 'M':
+			device = strtoul(optarg, NULL, 10);
+			input = INPUT_MIRISDR;
+			oversample = MIRISDR_OVERSAMPLE;
+			break;
+		case 'T':
+			mirisdr_hw_flavour = atoi(optarg);
+			break;
+#endif
 #if WITH_RTLSDR
 		case 'R':
 			device = strtoul(optarg, NULL, 10);
 			input = INPUT_RTLSDR;
 			oversample = RTL_OVERSAMPLE;
 			break;
+#endif
+#if WITH_RTLSDR || WITH_MIRISDR
 		case 'g':
 			gain = (int)(10 * atof(optarg));
 			break;
@@ -242,6 +274,11 @@ int main(int argc, char **argv) {
 #if WITH_RTLSDR
 	case INPUT_RTLSDR:
 		rtl_init(ctx, device, centerfreq, gain, correction);
+		break;
+#endif
+#if WITH_MIRISDR
+	case INPUT_MIRISDR:
+		mirisdr_init(ctx, device, mirisdr_hw_flavour, centerfreq, gain, correction);
 		break;
 #endif
 	default:

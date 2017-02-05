@@ -1,8 +1,10 @@
 export DEBUG ?= 1
 export USE_STATSD ?= 0
 export WITH_RTLSDR ?= 1
+export WITH_MIRISDR ?= 0
 CC = gcc
-CFLAGS = -std=c99 -g -Wall -D_XOPEN_SOURCE=500 -DDEBUG=$(DEBUG) -DUSE_STATSD=$(USE_STATSD) -DWITH_RTLSDR=$(WITH_RTLSDR) -O3 -ffast-math
+CFLAGS = -std=c99 -g -Wall -O3 -ffast-math -D_XOPEN_SOURCE=500 -DDEBUG=$(DEBUG)
+CFLAGS += -DUSE_STATSD=$(USE_STATSD) -DWITH_RTLSDR=$(WITH_RTLSDR) -DWITH_MIRISDR=$(WITH_MIRISDR)
 LDLIBS = -lfec -lm
 LDFLAGS = -Llibfec
 SUBDIRS = libfec
@@ -35,6 +37,10 @@ ifeq ($(WITH_RTLSDR), 1)
   DEPS += rtl.o
   LDLIBS += -lrtlsdr
 endif
+ifeq ($(WITH_MIRISDR), 1)
+  DEPS += mirisdr.o
+  LDLIBS += -lmirisdr
+endif
 
 .PHONY: all clean $(SUBDIRS) $(CLEANDIRS)
 
@@ -58,11 +64,13 @@ idrp.o: dumpvdl2.h idrp.h tlv.h
 
 rs.o: dumpvdl2.h fec.h
 
-dumpvdl2.o: dumpvdl2.h rtl.h
+dumpvdl2.o: dumpvdl2.h rtl.h mirisdr.h
 
 avlc.o: dumpvdl2.h avlc.h
 
 acars.o: dumpvdl2.h acars.h
+
+mirisdr.o: dumpvdl2.h mirisdr.h
 
 output.o: avlc.h acars.h
 

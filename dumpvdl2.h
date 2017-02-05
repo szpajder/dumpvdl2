@@ -27,6 +27,7 @@
 #define CSC_FREQ 136975000U
 #define FILE_BUFSIZE 320000U
 #define FILE_OVERSAMPLE 10
+#define SDR_AUTO_GAIN -100
 #define BUFSIZE (1000 * SPS)
 #define MAG_LP 0.9f
 #define DPHI_LP 0.95f
@@ -62,6 +63,9 @@ enum decoder_states { DEC_PREAMBLE, DEC_HEADER, DEC_DATA, DEC_IDLE };
 enum input_types {
 #if WITH_RTLSDR
 	INPUT_RTLSDR,
+#endif
+#if WITH_MIRISDR
+	INPUT_MIRISDR,
 #endif
 	INPUT_FILE,
 	INPUT_UNDEF
