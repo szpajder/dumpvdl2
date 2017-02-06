@@ -34,7 +34,7 @@ static int mirisdr_nearest_gain(mirisdr_dev_t *dev, int target_gain) {
 	return nearest;
 }
 
-void mirisdr_init(vdl2_state_t *ctx, uint32_t device, int flavour, uint32_t freq, int gain, int freq_offset) {
+void mirisdr_init(vdl2_state_t *ctx, uint32_t device, int flavour, uint32_t freq, int gain, int freq_offset, int usb_xfer_mode) {
 	int r;
 
 	mirisdr_hw_flavour_t hw_flavour;
@@ -54,6 +54,21 @@ void mirisdr_init(vdl2_state_t *ctx, uint32_t device, int flavour, uint32_t freq
 		fprintf(stderr, "Failed to open mirisdr device #%u: error %d\n", device, r);
 		_exit(1);
 	}
+
+	if(usb_xfer_mode == 0)
+		r = mirisdr_set_transfer(mirisdr, "ISOC");
+	else if(usb_xfer_mode == 1)
+		r = mirisdr_set_transfer(mirisdr, "BULK");
+	else {
+		fprintf(stderr, "Invalid USB transfer mode\n");
+		_exit(1);
+	}
+	if (r < 0) {
+		fprintf(stderr, "Failed to set transfer mode for device #%d: error %d\n", device, r);
+		_exit(1);
+	}
+	fprintf(stderr, "Using USB transfer mode %s\n", mirisdr_get_transfer(mirisdr));
+
 	r = mirisdr_set_sample_rate(mirisdr, MIRISDR_RATE);
 	if (r < 0) {
 		fprintf(stderr, "Failed to set sample rate for device #%d: error %d\n", device, r);

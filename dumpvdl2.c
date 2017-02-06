@@ -112,6 +112,7 @@ void usage() {
 	fprintf(stderr, "\t-g <gain>\t\tSet gain (decibels)\n");
 	fprintf(stderr, "\t-p <correction>\t\tSet freq correction (in Hertz)\n");
 	fprintf(stderr, "\t-c <center_frequency>\tSet center frequency in Hz (default: auto)\n");
+	fprintf(stderr, "\t-e <usb_transfer_mode>\t0 - isochronous (default), 1 - bulk\n");
 #endif
 	fprintf(stderr, "\nfile_options:\n");
 	fprintf(stderr, "\t-F <input_file>\t\tRead I/Q samples from file\n");
@@ -136,9 +137,10 @@ int main(int argc, char **argv) {
 #endif
 #if WITH_MIRISDR
 	int mirisdr_hw_flavour = 0;
+	int mirisdr_usb_xfer_mode = 0;
 #endif
 	int opt;
-	char *optstring = "c:DF:g:hHm:M:o:O:p:R:S:T:";
+	char *optstring = "c:De:F:g:hHm:M:o:O:p:R:S:T:";
 #if USE_STATSD
 	char *statsd_addr = NULL;
 	int statsd_enabled = 0;
@@ -180,6 +182,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'T':
 			mirisdr_hw_flavour = atoi(optarg);
+			break;
+		case 'e':
+			mirisdr_usb_xfer_mode = atoi(optarg);
 			break;
 #endif
 #if WITH_RTLSDR
@@ -277,7 +282,7 @@ int main(int argc, char **argv) {
 #endif
 #if WITH_MIRISDR
 	case INPUT_MIRISDR:
-		mirisdr_init(ctx, device, mirisdr_hw_flavour, centerfreq, gain, correction);
+		mirisdr_init(ctx, device, mirisdr_hw_flavour, centerfreq, gain, correction, mirisdr_usb_xfer_mode);
 		break;
 #endif
 	default:
