@@ -27,6 +27,7 @@
 #define CSC_FREQ 136975000U
 #define FILE_BUFSIZE 320000U
 #define FILE_OVERSAMPLE 10
+#define SDR_AUTO_GAIN -100
 #define BUFSIZE (1000 * SPS)
 #define MAG_LP 0.9f
 #define DPHI_LP 0.95f
@@ -63,9 +64,13 @@ enum input_types {
 #if WITH_RTLSDR
 	INPUT_RTLSDR,
 #endif
+#if WITH_MIRISDR
+	INPUT_MIRISDR,
+#endif
 	INPUT_FILE,
 	INPUT_UNDEF
 };
+enum sample_formats { SFMT_U8, SFMT_S16_LE, SFMT_UNDEF };
 
 typedef struct {
 	float mag_buf[BUFSIZE];
@@ -115,6 +120,8 @@ vdl2_state_t *vdl2_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate
 void sincosf_lut_init();
 void process_buf_uchar_init();
 void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx);
+void process_buf_short_init();
+void process_buf_short(unsigned char *buf, uint32_t len, void *ctx);
 
 // crc.c
 uint16_t crc16_ccitt(uint8_t *data, uint32_t len);

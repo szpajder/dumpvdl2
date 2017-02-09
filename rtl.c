@@ -59,7 +59,7 @@ void rtl_init(vdl2_state_t *ctx, uint32_t device, int freq, int gain, int correc
 		_exit(1);
 	}
 
-	if(gain == RTL_AUTO_GAIN) {
+	if(gain == SDR_AUTO_GAIN) {
 		r = rtlsdr_set_tuner_gain_mode(rtl, 0);
 		if (r < 0) {
 			fprintf(stderr, "Failed to set automatic gain for device #%d: error %d\n", device, r);
