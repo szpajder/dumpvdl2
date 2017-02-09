@@ -190,8 +190,10 @@ void output_avlc(vdl2_state_t *v, const avlc_frame_t *f) {
 		_exit(1);
 	char ftime[24];
 	strftime(ftime, sizeof(ftime), "%F %T", localtime(&f->t));
-	float snr = 20.0f * log10f(v->mag_frame / (v->mag_nf + 0.001f));
-	fprintf(outf, "\n[%s] [%.2f:%.2f] [%.1f dB]\n", ftime, v->mag_frame, v->mag_nf, snr);
+	float sig_pwr_dbfs = 20.0f * log10f(v->mag_frame);
+	float nf_pwr_dbfs = 20.0f * log10f(v->mag_nf + 0.001f);
+	fprintf(outf, "\n[%s] [%.1f/%.1f dBFS] [%.1f dB]\n",
+		ftime, sig_pwr_dbfs, nf_pwr_dbfs, sig_pwr_dbfs-nf_pwr_dbfs);
 	fprintf(outf, "%06X (%s, %s) -> %06X (%s): %s\n",
 		f->src.a_addr.addr,
 		addrtype_descr[f->src.a_addr.type],
