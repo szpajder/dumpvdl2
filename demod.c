@@ -24,7 +24,7 @@ static void sincosf_lut(uint32_t phi, float *sine, float *cosine) {
 	*cosine = v1 + (v2 - v1) * fract;
 }
 
-static void correlate_and_sync(vdl2_state_t *v) {
+static void correlate_and_sync(vdl2_channel_t *v) {
 	int i, min1 = 0, min2 = 0, min_dist, pos;
 	float avgmax, minv1, minv2;
 	float *buf = v->mag_buf;
@@ -90,13 +90,13 @@ static void multiply(float ar, float aj, float br, float bj, float *cr, float *c
 	*cj = aj*br + ar*bj;
 }
 
-static void decoder_reset(vdl2_state_t *v) {
+static void decoder_reset(vdl2_channel_t *v) {
 	v->decoder_state = DEC_PREAMBLE;
 	bitstream_reset(v->bs);
 	v->requested_bits = 4 * BPS + PREAMBLE_LEN;		// allow some extra room for leading zeros in xmtr ramp-up stage
 }
 
-static void demod_reset(vdl2_state_t *v) {
+static void demod_reset(vdl2_channel_t *v) {
 	decoder_reset(v);
 	v->bufe = v->bufs = v->sclk = 0;
 	v->demod_state = DM_INIT;
@@ -104,7 +104,7 @@ static void demod_reset(vdl2_state_t *v) {
 	v->dm_phi = 0.f;
 }
 
-static void demod(vdl2_state_t *v) {
+static void demod(vdl2_channel_t *v) {
 	static const uint8_t graycode[ARITY] = { 0, 1, 3, 2, 6, 7, 5, 4 };
 	float dI, dQ, dphi, phierr;
 	int idx, samples_available, samples_needed;
@@ -123,7 +123,7 @@ static void demod(vdl2_state_t *v) {
 			debug_print("%s", "no sync, DM_IDLE\n");
 			return;
 		}
-		statsd_increment("demod.sync.good");
+		statsd_increment(v->freq, "demod.sync.good");
 		v->dphi = 0.0f;
 		v->pI = v->I[v->sclk];
 		v->pQ = v->Q[v->sclk];
@@ -187,20 +187,15 @@ static void demod(vdl2_state_t *v) {
 	}
 }
 
-static void process_samples(vdl2_state_t *v) {
+static void process_samples(vdl2_channel_t *v, float *sbuf, uint32_t len) {
 	int i, available;
-	static int idle_skips = 0, not_idle_skips = 0;
-	static int bufnum = 0, samplenum = 0, cnt = 0, nfcnt = 0;
 	float re, im, mag;
 	float cwf, swf;
-	static float lp_re = 0.0f, lp_im = 0.0f;
 	static const float iq_lp2 = 1.0f - IQ_LP;
-	uint32_t len = v->slen;
-	float *sbuf = v->sbuf;
-	samplenum = -1;
+	v->samplenum = -1;
 	for(i = 0; i < len;) {
 #if DEBUG
-		samplenum++;
+		v->samplenum++;
 #endif
 		re = sbuf[i++];
 		im = sbuf[i++];
@@ -213,42 +208,37 @@ static void process_samples(vdl2_state_t *v) {
 		}
 
 // lowpass IIR
-		lp_re = IQ_LP * lp_re + iq_lp2 * re;
-		lp_im = IQ_LP * lp_im + iq_lp2 * im;
+		v->lp_re = IQ_LP * v->lp_re + iq_lp2 * re;
+		v->lp_im = IQ_LP * v->lp_im + iq_lp2 * im;
 // decimation
-		cnt %= v->oversample;
-		if(cnt++ != 0)
+		v->cnt %= v->oversample;
+		if(v->cnt++ != 0)
 			continue;
 
-		mag = hypotf(lp_re, lp_im);
+		mag = hypotf(v->lp_re, v->lp_im);
 		v->mag_lp = v->mag_lp * MAG_LP + mag * (1.0f - MAG_LP);
-		nfcnt %= 1000;
+		v->nfcnt %= 1000;
 // update noise floor estimate
-		if(nfcnt++ == 0)
+		if(v->nfcnt++ == 0)
 			v->mag_nf = NF_LP * v->mag_nf + (1.0f - NF_LP) * fminf(v->mag_lp, v->mag_nf) + 0.0001f;
 		if(v->mag_lp > 3.0f * v->mag_nf) {
-			if(v->demod_state == DM_IDLE) {
-				idle_skips++;
+			if(v->demod_state == DM_IDLE)
 				continue;
-			}
 			if(v->sq == 0) {
-				debug_print("*** on at (%d:%d) ***\n", bufnum, samplenum);
+				debug_print("*** on at (%d:%d) ***\n", v->bufnum, v->samplenum);
 				v->sq = 1;
-				idle_skips = not_idle_skips = 0;
 			}
 		} else {
 			if(v->sq == 1 && v->demod_state == DM_IDLE) {	// close squelch only when decoder finished work or errored
 				// FIXME: time-limit this, because reading obvious trash does not make sense
-				debug_print("*** off at (%d:%d) *** after %d idle_skips, %d not_idle_skips\n", bufnum, samplenum, idle_skips, not_idle_skips);
+				debug_print("*** off at (%d:%d) ***\n", v->bufnum, v->samplenum);
 				v->sq = 0;
 				demod_reset(v);
-			} else {
-				not_idle_skips++;
 			}
 		}
 		if(v->sq == 1) {
-			v->I[v->bufe] = lp_re;
-			v->Q[v->bufe] = lp_im;
+			v->I[v->bufe] = v->lp_re;
+			v->Q[v->bufe] = v->lp_im;
 			v->mag_buf[v->bufe] = mag;
 			v->mag_lpbuf[v->bufe] = v->mag_lp;
 			v->bufe++; v->bufe %= BUFSIZE;
@@ -263,8 +253,8 @@ static void process_samples(vdl2_state_t *v) {
 			demod(v);
 		}
 	}
-	bufnum++;
-	if(DEBUG && bufnum % 10 == 0)
+	v->bufnum++;
+	if(DEBUG && v->bufnum % 10 == 0)
 		debug_print("noise_floor: %f\n", v->mag_nf);
 }
 
@@ -274,8 +264,8 @@ void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx) {
 	float *sbuf = v->sbuf;
 	for(uint32_t i = 0; i < len; i++)
 		sbuf[i] = levels[buf[i]];
-	v->slen = len;
-	process_samples(v);
+	for(int i = 0; i < v->num_channels; i++)
+		process_samples(v->channels[i], sbuf, len);
 }
 
 void process_buf_uchar_init() {
@@ -293,8 +283,8 @@ void process_buf_short(unsigned char *buf, uint32_t len, void *ctx) {
 	len /= 2;
 	for(uint32_t i = 0; i < len; i++)
 		sbuf[i] = (float)bbuf[i] / 32768.0f;
-	v->slen = len;
-	process_samples(v);
+	for(int i = 0; i < v->num_channels; i++)
+		process_samples(v->channels[i], sbuf, len);
 }
 
 void sincosf_lut_init() {
@@ -304,9 +294,9 @@ void sincosf_lut_init() {
 	cos_lut[256] = cos_lut[0];
 }
 
-vdl2_state_t *vdl2_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample) {
-	vdl2_state_t *v;
-	v = XCALLOC(1, sizeof(vdl2_state_t));
+vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample) {
+	vdl2_channel_t *v;
+	v = XCALLOC(1, sizeof(vdl2_channel_t));
 	v->bs = bitstream_init(BSLEN);
 	v->mag_nf = 2.0f;
 // Cast to signed first, because casting negative float to uint is not portable
@@ -314,6 +304,7 @@ vdl2_state_t *vdl2_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate
 	debug_print("dm_dphi: 0x%x\n", v->dm_dphi);
 	v->offset_tuning = (centerfreq != freq);
 	v->oversample = oversample;
+	v->freq = freq;
 	demod_reset(v);
 	return v;
 }

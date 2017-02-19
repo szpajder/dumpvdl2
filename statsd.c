@@ -9,7 +9,6 @@
 
 #define STATSD_NAMESPACE "dumpvdl2"
 static statsd_link *statsd = NULL;
-static uint32_t frequency = 0;
 
 static const char *counters[] = {
 	"avlc.errors.bad_fcs",
@@ -67,17 +66,16 @@ void statsd_initialize_counters(uint32_t freq) {
 		snprintf(metric, sizeof(metric), "%u.%s", freq, counters[n]);
 		statsd_count(statsd, metric, 0, 1.0);
 	}
-	frequency = freq;
 }
 
-void statsd_counter_increment(char *counter) {
+void statsd_counter_increment(uint32_t freq, char *counter) {
 	if(!statsd) return;
 	char metric[256];
-	snprintf(metric, sizeof(metric), "%d.%s", frequency, counter);
+	snprintf(metric, sizeof(metric), "%d.%s", freq, counter);
 	statsd_inc(statsd, metric, 1.0);
 }
 
-void statsd_timing_delta_send(char *timer, struct timeval *ts) {
+void statsd_timing_delta_send(uint32_t freq, char *timer, struct timeval *ts) {
 	if(!statsd || !ts) return;
 	char metric[256];
 	struct timeval te;
@@ -90,6 +88,6 @@ void statsd_timing_delta_send(char *timer, struct timeval *ts) {
 	}
 	tdiff = ((te.tv_sec - ts->tv_sec) * 1000000UL + te.tv_usec - ts->tv_usec) / 1000;
 	debug_print("tdiff: %u ms\n", tdiff);
-	snprintf(metric, sizeof(metric), "%d.%s", frequency, timer);
+	snprintf(metric, sizeof(metric), "%d.%s", freq, timer);
 	statsd_timing(statsd, metric, tdiff);
 }

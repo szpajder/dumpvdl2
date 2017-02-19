@@ -25,6 +25,7 @@
 #define MAX_PREAMBLE_ERRORS 3
 #define SYMBOL_RATE 10500
 #define CSC_FREQ 136975000U
+#define MAX_CHANNELS 8
 #define FILE_BUFSIZE 320000U
 #define FILE_OVERSAMPLE 10
 #define SDR_AUTO_GAIN -100.0f
@@ -75,6 +76,7 @@ enum sample_formats { SFMT_U8, SFMT_S16_LE, SFMT_UNDEF };
 typedef struct {
 	float mag_buf[BUFSIZE];
 	float mag_lpbuf[BUFSIZE];		// temporary for testing
+	float lp_re, lp_im;
 	float I[BUFSIZE];
 	float Q[BUFSIZE];
 	float pI, pQ;
@@ -82,23 +84,30 @@ typedef struct {
 	float mag_nf;
 	float mag_frame;
 	float dphi;
+	int bufnum, samplenum;
+	int cnt, nfcnt;
 	int sq;
 	int bufs, bufe;
 	int sclk;
 	int offset_tuning;
 	enum demod_states demod_state;
 	enum decoder_states decoder_state;
+	uint32_t freq;
 	uint32_t dm_phi, dm_dphi;
 	uint32_t requested_samples;
 	uint32_t requested_bits;
 	bitstream_t *bs;
-	float *sbuf;
-	uint32_t slen;
 	uint32_t datalen, datalen_octets, last_block_len_octets, fec_octets;
 	uint32_t num_blocks;
 	uint16_t lfsr;
 	uint16_t oversample;
 	struct timeval tstart;
+} vdl2_channel_t;
+
+typedef struct {
+	float *sbuf;
+	int num_channels;
+	vdl2_channel_t **channels;
 } vdl2_state_t;
 
 // bitstream.c
@@ -113,10 +122,10 @@ void bitstream_reset(bitstream_t *bs);
 uint32_t reverse(uint32_t v, int numbits);
 
 // decode.c
-void decode_vdl_frame(vdl2_state_t *v);
+void decode_vdl_frame(vdl2_channel_t *v);
 
 // demod.c
-vdl2_state_t *vdl2_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample);
+vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample);
 void sincosf_lut_init();
 void process_buf_uchar_init();
 void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx);
@@ -127,9 +136,9 @@ void process_buf_short(unsigned char *buf, uint32_t len, void *ctx);
 uint16_t crc16_ccitt(uint8_t *data, uint32_t len);
 
 // avlc.c
-void parse_avlc_frames(vdl2_state_t *v, uint8_t *buf, uint32_t len);
+void parse_avlc_frames(vdl2_channel_t *v, uint8_t *buf, uint32_t len);
 uint32_t parse_dlc_addr(uint8_t *buf);
-void output_avlc(vdl2_state_t *v, const avlc_frame_t *f);
+void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f);
 
 // rs.c
 int rs_init();
@@ -147,10 +156,10 @@ void output_raw(uint8_t *buf, uint32_t len);
 int statsd_initialize(char *statsd_addr);
 void statsd_initialize_counters(uint32_t freq);
 #endif
-void statsd_counter_increment(char *counter);
-void statsd_timing_delta_send(char *timer, struct timeval *ts);
-#define statsd_increment(counter) do { if(USE_STATSD) statsd_counter_increment(counter); } while(0)
-#define statsd_timing_delta(timer, start) do { if(USE_STATSD) statsd_timing_delta_send(timer, start); } while(0)
+void statsd_counter_increment(uint32_t freq, char *counter);
+void statsd_timing_delta_send(uint32_t freq, char *timer, struct timeval *ts);
+#define statsd_increment(freq, counter) do { if(USE_STATSD) statsd_counter_increment(freq, counter); } while(0)
+#define statsd_timing_delta(freq, timer, start) do { if(USE_STATSD) statsd_timing_delta_send(freq, timer, start); } while(0)
 
 // util.c
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func);

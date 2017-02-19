@@ -112,7 +112,7 @@ void mirisdr_init(vdl2_state_t *ctx, uint32_t device, int flavour, uint32_t freq
 	}
 	mirisdr_reset_buffer(mirisdr);
 	fprintf(stderr, "Device %d started\n", device);
-	ctx->sbuf = XCALLOC(MIRISDR_BUFSIZE / 2, sizeof(float));
+	ctx->sbuf = XCALLOC(MIRISDR_BUFSIZE / sizeof(int16_t), sizeof(float));
 	if(mirisdr_read_async(mirisdr, process_buf_short, ctx, MIRISDR_BUFCNT, MIRISDR_BUFSIZE) < 0) {
 		fprintf(stderr, "Device #%d: async read failed\n", device);
 		_exit(1);

@@ -54,7 +54,7 @@ uint32_t parse_dlc_addr(uint8_t *buf) {
 	return reverse((buf[0] >> 1) | (buf[1] << 6) | (buf[2] << 13) | ((buf[3] & 0xfe) << 20), 28) & ONES(28);
 }
 
-static void parse_avlc(vdl2_state_t *v, uint8_t *buf, uint32_t len) {
+static void parse_avlc(vdl2_channel_t *v, uint8_t *buf, uint32_t len) {
 	debug_print_buf_hex(buf, len, "%s", "Frame data:\n");
 // FCS check
 	len -= 2;
@@ -66,10 +66,10 @@ static void parse_avlc(vdl2_state_t *v, uint8_t *buf, uint32_t len) {
 		debug_print("%s", "FCS check OK\n");
 	} else {
 		debug_print("%s", "FCS check failed\n");
-		statsd_increment("avlc.errors.bad_fcs");
+		statsd_increment(v->freq, "avlc.errors.bad_fcs");
 		return;
 	}
-	statsd_increment("avlc.frames.good");
+	statsd_increment(v->freq, "avlc.frames.good");
 	uint8_t *ptr = buf;
 	avlc_frame_t frame;
 	frame.t = time(NULL);
@@ -84,23 +84,23 @@ static void parse_avlc(vdl2_state_t *v, uint8_t *buf, uint32_t len) {
 		switch(dt) {
 		case ADDRTYPE_GS_ADM:
 		case ADDRTYPE_GS_DEL:
-			statsd_increment("avlc.msg.air2gnd");
+			statsd_increment(v->freq, "avlc.msg.air2gnd");
 			break;
 		case ADDRTYPE_ALL:
-			statsd_increment("avlc.msg.air2all");
+			statsd_increment(v->freq, "avlc.msg.air2all");
 			break;
 		}
 	} else if(st == ADDRTYPE_GS_ADM || st == ADDRTYPE_GS_DEL) {
 		switch(dt) {
 		case ADDRTYPE_AIRCRAFT:
-			statsd_increment("avlc.msg.gnd2air");
+			statsd_increment(v->freq, "avlc.msg.gnd2air");
 			break;
 		case ADDRTYPE_GS_ADM:
 		case ADDRTYPE_GS_DEL:
-			statsd_increment("avlc.msg.gnd2gnd");
+			statsd_increment(v->freq, "avlc.msg.gnd2gnd");
 			break;
 		case ADDRTYPE_ALL:
-			statsd_increment("avlc.msg.gnd2all");
+			statsd_increment(v->freq, "avlc.msg.gnd2all");
 			break;
 		}
 	}
@@ -135,10 +135,10 @@ static void parse_avlc(vdl2_state_t *v, uint8_t *buf, uint32_t len) {
 	output_avlc(v, &frame);
 }
 
-void parse_avlc_frames(vdl2_state_t *v, uint8_t *buf, uint32_t len) {
+void parse_avlc_frames(vdl2_channel_t *v, uint8_t *buf, uint32_t len) {
 	if(buf[0] != AVLC_FLAG) {
 		debug_print("%s", "No AVLC frame delimiter at the start\n");
-		statsd_increment("avlc.errors.no_flag_start");
+		statsd_increment(v->freq, "avlc.errors.no_flag_start");
 		return;
 	}
 	uint32_t fcnt = 0, goodfcnt = 0;
@@ -147,16 +147,16 @@ void parse_avlc_frames(vdl2_state_t *v, uint8_t *buf, uint32_t len) {
 	uint8_t *buf_end = buf + len;
 	uint32_t flen;
 	while(frame_start < buf_end - 1) {
-		statsd_increment("avlc.frames.processed");
+		statsd_increment(v->freq, "avlc.frames.processed");
 		if((frame_end = memchr(frame_start, AVLC_FLAG, buf_end - frame_start)) == NULL) {
 			debug_print("Frame %u: truncated\n", fcnt);
-			statsd_increment("avlc.errors.no_flag_end");
+			statsd_increment(v->freq, "avlc.errors.no_flag_end");
 			return;
 		}
 		flen = frame_end - frame_start;
 		if(flen < MIN_AVLC_LEN) {
 			debug_print("Frame %u: too short (len=%u required=%d)\n", fcnt, flen, MIN_AVLC_LEN);
-			statsd_increment("avlc.errors.too_short");
+			statsd_increment(v->freq, "avlc.errors.too_short");
 			goto next;
 		}
 		debug_print("Frame %u: len=%u\n", fcnt, flen);
@@ -184,7 +184,7 @@ static void output_avlc_U(const avlc_frame_t *f) {
 	}
 }
 
-void output_avlc(vdl2_state_t *v, const avlc_frame_t *f) {
+void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f) {
 	if(f == NULL) return;
 	if((daily || hourly) && rotate_outfile() < 0)
 		_exit(1);
@@ -192,8 +192,8 @@ void output_avlc(vdl2_state_t *v, const avlc_frame_t *f) {
 	strftime(ftime, sizeof(ftime), "%F %T", localtime(&f->t));
 	float sig_pwr_dbfs = 20.0f * log10f(v->mag_frame);
 	float nf_pwr_dbfs = 20.0f * log10f(v->mag_nf + 0.001f);
-	fprintf(outf, "\n[%s] [%.1f/%.1f dBFS] [%.1f dB]\n",
-		ftime, sig_pwr_dbfs, nf_pwr_dbfs, sig_pwr_dbfs-nf_pwr_dbfs);
+	fprintf(outf, "\n[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB]\n",
+		ftime, (float)v->freq / 1e+6, sig_pwr_dbfs, nf_pwr_dbfs, sig_pwr_dbfs-nf_pwr_dbfs);
 	fprintf(outf, "%06X (%s, %s) -> %06X (%s): %s\n",
 		f->src.a_addr.addr,
 		addrtype_descr[f->src.a_addr.type],
