@@ -109,7 +109,7 @@ void usage() {
 	fprintf(stderr, "\nmirisdr_options:\n");
 	fprintf(stderr, "\t-M <device_id>\t\tUse Mirics device with specified ID (default: 0)\n");
 	fprintf(stderr, "\t-T <device_type>\t0 - default, 1 - SDRPlay\n");
-	fprintf(stderr, "\t-g <gain>\t\tSet gain (decibels)\n");
+	fprintf(stderr, "\t-g <gain>\t\tSet gain (tens of decibels, ie. -g 10.2 = 102 dB)\n");
 	fprintf(stderr, "\t-p <correction>\t\tSet freq correction (in Hertz)\n");
 	fprintf(stderr, "\t-c <center_frequency>\tSet center frequency in Hz (default: auto)\n");
 	fprintf(stderr, "\t-e <usb_transfer_mode>\t0 - isochronous (default), 1 - bulk\n");
