@@ -41,8 +41,17 @@ void setup_signals() {
 }
 
 static uint32_t calc_centerfreq(uint32_t *freq, int cnt, uint32_t source_rate) {
-// FIXME
-	return freq[0];
+	uint32_t freq_min, freq_max;
+	freq_min = freq_max = freq[0];
+	for(int i = 0; i < cnt; i++) {
+		if(freq[i] < freq_min) freq_min = freq[i];
+		if(freq[i] > freq_max) freq_max = freq[i];
+	}
+	if(freq_max - freq_min > source_rate * 0.8f) {
+		fprintf(stderr, "Error: given frequencies are too fart apart\n");
+		return 0;
+	}
+	return freq_min + (freq_max - freq_min) / 2;
 }
 
 void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
