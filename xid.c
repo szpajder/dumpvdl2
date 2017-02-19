@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <arpa/inet.h>
 #include "dumpvdl2.h"
 #include "tlv.h"
 #include "xid.h"
@@ -37,6 +38,22 @@ static const vdl_modulation_descr_t modulation_names[] = {
 	{ 0x2, "VDL-M2, D8PSK, 31500 bps" },
 	{ 0x4, "VDL-M3, D8PSK, 31500 bps" },
 	{ 0x0, NULL }
+};
+
+static const dict lcr_causes[] = {
+	{ 0x00,	"Bad local parameter" },
+	{ 0x01, "Out of link layer resources" },
+	{ 0x02, "Out of packet layer resources" },
+	{ 0x03, "Terrestrial network not available" },
+	{ 0x04, "Terrestrial network congestion" },
+	{ 0x05, "Cannot support autotune" },
+	{ 0x06, "Station cannot support initiating handoff" },
+	{ 0x7f, "Other unspecified local reason" },
+	{ 0x80, "Bad global parameter" },
+	{ 0x81, "Protocol violation" },
+	{ 0x82, "Ground system out of resources" },
+	{ 0xff, "Other unspecified system reason" },
+	{ 0x00, NULL }
 };
 
 static char *fmt_vdl_modulation(uint8_t *data, uint16_t len) {
@@ -78,6 +95,31 @@ static char *fmt_string(uint8_t *data, uint16_t len) {
 	char *buf = XCALLOC(len + 1, sizeof(char));
 	memcpy(buf, data, len);
 	buf[len] = '\0';
+	return buf;
+}
+
+static char *fmt_lcr_cause(uint8_t *data, uint16_t len) {
+	if(len < 1) return strdup("<field truncated>");
+	char *buf = XCALLOC(128, sizeof(char));
+	char *cause_descr = (char *)dict_search(lcr_causes, data[0]);
+	sprintf(buf, "0x%02x (%s)", data[0], (cause_descr ? cause_descr : "unknown"));
+	data++; len--;
+	if(len >= 2) {
+		char *delaybuf = XCALLOC(32, sizeof(char));
+		sprintf(delaybuf, ", delay: %d", ntohs(*((uint16_t *)data)));
+		strcat(buf, delaybuf);
+		free(delaybuf);
+		data+=2; len-=2;
+	}
+	if(len > 0) {
+		char *additional = fmt_hexstring(data, len);
+		strcat(buf, ", additional data: ");
+		size_t total_len = strlen(additional) + strlen(buf);
+		if(total_len > 127)
+			buf = XREALLOC(buf, total_len + 1);
+		strcat(buf, additional);
+		free(additional);
+	}
 	return buf;
 }
 
@@ -128,7 +170,7 @@ static const tlv_dict xid_vdl_params[] = {
 	{ 0x03, &fmt_hexstring, "XID sequencing" },
 	{ 0x04, &fmt_hexstring, "AVLC specific options" },
 	{ 0x05, &fmt_hexstring, "Expedited SN connection " },
-	{ 0x06, &fmt_hexstring, "LCR cause" },
+	{ 0x06, &fmt_lcr_cause, "LCR cause" },
 	{ 0x81, &fmt_vdl_modulation, "Modulation support" },
 	{ 0x82, &fmt_dlc_addrs, "Alternate ground stations" },
 	{ 0x83, &fmt_string, "Destination airport" },
