@@ -123,18 +123,18 @@ static int deinterleave(uint8_t *in, uint32_t len, uint32_t rows, uint32_t cols,
 	return 0;
 }
 
-void decode_vdl_frame(vdl2_state_t *v) {
+void decode_vdl_frame(vdl2_channel_t *v) {
 	switch(v->decoder_state) {
 	case DEC_PREAMBLE:
 #if USE_STATSD
 		gettimeofday(&v->tstart, NULL);
 #endif
 		if(soft_preamble_search(v->bs) == NULL) {
-			statsd_increment("decoder.errors.no_preamble");
+			statsd_increment(v->freq, "decoder.errors.no_preamble");
 			v->decoder_state = DEC_IDLE;
 			return;
 		}
-		statsd_increment("decoder.preambles.good");
+		statsd_increment(v->freq, "decoder.preambles.good");
 		v->decoder_state = DEC_HEADER;
 		v->requested_bits = HEADER_LEN;
 		debug_print("DEC_HEADER, requesting %u bits\n", v->requested_bits);
@@ -145,7 +145,7 @@ void decode_vdl_frame(vdl2_state_t *v) {
 		uint32_t header;
 		if(bitstream_read_word_msbfirst(v->bs, &header, HEADER_LEN) < 0) {
 			debug_print("%s", "Could not read header from bitstream\n");
-			statsd_increment("decoder.errors.no_header");
+			statsd_increment(v->freq, "decoder.errors.no_header");
 			v->decoder_state = DEC_IDLE;
 			return;
 		}
@@ -153,11 +153,11 @@ void decode_vdl_frame(vdl2_state_t *v) {
 		header >>= CRCLEN;
 		if(!check_crc(header, crc)) {
 			debug_print("%s", "CRC check failed\n");
-			statsd_increment("decoder.errors.crc_bad");
+			statsd_increment(v->freq, "decoder.errors.crc_bad");
 			v->decoder_state = DEC_IDLE;
 			return;
 		}
-		statsd_increment("decoder.crc.good");
+		statsd_increment(v->freq, "decoder.crc.good");
 		v->datalen = reverse(header & ONES(TRLEN), TRLEN);
 		v->datalen_octets = v->datalen / 8;
 		if(v->datalen % 8 != 0)
@@ -175,7 +175,7 @@ void decode_vdl_frame(vdl2_state_t *v) {
 
 		if(v->fec_octets == 0) {
 			debug_print("%s", "fec_octets is 0 which means the frame is unreasonably short\n");
-			statsd_increment("decoder.errors.no_fec");
+			statsd_increment(v->freq, "decoder.errors.no_fec");
 			v->decoder_state = DEC_IDLE;
 			return;
 		}
@@ -188,12 +188,12 @@ void decode_vdl_frame(vdl2_state_t *v) {
 		uint8_t *fec = XCALLOC(v->fec_octets, sizeof(uint8_t));
 		if(bitstream_read_lsbfirst(v->bs, data, v->datalen_octets, 8) < 0) {
 			debug_print("%s", "Frame data truncated\n");
-			statsd_increment("decoder.errors.data_truncated");
+			statsd_increment(v->freq, "decoder.errors.data_truncated");
 			goto cleanup;
 		}
 		if(bitstream_read_lsbfirst(v->bs, fec, v->fec_octets, 8) < 0) {
 			debug_print("%s", "FEC data truncated\n");
-			statsd_increment("decoder.errors.fec_truncated");
+			statsd_increment(v->freq, "decoder.errors.fec_truncated");
 			goto cleanup;
 		}
 		debug_print_buf_hex(data, v->datalen_octets, "%s", "Data:\n");
@@ -204,7 +204,7 @@ void decode_vdl_frame(vdl2_state_t *v) {
 			int ret;
 			if((ret = deinterleave(data, v->datalen_octets, v->num_blocks, RS_N, rs_tab, RS_K, 0)) < 0) {
 				debug_print("Deinterleaver failed with error %d\n", ret);
-				statsd_increment("decoder.errors.deinterleave_data");
+				statsd_increment(v->freq, "decoder.errors.deinterleave_data");
 				goto cleanup;
 			}
 
@@ -215,7 +215,7 @@ void decode_vdl_frame(vdl2_state_t *v) {
 
 			if((ret = deinterleave(fec, v->fec_octets, fec_rows, RS_N, rs_tab, RS_N - RS_K, RS_K)) < 0) {
 				debug_print("Deinterleaver failed with error %d\n", ret);
-				statsd_increment("decoder.errors.deinterleave_fec");
+				statsd_increment(v->freq, "decoder.errors.deinterleave_fec");
 				goto cleanup;
 			}
 #if DEBUG
@@ -226,7 +226,7 @@ void decode_vdl_frame(vdl2_state_t *v) {
 #endif
 			bitstream_reset(v->bs);
 			for(int r = 0; r < v->num_blocks; r++) {
-				statsd_increment("decoder.blocks.processed");
+				statsd_increment(v->freq, "decoder.blocks.processed");
 				if(r != v->num_blocks - 1)	// full block
 					ret = rs_verify((uint8_t *)&rs_tab[r], RS_N - RS_K);
 				else				// last, partial block
@@ -234,10 +234,10 @@ void decode_vdl_frame(vdl2_state_t *v) {
 				debug_print("Block %d FEC: %d\n", r, ret);
 				if(ret < 0) {
 					debug_print("%s", "FEC check failed\n");
-					statsd_increment("decoder.errors.fec_bad");
+					statsd_increment(v->freq, "decoder.errors.fec_bad");
 					goto cleanup;
 				} else {
-					statsd_increment("decoder.blocks.fec_ok");
+					statsd_increment(v->freq, "decoder.blocks.fec_ok");
 					if(ret > 0)
 						debug_print_buf_hex(rs_tab[r], RS_N, "Corrected block %d:\n", r);
 				}
@@ -248,7 +248,7 @@ void decode_vdl_frame(vdl2_state_t *v) {
 					ret = bitstream_append_lsbfirst(v->bs, (uint8_t *)&rs_tab[r], v->last_block_len_octets, 8);
 				if(ret < 0) {
 					debug_print("%s", "bitstream_append_lsbfirst failed\n");
-					statsd_increment("decoder.errors.bitstream");
+					statsd_increment(v->freq, "decoder.errors.bitstream");
 					goto cleanup;
 				}
 			}
@@ -262,12 +262,12 @@ void decode_vdl_frame(vdl2_state_t *v) {
 		}
 		if(bitstream_hdlc_unstuff(v->bs) < 0) {
 			debug_print("%s", "Invalid bit sequence in the stream\n");
-			statsd_increment("decoder.errors.unstuff");
+			statsd_increment(v->freq, "decoder.errors.unstuff");
 			goto cleanup;
 		}
 		if((v->bs->end - v->bs->start) % 8 != 0) {
 			debug_print("%s", "Bit stream error: does not end on a byte boundary\n");
-			statsd_increment("decoder.errors.truncated_octets");
+			statsd_increment(v->freq, "decoder.errors.truncated_octets");
 			goto cleanup;
 		}
 		debug_print("stream OK after unstuffing, datalen_octets was %u now is %u\n", v->datalen_octets, ((v->bs->end - v->bs->start) / 8));
@@ -276,12 +276,12 @@ void decode_vdl_frame(vdl2_state_t *v) {
 		memset(data, 0, v->datalen_octets * sizeof(uint8_t));
 		if(bitstream_read_lsbfirst(v->bs, data, v->datalen_octets, 8) < 0) {
 			debug_print("%s", "bitstream_read_lsbfirst failed\n");
-			statsd_increment("decoder.errors.bitstream");
+			statsd_increment(v->freq, "decoder.errors.bitstream");
 			goto cleanup;
 		}
-		statsd_increment("decoder.msg.good");
+		statsd_increment(v->freq, "decoder.msg.good");
 		parse_avlc_frames(v, data, v->datalen_octets);
-		statsd_timing_delta("decoder.msg.processing_time", &v->tstart);
+		statsd_timing_delta(v->freq, "decoder.msg.processing_time", &v->tstart);
 cleanup:
 		if(data) free(data);
 		if(fec) free(fec);

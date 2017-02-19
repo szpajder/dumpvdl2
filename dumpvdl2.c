@@ -40,8 +40,18 @@ void setup_signals() {
 	sigaction(SIGTERM, &sigact, NULL);
 }
 
-static uint32_t calc_centerfreq(uint32_t freq, uint32_t source_rate) {
-	return freq;
+static uint32_t calc_centerfreq(uint32_t *freq, int cnt, uint32_t source_rate) {
+	uint32_t freq_min, freq_max;
+	freq_min = freq_max = freq[0];
+	for(int i = 0; i < cnt; i++) {
+		if(freq[i] < freq_min) freq_min = freq[i];
+		if(freq[i] > freq_max) freq_max = freq[i];
+	}
+	if(freq_max - freq_min > source_rate * 0.8f) {
+		fprintf(stderr, "Error: given frequencies are too fart apart\n");
+		return 0;
+	}
+	return freq_min + (freq_max - freq_min) / 2;
 }
 
 void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
@@ -57,11 +67,11 @@ void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
 	switch(sfmt) {
 	case SFMT_U8:
 		process_buf_uchar_init();
-		ctx->sbuf = XCALLOC(FILE_BUFSIZE, sizeof(float));
+		ctx->sbuf = XCALLOC(FILE_BUFSIZE / sizeof(uint8_t), sizeof(float));
 		process_buf = &process_buf_uchar;
 		break;
 	case SFMT_S16_LE:
-		ctx->sbuf = XCALLOC(FILE_BUFSIZE / 2, sizeof(float));
+		ctx->sbuf = XCALLOC(FILE_BUFSIZE / sizeof(int16_t), sizeof(float));
 		process_buf = &process_buf_short;
 		break;
 	default:
@@ -80,16 +90,16 @@ void usage() {
 	fprintf(stderr, "Usage:\n\n");
 #if WITH_RTLSDR
 	fprintf(stderr, "RTL-SDR receiver:\n");
-	fprintf(stderr, "\tdumpvdl2 [output_options] -R <device_id> [rtlsdr_options] [<channel_frequency>]\n");
+	fprintf(stderr, "\tdumpvdl2 [output_options] -R <device_id> [rtlsdr_options] [<freq_1> [freq_2 [...]]]\n");
 #endif
 #if WITH_MIRISDR
 	fprintf(stderr, "MIRI-SDR receiver:\n");
-	fprintf(stderr, "\tdumpvdl2 [output_options] -M <device_id> [mirisdr_options] [<channel_frequency>]\n");
+	fprintf(stderr, "\tdumpvdl2 [output_options] -M <device_id> [mirisdr_options] [<freq_1> [freq_2 [...]]]\n");
 #endif
 	fprintf(stderr, "I/Q input from file:\n");
-	fprintf(stderr, "\tdumpvdl2 [output_options] -F <input_file> [file_options] [<channel_frequency>]\n");
+	fprintf(stderr, "\tdumpvdl2 [output_options] -F <input_file> [file_options] [<freq_1> [freq_2 [...]]]\n");
 	fprintf(stderr, "\ncommon options:\n");
-	fprintf(stderr, "\t<channel_frequency>\tVDL2 channel to listen to, In Hz.\n");
+	fprintf(stderr, "\t<freq_n>\tVDL2 channel frequency, in Hz (max %d simultaneous channels supported).\n", MAX_CHANNELS);
 	fprintf(stderr, "\t\t\t\tIf omitted, will use VDL2 Common Signalling Channel (%u Hz)\n", CSC_FREQ);
 	fprintf(stderr, "\noutput_options:\n");
 	fprintf(stderr, "\t-o <output_file>\tOutput decoded frames to <output_file> (default: stdout)\n");
@@ -126,8 +136,10 @@ void usage() {
 }
 
 int main(int argc, char **argv) {
-	vdl2_state_t *ctx;
-	uint32_t freq = 0, centerfreq = 0, sample_rate = 0, oversample = 0;
+	vdl2_state_t ctx;
+	uint32_t centerfreq = 0, sample_rate = 0, oversample = 0;
+	uint32_t *freqs;
+	int num_channels = 0;
 	enum input_types input = INPUT_UNDEF;
 	enum sample_formats sample_fmt = SFMT_UNDEF;
 #if WITH_RTLSDR || WITH_MIRISDR
@@ -219,11 +231,25 @@ int main(int argc, char **argv) {
 			usage();
 		}
 	}
-	if(optind < argc)
-		freq = strtoul(argv[optind], NULL, 10);
-
 	if(input == INPUT_UNDEF)
 		usage();
+
+	if(optind < argc) {
+		num_channels = argc - optind;
+		if(num_channels > MAX_CHANNELS) {
+			fprintf(stderr, "Error: too many channels specified (%d > %d)\n", num_channels, MAX_CHANNELS);
+			_exit(1);
+		}
+		freqs = XCALLOC(num_channels, sizeof(uint32_t));
+		for(int i = 0; i < num_channels; i++)
+			freqs[i] = strtoul(argv[optind+i], NULL, 10);
+	} else {
+		fprintf(stderr, "Warning: frequency not set - using VDL2 Common Signalling Channel as a default (%u Hz)\n", CSC_FREQ);
+		num_channels = 1;
+		freqs = XCALLOC(num_channels, sizeof(uint32_t));
+		freqs[0] = CSC_FREQ;
+	}
+
 	if(outfile == NULL) {
 		outfile = strdup("-");		// output to stdout by default
 		hourly = daily = 0;		// stdout is not rotateable - ignore silently
@@ -233,34 +259,38 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Use -h for help\n");
 		_exit(1);
 	}
-	if(freq == 0) {
-		fprintf(stderr, "Warning: frequency not set - using VDL2 Common Signalling Channel as a default (%u Hz)\n", CSC_FREQ);
-		freq = CSC_FREQ;
-	}
 	sample_rate = SYMBOL_RATE * SPS * oversample;
 	fprintf(stderr, "Sampling rate set to %u sps\n", sample_rate);
 	if(centerfreq == 0) {
-		centerfreq = calc_centerfreq(freq, sample_rate);
+		centerfreq = calc_centerfreq(freqs, num_channels, sample_rate);
 		if(centerfreq == 0) {
 			fprintf(stderr, "Failed to calculate center frequency\n");
 			_exit(2);
 		}
 	}
-	if((ctx = vdl2_init(centerfreq, freq, sample_rate, oversample)) == NULL) {
-		fprintf(stderr, "Failed to initialize VDL state\n");
-		_exit(2);
+
+	memset(&ctx, 0, sizeof(vdl2_state_t));
+	ctx.num_channels = num_channels;
+	ctx.channels = XCALLOC(num_channels, sizeof(vdl2_channel_t *));
+	for(int i = 0; i < num_channels; i++) {
+		if((ctx.channels[i] = vdl2_channel_init(centerfreq, freqs[i], sample_rate, oversample)) == NULL) {
+			fprintf(stderr, "Failed to initialize VDL channel\n");
+			_exit(2);
+		}
 	}
+
 	if(rs_init() < 0) {
 		fprintf(stderr, "Failed to initialize RS codec\n");
 		_exit(3);
 	}
 #if USE_STATSD
-	if(statsd_enabled && freq != 0) {
+	if(statsd_enabled && input != INPUT_FILE) {
 		if(statsd_initialize(statsd_addr) < 0) {
 				fprintf(stderr, "Failed to initialize statsd client\n");
 				_exit(4);
 		}
-		statsd_initialize_counters(freq);
+		for(int i = 0; i < num_channels; i++)
+			statsd_initialize_counters(freqs[i]);
 	} else {
 		statsd_enabled = 0;
 	}
@@ -273,16 +303,16 @@ int main(int argc, char **argv) {
 	sincosf_lut_init();
 	switch(input) {
 	case INPUT_FILE:
-		process_file(ctx, infile, sample_fmt);
+		process_file(&ctx, infile, sample_fmt);
 		break;
 #if WITH_RTLSDR
 	case INPUT_RTLSDR:
-		rtl_init(ctx, device, centerfreq, gain, correction);
+		rtl_init(&ctx, device, centerfreq, gain, correction);
 		break;
 #endif
 #if WITH_MIRISDR
 	case INPUT_MIRISDR:
-		mirisdr_init(ctx, device, mirisdr_hw_flavour, centerfreq, gain, correction, mirisdr_usb_xfer_mode);
+		mirisdr_init(&ctx, device, mirisdr_hw_flavour, centerfreq, gain, correction, mirisdr_usb_xfer_mode);
 		break;
 #endif
 	default:
