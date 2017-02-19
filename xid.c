@@ -205,8 +205,8 @@ xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len) {
 	}
 	if(len > 0)
 		debug_print("Warning: %u unparsed octets left at end of XID message\n", len);
-	if(msg->pub_params == NULL || msg->vdl_params == NULL) {
-		fprintf(outf, "-- Incomplete XID message\n");
+// pub_params are optional, vdl_params are mandatory
+	if(msg->vdl_params == NULL) {
 		debug_print("%s", "Incomplete XID message\n");
 		return NULL;
 	}
@@ -223,8 +223,11 @@ xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len) {
 
 void output_xid(xid_msg_t *msg) {
 	fprintf(outf, "XID: %s\n", xid_names[msg->type].description);
-	fprintf(outf, "Public params:\n");
-	output_tlv(outf, msg->pub_params, xid_pub_params);
+// pub_params are optional, vdl_params are mandatory
+	if(msg->pub_params) {
+		fprintf(outf, "Public params:\n");
+		output_tlv(outf, msg->pub_params, xid_pub_params);
+	}
 	fprintf(outf, "VDL params:\n");
 	output_tlv(outf, msg->vdl_params, xid_vdl_params);
 }
