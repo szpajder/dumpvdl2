@@ -34,7 +34,7 @@ static int nearest_gain(rtlsdr_dev_t *dev, int target_gain) {
 	return nearest;
 }
 
-void rtl_init(vdl2_state_t *ctx, uint32_t device, int freq, int gain, int correction) {
+void rtl_init(vdl2_state_t *ctx, uint32_t device, int freq, float gain, int correction) {
 	int r;
 
 	r = rtlsdr_open(&rtl, device);
@@ -67,7 +67,7 @@ void rtl_init(vdl2_state_t *ctx, uint32_t device, int freq, int gain, int correc
 		} else
 			fprintf(stderr, "Device #%d: gain set to automatic\n", device);
 	} else {
-		int ngain = nearest_gain(rtl, gain);
+		int ngain = nearest_gain(rtl, (int)(gain * 10.f));
 		if(ngain < 0) {
 			fprintf(stderr, "Failed to read supported gain list for device #%d: error %d\n", device, ngain);
 			_exit(1);
@@ -76,11 +76,11 @@ void rtl_init(vdl2_state_t *ctx, uint32_t device, int freq, int gain, int correc
 		r |= rtlsdr_set_tuner_gain(rtl, ngain);
 		if (r < 0) {
 			fprintf(stderr, "Failed to set gain to %0.2f for device #%d: error %d\n",
-				(float)ngain / 10.0, device, r);
+				(float)ngain / 10.f, device, r);
 			_exit(1);
 		} else
 			fprintf(stderr, "Device #%d: gain set to %0.2f dB\n", device,
-				(float)rtlsdr_get_tuner_gain(rtl) / 10.0);
+				(float)rtlsdr_get_tuner_gain(rtl) / 10.f);
 	}
 
 	r = rtlsdr_set_agc_mode(rtl, 0);

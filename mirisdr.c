@@ -34,7 +34,7 @@ static int mirisdr_nearest_gain(mirisdr_dev_t *dev, int target_gain) {
 	return nearest;
 }
 
-void mirisdr_init(vdl2_state_t *ctx, uint32_t device, int flavour, uint32_t freq, int gain, int freq_offset, int usb_xfer_mode) {
+void mirisdr_init(vdl2_state_t *ctx, uint32_t device, int flavour, uint32_t freq, float gain, int freq_offset, int usb_xfer_mode) {
 	int r;
 
 	mirisdr_hw_flavour_t hw_flavour;
@@ -89,7 +89,7 @@ void mirisdr_init(vdl2_state_t *ctx, uint32_t device, int flavour, uint32_t freq
 		} else
 			fprintf(stderr, "Device #%d: gain set to automatic\n", device);
 	} else {
-		int ngain = mirisdr_nearest_gain(mirisdr, gain);
+		int ngain = mirisdr_nearest_gain(mirisdr, (int)gain);
 		if(ngain < 0) {
 			fprintf(stderr, "Failed to read supported gain list for device #%d: error %d\n", device, ngain);
 			_exit(1);
@@ -97,12 +97,12 @@ void mirisdr_init(vdl2_state_t *ctx, uint32_t device, int flavour, uint32_t freq
 		r = mirisdr_set_tuner_gain_mode(mirisdr, 1);
 		r |= mirisdr_set_tuner_gain(mirisdr, ngain);
 		if (r < 0) {
-			fprintf(stderr, "Failed to set gain to %0.2f for device #%d: error %d\n",
-				(float)ngain / 10.0, device, r);
+			fprintf(stderr, "Failed to set gain to %d for device #%d: error %d\n",
+				ngain, device, r);
 			_exit(1);
 		} else
-			fprintf(stderr, "Device #%d: gain set to %0.2f dB\n", device,
-				(float)mirisdr_get_tuner_gain(mirisdr) / 10.0);
+			fprintf(stderr, "Device #%d: gain set to %d dB\n", device,
+				mirisdr_get_tuner_gain(mirisdr));
 	}
 
 	r = mirisdr_set_sample_format(mirisdr, "252_S16");

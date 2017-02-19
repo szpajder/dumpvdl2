@@ -109,7 +109,7 @@ void usage() {
 	fprintf(stderr, "\nmirisdr_options:\n");
 	fprintf(stderr, "\t-M <device_id>\t\tUse Mirics device with specified ID (default: 0)\n");
 	fprintf(stderr, "\t-T <device_type>\t0 - default, 1 - SDRPlay\n");
-	fprintf(stderr, "\t-g <gain>\t\tSet gain (tens of decibels, ie. -g 10.2 = 102 dB)\n");
+	fprintf(stderr, "\t-g <gain>\t\tSet gain (in decibels, from 0 to 102 dB)\n");
 	fprintf(stderr, "\t-p <correction>\t\tSet freq correction (in Hertz)\n");
 	fprintf(stderr, "\t-c <center_frequency>\tSet center frequency in Hz (default: auto)\n");
 	fprintf(stderr, "\t-e <usb_transfer_mode>\t0 - isochronous (default), 1 - bulk\n");
@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
 	enum sample_formats sample_fmt = SFMT_UNDEF;
 #if WITH_RTLSDR || WITH_MIRISDR
 	uint32_t device = 0;
-	int gain = SDR_AUTO_GAIN;
+	float gain = SDR_AUTO_GAIN;
 	int correction = 0;
 #endif
 #if WITH_MIRISDR
@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
 #endif
 #if WITH_RTLSDR || WITH_MIRISDR
 		case 'g':
-			gain = (int)(10 * atof(optarg));
+			gain = atof(optarg);
 			break;
 		case 'p':
 			correction = atoi(optarg);

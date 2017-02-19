@@ -27,7 +27,7 @@
 #define CSC_FREQ 136975000U
 #define FILE_BUFSIZE 320000U
 #define FILE_OVERSAMPLE 10
-#define SDR_AUTO_GAIN -100
+#define SDR_AUTO_GAIN -100.0f
 #define BUFSIZE (1000 * SPS)
 #define MAG_LP 0.9f
 #define DPHI_LP 0.95f
