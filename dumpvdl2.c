@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <signal.h>
 #include <errno.h>
 #if WITH_RTLSDR
@@ -90,48 +91,48 @@ void usage() {
 	fprintf(stderr, "Usage:\n\n");
 #if WITH_RTLSDR
 	fprintf(stderr, "RTL-SDR receiver:\n");
-	fprintf(stderr, "\tdumpvdl2 [output_options] -R <device_id> [rtlsdr_options] [<freq_1> [freq_2 [...]]]\n");
+	fprintf(stderr, "\tdumpvdl2 [output_options] --rtlsdr <device_id> [rtlsdr_options] [<freq_1> [freq_2 [...]]]\n");
 #endif
 #if WITH_MIRISDR
 	fprintf(stderr, "MIRI-SDR receiver:\n");
-	fprintf(stderr, "\tdumpvdl2 [output_options] -M <device_id> [mirisdr_options] [<freq_1> [freq_2 [...]]]\n");
+	fprintf(stderr, "\tdumpvdl2 [output_options] --mirisdr <device_id> [mirisdr_options] [<freq_1> [freq_2 [...]]]\n");
 #endif
 	fprintf(stderr, "I/Q input from file:\n");
-	fprintf(stderr, "\tdumpvdl2 [output_options] -F <input_file> [file_options] [<freq_1> [freq_2 [...]]]\n");
+	fprintf(stderr, "\tdumpvdl2 [output_options] --iq-file <input_file> [file_options] [<freq_1> [freq_2 [...]]]\n");
 	fprintf(stderr, "\ncommon options:\n");
-	fprintf(stderr, "\t<freq_n>\tVDL2 channel frequency, in Hz (max %d simultaneous channels supported).\n", MAX_CHANNELS);
-	fprintf(stderr, "\t\t\t\tIf omitted, will use VDL2 Common Signalling Channel (%u Hz)\n", CSC_FREQ);
+	fprintf(stderr, "\t<freq_1> [freq_2 [...]]\t\tVDL2 channel frequences, in Hz (max %d simultaneous channels supported).\n", MAX_CHANNELS);
+	fprintf(stderr, "\t\t\t\t\tIf omitted, will use VDL2 Common Signalling Channel (%u Hz)\n", CSC_FREQ);
 	fprintf(stderr, "\noutput_options:\n");
-	fprintf(stderr, "\t-o <output_file>\tOutput decoded frames to <output_file> (default: stdout)\n");
-	fprintf(stderr, "\t-H\t\t\tRotate output file hourly\n");
-	fprintf(stderr, "\t-D\t\t\tRotate output file daily\n");
+	fprintf(stderr, "\t--output-file <output_file>\tOutput decoded frames to <output_file> (default: stdout)\n");
+	fprintf(stderr, "\t--hourly\t\t\tRotate output file hourly\n");
+	fprintf(stderr, "\t--daily\t\t\t\tRotate output file daily\n");
 #if USE_STATSD
-	fprintf(stderr, "\t-S <host>:<port>\tSend statistics to Etsy StatsD server <host>:<port> (default: disabled)\n");
+	fprintf(stderr, "\t--statsd <host>:<port>\tSend statistics to Etsy StatsD server <host>:<port> (default: disabled)\n");
 #endif
 #if WITH_RTLSDR
 	fprintf(stderr, "\nrtlsdr_options:\n");
-	fprintf(stderr, "\t-R <device_id>\t\tUse RTL device with specified ID (default: 0)\n");
-	fprintf(stderr, "\t-g <gain>\t\tSet gain (decibels)\n");
-	fprintf(stderr, "\t-p <correction>\t\tSet freq correction (ppm)\n");
-	fprintf(stderr, "\t-c <center_frequency>\tSet center frequency in Hz (default: auto)\n");
+	fprintf(stderr, "\t--rtlsdr <device_id>\t\tUse RTL device with specified ID (default: 0)\n");
+	fprintf(stderr, "\t--gain <gain>\t\t\tSet gain (decibels)\n");
+	fprintf(stderr, "\t--correction <correction>\tSet freq correction (ppm)\n");
+	fprintf(stderr, "\t--centerfreq <center_frequency>\tSet center frequency in Hz (default: auto)\n");
 #endif
 #if WITH_MIRISDR
 	fprintf(stderr, "\nmirisdr_options:\n");
-	fprintf(stderr, "\t-M <device_id>\t\tUse Mirics device with specified ID (default: 0)\n");
-	fprintf(stderr, "\t-T <device_type>\t0 - default, 1 - SDRPlay\n");
-	fprintf(stderr, "\t-g <gain>\t\tSet gain (in decibels, from 0 to 102 dB)\n");
-	fprintf(stderr, "\t-p <correction>\t\tSet freq correction (in Hertz)\n");
-	fprintf(stderr, "\t-c <center_frequency>\tSet center frequency in Hz (default: auto)\n");
-	fprintf(stderr, "\t-e <usb_transfer_mode>\t0 - isochronous (default), 1 - bulk\n");
+	fprintf(stderr, "\t--mirisdr <device_id>\t\tUse Mirics device with specified ID (default: 0)\n");
+	fprintf(stderr, "\t--hw-type <device_type>\t\t0 - default, 1 - SDRPlay\n");
+	fprintf(stderr, "\t--gain <gain>\t\t\tSet gain (in decibels, from 0 to 102 dB)\n");
+	fprintf(stderr, "\t--correction <correction>\tSet freq correction (in Hertz)\n");
+	fprintf(stderr, "\t--centerfreq <center_frequency>\tSet center frequency in Hz (default: auto)\n");
+	fprintf(stderr, "\t--usb-mode <usb_transfer_mode>\t0 - isochronous (default), 1 - bulk\n");
 #endif
 	fprintf(stderr, "\nfile_options:\n");
-	fprintf(stderr, "\t-F <input_file>\t\tRead I/Q samples from file\n");
-	fprintf(stderr, "\t-c <center_frequency>\tCenter frequency of the input data, in Hz (default: 0)\n");
-	fprintf(stderr, "\t-O <oversample_rate>\tOversampling rate for recorded data (default: %u)\n", FILE_OVERSAMPLE);
-	fprintf(stderr, "\t\t\t\t  (sampling rate will be set to %u * oversample_rate)\n", SYMBOL_RATE * SPS);
-	fprintf(stderr, "\t-m <sample_format>\tInput sample format. Supported formats:\n");
-	fprintf(stderr, "\t\t\t\t  U8\t\t8-bit unsigned (eg. recorded with rtl_sdr) (default)\n");
-	fprintf(stderr, "\t\t\t\t  S16_LE\t16-bit signed, little-endian (eg. recorded with miri_sdr)\n");
+	fprintf(stderr, "\t--iq-file <input_file>\t\tRead I/Q samples from file\n");
+	fprintf(stderr, "\t--centerfreq <center_frequency>\tCenter frequency of the input data, in Hz (default: 0)\n");
+	fprintf(stderr, "\t--oversample <oversample_rate>\tOversampling rate for recorded data (default: %u)\n", FILE_OVERSAMPLE);
+	fprintf(stderr, "\t\t\t\t\t  (sampling rate will be set to %u * oversample_rate)\n", SYMBOL_RATE * SPS);
+	fprintf(stderr, "\t--sample-format <sample_format>\tInput sample format. Supported formats:\n");
+	fprintf(stderr, "\t\t\t\t\t  U8\t\t8-bit unsigned (eg. recorded with rtl_sdr) (default)\n");
+	fprintf(stderr, "\t\t\t\t\t  S16_LE\t16-bit signed, little-endian (eg. recorded with miri_sdr)\n");
 	_exit(0);
 }
 
@@ -152,22 +153,48 @@ int main(int argc, char **argv) {
 	int mirisdr_usb_xfer_mode = 0;
 #endif
 	int opt;
-	char *optstring = "c:De:F:g:hHm:M:o:O:p:R:S:T:";
+	struct option long_opts[] = {
+		{ "centerfreq",		required_argument,	NULL,	__OPT_CENTERFREQ },
+		{ "daily",		no_argument,		NULL,	__OPT_DAILY },
+		{ "hourly",		no_argument,		NULL, 	__OPT_HOURLY },
+		{ "output-file",	required_argument,	NULL,	__OPT_OUTPUT_FILE },
+		{ "iq-file",		required_argument,	NULL,	__OPT_IQ_FILE },
+		{ "oversample",		required_argument,	NULL,	__OPT_OVERSAMPLE },
+		{ "sample-format",	required_argument,	NULL,	__OPT_SAMPLE_FORMAT },
+#if WITH_MIRISDR
+		{ "mirisdr",		required_argument,	NULL,	__OPT_MIRISDR },
+		{ "hw-type",		required_argument,	NULL,	__OPT_HW_TYPE },
+		{ "usb-mode",		required_argument,	NULL,	__OPT_USB_MODE },
+#endif
+#if WITH_RTLSDR
+		{ "rtlsdr",		required_argument,	NULL,	__OPT_RTLSDR },
+#endif
+#if WITH_RTLSDR || WITH_MIRISDR
+		{ "gain",		required_argument,	NULL,	__OPT_GAIN },
+		{ "correction",		required_argument,	NULL,	__OPT_CORRECTION },
+#endif
+#if USE_STATSD
+		{ "statsd",		required_argument,	NULL,	__OPT_STATSD },
+#endif
+		{ "help",		no_argument,		NULL,	__OPT_HELP },
+		{ 0,			0,			0,	0 }
+	};
+
 #if USE_STATSD
 	char *statsd_addr = NULL;
 	int statsd_enabled = 0;
 #endif
 	char *infile = NULL, *outfile = NULL;
 
-	while((opt = getopt(argc, argv, optstring)) != -1) {
+	while((opt = getopt_long(argc, argv, "", long_opts, NULL)) != -1) {
 		switch(opt) {
-		case 'F':
+		case __OPT_IQ_FILE:
 			infile = strdup(optarg);
 			input = INPUT_FILE;
 			oversample = FILE_OVERSAMPLE;
 			sample_fmt = SFMT_U8;
 			break;
-		case 'm':
+		case __OPT_SAMPLE_FORMAT:
 			if(!strcmp(optarg, "U8"))
 				sample_fmt = SFMT_U8;
 			else if(!strcmp(optarg, "S16_LE"))
@@ -177,56 +204,56 @@ int main(int argc, char **argv) {
 				_exit(1);
 			}
 			break;
-		case 'H':
+		case __OPT_HOURLY:
 			hourly = 1;
 			break;
-		case 'D':
+		case __OPT_DAILY:
 			daily = 1;
 			break;
-		case 'c':
+		case __OPT_CENTERFREQ:
 			centerfreq = strtoul(optarg, NULL, 10);
 			break;
 #if WITH_MIRISDR
-		case 'M':
+		case __OPT_MIRISDR:
 			device = strtoul(optarg, NULL, 10);
 			input = INPUT_MIRISDR;
 			oversample = MIRISDR_OVERSAMPLE;
 			break;
-		case 'T':
+		case __OPT_HW_TYPE:
 			mirisdr_hw_flavour = atoi(optarg);
 			break;
-		case 'e':
+		case __OPT_USB_MODE:
 			mirisdr_usb_xfer_mode = atoi(optarg);
 			break;
 #endif
 #if WITH_RTLSDR
-		case 'R':
+		case __OPT_RTLSDR:
 			device = strtoul(optarg, NULL, 10);
 			input = INPUT_RTLSDR;
 			oversample = RTL_OVERSAMPLE;
 			break;
 #endif
 #if WITH_RTLSDR || WITH_MIRISDR
-		case 'g':
+		case __OPT_GAIN:
 			gain = atof(optarg);
 			break;
-		case 'p':
+		case __OPT_CORRECTION:
 			correction = atoi(optarg);
 			break;
 #endif
-		case 'o':
+		case __OPT_OUTPUT_FILE:
 			outfile = strdup(optarg);
 			break;
-		case 'O':
+		case __OPT_OVERSAMPLE:
 			oversample = atoi(optarg);
 			break;
 #if USE_STATSD
-		case 'S':
+		case __OPT_STATSD:
 			statsd_addr = strdup(optarg);
 			statsd_enabled = 1;
 			break;
 #endif
-		case 'h':
+		case __OPT_HELP:
 		default:
 			usage();
 		}

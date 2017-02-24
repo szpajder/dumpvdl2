@@ -35,6 +35,31 @@
 #define NF_LP 0.85f
 #define IQ_LP 0.92f
 
+// long command line options
+#define __OPT_CENTERFREQ		 1
+#define __OPT_DAILY			 2
+#define __OPT_HOURLY			 3
+#define __OPT_OUTPUT_FILE		 4
+#define __OPT_IQ_FILE			 5
+#define __OPT_OVERSAMPLE		 6
+#define __OPT_SAMPLE_FORMAT		 7
+#ifdef WITH_MIRISDR
+#define __OPT_MIRISDR			 8
+#define __OPT_HW_TYPE			 9
+#define __OPT_USB_MODE			10
+#endif
+#if WITH_RTLSDR
+#define __OPT_RTLSDR			11
+#endif
+#if WITH_MIRISDR || WITH_RTLSDR
+#define __OPT_GAIN			12
+#define __OPT_CORRECTION		13
+#endif
+#if USE_STATSD
+#define __OPT_STATSD			14
+#endif
+#define __OPT_HELP			99
+
 #define debug_print(fmt, ...) \
 	do { if (DEBUG) fprintf(stderr, "%s(): " fmt, __func__, __VA_ARGS__); } while (0)
 
