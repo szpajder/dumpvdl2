@@ -79,6 +79,12 @@
 #define MSGFLT_IDRP_KEEPALIVE		(1 << 12)
 #define MSGFLT_ESIS			(1 << 13)
 
+typedef struct {
+	char *token;
+	uint32_t value;
+	char *description;
+} msg_filterspec_t;
+
 #define debug_print(fmt, ...) \
 	do { if (DEBUG) fprintf(stderr, "%s(): " fmt, __func__, __VA_ARGS__); } while (0)
 

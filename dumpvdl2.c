@@ -107,7 +107,7 @@ void usage() {
 	fprintf(stderr, "\t--output-file <output_file>\tOutput decoded frames to <output_file> (default: stdout)\n");
 	fprintf(stderr, "\t--hourly\t\t\tRotate output file hourly\n");
 	fprintf(stderr, "\t--daily\t\t\t\tRotate output file daily\n");
-	fprintf(stderr, "\t--msg-filter <filter_mask>\tMessage types to display (default: all)\n");
+	fprintf(stderr, "\t--msg-filter <filter_spec>\tMessage types to display (default: all) (\"--msg-filter help\" for details)\n");
 #if USE_STATSD
 	fprintf(stderr, "\t--statsd <host>:<port>\tSend statistics to Etsy StatsD server <host>:<port> (default: disabled)\n");
 #endif
@@ -136,6 +136,97 @@ void usage() {
 	fprintf(stderr, "\t\t\t\t\t  U8\t\t8-bit unsigned (eg. recorded with rtl_sdr) (default)\n");
 	fprintf(stderr, "\t\t\t\t\t  S16_LE\t16-bit signed, little-endian (eg. recorded with miri_sdr)\n");
 	_exit(0);
+}
+
+const msg_filterspec_t filters[] = {
+	{ "all",		MSGFLT_ALL,			"All messages" },
+	{ "uplink",		MSGFLT_SRC_GND,			"Uplink messages (sourced by ground stations)" },
+	{ "downlink",		MSGFLT_SRC_AIR,			"Downlink messages (sourced by aircraft)" },
+	{ "avlc_s",		MSGFLT_AVLC_S,			"AVLC Supervisory frames" },
+	{ "avlc_u",		MSGFLT_AVLC_U,			"AVLC Unnumbered Control frames" },
+	{ "avlc_i",		MSGFLT_AVLC_I,			"AVLC Information frames" },
+	{ "avlc",		MSGFLT_AVLC_S | MSGFLT_AVLC_U | MSGFLT_AVLC_I, "All AVLC frames (shorthand for \"avlc_s,avlc_u,avlc_i)\"", },
+	{ "acars_nodata",	MSGFLT_ACARS_NODATA,		"ACARS frames without data (eg. empty ACKs)" },
+	{ "acars_data",		MSGFLT_ACARS_DATA,		"ACARS frames with data" },
+	{ "acars",		MSGFLT_ACARS_NODATA | MSGFLT_ACARS_DATA, "All ACARS frames (shorthand for \"acars_nodata,acars_data\")" },
+	{ "xid_no_gsif",	MSGFLT_XID_NO_GSIF,		"XID frames other than Ground Station Information Frames" },
+	{ "gsif",		MSGFLT_XID_GSIF,		"Ground Station Information Frames" },
+	{ "xid",		MSGFLT_XID_NO_GSIF | MSGFLT_XID_GSIF, "All XID frames (shorthand for \"xid_no_gsif,gsif\")" },
+	{ "x25_control",	MSGFLT_X25_CONTROL,		"X.25 Control packets" },
+	{ "x25_data",		MSGFLT_X25_DATA,		"X.25 Data packets" },
+	{ "x25",		MSGFLT_X25_CONTROL | MSGFLT_X25_CONTROL, "All X.25 packets (shorthand for \"x25_control,x25_data\")" },
+	{ "idrp_no_keepalive",	MSGFLT_IDRP_NO_KEEPALIVE,	"IDRP PDUs other than Keepalives" },
+	{ "idrp_keepalive",	MSGFLT_IDRP_KEEPALIVE,		"IDRP Keepalive PDUs" },
+	{ "idrp",		MSGFLT_IDRP_NO_KEEPALIVE | MSGFLT_IDRP_KEEPALIVE, "All IDRP PDUs (shorthand for \"idrp_no_keepalive,idrp_keepalive\")" },
+	{ "esis",		MSGFLT_ESIS,			"ES-IS PDUs" },
+	{ 0,			0,				0 }
+};
+
+static void msg_filter_usage() {
+	fprintf(stderr, "<filter_spec> is a comma-separated list of words specifying message types which should\n");
+	fprintf(stderr, "be displayed. Each word may optionally be preceded by a '-' sign to negate its meaning\n");
+	fprintf(stderr, "(ie. to indicate that a particular message type shall not be displayed).\n");
+	fprintf(stderr, "\nSupported message types:\n\n");
+
+	msg_filterspec_t *ptr = (msg_filterspec_t *)filters;
+	while(ptr->token != NULL) {
+		fprintf(stderr, "\t%s\t%s%s%s\n",
+			ptr->token,
+			strlen(ptr->token) < 8 ? "\t" : "",
+			strlen(ptr->token) < 16 ? "\t" : "",
+			ptr->description
+		);
+		ptr++;
+	}
+
+	fprintf(stderr, "\nWhen --msg-filter option is not used, all messages are displayed. But when it is, the\n");
+	fprintf(stderr, "filter is first reset to \"none\", ie. you have to explicitly enable all message types\n");
+	fprintf(stderr, "which you wish to see. Word list is parsed from left to right, so the last match wins.\n");
+	fprintf(stderr, "\nRefer to FILTERING_EXAMPLES.md file for usage examples.\n");
+	_exit(0);
+}
+
+static void update_filtermask(char *token, uint32_t *fmask) {
+	msg_filterspec_t *ptr = (msg_filterspec_t *)filters;
+	int negate = 0;
+	if(token[0] == '-') {
+		negate = 1;
+		token++;
+		if(token[0] == '\0') {
+			fprintf(stderr, "Invalid filtermask: no token after '-'\n");
+			_exit(1);
+		}
+	}
+	while(ptr->token != NULL) {
+		if(!strcmp(token, ptr->token)) {
+			if(negate)
+				*fmask &= ~ptr->value;
+			else
+				*fmask |= ptr->value;
+			debug_print("token: %s negate: %d filtermask: 0x%x\n", token, negate, *fmask);
+			return;
+		}
+		ptr++;
+	}
+	fprintf(stderr, "Invalid filter specification: %s: unknown message type\n", token);
+	_exit(1);
+}
+
+static uint32_t parse_msg_filterspec(char *filterspec) {
+	if(!strcmp(filterspec, "help")) {
+		msg_filter_usage();
+		return 0;
+	}
+	uint32_t fmask = MSGFLT_NONE;
+	char *token = strtok(filterspec, ",");
+	if(token == NULL) {
+		fprintf(stderr, "Invalid filter specification\n");
+		_exit(1);
+	}
+	update_filtermask(token, &fmask);
+	while((token = strtok(NULL, ",")) != NULL)
+		update_filtermask(token, &fmask);
+	return fmask;
 }
 
 int main(int argc, char **argv) {
@@ -257,7 +348,7 @@ int main(int argc, char **argv) {
 			break;
 #endif
 		case __OPT_MSG_FILTER:
-			msg_filter = strtoul(optarg, NULL, 0);
+			msg_filter = parse_msg_filterspec(optarg);
 			break;
 		case __OPT_HELP:
 		default:
