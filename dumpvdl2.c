@@ -154,7 +154,7 @@ const msg_filterspec_t filters[] = {
 	{ "xid",		MSGFLT_XID_NO_GSIF | MSGFLT_XID_GSIF, "All XID frames (shorthand for \"xid_no_gsif,gsif\")" },
 	{ "x25_control",	MSGFLT_X25_CONTROL,		"X.25 Control packets" },
 	{ "x25_data",		MSGFLT_X25_DATA,		"X.25 Data packets" },
-	{ "x25",		MSGFLT_X25_CONTROL | MSGFLT_X25_CONTROL, "All X.25 packets (shorthand for \"x25_control,x25_data\")" },
+	{ "x25",		MSGFLT_X25_CONTROL | MSGFLT_X25_DATA, "All X.25 packets (shorthand for \"x25_control,x25_data\")" },
 	{ "idrp_no_keepalive",	MSGFLT_IDRP_NO_KEEPALIVE,	"IDRP PDUs other than Keepalives" },
 	{ "idrp_keepalive",	MSGFLT_IDRP_KEEPALIVE,		"IDRP Keepalive PDUs" },
 	{ "idrp",		MSGFLT_IDRP_NO_KEEPALIVE | MSGFLT_IDRP_KEEPALIVE, "All IDRP PDUs (shorthand for \"idrp_no_keepalive,idrp_keepalive\")" },
