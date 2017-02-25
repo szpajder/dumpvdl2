@@ -46,5 +46,5 @@ typedef struct {
 } bispdu_err_t;
 
 // idrp.c
-idrp_pdu_t *parse_idrp_pdu(uint8_t *buf, uint32_t len);
+idrp_pdu_t *parse_idrp_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_type);
 void output_idrp(idrp_pdu_t *pdu);

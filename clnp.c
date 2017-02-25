@@ -5,7 +5,7 @@
 #include "clnp.h"
 #include "idrp.h"
 
-static void parse_clnp_pdu_payload(clnp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
+static void parse_clnp_pdu_payload(clnp_pdu_t *pdu, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	if(len == 0)
 		goto clnp_pdu_payload_unparsed;
 	pdu->proto = *buf;
@@ -14,7 +14,7 @@ static void parse_clnp_pdu_payload(clnp_pdu_t *pdu, uint8_t *buf, uint32_t len) 
 // not implemented yet
 		break;
 	case SN_PROTO_IDRP:
-		pdu->data = parse_idrp_pdu(buf, len);
+		pdu->data = parse_idrp_pdu(buf, len, msg_type);
 		break;
 	case SN_PROTO_CLNP:
 		debug_print("%s", "CLNP inside CLNP? Bailing out to avoid loop\n");
@@ -30,7 +30,7 @@ clnp_pdu_payload_unparsed:
 	pdu->datalen = len;
 }
 
-clnp_pdu_t *parse_clnp_pdu(uint8_t *buf, uint32_t len) {
+clnp_pdu_t *parse_clnp_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	static clnp_pdu_t *pdu = NULL;
 	if(len < CLNP_MIN_LEN) {
 		debug_print("Too short (len %u < min len %u)\n", len, CLNP_MIN_LEN);
@@ -48,11 +48,11 @@ clnp_pdu_t *parse_clnp_pdu(uint8_t *buf, uint32_t len) {
 		return NULL;
 	}
 	buf += hdrlen; len -= hdrlen;
-	parse_clnp_pdu_payload(pdu, buf, len);
+	parse_clnp_pdu_payload(pdu, buf, len, msg_type);
 	return pdu;
 }
 
-clnp_pdu_t *parse_clnp_compressed_init_pdu(uint8_t *buf, uint32_t len) {
+clnp_pdu_t *parse_clnp_compressed_init_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	static clnp_pdu_t *pdu = NULL;
 	if(len < CLNP_COMPRESSED_INIT_MIN_LEN) {
 		debug_print("Too short (len %u < min len %u)\n", len, CLNP_COMPRESSED_INIT_MIN_LEN);
@@ -74,7 +74,7 @@ clnp_pdu_t *parse_clnp_compressed_init_pdu(uint8_t *buf, uint32_t len) {
 		return NULL;
 	}
 	buf += hdrlen; len -= hdrlen;
-	parse_clnp_pdu_payload(pdu, buf, len);
+	parse_clnp_pdu_payload(pdu, buf, len, msg_type);
 	return pdu;
 }
 

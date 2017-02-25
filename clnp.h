@@ -13,7 +13,7 @@ typedef struct {
 } clnp_pdu_t;
 
 // clnp.c
-clnp_pdu_t *parse_clnp_pdu(uint8_t *buf, uint32_t len);
-clnp_pdu_t *parse_clnp_compressed_init_pdu(uint8_t *buf, uint32_t len);
+clnp_pdu_t *parse_clnp_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_type);
+clnp_pdu_t *parse_clnp_compressed_init_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_type);
 void output_clnp(clnp_pdu_t *pdu);
 void output_clnp_compressed(clnp_pdu_t *pdu);

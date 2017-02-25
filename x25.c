@@ -155,27 +155,27 @@ static int parse_x25_facility_field(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) 
 	return 1 + fac_len;
 }
 
-static void *parse_x25_user_data(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
+static void *parse_x25_user_data(x25_pkt_t *pkt, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	if(buf == NULL || len == 0)
 		return NULL;
 	uint8_t proto = *buf;
 	if(proto == SN_PROTO_CLNP) {
 		pkt->proto = SN_PROTO_CLNP;
-		return parse_clnp_pdu(buf, len);
+		return parse_clnp_pdu(buf, len, msg_type);
 	} else if(proto == SN_PROTO_ESIS) {
 		pkt->proto = SN_PROTO_ESIS;
-		return parse_esis_pdu(buf, len);
+		return parse_esis_pdu(buf, len, msg_type);
 	}
 	uint8_t pdu_type = proto >> 4;
 	if(pdu_type < 4) {
 		pkt->proto = SN_PROTO_CLNP_INIT_COMPRESSED;
-		return parse_clnp_compressed_init_pdu(buf, len);
+		return parse_clnp_compressed_init_pdu(buf, len, msg_type);
 	}
 	pkt->proto = proto;
 	return NULL;
 }
 
-x25_pkt_t *parse_x25(uint8_t *buf, uint32_t len) {
+x25_pkt_t *parse_x25(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	static x25_pkt_t *pkt = NULL;
 	int ret;
 
@@ -207,10 +207,12 @@ x25_pkt_t *parse_x25(uint8_t *buf, uint32_t len) {
 	uint8_t pkttype = hdr->type.val;
 	if((pkttype & 1) == 0) {
 		pkt->type = X25_DATA;
+		*msg_type |= MSGFLT_X25_DATA;
 	} else {
 		pkttype &= 0x1f;
 		if(pkttype == X25_RR || pkttype == X25_REJ)
 			pkt->type = pkttype;
+		*msg_type |= MSGFLT_X25_CONTROL;
 	}
 	switch(pkt->type) {
 	case X25_CALL_REQUEST:
@@ -236,7 +238,7 @@ x25_pkt_t *parse_x25(uint8_t *buf, uint32_t len) {
 		}
 	/* FALLTHROUGH because Fast Select is on, so there might be a data PDU in call req or accept */
 	case X25_DATA:
-		pkt->data = parse_x25_user_data(pkt, ptr, len);
+		pkt->data = parse_x25_user_data(pkt, ptr, len, msg_type);
 		break;
 	case X25_CLEAR_REQUEST:
 		if(len > 0) {

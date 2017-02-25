@@ -196,7 +196,7 @@ static const tlv_dict xid_vdl_params[] = {
 	{ 0x00, NULL, NULL }
 };
 
-xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len) {
+xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	static xid_msg_t *msg = NULL;
 
 	if(len < XID_MIN_LEN) {
@@ -260,6 +260,10 @@ xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len) {
 	else
 		cm = 0xFF;
 	msg->type = ((cr & 0x1) << 3) | ((pf & 0x1) << 2) | ((cm & 0x1) << 1) | ((cm & 0x2) >> 1);
+	if(msg->type == GSIF)
+		*msg_type |= MSGFLT_XID_GSIF;
+	else
+		*msg_type |= MSGFLT_XID_NO_GSIF;
 	return msg;
 }
 

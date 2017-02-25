@@ -34,6 +34,6 @@ typedef struct {
 } esis_pdu_t;
 
 // esis.c
-esis_pdu_t *parse_esis_pdu(uint8_t *buf, uint32_t len);
+esis_pdu_t *parse_esis_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_type);
 void output_esis(esis_pdu_t *pdu);
 

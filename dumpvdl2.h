@@ -58,7 +58,26 @@
 #if USE_STATSD
 #define __OPT_STATSD			14
 #endif
+#define __OPT_MSG_FILTER		15
 #define __OPT_HELP			99
+
+// message filters
+#define MSGFLT_ALL			(~0)
+#define MSGFLT_NONE			(0)
+#define MSGFLT_SRC_GND			(1 <<  0)
+#define MSGFLT_SRC_AIR			(1 <<  1)
+#define MSGFLT_AVLC_S			(1 <<  2)
+#define MSGFLT_AVLC_U			(1 <<  3)
+#define MSGFLT_AVLC_I			(1 <<  4)
+#define MSGFLT_ACARS_NODATA		(1 <<  5)
+#define MSGFLT_ACARS_DATA		(1 <<  6)
+#define MSGFLT_XID_NO_GSIF		(1 <<  7)
+#define MSGFLT_XID_GSIF			(1 <<  8)
+#define MSGFLT_X25_CONTROL		(1 <<  9)
+#define MSGFLT_X25_DATA			(1 << 10)
+#define MSGFLT_IDRP_NO_KEEPALIVE	(1 << 11)
+#define MSGFLT_IDRP_KEEPALIVE		(1 << 12)
+#define MSGFLT_ESIS			(1 << 13)
 
 #define debug_print(fmt, ...) \
 	do { if (DEBUG) fprintf(stderr, "%s(): " fmt, __func__, __VA_ARGS__); } while (0)
@@ -163,7 +182,7 @@ uint16_t crc16_ccitt(uint8_t *data, uint32_t len);
 // avlc.c
 void parse_avlc_frames(vdl2_channel_t *v, uint8_t *buf, uint32_t len);
 uint32_t parse_dlc_addr(uint8_t *buf);
-void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f);
+void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f, const uint32_t msg_type);
 
 // rs.c
 int rs_init();
@@ -192,4 +211,7 @@ void *xrealloc(void *ptr, size_t size, const char *file, const int line, const c
 char *fmt_hexstring(uint8_t *data, uint16_t len);
 char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len);
 char *fmt_bitfield(uint8_t val, const dict *d);
+
+// dumpvdl2.c
+extern uint32_t msg_filter;
 #endif // !_DUMPVDL2_H

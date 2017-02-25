@@ -36,5 +36,5 @@ typedef struct {
 } xid_msg_t;
 
 // xid.c
-xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len);
+xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uint32_t *msg_type);
 void output_xid(xid_msg_t *msg);

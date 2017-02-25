@@ -14,7 +14,7 @@
  * ACARS message decoder
  * Based on acarsdec by Thierry Leconte
  */
-acars_msg_t *parse_acars(uint8_t *buf, uint32_t len) {
+acars_msg_t *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	static acars_msg_t *msg = NULL;
 	int i;
 
@@ -37,6 +37,8 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len) {
 	else
 		memset(msg, 0, sizeof(acars_msg_t));
 
+	// safe default
+	*msg_type |= MSGFLT_ACARS_NODATA;
 	for(i = 0; i < len; i++)
 		buf[i] &= 0x7f;
 
@@ -96,8 +98,11 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len) {
 			debug_print("message truncated to buffer size (%u > %u)", len, ACARSMSG_BUFSIZE);
 			len = ACARSMSG_BUFSIZE - 1;		// leave space for terminating '\0'
 		}
-		if(len > 0)
+		if(len > 0) {
 			memcpy(msg->txt, buf + k, len);
+			*msg_type |= MSGFLT_ACARS_DATA;
+			*msg_type &= ~MSGFLT_ACARS_NODATA;
+		}
 		msg->txt[len] = '\0';
 	}
 	/* txt end */

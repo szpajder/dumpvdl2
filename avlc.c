@@ -72,16 +72,18 @@ static void parse_avlc(vdl2_channel_t *v, uint8_t *buf, uint32_t len) {
 	statsd_increment(v->freq, "avlc.frames.good");
 	uint8_t *ptr = buf;
 	avlc_frame_t frame;
+	uint32_t msg_type = 0;
 	frame.t = time(NULL);
 	frame.dst.val = parse_dlc_addr(ptr);
 	ptr += 4; len -= 4;
 	frame.src.val = parse_dlc_addr(ptr);
 	ptr += 4; len -= 4;
+
+	switch(frame.src.a_addr.type) {
+	case ADDRTYPE_AIRCRAFT:
+		msg_type |= MSGFLT_SRC_AIR;
 #if USE_STATSD
-	uint8_t st = frame.src.a_addr.type;
-	uint8_t dt = frame.dst.a_addr.type;
-	if(st == ADDRTYPE_AIRCRAFT) {
-		switch(dt) {
+		switch(frame.dst.a_addr.type) {
 		case ADDRTYPE_GS_ADM:
 		case ADDRTYPE_GS_DEL:
 			statsd_increment(v->freq, "avlc.msg.air2gnd");
@@ -90,8 +92,13 @@ static void parse_avlc(vdl2_channel_t *v, uint8_t *buf, uint32_t len) {
 			statsd_increment(v->freq, "avlc.msg.air2all");
 			break;
 		}
-	} else if(st == ADDRTYPE_GS_ADM || st == ADDRTYPE_GS_DEL) {
-		switch(dt) {
+#endif
+		break;
+	case ADDRTYPE_GS_ADM:
+	case ADDRTYPE_GS_DEL:
+		msg_type |= MSGFLT_SRC_GND;
+#if USE_STATSD
+		switch(frame.dst.a_addr.type) {
 		case ADDRTYPE_AIRCRAFT:
 			statsd_increment(v->freq, "avlc.msg.gnd2air");
 			break;
@@ -103,27 +110,32 @@ static void parse_avlc(vdl2_channel_t *v, uint8_t *buf, uint32_t len) {
 			statsd_increment(v->freq, "avlc.msg.gnd2all");
 			break;
 		}
-	}
 #endif
+		break;
+	}
+
 	frame.lcf.val = *ptr++;
 	len--;
 	frame.data_valid = 0;
 	frame.data = NULL;
 	if(IS_S(frame.lcf)) {
+		msg_type |= MSGFLT_AVLC_S;
 		/* TODO */
 	} else if(IS_U(frame.lcf)) {
+		msg_type |= MSGFLT_AVLC_U;
 		switch(U_MFUNC(frame.lcf)) {
 		case XID:
-			frame.data = parse_xid(frame.src.a_addr.status, U_PF(frame.lcf), ptr, len);
+			frame.data = parse_xid(frame.src.a_addr.status, U_PF(frame.lcf), ptr, len, &msg_type);
 			break;
 		}
 	} else { 	// IS_I(frame.lcf) == true
+		msg_type |= MSGFLT_AVLC_I;
 		if(len > 3 && ptr[0] == 0xff && ptr[1] == 0xff && ptr[2] == 0x01) {
 			frame.proto = PROTO_ACARS;
-			frame.data = parse_acars(ptr + 3, len - 3);
+			frame.data = parse_acars(ptr + 3, len - 3, &msg_type);
 		} else {
 			frame.proto = PROTO_X25;
-			frame.data = parse_x25(ptr, len);
+			frame.data = parse_x25(ptr, len, &msg_type);
 		}
 	}
 	if(frame.data == NULL) {	// unparseable frame
@@ -132,7 +144,8 @@ static void parse_avlc(vdl2_channel_t *v, uint8_t *buf, uint32_t len) {
 	} else {
 		frame.data_valid = 1;
 	}
-	output_avlc(v, &frame);
+//	if(msg_type & msg_filter == msg_type)
+		output_avlc(v, &frame, msg_type);
 }
 
 void parse_avlc_frames(vdl2_channel_t *v, uint8_t *buf, uint32_t len) {
@@ -184,7 +197,7 @@ static void output_avlc_U(const avlc_frame_t *f) {
 	}
 }
 
-void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f) {
+void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f, const uint32_t msg_type) {
 	if(f == NULL) return;
 	if((daily || hourly) && rotate_outfile() < 0)
 		_exit(1);
@@ -192,8 +205,12 @@ void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f) {
 	strftime(ftime, sizeof(ftime), "%F %T", localtime(&f->t));
 	float sig_pwr_dbfs = 20.0f * log10f(v->mag_frame);
 	float nf_pwr_dbfs = 20.0f * log10f(v->mag_nf + 0.001f);
-	fprintf(outf, "\n[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB]\n",
-		ftime, (float)v->freq / 1e+6, sig_pwr_dbfs, nf_pwr_dbfs, sig_pwr_dbfs-nf_pwr_dbfs);
+/*	fprintf(outf, "\n[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB]\n",
+		ftime, (float)v->freq / 1e+6, sig_pwr_dbfs, nf_pwr_dbfs, sig_pwr_dbfs-nf_pwr_dbfs); */
+	fprintf(outf, "\n[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB] %04x:%04x %s\n",
+		ftime, (float)v->freq / 1e+6, sig_pwr_dbfs, nf_pwr_dbfs, sig_pwr_dbfs-nf_pwr_dbfs,
+		msg_type, msg_filter,
+		((msg_type & msg_filter) == msg_type ? "" : " (filtered)"));
 	fprintf(outf, "%06X (%s, %s) -> %06X (%s): %s\n",
 		f->src.a_addr.addr,
 		addrtype_descr[f->src.a_addr.type],

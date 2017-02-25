@@ -204,7 +204,7 @@ static int parse_idrp_error_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	return 0;
 }
 
-idrp_pdu_t *parse_idrp_pdu(uint8_t *buf, uint32_t len) {
+idrp_pdu_t *parse_idrp_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	static idrp_pdu_t *pdu;
 	if(len < BISPDU_HDR_LEN) {
 		debug_print("Too short (len %u < min len %u)\n", len, BISPDU_HDR_LEN);
@@ -248,6 +248,11 @@ idrp_pdu_t *parse_idrp_pdu(uint8_t *buf, uint32_t len) {
 	}
 	if(result < 0)		// unparseable PDU
 		return NULL;
+
+	if(hdr->type == BISPDU_TYPE_KEEPALIVE)
+		*msg_type |= MSGFLT_IDRP_KEEPALIVE;
+	else
+		*msg_type |= MSGFLT_IDRP_NO_KEEPALIVE;
 
 	pdu->hdr = hdr;
 	return pdu;

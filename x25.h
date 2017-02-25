@@ -87,6 +87,6 @@ typedef struct {
 } x25_pkt_t;
 
 // x25.c
-x25_pkt_t *parse_x25(uint8_t *buf, uint32_t len);
+x25_pkt_t *parse_x25(uint8_t *buf, uint32_t len, uint32_t *msg_type);
 void output_x25(x25_pkt_t *pkt);
 #endif // !_X25_H

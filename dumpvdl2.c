@@ -15,6 +15,7 @@
 #include "dumpvdl2.h"
 
 int do_exit = 0;
+uint32_t msg_filter = MSGFLT_ALL;
 
 void sighandler(int sig) {
 	fprintf(stderr, "Got signal %d, exiting\n", sig);
@@ -106,6 +107,7 @@ void usage() {
 	fprintf(stderr, "\t--output-file <output_file>\tOutput decoded frames to <output_file> (default: stdout)\n");
 	fprintf(stderr, "\t--hourly\t\t\tRotate output file hourly\n");
 	fprintf(stderr, "\t--daily\t\t\t\tRotate output file daily\n");
+	fprintf(stderr, "\t--msg-filter <filter_mask>\tMessage types to display (default: all)\n");
 #if USE_STATSD
 	fprintf(stderr, "\t--statsd <host>:<port>\tSend statistics to Etsy StatsD server <host>:<port> (default: disabled)\n");
 #endif
@@ -161,6 +163,7 @@ int main(int argc, char **argv) {
 		{ "iq-file",		required_argument,	NULL,	__OPT_IQ_FILE },
 		{ "oversample",		required_argument,	NULL,	__OPT_OVERSAMPLE },
 		{ "sample-format",	required_argument,	NULL,	__OPT_SAMPLE_FORMAT },
+		{ "msg-filter",		required_argument,	NULL,	__OPT_MSG_FILTER },
 #if WITH_MIRISDR
 		{ "mirisdr",		required_argument,	NULL,	__OPT_MIRISDR },
 		{ "hw-type",		required_argument,	NULL,	__OPT_HW_TYPE },
@@ -253,6 +256,9 @@ int main(int argc, char **argv) {
 			statsd_enabled = 1;
 			break;
 #endif
+		case __OPT_MSG_FILTER:
+			msg_filter = strtoul(optarg, NULL, 0);
+			break;
 		case __OPT_HELP:
 		default:
 			usage();

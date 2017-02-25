@@ -14,5 +14,5 @@ typedef struct {
 	uint8_t txt[ACARSMSG_BUFSIZE];
 } acars_msg_t;
 
-acars_msg_t *parse_acars(uint8_t *buf, uint32_t len);
+acars_msg_t *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type);
 void output_acars(const acars_msg_t *msg);

@@ -80,7 +80,7 @@ static int parse_octet_string(uint8_t *buf, uint32_t len, uint8_t **dst, uint8_t
 	return 1 + buflen;	// total number of consumed octets
 }
 
-esis_pdu_t *parse_esis_pdu(uint8_t *buf, uint32_t len) {
+esis_pdu_t *parse_esis_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	static esis_pdu_t *pdu;
 	if(len < ESIS_HDR_LEN) {
 		debug_print("Too short (len %u < min len %u)\n", len, ESIS_HDR_LEN);
@@ -125,6 +125,7 @@ esis_pdu_t *parse_esis_pdu(uint8_t *buf, uint32_t len) {
 		return NULL;
 	}
 	pdu->hdr = hdr;
+	*msg_type |= MSGFLT_ESIS;
 	return pdu;
 }
 
