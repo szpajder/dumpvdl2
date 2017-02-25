@@ -188,7 +188,7 @@ uint16_t crc16_ccitt(uint8_t *data, uint32_t len);
 // avlc.c
 void parse_avlc_frames(vdl2_channel_t *v, uint8_t *buf, uint32_t len);
 uint32_t parse_dlc_addr(uint8_t *buf);
-void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f, const uint32_t msg_type);
+void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f);
 
 // rs.c
 int rs_init();

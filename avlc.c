@@ -144,8 +144,12 @@ static void parse_avlc(vdl2_channel_t *v, uint8_t *buf, uint32_t len) {
 	} else {
 		frame.data_valid = 1;
 	}
-//	if(msg_type & msg_filter == msg_type)
-		output_avlc(v, &frame, msg_type);
+	if((msg_type & msg_filter) == msg_type) {
+		debug_print("msg_type: %x msg_filter: %x (accepted)\n", msg_type, msg_filter);
+		output_avlc(v, &frame);
+	} else {
+		debug_print("msg_type: %x msg_filter: %x (filtered out)\n", msg_type, msg_filter);
+	}
 }
 
 void parse_avlc_frames(vdl2_channel_t *v, uint8_t *buf, uint32_t len) {
@@ -197,7 +201,7 @@ static void output_avlc_U(const avlc_frame_t *f) {
 	}
 }
 
-void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f, const uint32_t msg_type) {
+void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f) {
 	if(f == NULL) return;
 	if((daily || hourly) && rotate_outfile() < 0)
 		_exit(1);
@@ -205,12 +209,8 @@ void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f, const uint32_t msg_ty
 	strftime(ftime, sizeof(ftime), "%F %T", localtime(&f->t));
 	float sig_pwr_dbfs = 20.0f * log10f(v->mag_frame);
 	float nf_pwr_dbfs = 20.0f * log10f(v->mag_nf + 0.001f);
-/*	fprintf(outf, "\n[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB]\n",
-		ftime, (float)v->freq / 1e+6, sig_pwr_dbfs, nf_pwr_dbfs, sig_pwr_dbfs-nf_pwr_dbfs); */
-	fprintf(outf, "\n[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB] %04x:%04x %s\n",
-		ftime, (float)v->freq / 1e+6, sig_pwr_dbfs, nf_pwr_dbfs, sig_pwr_dbfs-nf_pwr_dbfs,
-		msg_type, msg_filter,
-		((msg_type & msg_filter) == msg_type ? "" : " (filtered)"));
+	fprintf(outf, "\n[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB]\n",
+		ftime, (float)v->freq / 1e+6, sig_pwr_dbfs, nf_pwr_dbfs, sig_pwr_dbfs-nf_pwr_dbfs);
 	fprintf(outf, "%06X (%s, %s) -> %06X (%s): %s\n",
 		f->src.a_addr.addr,
 		addrtype_descr[f->src.a_addr.type],
