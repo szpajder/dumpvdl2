@@ -122,10 +122,8 @@ void output_acars_pp(const acars_msg_t *msg) {
 	sprintf(pkt, "AC%1c %7s %1c %2s %1c %4s %6s %s",
 		msg->mode, msg->reg, msg->ack, msg->label, msg->bid, msg->no, msg->fid, txt);
 
-	if(write(pp_sockfd, pkt, strlen(pkt)) < 0) {
-		perror("output_acars_pp: write(pp_sockfd) failed");
-		_exit(1);
-	}
+	if(write(pp_sockfd, pkt, strlen(pkt)) < 0)
+		debug_print("write(pp_sockfd) error: %s", strerror(errno));
 }
 
 void output_acars(const acars_msg_t *msg) {
