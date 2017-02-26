@@ -25,7 +25,7 @@
 #include "avlc.h"
 #include "tlv.h"
 
-#define DUMPVDL2_VERSION "0.1.0rc"
+#define DUMPVDL2_VERSION "1.0.0"
 #define RS_K 249        // Reed-Solomon vector length (bytes)
 #define RS_N 255        // Reed-Solomon codeword length (bytes)
 #define BSLEN 32768UL
