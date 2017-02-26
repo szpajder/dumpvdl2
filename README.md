@@ -38,7 +38,7 @@ area where CPDLC over VDL2 is utilized and you are able to collect it, please co
 
         sudo apt-get install git gcc autoconf make cmake libusb-1.0-0-dev libtool
 
-###### RTLSDR support
+##### RTLSDR support
 
 - Install `librtlsdr` library (unless you have it already):
 
@@ -52,7 +52,7 @@ area where CPDLC over VDL2 is utilized and you are able to collect it, please co
         sudo ldconfig
         sudo cp $HOME/rtl-sdr/rtl-sdr.rules /etc/udev/rules.d/rtl-sdr.rules
 
-###### Mirics support
+##### Mirics support
 
 - Install `libmirisdr-4` library:
 
@@ -69,7 +69,7 @@ area where CPDLC over VDL2 is utilized and you are able to collect it, please co
 However I don't have a real device to test it - I just tested `dumpvdl2` on TV dongles
 with the same chipset. If you have SDRPlay at hand, please test it and share your feedback.
 
-###### Compiling dumpvdl2
+##### Compiling dumpvdl2
 
 - Clone the `dumpvdl2` repository:
 
@@ -208,7 +208,7 @@ for this purpose:
 - [Grafana](http://grafana.org/) is a sophisticated and elegant graphing solution supporting
   a variety of data sources.
 
-Here is an example of some `dumpvdl2` metric being graphed by Grafana:
+Here is an example of some `dumpvdl2` metrics being graphed by Grafana:
 
 ![Statistics](statistics.png?raw=true)
 
@@ -254,53 +254,53 @@ and good quality feeder cable.
 
 It basically comes down to three things:
 
-1. The signal has to be strong enough (preferably 20 dB over noise floor, or better)
+###### The signal has to be strong enough (preferably 20 dB over noise floor, or better)
 
-  - set your tuner gain quite high. I get good results with 42 dB for RTLSDR and 100 dB for Mirics
-    dongles.
+- set your tuner gain quite high. I get good results with 42 dB for RTLSDR and 100 dB for Mirics
+  dongles.
 
-  - check SDR Console with the same gain setting - do you see data bursts clearly? (they are
-    very short, like pops).
+- check SDR Console with the same gain setting - do you see data bursts clearly? (they are
+  very short, like pops).
 
-  - if your DC spike is very high, set the center frequency manually to dodge it (use `--centerfreq`
-    option for `dumpvdl2`).
+- if your DC spike is very high, set the center frequency manually to dodge it (use `--centerfreq`
+  option).
 
-  - RTL dongles are cheap - some of them have higher noise figure than others. If you have several
-    of them at hand, just try another one.
+- RTL dongles are cheap - some of them have higher noise figure than others. If you have several
+  dongles at hand, just try another one.
 
 To verify that the signal strength is enough for the squelch to open, do the following:
 
-  - Go to `dumpvdl2` source directory
+- Go to `dumpvdl2` source directory
 
-  - Recompile with debug output enabled:
+- Recompile with debug output enabled:
 
         make clean
         make <your_make_options> DEBUG=1
 
-  - Run the program as usual. It will display debugging info to standard error. Every second or so
-    the current noise floor estimate will be printed:
+- Run the program as usual. It will display debugging info to standard error. Every second or so
+  the current noise floor estimate will be printed:
 ```
 process_samples(): noise_floor: 0.006000
 process_samples(): noise_floor: 0.005624
 process_samples(): noise_floor: 0.005478
 ```
-  - If you only see these lines and nothing else, it means there is no transmission on the configured
-    channel - or there is, but it's not strong enough for the squelch to open. If you see a lot of
-    other stuff as well - that's good, messages describe various stages of frame decoding and you
-    can figure out, how it's doing and where it fails. However if the squelch opens all the time,
-    several times a second and there are still no messages, it means your gain is probably set too
-    high and the receiver front end is saturated. Reduce the gain a bit (like 1-2 dB) and see if
-    it helps.
+- If you only see these lines and nothing else, it means there is no transmission on the configured
+  channel - or there is, but it's not strong enough for the squelch to open. If you see a lot of
+  other debug messages, that's good, they describe various stages of frame decoding and you
+  can figure out, how it's doing and where it fails. However if the squelch opens all the time,
+  several times a second and there are still no messages, it means your gain is probably set too
+  high and the receiver front end is saturated. Reduce the gain a bit (like 1-2 dB) and see if
+  it helps.
 
-2. Tuned frequency has to be correct
+###### Tuned frequency has to be correct
 
-  - initially, just don't set it manually, use the default of 136.975 MHz.
+- initially, just don't set it manually, use the default of 136.975 MHz.
 
-3. PPM correction setting has to be accurate
+###### PPM correction setting has to be accurate
 
-  - oscillators in cheap receivers are not 100% accurate. It is usually necessary to introduce
-    manual correction to get precise tuning. There is no one-size-fits-all correction value - it is
-    receiver-specific. See next question.
+- oscillators in cheap receivers are not 100% accurate. It is usually necessary to introduce
+  manual correction to get precise tuning. There is no one-size-fits-all correction value - it is
+  receiver-specific. See next question.
 
 ##### How do I estimate PPM correction value for my dongle?
 
@@ -376,8 +376,8 @@ comes down to the following:
   to signed float in the <-1;1> range. Refer to `process_buf_uchar()` and `process_buf_short()`
   routines for details.
 
-- `Makefile` - add new WITH_*DEVICE* compile time option and your new source files, modify
-  `LDLIBS`, etc.
+- `Makefile` - add new WITH_*DEVICE* compile time option and your new source files, add
+  necessary `LDLIBS`, etc.
 
 ##### Can you add support for Windows?
 
