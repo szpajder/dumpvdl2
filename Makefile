@@ -66,19 +66,23 @@ rs.o: dumpvdl2.h fec.h
 
 dumpvdl2.o: dumpvdl2.h rtl.h mirisdr.h
 
-avlc.o: dumpvdl2.h avlc.h
+avlc.o: dumpvdl2.h avlc.h xid.h acars.h x25.h
 
 acars.o: dumpvdl2.h acars.h
 
 mirisdr.o: dumpvdl2.h mirisdr.h
 
-output.o: avlc.h acars.h
+output.o: dumpvdl2.h
 
-rtl.o: rtl.h
+rtl.o: dumpvdl2.h rtl.h
+
+statsd.o: dumpvdl2.h
 
 tlv.o: tlv.h dumpvdl2.h
 
-xid.o: dumpvdl2.h tlv.h
+util.o: dumpvdl2.h tlv.h
+
+xid.o: dumpvdl2.h tlv.h xid.h
 
 x25.o: dumpvdl2.h clnp.h esis.h tlv.h x25.h
 
