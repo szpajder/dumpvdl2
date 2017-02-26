@@ -1,4 +1,4 @@
-export DEBUG ?= 1
+export DEBUG ?= 0
 export USE_STATSD ?= 0
 export WITH_RTLSDR ?= 1
 export WITH_MIRISDR ?= 0
