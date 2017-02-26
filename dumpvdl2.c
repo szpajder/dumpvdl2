@@ -108,6 +108,7 @@ void usage() {
 	fprintf(stderr, "\t--hourly\t\t\tRotate output file hourly\n");
 	fprintf(stderr, "\t--daily\t\t\t\tRotate output file daily\n");
 	fprintf(stderr, "\t--msg-filter <filter_spec>\tMessage types to display (default: all) (\"--msg-filter help\" for details)\n");
+	fprintf(stderr, "\t--output-acars-pp <host:port>\tSend ACARS messages to Planeplotter over UDP/IP\n");
 #if USE_STATSD
 	fprintf(stderr, "\t--statsd <host>:<port>\tSend statistics to Etsy StatsD server <host>:<port> (default: disabled)\n");
 #endif
@@ -255,6 +256,7 @@ int main(int argc, char **argv) {
 		{ "oversample",		required_argument,	NULL,	__OPT_OVERSAMPLE },
 		{ "sample-format",	required_argument,	NULL,	__OPT_SAMPLE_FORMAT },
 		{ "msg-filter",		required_argument,	NULL,	__OPT_MSG_FILTER },
+		{ "output-acars-pp",	required_argument,	NULL,	__OPT_OUTPUT_ACARS_PP },
 #if WITH_MIRISDR
 		{ "mirisdr",		required_argument,	NULL,	__OPT_MIRISDR },
 		{ "hw-type",		required_argument,	NULL,	__OPT_HW_TYPE },
@@ -278,7 +280,7 @@ int main(int argc, char **argv) {
 	char *statsd_addr = NULL;
 	int statsd_enabled = 0;
 #endif
-	char *infile = NULL, *outfile = NULL;
+	char *infile = NULL, *outfile = NULL, *pp_addr = NULL;
 
 	while((opt = getopt_long(argc, argv, "", long_opts, NULL)) != -1) {
 		switch(opt) {
@@ -347,6 +349,9 @@ int main(int argc, char **argv) {
 			statsd_enabled = 1;
 			break;
 #endif
+		case __OPT_OUTPUT_ACARS_PP:
+			pp_addr = strdup(optarg);
+			break;
 		case __OPT_MSG_FILTER:
 			msg_filter = parse_msg_filterspec(optarg);
 			break;
@@ -421,6 +426,10 @@ int main(int argc, char **argv) {
 #endif
 	if(init_output_file(outfile) < 0) {
 		fprintf(stderr, "Failed to initialize output - aborting\n");
+		_exit(4);
+	}
+	if(pp_addr && init_pp(pp_addr) < 0) {
+		fprintf(stderr, "Failed to initialize output socket to Planeplotter - aborting\n");
 		_exit(4);
 	}
 	setup_signals();

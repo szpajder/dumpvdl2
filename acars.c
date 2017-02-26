@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "dumpvdl2.h"
 #include "acars.h"
 
@@ -109,6 +110,24 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	return msg;
 }
 
+void output_acars_pp(const acars_msg_t *msg) {
+	char pkt[ACARSMSG_BUFSIZE+32];
+	char txt[ACARSMSG_BUFSIZE];
+
+	strcpy(txt, msg->txt);
+	for(char *ptr = txt; *ptr != 0; ptr++)
+		if (*ptr == '\n' || *ptr == '\r')
+			*ptr = ' ';
+
+	sprintf(pkt, "AC%1c %7s %1c %2s %1c %4s %6s %s",
+		msg->mode, msg->reg, msg->ack, msg->label, msg->bid, msg->no, msg->fid, txt);
+
+	if(write(pp_sockfd, pkt, strlen(pkt)) < 0) {
+		perror("output_acars_pp: write(pp_sockfd) failed");
+		_exit(1);
+	}
+}
+
 void output_acars(const acars_msg_t *msg) {
 	fprintf(outf, "ACARS:\n");
 	if(msg->mode < 0x5d)
@@ -116,4 +135,6 @@ void output_acars(const acars_msg_t *msg) {
 	fprintf(outf, "Mode: %1c Label: %s Blk id: %c Ack: %c Msg no.: %s\n",
 		msg->mode, msg->label, msg->bid, msg->ack, msg->no);
 	fprintf(outf, "Message:\n%s\n", msg->txt);
+	if(pp_sockfd > 0)
+		output_acars_pp(msg);
 }
