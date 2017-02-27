@@ -7,7 +7,7 @@ dumpvdl2 is a lightweight, standalone VDL Mode 2 message decoder and protocol an
 - Runs under Linux (tested on: x86, x86-64, Raspberry Pi)
 - Supports following SDR hardware:
   - RTLSDR (via [rtl-sdr library] (http://osmocom.org/projects/sdr/wiki/rtl-sdr))
-  - Mirics SDR (via [libmirisdr-4] (https://github.com/f4exb/libmirisdr-4))
+  - Mirics SDR, eg. SDRPlay (via [libmirisdr-4] (https://github.com/f4exb/libmirisdr-4))
   - reads prerecorded IQ data from file
 - Decodes up to 8 VDL2 channels simultaneously
 - Outputs messages to standard output or to a file (with optional daily or hourly file rotation)
@@ -64,10 +64,6 @@ area where CPDLC over VDL2 is utilized and you are able to collect it, please co
         sudo make install
         sudo ldconfig
         sudo cp $HOME/libmirisdr-4/mirisdr.rules /etc/udev/rules.d/mirisdr.rules
-
-**Note**: `dumpvdl` shall theoretically work with SDRPlay RSP using this library.
-However I don't have a real device to test it - I just tested `dumpvdl2` on TV dongles
-with the same chipset. If you have SDRPlay at hand, please test it and share your feedback.
 
 ##### Compiling dumpvdl2
 
@@ -127,8 +123,8 @@ clean the old build first using `make clean`.
 
 - Mirics is similar, however `libmirisdr-4` library currently lacks support for configuring
   correction in ppm. If your receiver needs a non-zero correction, you can pass the appropriate
-  value in Hertz, instead of ppm. **Note:** this value will be added to the center
-  frequency, so if your receiver tunes a bit too high, the parameter value shall be negative:
+  value in Hertz, instead of ppm. **Note:** this value will be subtracted from the center
+  frequency, so if your receiver tunes a bit too low, the parameter value shall be negative:
 
         ./dumpvdl2 --mirisdr 0 --gain 100 --correction -2500
 
