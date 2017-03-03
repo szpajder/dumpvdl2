@@ -142,7 +142,7 @@ SDRPlay users should add `--hw-type 1` option. It uses frequency plans optimized
 and reportedly gives better results than the default mode.
 
 If you get error messages about lost samples on Raspberry Pi, try adding `--usb-mode 1`.
-This switches from USB transfer mode from isochronous to bulk, which is usually enough to rectify
+This switches USB transfer mode from isochronous to bulk, which is usually enough to rectify
 this problem. If it does not help, it might be that your Pi is overloaded or not beefy enough
 for the task.
 
@@ -235,7 +235,7 @@ and UDP port number, for example:
 The syntax is:
 ```
 dumpvdl2 --iq-file <file_name> [--sample-format <sample_format>] [--oversample <oversample_rate>]
-  [--centerfreq <center_frequency>] vdl_freq_1 [vdl_freq_2] [...]
+  [--centerfreq <center_frequency>] [vdl_freq_1] [vdl_freq_2] [...]
 ```
 The symbol rate for VDL2 is 10500 symbols/sec. `dumpvdl2` internal processing rate is 10 samples
 per symbol. Therefore the file must be recorded with sampling rate set to an integer multiple
