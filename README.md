@@ -34,13 +34,13 @@ area where CPDLC over VDL2 is utilized and you are able to collect it, please co
 
 ### Installation
 
-- Install necessary dependencies (unless you have them already). Example for Debian / Raspbian:
+Install necessary dependencies (unless you have them already). Example for Debian / Raspbian:
 
         sudo apt-get install git gcc autoconf make cmake libusb-1.0-0-dev libtool
 
 ##### RTLSDR support
 
-- Install `librtlsdr` library (unless you have it already):
+Install `librtlsdr` library (unless you have it already):
 
         cd
         git clone git://git.osmocom.org/rtl-sdr.git
@@ -54,7 +54,7 @@ area where CPDLC over VDL2 is utilized and you are able to collect it, please co
 
 ##### Mirics support
 
-- Install `libmirisdr-4` library:
+Install `libmirisdr-4` library:
 
         cd
         git clone https://github.com/f4exb/libmirisdr-4.git
@@ -67,33 +67,33 @@ area where CPDLC over VDL2 is utilized and you are able to collect it, please co
 
 ##### Compiling dumpvdl2
 
-- Clone the `dumpvdl2` repository:
+Clone the `dumpvdl2` repository:
 
         git clone https://github.com/szpajder/dumpvdl2.git
         cd dumpvdl2
 
-- If you only need RTLSDR support, it is enabled by default, so just type:
+If you only need RTLSDR support, it is enabled by default, so just type:
 
         make
 
-- Mirics support has to be explicitly enabled, like this:
+Mirics support has to be explicitly enabled, like this:
 
         make WITH_MIRISDR=1
 
-- If you want Mirics only, you may disable RTLSDR support:
+If you want Mirics only, you may disable RTLSDR support:
 
         make WITH_MIRISDR=1 WITH_RTLSDR=0
 
 **Note:** every time you decide to recompile with different `WITH_*` or `USE_*` options,
 clean the old build first using `make clean`.
 
-- For available command line options, run:
+For available command line options, run:
 
         ./dumpvdl2 --help
 
 ##### Optional: add support for statistics
 
-- Install `statsd-c-client` library from https://github.com/romanbsd/statsd-c-client:
+Install `statsd-c-client` library from https://github.com/romanbsd/statsd-c-client:
 
         git clone https://github.com/romanbsd/statsd-c-client.git
         cd statsd-c-client
@@ -101,44 +101,57 @@ clean the old build first using `make clean`.
         sudo make install
         sudo ldconfig
 
-- Compile `dumpvdl2` as above, but add `USE_STATSD=1`:
+Compile `dumpvdl2` as above, but add `USE_STATSD=1`:
 
         make USE_STATSD=1
 
 ### Basic usage
 
-- Simpliest case on RTLSDR dongle - uses RTL device with index 0, sets the tuner gain to
-  40 dB and tuning correction to 42 ppm, listens to the default VDL2 frequency of 136.975 MHz,
-  outputs to standard output:
+##### RTL-SDR
+
+Simpliest case on RTLSDR dongle - uses RTL device with index 0, sets the tuner gain to
+40 dB and tuning correction to 42 ppm, listens to the default VDL2 frequency of 136.975 MHz,
+outputs to standard output:
 
         ./dumpvdl2 --rtlsdr 0 --gain 40 --correction 42
 
-- If you want to listen to a different VDL2 channel, just give its frequency as a last parameter:
+If you want to listen to a different VDL2 channel, just give its frequency as a last parameter:
 
         ./dumpvdl2 --rtlsdr 0 --gain 40 --correction 42 136725000
 
-- `dumpvdl2` can decode up to 8 VDL2 channels simultaneously. Just add them at the end:
+`dumpvdl2` can decode up to 8 VDL2 channels simultaneously. Just add them at the end:
 
         ./dumpvdl2 --rtlsdr 0 --gain 40 --correction 42 136725000 136975000 136875000
 
-- Mirics is similar, however `libmirisdr-4` library currently lacks support for configuring
-  correction in ppm. If your receiver needs a non-zero correction, you can pass the appropriate
-  value in Hertz, instead of ppm. **Note:** this value will be subtracted from the center
-  frequency, so if your receiver tunes a bit too low, the parameter value shall be negative:
+If your receiver has a large DC spike, you can set the center frequency a bit to the side
+of the desired channel frequency, like this:
+
+        ./dumpvdl2 --rtlsdr 0 --gain 40 --correction 42 --centerfreq 136955000
+
+##### Mirics
+
+Mirics is similar, however `libmirisdr-4` library currently lacks support for configuring
+correction in ppm. If your receiver needs a non-zero correction, you can pass the appropriate
+value in Hertz, instead of ppm. **Note:** this value will be subtracted from the center
+frequency, so if your receiver tunes a bit too low, the parameter value shall be negative:
 
         ./dumpvdl2 --mirisdr 0 --gain 100 --correction -2500
 
-- If your receiver has a large DC spike, you can set the center frequency a bit to the side
-  of the desired channel frequency, like this:
+`libmirisdr-4` supports two types of hardware: generic Mirics (0 - the default) and SDRPlay (1).
+SDRPlay users should add `--hw-type 1` option. It uses frequency plans optimized for SDRPlay
+and reportedly gives better results than the default mode.
 
-        ./dumpvdl2 --rtlsdr 0 --gain 40 --correction 42 --centerfreq 136955000
+If you get error messages about lost samples on Raspberry Pi, try adding `--usb-mode 1`.
+This switches from USB transfer mode from isochronous to bulk, which is usually enough to rectify
+this problem. If it does not help, it might be that your Pi is overloaded or not beefy enough
+for the task.
 
 ### Output options
 
 - Decoded messages are printed to standard output by default. You can direct them to a
   disk file instead:
 
-        ./dumpvdl2 [other_options] --output-file vdl2.log
+        ./dumpvdl2 --output-file vdl2.log [other_options]
 
 - If you want the file to be automatically rotated on top of every hour, add `--hourly` option.
   The file name will be appended with `_YYYYMMDDHH` suffix.
@@ -163,7 +176,7 @@ information from them and display blips on the map. First, configure your Planep
 
 Supply `dumpvdl2` with the address (or host name) and port where the Planeplotter is listening:
 
-        ./dumpvdl2 [other_options] --output-acars-pp 10.10.10.12:9742
+        ./dumpvdl2 --output-acars-pp 10.10.10.12:9742 [other_options]
 
 That's all. Switch to 'Message view' in Planeplotter and look for incoming messages.
 
@@ -173,11 +186,11 @@ By default `dumpvdl2` logs all decoded messages. You can use `--msg-filter` opti
 things you don't want to see. If you do not want messages sent by ground stations, run
 the program like this:
 
-        ./dumpvdl2 [other_options] --msg-filter all,-uplink
+        ./dumpvdl2 --msg-filter all,-uplink [other_options]
 
 Or if you want to filter out empty ACARS messages, because they are boring, use this:
 
-        ./dumpvdl2 [other_options] --msg-filter all,-acars_nodata
+        ./dumpvdl2 --msg-filter all,-acars_nodata [other_options]
 
 For full list of supported filtering options, run:
 
@@ -212,6 +225,50 @@ Metrics are quite handy when tuning the antenna installation or receiving parame
 or correction). Full list of currently supported counters can be found in `statsd.c` source file.
 `dumpvdl2` produces a separate set of counters for each configured VDL2 channel.
 
+To enable statistics just give `dumpvdl2` your StatsD collector's hostname (or IP address)
+and UDP port number, for example:
+
+        ./dumpvdl2 --statsd 10.10.10.15:1234 [other_options]
+
+### Processing recorded IQ data from file
+
+The syntax is:
+```
+dumpvdl2 --iq-file <file_name> [--sample-format <sample_format>] [--oversample <oversample_rate>]
+  [--centerfreq <center_frequency>] vdl_freq_1 [vdl_freq_2] [...]
+```
+The symbol rate for VDL2 is 10500 symbols/sec. `dumpvdl2` internal processing rate is 10 samples
+per symbol. Therefore the file must be recorded with sampling rate set to an integer multiple
+of 105000. Specify the multiplier value with `--oversample` option. The default value is 10, which is
+valid for files sampled as 1050000 samples/sec. For example, if you have recorded your file at
+2100000 samples/sec, then use `--oversample 20` (because 105000 * 20 = 2100000).
+
+The program accepts raw data files without any header. Files produced by `rtl_sdr` and `miri_sdr`
+programs are perfectly valid input files. Different radios produce samples in different formats,
+though. The following sample formats are currently supported by `dumpvdl2`:
+
+- `U8` - unsigned 8-bit samples. This is the format produced by `rtl_sdr` utility.
+- `S16_LE` - 16-bit signed, little endian. Produced by `miri_sdr` utility (by default).
+
+Use `--sample-format` option to set the format. The default format is `U8`.
+
+The program assumes that the VDL2 channel is located at baseband (0 Hz), ie. the center
+frequency of your radio was set to the VDL2 channel frequency during recording. If this is not
+the case, you have to provide correct center frequency and channel frequency. For example, if your
+receiver was tuned to 136.955 MHz during recording and you want to decode the VDL2 channel
+located at 136.975 MHz, then use this:
+
+        dumpvdl2 --iq-file <file_name> --centerfreq 136955000 136975000
+
+Putting it all together:
+
+```
+dumpvdl2 --iq-file iq.dat --sample-format S16_LE --oversample 13 --centerfreq 136955000 136975000 136725000
+```
+
+processes `iq.dat` file recorded at 1365000 samples/sec using 16-bit signed samples, with receiver
+center frequency set to 136.955 MHz. VDL2 channels located at 136.975 and 136.725 MHz will be decoded.
+
 ### Frequently Asked Questions
 
 ##### What is VDL Mode 2?
@@ -240,11 +297,11 @@ can see short bursts every now and then, it's there.
 
 ##### What antenna shall I use?
 
-VDL2 runs on VHF airband, so if you already have an antenna for receiving ACARS or airband voice,
+VDL2 runs on VHF airband, so if you already have a dedicated antenna for ACARS or airband voice,
 it will be perfect for VDL2. However VDL2 transmissions are not very powerful, so do not expect
 thousands of messages per hour, if your antenna is located indoors. If you have already played
-with ADS-B, you know, what to do - put it outside and high with unobstructed sky view, use short
-and good quality feeder cable.
+with ADS-B, you know, what to do - put the antenna outside and high with unobstructed sky view,
+use short and good quality feeder cable, shield your radio from external RF interference.
 
 ##### Two hours straight and zero messages received. What's wrong?
 
@@ -253,7 +310,7 @@ It basically comes down to three things:
 ###### The signal has to be strong enough (preferably 20 dB over noise floor, or better)
 
 - set your tuner gain quite high. I get good results with 42 dB for RTLSDR and 100 dB for Mirics
-  dongles.
+  dongles. 75-85 dB is reported to work well on SDRPlay. However, it depends on the used antenna.
 
 - check SDR Console with the same gain setting - do you see data bursts clearly? (they are
   very short, like pops).
@@ -351,6 +408,23 @@ to bring the peak exactly to the tuned frequency. If it's a voice channel, judge
 aim for the lowest possible background noise. See this video tutorial for reference:
 [Frequency calibration in SDRSharp](https://www.youtube.com/watch?v=gFXMbr1dgng).
 
+##### What do these numbers in the message header mean?
+
+        [2017-02-26 19:18:00] [136.975] [-18.9/-43.9 dBFS] [25.0 dB]
+
+From left to right:
+
+- date and time (local timezone).
+
+- channel frequency on which the message has been received.
+
+- signal power level (averaged over transmitter ramp-up stage, ie. 3 symbol periods after
+  squelch opening). Full scale is 0 dB.
+
+- noise floor power level. Full scale is 0 dB.
+
+- signal to noise ratio (ie. signal power level minus noise floor power level).
+
 ##### Can you add support for [*my favourite SDR receiver type*]?
 
 Maybe. However do not expect me to purchase all SDRs available on the market just to make
@@ -380,23 +454,6 @@ comes down to the following:
 To be honest, I don't use Windows very often and I don't know the programming intricacies of
 this OS. However, if you feel like you could port the code and maintain the port later on,
 please do so. Pull requests welcome.
-
-##### What do numbers in the message header mean?
-
-        [2017-02-26 19:18:00] [136.975] [-18.9/-43.9 dBFS] [25.0 dB]
-
-From left to right:
-
-- date and time (local timezone).
-
-- channel frequency on which the message has been received.
-
-- signal power level (averaged over transmitter ramp-up stage, ie. 3 symbol periods after
-  squelch opening). Full scale is 0 dB.
-
-- noise floor power level. Full scale is 0 dB.
-
-- signal to noise ratio (ie. signal power level minus noise floor power level).
 
 ### License
 
