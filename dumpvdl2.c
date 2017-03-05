@@ -125,6 +125,7 @@ void usage() {
 	fprintf(stderr, "\t--output-file <output_file>\tOutput decoded frames to <output_file> (default: stdout)\n");
 	fprintf(stderr, "\t--hourly\t\t\tRotate output file hourly\n");
 	fprintf(stderr, "\t--daily\t\t\t\tRotate output file daily\n");
+	fprintf(stderr, "\t--utc\t\t\t\tUse UTC timestamps in output and file names\n");
 	fprintf(stderr, "\t--msg-filter <filter_spec>\tMessage types to display (default: all) (\"--msg-filter help\" for details)\n");
 	fprintf(stderr, "\t--output-acars-pp <host:port>\tSend ACARS messages to Planeplotter over UDP/IP\n");
 #if USE_STATSD
@@ -269,6 +270,7 @@ int main(int argc, char **argv) {
 		{ "centerfreq",		required_argument,	NULL,	__OPT_CENTERFREQ },
 		{ "daily",		no_argument,		NULL,	__OPT_DAILY },
 		{ "hourly",		no_argument,		NULL, 	__OPT_HOURLY },
+		{ "utc",		no_argument,		NULL,	__OPT_UTC },
 		{ "output-file",	required_argument,	NULL,	__OPT_OUTPUT_FILE },
 		{ "iq-file",		required_argument,	NULL,	__OPT_IQ_FILE },
 		{ "oversample",		required_argument,	NULL,	__OPT_OVERSAMPLE },
@@ -323,6 +325,9 @@ int main(int argc, char **argv) {
 			break;
 		case __OPT_DAILY:
 			daily = 1;
+			break;
+		case __OPT_UTC:
+			utc = 1;
 			break;
 		case __OPT_CENTERFREQ:
 			centerfreq = strtoul(optarg, NULL, 10);

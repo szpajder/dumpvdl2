@@ -159,6 +159,8 @@ for the task.
 - If you prefer daily rotation, `--daily` option does just that. The file name suffix will be
   `_YYYYMMDD` in this case.
 
+- Add `--utc` option if you prefer UTC timestamps rather than local timezone in output and filenames.
+
 ### Integration with Planeplotter
 
 `dumpvdl2` can send ACARS messages to Planeplotter, which in turn can extract aircraft position
@@ -410,11 +412,11 @@ aim for the lowest possible background noise. See this video tutorial for refere
 
 ##### What do these numbers in the message header mean?
 
-        [2017-02-26 19:18:00] [136.975] [-18.9/-43.9 dBFS] [25.0 dB]
+        [2017-02-26 19:18:00 GMT] [136.975] [-18.9/-43.9 dBFS] [25.0 dB]
 
 From left to right:
 
-- date and time (local timezone).
+- date and time with timezone.
 
 - channel frequency on which the message has been received.
 

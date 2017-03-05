@@ -30,7 +30,7 @@
 
 FILE *outf;
 int pp_sockfd = 0;
-uint8_t hourly = 0, daily = 0;
+uint8_t hourly = 0, daily = 0, utc = 0;
 static char *filename_prefix = NULL;
 static size_t prefix_len;
 static struct tm current_tm;
@@ -41,7 +41,10 @@ static int open_outfile() {
 
 	if(hourly || daily) {
 		time_t t = time(NULL);
-		localtime_r(&t, &current_tm);
+		if(utc)
+			gmtime_r(&t, &current_tm);
+		else
+			localtime_r(&t, &current_tm);
 		char suffix[16];
 		if(hourly)
 			fmt = "_%Y%m%d_%H";
@@ -116,7 +119,10 @@ int init_pp(char *pp_addr) {
 int rotate_outfile() {
 	struct tm new_tm;
 	time_t t = time(NULL);
-	localtime_r(&t, &new_tm);
+	if(utc)
+		gmtime_r(&t, &new_tm);
+	else
+		localtime_r(&t, &new_tm);
 	if((hourly && new_tm.tm_hour != current_tm.tm_hour) || (daily && new_tm.tm_mday != current_tm.tm_mday)) {
 		fclose(outf);
 		return open_outfile();

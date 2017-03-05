@@ -224,7 +224,7 @@ void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f) {
 	if((daily || hourly) && rotate_outfile() < 0)
 		_exit(1);
 	char ftime[24];
-	strftime(ftime, sizeof(ftime), "%F %T", localtime(&f->t));
+	strftime(ftime, sizeof(ftime), "%F %T %Z", (utc ? gmtime(&f->t) : localtime(&f->t)));
 	float sig_pwr_dbfs = 20.0f * log10f(v->mag_frame);
 	float nf_pwr_dbfs = 20.0f * log10f(v->mag_nf + 0.001f);
 	fprintf(outf, "\n[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB]\n",

@@ -78,6 +78,7 @@
 #endif
 #define __OPT_MSG_FILTER		15
 #define __OPT_OUTPUT_ACARS_PP		16
+#define __OPT_UTC			17
 #define __OPT_HELP			99
 
 // message filters
@@ -215,7 +216,7 @@ int rs_verify(uint8_t *data, int fec_octets);
 
 // output.c
 extern FILE *outf;
-extern uint8_t hourly, daily;
+extern uint8_t hourly, daily, utc;
 extern int pp_sockfd;
 int init_output_file(char *file);
 int init_pp(char *pp_addr);
