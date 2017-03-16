@@ -98,7 +98,7 @@ static char *fmt_dlc_addrs(uint8_t *data, uint16_t len) {
 // raw DLC addr is 4 bytes, turn it into 6 hex digits + space, add 1 for \0 at the end
 	uint32_t buflen = len / 4 * 7 + 1;
 	char *buf = XCALLOC(buflen, sizeof(char));
-	char addrstring[7];	// single DLC addr = 6 hex digits + \0
+	char addrstring[8];	// single DLC addr = 6 hex digits + space + \0
 	while(len > 0) {
 		avlc_addr_t a;
 		a.val = parse_dlc_addr(ptr);
