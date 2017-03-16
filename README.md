@@ -154,10 +154,11 @@ for the task.
         ./dumpvdl2 --output-file vdl2.log [other_options]
 
 - If you want the file to be automatically rotated on top of every hour, add `--hourly` option.
-  The file name will be appended with `_YYYYMMDDHH` suffix.
+  The file name will be appended with `_YYYYMMDDHH` suffix. If file extension is present, it
+  will be placed after the suffix.
 
 - If you prefer daily rotation, `--daily` option does just that. The file name suffix will be
-  `_YYYYMMDD` in this case.
+  `_YYYYMMDD` in this case. If file extension is present, it will be placed after the suffix.
 
 - Add `--utc` option if you prefer UTC timestamps rather than local timezone in output and filenames.
 

@@ -46,6 +46,15 @@ static int open_outfile() {
 		else
 			localtime_r(&t, &current_tm);
 		char suffix[16];
+// if filename_prefix has an extension, then move it to the end of the resulting file name
+		char *ext = strrchr(filename_prefix, '.');
+		char *extension = NULL;
+		if(ext == filename_prefix || ext[1] == '\0')
+			ext = NULL;
+		if(ext) {
+			extension = strdup(ext);
+			*ext = '\0';
+		}
 		if(hourly)
 			fmt = "_%Y%m%d_%H";
 		else	// daily
@@ -57,6 +66,10 @@ static int open_outfile() {
 		}
 		filename = XCALLOC(prefix_len + tlen + 2, sizeof(uint8_t));
 		sprintf(filename, "%s%s", filename_prefix, suffix);
+		if(extension) {
+			strcat(filename, extension);
+			free(extension);
+		}
 	} else {
 		filename = filename_prefix;
 	}
