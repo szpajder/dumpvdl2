@@ -32,6 +32,7 @@ FILE *outf;
 int pp_sockfd = 0;
 uint8_t hourly = 0, daily = 0, utc = 0;
 static char *filename_prefix = NULL;
+static char *extension = NULL;
 static size_t prefix_len;
 static struct tm current_tm;
 
@@ -46,15 +47,6 @@ static int open_outfile() {
 		else
 			localtime_r(&t, &current_tm);
 		char suffix[16];
-// if filename_prefix has an extension, then move it to the end of the resulting file name
-		char *ext = strrchr(filename_prefix, '.');
-		char *extension = NULL;
-		if(ext == filename_prefix || ext[1] == '\0')
-			ext = NULL;
-		if(ext) {
-			extension = strdup(ext);
-			*ext = '\0';
-		}
 		if(hourly)
 			fmt = "_%Y%m%d_%H";
 		else	// daily
@@ -65,11 +57,7 @@ static int open_outfile() {
 			return -1;
 		}
 		filename = XCALLOC(prefix_len + tlen + 2, sizeof(uint8_t));
-		sprintf(filename, "%s%s", filename_prefix, suffix);
-		if(extension) {
-			strcat(filename, extension);
-			free(extension);
-		}
+		sprintf(filename, "%s%s%s", filename_prefix, suffix, extension);
 	} else {
 		filename = filename_prefix;
 	}
@@ -90,6 +78,17 @@ int init_output_file(char *file) {
 	} else {
 		filename_prefix = file;
 		prefix_len = strlen(filename_prefix);
+		if(hourly || daily) {
+			char *ext = strrchr(filename_prefix, '.');
+			if(ext != NULL && (ext == filename_prefix || ext[1] == '\0'))
+				ext = NULL;
+			if(ext) {
+				extension = strdup(ext);
+				*ext = '\0';
+			} else {
+				extension = strdup("");
+			}
+		}
 		return open_outfile();
 	}
 	return 0;
