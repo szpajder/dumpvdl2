@@ -25,6 +25,7 @@ dumpvdl2 is a lightweight, standalone VDL Mode 2 message decoder and protocol an
 - [X] ISO 8473 (CLNP) - partially supported (CLNP header is skipped over without decoding)
 - [X] ISO 9542 (ES-IS) - supported
 - [X] ISO 10747 (IDRP) - partially supported (decoding of some less important attributes is TODO)
+- [X] ISO 8073 (COTP) - supported
 - [ ] ICAO ULCS - not supported
 - [ ] ICAO Applications (CM, CPDLC) - not supported
 
@@ -36,7 +37,7 @@ area where CPDLC over VDL2 is utilized and you are able to collect it, please co
 
 Install necessary dependencies (unless you have them already). Example for Debian / Raspbian:
 
-        sudo apt-get install git gcc autoconf make cmake libusb-1.0-0-dev libtool
+        sudo apt-get install git gcc autoconf make cmake libusb-1.0-0-dev libtool libglib2.0-dev pkg-config
 
 ##### RTLSDR support
 
