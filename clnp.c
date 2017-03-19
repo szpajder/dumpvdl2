@@ -22,6 +22,7 @@
 #include "dumpvdl2.h"
 #include "clnp.h"
 #include "idrp.h"
+#include "cotp.h"
 
 static void parse_clnp_pdu_payload(clnp_pdu_t *pdu, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	if(len == 0)
@@ -36,6 +37,12 @@ static void parse_clnp_pdu_payload(clnp_pdu_t *pdu, uint8_t *buf, uint32_t len, 
 		break;
 	case SN_PROTO_CLNP:
 		debug_print("%s", "CLNP inside CLNP? Bailing out to avoid loop\n");
+		break;
+	default:
+// assume X.224 COTP TPDU
+		pdu->data = parse_cotp_concatenated_pdu(buf, len, msg_type);
+		if(pdu->data != NULL)
+			pdu->proto = SN_PROTO_COTP;
 		break;
 	}
 	if(pdu->data != NULL) {
@@ -122,6 +129,14 @@ static void output_clnp_pdu(clnp_pdu_t *pdu) {
 	case SN_PROTO_CLNP:
 		fprintf(outf, "-- Nested CLNP PDU - ignored\n");
 		output_raw(pdu->data, pdu->datalen);
+		break;
+	case SN_PROTO_COTP:
+		if(pdu->data_valid) {
+			output_cotp_concatenated_pdu(pdu->data);
+		} else {
+			fprintf(outf, "-- Unparseable COTP TPDU\n");
+			output_raw(pdu->data, pdu->datalen);
+		}
 		break;
 	default:
 		fprintf(outf, "Unknown protocol 0x%02x\n", pdu->proto);

@@ -33,6 +33,7 @@
 #define	SN_PROTO_CLNP			0x81
 #define	SN_PROTO_ESIS			0x82
 #define	SN_PROTO_IDRP			0x85
+#define	SN_PROTO_COTP			0xFF	// dummy value
 
 /*
  * X.25 packet identifiers

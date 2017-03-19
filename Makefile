@@ -5,7 +5,9 @@ export WITH_MIRISDR ?= 0
 CC = gcc
 CFLAGS = -std=c99 -g -Wall -O3 -ffast-math -D_XOPEN_SOURCE=500 -DDEBUG=$(DEBUG)
 CFLAGS += -DUSE_STATSD=$(USE_STATSD) -DWITH_RTLSDR=$(WITH_RTLSDR) -DWITH_MIRISDR=$(WITH_MIRISDR)
+CFLAGS += `pkg-config --cflags glib-2.0`
 LDLIBS = -lfec -lm
+LDLIBS += `pkg-config --libs glib-2.0`
 LDFLAGS = -Llibfec
 SUBDIRS = libfec
 CLEANDIRS = $(SUBDIRS:%=clean-%)
@@ -14,6 +16,7 @@ OBJ =	acars.o \
 	avlc.o \
 	bitstream.o \
 	clnp.o \
+	cotp.o \
 	crc.o \
 	decode.o \
 	demod.o \
@@ -50,7 +53,9 @@ $(BIN): $(DEPS)
 
 $(FEC): libfec ;
 
-clnp.o: dumpvdl2.h clnp.h idrp.h
+clnp.o: dumpvdl2.h clnp.h idrp.h cotp.h
+
+cotp.o: dumpvdl2.h tlv.h cotp.h
 
 decode.o: dumpvdl2.h
 
