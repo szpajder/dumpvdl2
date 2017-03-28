@@ -26,11 +26,12 @@
 #include "tlv.h"
 #include "cotp.h"
 
-static void cotp_pdu_free(gpointer pdu, gpointer user_data) {
+static void cotp_pdu_free(gpointer pdu) {
 	if(pdu == NULL) return;
 	cotp_pdu_t *p = (cotp_pdu_t *)pdu;
 	if(p->data_valid)
 		free(p->data);
+	free(pdu);
 }
 
 static int parse_cotp_pdu(cotp_pdu_t *pdu, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
@@ -120,8 +121,7 @@ GSList *parse_cotp_concatenated_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_ty
 	int ret;
 
 	if(pdu_list != NULL) {
-		g_slist_foreach(pdu_list, cotp_pdu_free, NULL);
-		g_slist_free(pdu_list);
+		g_slist_free_full(pdu_list, cotp_pdu_free);
 		pdu_list = NULL;
 	}
 	while(len > 0) {
