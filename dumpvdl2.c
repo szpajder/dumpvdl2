@@ -106,7 +106,6 @@ void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
 }
 
 void usage() {
-	fprintf(stderr, "DUMPVDL2 version %s\n", DUMPVDL2_VERSION);
 	fprintf(stderr, "Usage:\n\n");
 #if WITH_RTLSDR
 	fprintf(stderr, "RTL-SDR receiver:\n");
@@ -302,6 +301,7 @@ int main(int argc, char **argv) {
 #endif
 	char *infile = NULL, *outfile = NULL, *pp_addr = NULL;
 
+	fprintf(stderr, "dumpVDL2 %s\n", DUMPVDL2_VERSION);
 	while((opt = getopt_long(argc, argv, "", long_opts, NULL)) != -1) {
 		switch(opt) {
 		case __OPT_IQ_FILE:

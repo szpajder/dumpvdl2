@@ -4,6 +4,10 @@ export WITH_RTLSDR ?= 1
 export WITH_MIRISDR ?= 0
 CC = gcc
 CFLAGS = -std=c99 -g -Wall -O3 -ffast-math -D_XOPEN_SOURCE=500 -DDEBUG=$(DEBUG)
+DUMPVDL2_VERSION:=\"$(shell git describe --always --tags --dirty)\"
+ifneq ($(DUMPVDL2_VERSION), \"\")
+  CFLAGS+=-DDUMPVDL2_VERSION=$(DUMPVDL2_VERSION)
+endif
 CFLAGS += -DUSE_STATSD=$(USE_STATSD) -DWITH_RTLSDR=$(WITH_RTLSDR) -DWITH_MIRISDR=$(WITH_MIRISDR)
 CFLAGS += `pkg-config --cflags glib-2.0`
 LDLIBS = -lfec -lm
