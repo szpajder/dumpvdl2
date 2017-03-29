@@ -23,5 +23,5 @@
 #define MIRISDR_OVERSAMPLE 13
 #define MIRISDR_RATE (SYMBOL_RATE * SPS * MIRISDR_OVERSAMPLE)
 // mirisdr.c
-void mirisdr_init(vdl2_state_t *ctx, uint32_t device, int flavour, uint32_t freq, float gain, int freq_offset, int usb_xfer_mode);
+void mirisdr_init(vdl2_state_t *ctx, char *dev, int flavour, uint32_t freq, float gain, int freq_offset, int usb_xfer_mode);
 void mirisdr_cancel();

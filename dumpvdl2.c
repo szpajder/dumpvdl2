@@ -334,7 +334,7 @@ int main(int argc, char **argv) {
 			break;
 #if WITH_MIRISDR
 		case __OPT_MIRISDR:
-			device = strtoul(optarg, NULL, 10);
+			device = optarg;
 			input = INPUT_MIRISDR;
 			oversample = MIRISDR_OVERSAMPLE;
 			break;

@@ -54,7 +54,7 @@ static int nearest_gain(rtlsdr_dev_t *dev, int target_gain) {
 }
 
 /* taken from librtlsdr-keenerd, (c) Kyle Keen */
-int verbose_device_search(char *s) {
+static int rtl_verbose_device_search(char *s) {
 	int i, device_count, device, offset;
 	char *s2;
 	char vendor[256] = {0}, product[256] = {0}, serial[256] = {0};
@@ -119,7 +119,7 @@ int verbose_device_search(char *s) {
 void rtl_init(vdl2_state_t *ctx, char *dev, int freq, float gain, int correction) {
 	int r;
 
-	int device = verbose_device_search(dev);
+	int device = rtl_verbose_device_search(dev);
 	if(device < 0)
 		_exit(1);
 	r = rtlsdr_open(&rtl, device);

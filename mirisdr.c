@@ -18,6 +18,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <mirisdr.h>
 #include "dumpvdl2.h"
@@ -52,7 +53,66 @@ static int mirisdr_nearest_gain(mirisdr_dev_t *dev, int target_gain) {
 	return nearest;
 }
 
-void mirisdr_init(vdl2_state_t *ctx, uint32_t device, int flavour, uint32_t freq, float gain, int freq_offset, int usb_xfer_mode) {
+static int mirisdr_verbose_device_search(char *s) {
+	int i, device_count, device, offset;
+	char *s2;
+	char vendor[256], product[256], serial[256];
+	device_count = mirisdr_get_device_count();
+	if (!device_count) {
+		fprintf(stderr, "No supported devices found.\n");
+		return -1;
+	}
+	fprintf(stderr, "Found %d device(s):\n", device_count);
+	for (i = 0; i < device_count; i++) {
+		mirisdr_get_device_usb_strings(i, vendor, product, serial);
+		fprintf(stderr, "  %d:  %s, %s, SN: %s\n", i, vendor, product, serial);
+	}
+	fprintf(stderr, "\n");
+	/* does string look like raw id number */
+	device = (int)strtol(s, &s2, 0);
+	if (s2[0] == '\0' && device >= 0 && device < device_count) {
+		fprintf(stderr, "Using device %d: %s\n",
+			device, mirisdr_get_device_name((uint32_t)device));
+		return device;
+	}
+	/* does string exact match a serial */
+	for (i = 0; i < device_count; i++) {
+		mirisdr_get_device_usb_strings(i, vendor, product, serial);
+		if (strcmp(s, serial) != 0) {
+			continue;}
+		device = i;
+		fprintf(stderr, "Using device %d: %s\n",
+			device, mirisdr_get_device_name((uint32_t)device));
+		return device;
+	}
+	/* does string prefix match a serial */
+	for (i = 0; i < device_count; i++) {
+		mirisdr_get_device_usb_strings(i, vendor, product, serial);
+		if (strncmp(s, serial, strlen(s)) != 0) {
+			continue;}
+		device = i;
+		fprintf(stderr, "Using device %d: %s\n",
+			device, mirisdr_get_device_name((uint32_t)device));
+		return device;
+	}
+	/* does string suffix match a serial */
+	for (i = 0; i < device_count; i++) {
+		mirisdr_get_device_usb_strings(i, vendor, product, serial);
+		offset = strlen(serial) - strlen(s);
+		if (offset < 0) {
+			continue;}
+		if (strncmp(s, serial+offset, strlen(s)) != 0) {
+			continue;}
+		device = i;
+		fprintf(stderr, "Using device %d: %s\n",
+			device, mirisdr_get_device_name((uint32_t)device));
+		return device;
+	}
+	fprintf(stderr, "No matching devices found.\n");
+	return -1;
+}
+
+void mirisdr_init(vdl2_state_t *ctx, char *dev, int flavour, uint32_t freq, float gain, int freq_offset, int usb_xfer_mode) {
 	int r;
 
 	mirisdr_hw_flavour_t hw_flavour;
@@ -67,6 +127,9 @@ void mirisdr_init(vdl2_state_t *ctx, uint32_t device, int flavour, uint32_t freq
 		fprintf(stderr, "Unknown device variant %u\n", flavour);
 		_exit(1);
 	}
+	int device = mirisdr_verbose_device_search(dev);
+	if(device < 0)
+		_exit(1);
 	r = mirisdr_open(&mirisdr, hw_flavour, device);
 	if(mirisdr == NULL) {
 		fprintf(stderr, "Failed to open mirisdr device #%u: error %d\n", device, r);

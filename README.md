@@ -147,6 +147,8 @@ frequency, so if your receiver tunes a bit too low, the parameter value shall be
 
         ./dumpvdl2 --mirisdr 0 --gain 100 --correction -2500
 
+Device serial number can be given instead of ID, the same way, as for RTLSDR receivers.
+
 `libmirisdr-4` supports two types of hardware: generic Mirics (0 - the default) and SDRPlay (1).
 SDRPlay users should add `--hw-type 1` option. It uses frequency plans optimized for SDRPlay
 and reportedly gives better results than the default mode.
