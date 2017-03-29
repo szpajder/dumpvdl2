@@ -256,7 +256,7 @@ int main(int argc, char **argv) {
 	enum input_types input = INPUT_UNDEF;
 	enum sample_formats sample_fmt = SFMT_UNDEF;
 #if WITH_RTLSDR || WITH_MIRISDR
-	uint32_t device = 0;
+	char *device = NULL;
 	float gain = SDR_AUTO_GAIN;
 	int correction = 0;
 #endif
@@ -347,7 +347,7 @@ int main(int argc, char **argv) {
 #endif
 #if WITH_RTLSDR
 		case __OPT_RTLSDR:
-			device = strtoul(optarg, NULL, 10);
+			device = optarg;
 			input = INPUT_RTLSDR;
 			oversample = RTL_OVERSAMPLE;
 			break;

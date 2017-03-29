@@ -116,6 +116,15 @@ outputs to standard output:
 
         ./dumpvdl2 --rtlsdr 0 --gain 40 --correction 42
 
+Device ID numbers are not persistent - they depend on the USB device order and the sequence
+which they were plugged in. You may specify the device by its serial number to get deterministic
+behavior:
+
+        ./dumpvdl2 --rtlsdr 771111153 --gain 40 --correction 42
+
+Use `rtl_test` utility to get serial numbers of your devices. `dumpvdl2` will print them to
+the screen on startup as well.
+
 If you want to listen to a different VDL2 channel, just give its frequency as a last parameter:
 
         ./dumpvdl2 --rtlsdr 0 --gain 40 --correction 42 136725000
