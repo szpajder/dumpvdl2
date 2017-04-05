@@ -10,9 +10,8 @@ ifneq ($(DUMPVDL2_VERSION), \"\")
 endif
 CFLAGS += -DUSE_STATSD=$(USE_STATSD) -DWITH_RTLSDR=$(WITH_RTLSDR) -DWITH_MIRISDR=$(WITH_MIRISDR)
 CFLAGS += `pkg-config --cflags glib-2.0`
-LDLIBS = -lfec -lm
+LDLIBS = -lm
 LDLIBS += `pkg-config --libs glib-2.0`
-LDFLAGS = -Llibfec
 SUBDIRS = libfec
 CLEANDIRS = $(SUBDIRS:%=clean-%)
 BIN = dumpvdl2
