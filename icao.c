@@ -132,6 +132,24 @@ uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 	}
 	ASN_STRUCT_FREE(asn_DEF_CMGroundMessage, gndmsg);
 
+// First try protected PDUs, because they are more commonly used than unprotected ones.
+// FIXME: verify ATN checksum to be 100% sure that the guessed PDU type is correct
+	ATCDownlinkMessage_t *atcdownmsg = NULL;
+	if(decode_protected_ATCDownlinkMessage((void **)&atcdownmsg, buf, size) == 0) {
+		icao_apdu->type = &asn_DEF_ATCDownlinkMessage;
+		icao_apdu->data = atcdownmsg;
+		return;
+	}
+	ASN_STRUCT_FREE(asn_DEF_ATCDownlinkMessage, atcdownmsg);
+
+	ATCUplinkMessage_t *atcupmsg = NULL;
+	if(decode_protected_ATCUplinkMessage((void **)&atcupmsg, buf, size) == 0) {
+		icao_apdu->type = &asn_DEF_ATCUplinkMessage;
+		icao_apdu->data = atcupmsg;
+		return;
+	}
+	ASN_STRUCT_FREE(asn_DEF_ATCUplinkMessage, atcupmsg);
+
 	AircraftPDUs_t *airpdu = NULL;
 	if(decode_as(&asn_DEF_AircraftPDUs, (void **)&airpdu, buf, size) == 0) {
 		icao_apdu->type = &asn_DEF_AircraftPDUs;
@@ -148,21 +166,6 @@ uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 	}
 	ASN_STRUCT_FREE(asn_DEF_GroundPDUs, gndpdu);
 
-	ATCDownlinkMessage_t *atcdownmsg = NULL;
-	if(decode_protected_ATCDownlinkMessage((void **)&atcdownmsg, buf, size) == 0) {
-		icao_apdu->type = &asn_DEF_ATCDownlinkMessage;
-		icao_apdu->data = atcdownmsg;
-		return;
-	}
-	ASN_STRUCT_FREE(asn_DEF_ATCDownlinkMessage, atcdownmsg);
-
-	ATCUplinkMessage_t *atcupmsg = NULL;
-	if(decode_protected_ATCUplinkMessage((void **)&atcupmsg, buf, size) == 0) {
-		icao_apdu->type = &asn_DEF_ATCUplinkMessage;
-		icao_apdu->data = atcupmsg;
-		return;
-	}
-	ASN_STRUCT_FREE(asn_DEF_ATCUplinkMessage, atcupmsg);
 	debug_print("%s", "unknown APDU type\n");
 }
 
