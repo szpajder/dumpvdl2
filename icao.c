@@ -31,7 +31,7 @@
 #include "dumpvdl2.h"	// outf
 #include "icao.h"
 
-int decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, int size) {
+static int decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, int size) {
 	asn_dec_rval_t rval;
 	rval = uper_decode_complete(0, td, struct_ptr, buf, size);
 	if(rval.code != RC_OK) {
@@ -46,11 +46,75 @@ int decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, int si
 	return 0;
 }
 
+// Decodes ATCDownlinkMessage encapsulated in ProtectedAircraftPDU
+static int decode_protected_ATCDownlinkMessage(void **atcdownmsg, uint8_t *buf, int size) {
+	ProtectedAircraftPDUs_t *pairpdu = NULL;
+	int ret = -1;	// error by default
+
+	if(decode_as(&asn_DEF_ProtectedAircraftPDUs, (void **)&pairpdu, buf, size) != 0)
+		goto protected_aircraft_pdu_cleanup;
+
+	ProtectedDownlinkMessage_t *p_downlink_msg = NULL;
+	switch(pairpdu->present) {
+	case ProtectedAircraftPDUs_PR_startdown:
+		p_downlink_msg = &pairpdu->choice.startdown.startDownlinkMessage;
+		break;
+	case ProtectedAircraftPDUs_PR_send:
+		p_downlink_msg = &pairpdu->choice.send;
+		break;
+	default:
+		break;
+	}
+	if(p_downlink_msg == NULL || p_downlink_msg->protectedMessage == NULL)
+		goto protected_aircraft_pdu_cleanup;
+	if(decode_as(&asn_DEF_ATCDownlinkMessage, atcdownmsg,
+	   p_downlink_msg->protectedMessage->buf,
+	   p_downlink_msg->protectedMessage->size) == 0) {
+		ret = 0;
+		goto protected_aircraft_pdu_cleanup;
+	}
+	debug_print("%s", "unable to decode ProtectedAircraftPDU as ATCDownlinkMessage\n");
+protected_aircraft_pdu_cleanup:
+	ASN_STRUCT_FREE(asn_DEF_ProtectedAircraftPDUs, pairpdu);
+	return ret;
+}
+
+// Decodes ATCUplinkMessage encapsulated in ProtectedAircraftPDU
+static int decode_protected_ATCUplinkMessage(void **atcupmsg, uint8_t *buf, int size) {
+	ProtectedGroundPDUs_t *pgndpdu = NULL;
+	int ret = -1;   // error by default
+
+	if(decode_as(&asn_DEF_ProtectedGroundPDUs, (void **)&pgndpdu, buf, size) != 0)
+		goto protected_ground_pdu_cleanup;
+
+	ProtectedUplinkMessage_t *p_uplink_msg = NULL;
+	switch(pgndpdu->present) {
+	case ProtectedGroundPDUs_PR_startup:
+		p_uplink_msg = &pgndpdu->choice.startup;
+		break;
+	case ProtectedGroundPDUs_PR_send:
+		p_uplink_msg = &pgndpdu->choice.send;
+		break;
+	default:
+		break;
+	}
+	if(p_uplink_msg == NULL || p_uplink_msg->protectedMessage == NULL)
+		goto protected_ground_pdu_cleanup;
+	if(decode_as(&asn_DEF_ATCUplinkMessage, atcupmsg,
+	   p_uplink_msg->protectedMessage->buf,
+	   p_uplink_msg->protectedMessage->size) == 0) {
+		ret = 0;
+		goto protected_ground_pdu_cleanup;
+	}
+	debug_print("%s", "unable to decode ProtectedGroundPDU as ATCUplinkMessage\n");
+protected_ground_pdu_cleanup:
+	ASN_STRUCT_FREE(asn_DEF_ProtectedGroundPDUs, pgndpdu);
+	return ret;
+}
+
 static void decode_arbitrary_payload(icao_apdu_t *icao_apdu, AE_qualifier_form2_t ae_qualifier,
 uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 // FIXME: skip unnecessary decoding attempts according to msg direction and ae_qualifier
-// FIXME: turn this into a struct list and loop over it?
-// FIXME: ASN_FREE
 // FIXME: msg_type
 	CMAircraftMessage_t *msg = NULL;
 	if(decode_as(&asn_DEF_CMAircraftMessage, (void **)&msg, buf, size) == 0) {
@@ -58,6 +122,7 @@ uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 		icao_apdu->data = msg;
 		return;
 	}
+	ASN_STRUCT_FREE(asn_DEF_CMAircraftMessage, msg);
 
 	CMGroundMessage_t *gndmsg = NULL;
 	if(decode_as(&asn_DEF_CMGroundMessage, (void **)&gndmsg, buf, size) == 0) {
@@ -65,6 +130,7 @@ uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 		icao_apdu->data = gndmsg;
 		return;
 	}
+	ASN_STRUCT_FREE(asn_DEF_CMGroundMessage, gndmsg);
 
 	AircraftPDUs_t *airpdu = NULL;
 	if(decode_as(&asn_DEF_AircraftPDUs, (void **)&airpdu, buf, size) == 0) {
@@ -72,6 +138,7 @@ uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 		icao_apdu->data = airpdu;
 		return;
 	}
+	ASN_STRUCT_FREE(asn_DEF_AircraftPDUs, airpdu);
 
 	GroundPDUs_t *gndpdu = NULL;
 	if(decode_as(&asn_DEF_GroundPDUs, (void **)&gndpdu, buf, size) == 0) {
@@ -79,60 +146,23 @@ uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 		icao_apdu->data = gndpdu;
 		return;
 	}
+	ASN_STRUCT_FREE(asn_DEF_GroundPDUs, gndpdu);
 
-	ProtectedAircraftPDUs_t *pairpdu = NULL;
-	if(decode_as(&asn_DEF_ProtectedAircraftPDUs, (void **)&pairpdu, buf, size) == 0) {
-		ProtectedDownlinkMessage_t *p_downlink_msg = NULL;
-		switch(pairpdu->present) {
-		case ProtectedAircraftPDUs_PR_startdown:
-			p_downlink_msg = &pairpdu->choice.startdown.startDownlinkMessage;
-			break;
-		case ProtectedAircraftPDUs_PR_send:
-			p_downlink_msg = &pairpdu->choice.send;
-			break;
-		default:
-			break;
-		}
-		if(p_downlink_msg == NULL) return;
-		if(p_downlink_msg->protectedMessage == NULL) return;
-		ATCDownlinkMessage_t *atcdownmsg = NULL;
-		if(decode_as(&asn_DEF_ATCDownlinkMessage, (void **)&atcdownmsg,
-		   p_downlink_msg->protectedMessage->buf,
-		   p_downlink_msg->protectedMessage->size) == 0) {
-			icao_apdu->type = &asn_DEF_ATCDownlinkMessage;
-			icao_apdu->data = atcdownmsg;
-			return;
-		}
-		debug_print("%s", "unable to decode ProtectedAircraftPDU as ATCDownlinkMessage\n");
+	ATCDownlinkMessage_t *atcdownmsg = NULL;
+	if(decode_protected_ATCDownlinkMessage((void **)&atcdownmsg, buf, size) == 0) {
+		icao_apdu->type = &asn_DEF_ATCDownlinkMessage;
+		icao_apdu->data = atcdownmsg;
 		return;
 	}
+	ASN_STRUCT_FREE(asn_DEF_ATCDownlinkMessage, atcdownmsg);
 
-	ProtectedGroundPDUs_t *pgndpdu = NULL;
-	if(decode_as(&asn_DEF_ProtectedGroundPDUs, (void **)&pgndpdu, buf, size) == 0) {
-		ProtectedUplinkMessage_t *p_uplink_msg = NULL;
-		switch(pgndpdu->present) {
-		case ProtectedGroundPDUs_PR_startup:
-			p_uplink_msg = &pgndpdu->choice.startup;
-			break;
-		case ProtectedGroundPDUs_PR_send:
-			p_uplink_msg = &pgndpdu->choice.send;
-			break;
-		default:
-			break;
-		}
-		if(p_uplink_msg == NULL) return;
-		if(p_uplink_msg->protectedMessage == NULL) return;
-		ATCUplinkMessage_t *atcupmsg = NULL;
-		if(decode_as(&asn_DEF_ATCUplinkMessage, (void **)&atcupmsg,
-		   p_uplink_msg->protectedMessage->buf,
-		   p_uplink_msg->protectedMessage->size) == 0) {
-			icao_apdu->type = &asn_DEF_ATCUplinkMessage;
-			icao_apdu->data = atcupmsg;
-			return;
-		}
-		debug_print("%s", "unable to decode ProtectedGroundPDU as ATCUplinkMessage\n");
+	ATCUplinkMessage_t *atcupmsg = NULL;
+	if(decode_protected_ATCUplinkMessage((void **)&atcupmsg, buf, size) == 0) {
+		icao_apdu->type = &asn_DEF_ATCUplinkMessage;
+		icao_apdu->data = atcupmsg;
 		return;
 	}
+	ASN_STRUCT_FREE(asn_DEF_ATCUplinkMessage, atcupmsg);
 	debug_print("%s", "unknown APDU type\n");
 }
 
@@ -142,7 +172,7 @@ void decode_ulcs_acse(icao_apdu_t *icao_apdu, uint8_t *buf, uint32_t len, uint32
 	rval = uper_decode_complete(0, &asn_DEF_ACSE_apdu, (void **)&acse_apdu, buf, len);
 	if(rval.code != RC_OK) {
 		fprintf(stderr, "Decoding failed at position %ld\n", (long)rval.consumed);
-		return;
+		goto ulcs_acse_cleanup;
 	}
 //	asn_fprint(outf, &asn_DEF_ACSE_apdu, acse_apdu);
 
@@ -175,16 +205,19 @@ void decode_ulcs_acse(icao_apdu_t *icao_apdu, uint8_t *buf, uint32_t len, uint32
 	debug_print("calling-AE-qualifier: %ld\n", ae_qualifier);
 	if(user_info == NULL) {
 		debug_print("%s", "No user-information field\n");
-		return;
+		goto ulcs_acse_cleanup;
 	}
 	if(user_info->data.encoding.present != EXTERNALt__encoding_PR_arbitrary) {
 		debug_print("unsupported encoding: %d\n", user_info->data.encoding.present);
-		return;
+		goto ulcs_acse_cleanup;
 	}
 	decode_arbitrary_payload(icao_apdu, ae_qualifier,
 				 user_info->data.encoding.choice.arbitrary.buf,
 				 user_info->data.encoding.choice.arbitrary.size,
 				 msg_type);
+ulcs_acse_cleanup:
+	ASN_STRUCT_FREE(asn_DEF_ACSE_apdu, acse_apdu);
+	return;
 }
 
 static void decode_fully_encoded_data(icao_apdu_t *icao_apdu, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
@@ -193,14 +226,14 @@ static void decode_fully_encoded_data(icao_apdu_t *icao_apdu, uint8_t *buf, uint
 	rval = uper_decode_complete(0, &asn_DEF_Fully_encoded_data, (void **)&fed, buf, len);
 	if(rval.code != RC_OK) {
 		debug_print("uper_decode_complete() failed at position %ld\n", (long)rval.consumed);
-		return;
+		goto fed_cleanup;
 	}
 //	asn_fprint(outf, &asn_DEF_Fully_encoded_data, fed);
 //	printf("%ld bytes consumed, %ld left\n", (long)rval.consumed, (long)(len) - (long)rval.consumed);
 
 	if(fed->data.presentation_data_values.present != PDV_list__presentation_data_values_PR_arbitrary) {
 		debug_print("%s", "unsupported encoding of fully-encoded-data\n");
-		return;
+		goto fed_cleanup;
 	}
 	switch(fed->data.presentation_context_identifier) {
 	case Presentation_context_identifier_acse_apdu:
@@ -218,8 +251,11 @@ static void decode_fully_encoded_data(icao_apdu_t *icao_apdu, uint8_t *buf, uint
 	default:
 		debug_print("unsupported presentation-context-identifier: %ld\n",
 			fed->data.presentation_context_identifier);
-		return;
+		goto fed_cleanup;
 	}
+fed_cleanup:
+	ASN_STRUCT_FREE(asn_DEF_Fully_encoded_data, fed);
+	return;
 }
 
 icao_apdu_t *parse_icao_apdu(uint8_t *buf, uint32_t datalen, uint32_t *msg_type) {
