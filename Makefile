@@ -8,11 +8,12 @@ DUMPVDL2_VERSION:=\"$(shell git describe --always --tags --dirty)\"
 ifneq ($(DUMPVDL2_VERSION), \"\")
   CFLAGS+=-DDUMPVDL2_VERSION=$(DUMPVDL2_VERSION)
 endif
+CFLAGS += -Iasn1
 CFLAGS += -DUSE_STATSD=$(USE_STATSD) -DWITH_RTLSDR=$(WITH_RTLSDR) -DWITH_MIRISDR=$(WITH_MIRISDR)
 CFLAGS += `pkg-config --cflags glib-2.0`
 LDLIBS = -lm
 LDLIBS += `pkg-config --libs glib-2.0`
-SUBDIRS = libfec
+SUBDIRS = libfec asn1
 CLEANDIRS = $(SUBDIRS:%=clean-%)
 BIN = dumpvdl2
 OBJ =	acars.o \
@@ -24,6 +25,7 @@ OBJ =	acars.o \
 	decode.o \
 	demod.o \
 	esis.o \
+	icao.o \
 	idrp.o \
 	output.o \
 	rs.o \
@@ -34,7 +36,9 @@ OBJ =	acars.o \
 	util.o
 
 FEC = libfec/libfec.a
-DEPS = $(OBJ) $(FEC)
+ASN1 = asn1/asn1.a
+
+DEPS = $(OBJ) $(FEC) $(ASN1)
 ifeq ($(USE_STATSD), 1)
   DEPS += statsd.o
   LDLIBS += -lstatsdclient
@@ -56,9 +60,11 @@ $(BIN): $(DEPS)
 
 $(FEC): libfec ;
 
+$(ASN1): asn1 ;
+
 clnp.o: dumpvdl2.h clnp.h idrp.h cotp.h
 
-cotp.o: dumpvdl2.h tlv.h cotp.h
+cotp.o: dumpvdl2.h tlv.h cotp.h icao.h
 
 decode.o: dumpvdl2.h
 
@@ -67,6 +73,8 @@ demod.o: dumpvdl2.h
 bitstream.o: dumpvdl2.h
 
 esis.o: dumpvdl2.h esis.h tlv.h
+
+icao.o: dumpvdl2.h icao.h
 
 idrp.o: dumpvdl2.h idrp.h tlv.h
 

@@ -25,12 +25,13 @@
 #include "dumpvdl2.h"
 #include "tlv.h"
 #include "cotp.h"
+#include "icao.h"
 
 static void cotp_pdu_free(gpointer pdu) {
 	if(pdu == NULL) return;
-	cotp_pdu_t *p = (cotp_pdu_t *)pdu;
+/*	cotp_pdu_t *p = (cotp_pdu_t *)pdu;
 	if(p->data_valid)
-		free(p->data);
+		free(p->data); */
 	free(pdu);
 }
 
@@ -100,7 +101,7 @@ static int parse_cotp_pdu(cotp_pdu_t *pdu, uint8_t *buf, uint32_t len, uint32_t 
 // user data is allowed in this PDU; if it's there, try to parse it
 		buf += li; len -= li;
 		if(len > 0) {
-			/* pdu->data = process(...) */
+			pdu->data = parse_icao_apdu(buf, len, msg_type);
 			if(pdu->data != NULL) {
 				pdu->data_valid = 1;
 			} else {
@@ -202,8 +203,12 @@ static void output_cotp_pdu(gpointer p, gpointer user_data) {
 		fprintf(outf, " Reason: %u (%s)\n", pdu->class_or_status, (str ? str : "<unknown>"));
 		break;
 	}
-	if(pdu->data != NULL)
-		output_raw(pdu->data, pdu->datalen);
+	if(pdu->data != NULL) {
+		if(pdu->data_valid)
+			output_icao_apdu(pdu->data);
+		else
+			output_raw(pdu->data, pdu->datalen);
+	}
 }
 
 void output_cotp_concatenated_pdu(GSList *pdu_list) {
