@@ -302,6 +302,9 @@ icao_decoding_failed:
 		icao_apdu->data = buf;
 		icao_apdu->datalen = datalen;
 	}
+// temporary, for debugging
+	icao_apdu->raw_data = buf;
+	icao_apdu->datalen = datalen;
 	return icao_apdu;
 }
 
@@ -310,6 +313,8 @@ void output_icao_apdu(icao_apdu_t *icao_apdu) {
 		fprintf(outf, "-- NULL ICAO APDU\n");
 		return;
 	}
+// temporary, for debugging
+	output_raw(icao_apdu->raw_data, icao_apdu->datalen);
 	if(icao_apdu->type != NULL)
 		asn_fprint(outf, icao_apdu->type, icao_apdu->data);
 	else

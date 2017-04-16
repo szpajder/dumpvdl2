@@ -22,6 +22,7 @@
 typedef struct {
 	asn_TYPE_descriptor_t *type;
 	void *data;
+	void *raw_data;	// temporary, for debugging;
 	uint32_t datalen;
 } icao_apdu_t;
 
