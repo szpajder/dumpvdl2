@@ -26,12 +26,7 @@ dumpvdl2 is a lightweight, standalone VDL Mode 2 message decoder and protocol an
 - [X] ISO 9542 (ES-IS) - supported
 - [X] ISO 10747 (IDRP) - partially supported (decoding of some less important attributes is TODO)
 - [X] ISO 8073 (COTP) - supported
-- [ ] ICAO ULCS - not supported
-- [ ] ICAO Applications (CM, CPDLC) - not supported
-
-**Note:** the aim of this project is to support CPDLC (at least partially). However, CPDLC is not yet
-implemented in the FIR where I live, so I don't have any real data to work on. If you live in an
-area where CPDLC over VDL2 is utilized and you are able to collect it, please contact me (e-mail below).
+- [X] ICAO Applications (CM, CPDLC) - supported, currently at alpha-stage, may be buggy
 
 ### Installation
 
