@@ -666,10 +666,10 @@ clean:
 
 regen:
 	asn1c -fcompound-names -gen-PER atn-ulcs.asn1 atn-cm.asn1 atn-cpdlc.asn1
-# workaround for missing SET_OF_encode_uper function
-	sed -i 's/SET_OF_encode_uper,/NULL,/'  RelativeDistinguishedName.c
+# disable missing SET_OF_encode_uper function
+	patch -p0 < patches/disable_missing_set_of_encode_uper.diff
 # enable printing of CHOICE names by asn_print()
-	sed -i 's/if(0)/if(1)/' constr_CHOICE.c
+	patch -p0 < patches/print_choice_names.diff
 # silence compiler warnings on missing _DEFAULT_SOURCE
 	patch -p0 < patches/asn_system_h_default_source.diff
 
