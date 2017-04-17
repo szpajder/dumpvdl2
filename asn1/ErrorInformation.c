@@ -103,7 +103,7 @@ static asn_per_constraints_t asn_PER_type_ErrorInformation_constr_1 GCC_NOTUSED 
 };
 static const asn_INTEGER_enum_map_t asn_MAP_ErrorInformation_value2enum_1[] = {
 	{ 0,	30,	"unrecognizedMsgReferenceNumber" },
-	{ 1,	32,	"logicalAcknowledgmentNotAccepted" },
+	{ 1,	33,	"logicalAcknowledgementNotAccepted" },
 	{ 2,	21,	"insufficientResources" },
 	{ 3,	32,	"invalidMessageElementCombination" },
 	{ 4,	21,	"invalidMessageElement" }
@@ -113,7 +113,7 @@ static const unsigned int asn_MAP_ErrorInformation_enum2value_1[] = {
 	2,	/* insufficientResources(2) */
 	4,	/* invalidMessageElement(4) */
 	3,	/* invalidMessageElementCombination(3) */
-	1,	/* logicalAcknowledgmentNotAccepted(1) */
+	1,	/* logicalAcknowledgementNotAccepted(1) */
 	0	/* unrecognizedMsgReferenceNumber(0) */
 	/* This list is extensible */
 };

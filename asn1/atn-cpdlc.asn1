@@ -1260,11 +1260,12 @@ ATCUplinkMsgElementId ::= CHOICE
     -- LEAVE CONTROLLED AIRSPACE
     -- Urg(N)/Alr(M)/Resp(W/U)
     uM236NULL [236] NULL,
-    ...,
 
     -- REQUEST AGAIN WITH NEXT UNIT
     -- Urg(N)/Alr(L)/Resp(N)
-    uM237NULL [237]NULL
+    uM237NULL [237]NULL,
+
+    ...
 }
 
 ------------------------------------------------------------------------------------
@@ -1921,7 +1922,7 @@ DistanceSpecifiedNm ::= INTEGER (1..250)
 ErrorInformation ::= ENUMERATED
 {
     unrecognizedMsgReferenceNumber    (0),
-    logicalAcknowledgmentNotAccepted  (1),
+    logicalAcknowledgementNotAccepted (1),
     insufficientResources             (2),
     invalidMessageElementCombination  (3),
     invalidMessageElement             (4),
@@ -2183,7 +2184,7 @@ LevelsOfFlight ::= CHOICE
 LevelSpeed ::= SEQUENCE
 {
     level Level,
-    speed SpeedSpeed
+    speed Speed
 }
 
 LevelSpeedSpeed ::= SEQUENCE

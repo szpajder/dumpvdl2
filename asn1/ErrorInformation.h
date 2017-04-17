@@ -21,7 +21,7 @@ extern "C" {
 /* Dependencies */
 typedef enum ErrorInformation {
 	ErrorInformation_unrecognizedMsgReferenceNumber	= 0,
-	ErrorInformation_logicalAcknowledgmentNotAccepted	= 1,
+	ErrorInformation_logicalAcknowledgementNotAccepted	= 1,
 	ErrorInformation_insufficientResources	= 2,
 	ErrorInformation_invalidMessageElementCombination	= 3,
 	ErrorInformation_invalidMessageElement	= 4

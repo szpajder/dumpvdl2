@@ -315,8 +315,9 @@ typedef enum ATCUplinkMsgElementId_PR {
 	ATCUplinkMsgElementId_PR_uM234NULL,
 	ATCUplinkMsgElementId_PR_uM235NULL,
 	ATCUplinkMsgElementId_PR_uM236NULL,
+	ATCUplinkMsgElementId_PR_uM237NULL,
 	/* Extensions may appear below */
-	ATCUplinkMsgElementId_PR_uM237NULL
+	
 } ATCUplinkMsgElementId_PR;
 
 /* ATCUplinkMsgElementId */
@@ -560,11 +561,11 @@ typedef struct ATCUplinkMsgElementId {
 		NULL_t	 uM234NULL;
 		NULL_t	 uM235NULL;
 		NULL_t	 uM236NULL;
+		NULL_t	 uM237NULL;
 		/*
 		 * This type is extensible,
 		 * possible extensions are below.
 		 */
-		NULL_t	 uM237NULL;
 	} choice;
 	
 	/* Context for parsing across buffer boundaries */

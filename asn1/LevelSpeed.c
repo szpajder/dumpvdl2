@@ -18,9 +18,9 @@ static asn_TYPE_member_t asn_MBR_LevelSpeed_1[] = {
 		"level"
 		},
 	{ ATF_NOFLAGS, 0, offsetof(struct LevelSpeed, speed),
-		(ASN_TAG_CLASS_UNIVERSAL | (16 << 2)),
+		-1 /* Ambiguous tag (CHOICE?) */,
 		0,
-		&asn_DEF_SpeedSpeed,
+		&asn_DEF_Speed,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -31,15 +31,21 @@ static const ber_tlv_tag_t asn_DEF_LevelSpeed_tags_1[] = {
 	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
 };
 static const asn_TYPE_tag2member_t asn_MAP_LevelSpeed_tag2el_1[] = {
-    { (ASN_TAG_CLASS_UNIVERSAL | (16 << 2)), 1, 0, 0 }, /* speed */
-    { (ASN_TAG_CLASS_CONTEXT | (0 << 2)), 0, 0, 0 }, /* singleLevel */
-    { (ASN_TAG_CLASS_CONTEXT | (1 << 2)), 0, 0, 0 } /* blockLevel */
+    { (ASN_TAG_CLASS_CONTEXT | (0 << 2)), 0, 0, 1 }, /* singleLevel */
+    { (ASN_TAG_CLASS_CONTEXT | (0 << 2)), 1, -1, 0 }, /* speedIndicated */
+    { (ASN_TAG_CLASS_CONTEXT | (1 << 2)), 0, 0, 1 }, /* blockLevel */
+    { (ASN_TAG_CLASS_CONTEXT | (1 << 2)), 1, -1, 0 }, /* speedIndicatedMetric */
+    { (ASN_TAG_CLASS_CONTEXT | (2 << 2)), 1, 0, 0 }, /* speedTrue */
+    { (ASN_TAG_CLASS_CONTEXT | (3 << 2)), 1, 0, 0 }, /* speedTrueMetric */
+    { (ASN_TAG_CLASS_CONTEXT | (4 << 2)), 1, 0, 0 }, /* speedGround */
+    { (ASN_TAG_CLASS_CONTEXT | (5 << 2)), 1, 0, 0 }, /* speedGroundMetric */
+    { (ASN_TAG_CLASS_CONTEXT | (6 << 2)), 1, 0, 0 } /* speedMach */
 };
 static asn_SEQUENCE_specifics_t asn_SPC_LevelSpeed_specs_1 = {
 	sizeof(struct LevelSpeed),
 	offsetof(struct LevelSpeed, _asn_ctx),
 	asn_MAP_LevelSpeed_tag2el_1,
-	3,	/* Count of tags in the map */
+	9,	/* Count of tags in the map */
 	0, 0, 0,	/* Optional elements (not needed) */
 	-1,	/* Start extensions */
 	-1	/* Stop extensions */

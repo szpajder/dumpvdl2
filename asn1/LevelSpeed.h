@@ -13,7 +13,7 @@
 
 /* Including external dependencies */
 #include "Level.h"
-#include "SpeedSpeed.h"
+#include "Speed.h"
 #include <constr_SEQUENCE.h>
 
 #ifdef __cplusplus
@@ -23,7 +23,7 @@ extern "C" {
 /* LevelSpeed */
 typedef struct LevelSpeed {
 	Level_t	 level;
-	SpeedSpeed_t	 speed;
+	Speed_t	 speed;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;

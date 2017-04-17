@@ -8,7 +8,7 @@
 #include "ATCUplinkMsgElementId.h"
 
 static asn_per_constraints_t asn_PER_type_ATCUplinkMsgElementId_constr_1 GCC_NOTUSED = {
-	{ APC_CONSTRAINED | APC_EXTENSIBLE,  8,  8,  0,  236 }	/* (0..236,...) */,
+	{ APC_CONSTRAINED | APC_EXTENSIBLE,  8,  8,  0,  237 }	/* (0..237,...) */,
 	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
 	0, 0	/* No PER value map */
 };
@@ -2404,7 +2404,7 @@ static asn_CHOICE_specifics_t asn_SPC_ATCUplinkMsgElementId_specs_1 = {
 	asn_MAP_ATCUplinkMsgElementId_tag2el_1,
 	238,	/* Count of tags in the map */
 	0,
-	237	/* Extensions start */
+	238	/* Extensions start */
 };
 asn_TYPE_descriptor_t asn_DEF_ATCUplinkMsgElementId = {
 	"ATCUplinkMsgElementId",
