@@ -15,6 +15,7 @@
 
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE /* for snprintf() on some linux systems  */
+#define _DEFAULT_SOURCE /* avoid compiler warnings on newer glibc */
 #endif
 
 #include <stdio.h>	/* For snprintf(3) */

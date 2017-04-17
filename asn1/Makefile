@@ -670,4 +670,6 @@ regen:
 	sed -i 's/SET_OF_encode_uper,/NULL,/'  RelativeDistinguishedName.c
 # enable printing of CHOICE names by asn_print()
 	sed -i 's/if(0)/if(1)/' constr_CHOICE.c
+# silence compiler warnings on missing _DEFAULT_SOURCE
+	patch -p0 < patches/asn_system_h_default_source.diff
 
