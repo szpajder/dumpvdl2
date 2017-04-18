@@ -119,7 +119,8 @@ static const tlv_dict path_attribute_names[] = {
 	{ 13,	&fmt_hexstring,		"RD hop count" },
 	{ 14,	&fmt_hexstring,		"Security" },
 	{ 15,	&fmt_hexstring,		"Capacity" },
-	{ 16,	&fmt_hexstring,		"Priority" }
+	{ 16,	&fmt_hexstring,		"Priority" },
+	{ 0,    NULL,			NULL }
 };
 
 static int parse_idrp_open_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
