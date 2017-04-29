@@ -2,14 +2,16 @@ export DEBUG ?= 0
 export USE_STATSD ?= 0
 export WITH_RTLSDR ?= 1
 export WITH_MIRISDR ?= 0
+export WITH_SDRPLAY ?= 0
 CC = gcc
 CFLAGS = -std=c99 -g -Wall -O3 -fno-omit-frame-pointer -ffast-math -D_XOPEN_SOURCE=500 -DDEBUG=$(DEBUG)
 DUMPVDL2_VERSION:=\"$(shell git describe --always --tags --dirty)\"
 ifneq ($(DUMPVDL2_VERSION), \"\")
   CFLAGS+=-DDUMPVDL2_VERSION=$(DUMPVDL2_VERSION)
 endif
+
 CFLAGS += -Iasn1
-CFLAGS += -DUSE_STATSD=$(USE_STATSD) -DWITH_RTLSDR=$(WITH_RTLSDR) -DWITH_MIRISDR=$(WITH_MIRISDR)
+CFLAGS += -DUSE_STATSD=$(USE_STATSD) -DWITH_RTLSDR=$(WITH_RTLSDR) -DWITH_SDRPLAY=$(WITH_SDRPLAY) -DWITH_MIRISDR=$(WITH_MIRISDR)
 CFLAGS += `pkg-config --cflags glib-2.0`
 LDLIBS = -lm
 LDLIBS += `pkg-config --libs glib-2.0`
@@ -51,6 +53,10 @@ ifeq ($(WITH_MIRISDR), 1)
   DEPS += mirisdr.o
   LDLIBS += -lmirisdr
 endif
+ifeq ($(WITH_SDRPLAY), 1)
+  DEPS += sdrplay.o
+  LDLIBS += -lmirsdrapi-rsp
+endif
 
 .PHONY: all clean $(SUBDIRS) $(CLEANDIRS)
 
@@ -87,6 +93,8 @@ avlc.o: dumpvdl2.h avlc.h xid.h acars.h x25.h
 acars.o: dumpvdl2.h acars.h
 
 mirisdr.o: dumpvdl2.h mirisdr.h
+
+sdrplay.o: dumpvdl2.h sdrplay.h
 
 output.o: dumpvdl2.h
 
