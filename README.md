@@ -8,6 +8,7 @@ dumpvdl2 is a lightweight, standalone VDL Mode 2 message decoder and protocol an
 - Supports following SDR hardware:
   - RTLSDR (via [rtl-sdr library] (http://osmocom.org/projects/sdr/wiki/rtl-sdr))
   - Mirics SDR, eg. SDRPlay (via [libmirisdr-4] (https://github.com/f4exb/libmirisdr-4))
+  - SDRPlay RSP1/2, (Native support through API (http://www.sdrplay.com/docs/SDRplay_SDR_API_Specification.pdf))
   - reads prerecorded IQ data from file
 - Decodes up to 8 VDL2 channels simultaneously
 - Outputs messages to standard output or to a file (with optional daily or hourly file rotation)
@@ -61,6 +62,10 @@ Install `libmirisdr-4` library:
         sudo ldconfig
         sudo cp $HOME/libmirisdr-4/mirisdr.rules /etc/udev/rules.d/mirisdr.rules
 
+##### SDRPLAY RSP1/2 support
+
+Install `http://www.sdrplay.com/linuxdl.php` library.
+
 ##### Compiling dumpvdl2
 
 Clone the `dumpvdl2` repository:
@@ -79,6 +84,10 @@ Mirics support has to be explicitly enabled, like this:
 If you want Mirics only, you may disable RTLSDR support:
 
         make WITH_MIRISDR=1 WITH_RTLSDR=0
+
+If you want SDRPLAY RSP1/2 only, you may disable RTLSDR support:
+
+        make WITH_SDRPLAY=1 WITH_RTLSDR=0
 
 **Note:** every time you decide to recompile with different `WITH_*` or `USE_*` options,
 clean the old build first using `make clean`.
@@ -153,6 +162,13 @@ This switches USB transfer mode from isochronous to bulk, which is usually enoug
 this problem. If it does not help, it might be that your Pi is overloaded or not beefy enough
 for the task.
 
+##### SDRPLAY RSP1/2 Native
+
+ Sdrplay RSP native driver have some advanced option to support different antenna port, Bias-T, notch filter on AM/FM. 
+ A sample start with antenna A selection, bias-t off and notch filter :
+ 
+        ./dumpvdl2 --sdrplay 0 --gain 80 --antenna A --biast 0 --notch-filter 1 136975000 
+ 
 ### Output options
 
 - Decoded messages are printed to standard output by default. You can direct them to a

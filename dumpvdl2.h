@@ -71,7 +71,7 @@
 #if WITH_RTLSDR
 #define __OPT_RTLSDR			11
 #endif
-#if WITH_MIRISDR || WITH_RTLSDR
+#if WITH_MIRISDR || WITH_RTLSDR || WITH_SDRPLAY
 #define __OPT_GAIN			12
 #define __OPT_CORRECTION		13
 #endif
@@ -81,6 +81,14 @@
 #define __OPT_MSG_FILTER		15
 #define __OPT_OUTPUT_ACARS_PP		16
 #define __OPT_UTC			17
+#ifdef WITH_SDRPLAY
+#define __OPT_SDRPLAY			80
+#define __OPT_ANTENNA			81
+#define __OPT_BIAST				82
+#define __OPT_NOTCH_FILTER		83
+#define __OPT_AGC				84
+#endif
+
 #define __OPT_HELP			99
 
 // message filters
@@ -139,6 +147,9 @@ enum input_types {
 #endif
 #if WITH_MIRISDR
 	INPUT_MIRISDR,
+#endif
+#if WITH_SDRPLAY
+	INPUT_SDRPLAY,
 #endif
 	INPUT_FILE,
 	INPUT_UNDEF
