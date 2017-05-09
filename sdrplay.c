@@ -28,46 +28,83 @@ void sdrplay_init(vdl2_state_t *ctx, char *dev, char *antenna, uint32_t freq, fl
     mir_sdr_ErrT err;
     float ver;
     struct sdrplay_t SDRPlay;
+    mir_sdr_DeviceT devices[4];
+    unsigned int numDevs;
+    int devAvail = 0;
+    int device = atoi(dev);
     // Add ctx to local sdrplay context
     SDRPlay.context = ctx;
     /* initialize LNA State to 0 */
     SDRPlay.lna_state = 0;    
+    SDRPlay.autogain = 0;    
     /* Check API version */
     err = mir_sdr_ApiVersion(&ver);
-    fprintf(stdout, "Using SDRPlay API version %f\n", ver);        
     if ((err!= mir_sdr_Success) ||  (ver != MIR_SDR_API_VERSION)) {
             fprintf(stderr, "Incorrect API version %f\n", ver);
             _exit(1);
     }       
-    /* Activate biast */
-    if (enable_biast) {
-        fprintf(stdout, "Bias-t activated\n");        
-	    err = mir_sdr_RSPII_BiasTControl(1);
-        if (err!= mir_sdr_Success) {
-            fprintf(stderr, "Unable to activate bias-t, error : %d\n", err);
-            _exit(1);
-        }
-    }
-    /* Activate antenna */
-    if (strcmp(antenna,"A") == 0) {
-    	err = mir_sdr_RSPII_AntennaControl(mir_sdr_RSPII_ANTENNA_A);
-    } else {
-    	err = mir_sdr_RSPII_AntennaControl(mir_sdr_RSPII_ANTENNA_B);
-    }
+    err = mir_sdr_GetDevices(&devices[0], &numDevs, 4);
     if (err!= mir_sdr_Success) {
-        fprintf(stderr, "Unable to select antenna %s, error : %d\n", antenna, err);
+        fprintf(stderr, "Unable to get connected devices, error : %d\n", err);
         _exit(1);
     }
-    fprintf(stdout, "Antenna %s activated\n", antenna);        
-    // Activate notch filter ?
-    if (enable_biast) {
-        fprintf(stdout, "Notch AM/FM filter activated\n");        
-        err = mir_sdr_RSPII_RfNotchEnable(1);
-        if (err!= mir_sdr_Success) {
-            fprintf(stderr, "Unable to activate notch filter, error : %d\n", err);
-            _exit(1);
+    // Check how much devices are available
+    for(int i = 0; i < numDevs; i++) {
+        if(devices[i].devAvail == 1) {
+            devAvail++;
         }
     }
+    // No device
+    if (devAvail == 0) {
+        fprintf(stderr, "ERROR: No RSP devices available.\n");
+        _exit(1);
+    }
+    // Check if selected device is available
+    if (devices[device].devAvail != 1) {
+        fprintf(stderr, "ERROR: RSP selected #%d is not available.\n", device);
+        _exit(1);
+    }
+
+    // Select device
+    err = mir_sdr_SetDeviceIdx(device);    
+    if (err!= mir_sdr_Success) {
+        fprintf(stderr, "Unable to select device #%d, error : %d\n", device, err);
+        _exit(1);
+    }
+    fprintf(stdout, "Using SDRPlay RSP%d with API version %.3f\n", devices[device].hwVer, ver);
+    // Those options are only available on RSP2
+    if (devices[device].hwVer == 2) {
+        /* Activate biast */
+        if (enable_biast) {
+            fprintf(stdout, "Bias-t activated\n");        
+    	    err = mir_sdr_RSPII_BiasTControl(1);
+            if (err!= mir_sdr_Success) {
+                fprintf(stderr, "Unable to activate bias-t, error : %d\n", err);
+                _exit(1);
+            }
+        }
+        /* Activate antenna */
+        if (strcmp(antenna,"A") == 0) {
+        	err = mir_sdr_RSPII_AntennaControl(mir_sdr_RSPII_ANTENNA_A);
+        } else {
+        	err = mir_sdr_RSPII_AntennaControl(mir_sdr_RSPII_ANTENNA_B);
+        }
+        if (err!= mir_sdr_Success) {
+            fprintf(stderr, "Unable to select antenna %s, error : %d\n", antenna, err);
+            _exit(1);
+        }
+        fprintf(stdout, "Antenna %s activated\n", antenna);        
+        // Activate notch filter ?
+        if (enable_notch_filter) {
+            fprintf(stdout, "Notch AM/FM filter activated\n");        
+            err = mir_sdr_RSPII_RfNotchEnable(1);
+            if (err!= mir_sdr_Success) {
+                fprintf(stderr, "Unable to activate notch filter, error : %d\n", err);
+                _exit(1);
+            }
+        }
+    }
+
     /* DC Offset Mode */
     err = mir_sdr_DCoffsetIQimbalanceControl(1,0);
     if (err!= mir_sdr_Success) {
@@ -110,19 +147,19 @@ void sdrplay_init(vdl2_state_t *ctx, char *dev, char *antenna, uint32_t freq, fl
         // Found correct setting using lna Gr table
         int lnaGRdBs[9] = {0 , 10, 15, 21, 24, 34, 39, 45, 64};
         // Start from position 0
-        if ((gain < 0) || (gain>104)) {
+        if ((gain < 0.0) || (gain>104.0)) {
             fprintf(stderr, "Wrong gain settings should be >0 or <104\n" );
             _exit(1);
         }
         SDRPlay.lna_state = 0;
         // So convert gain to gain reduction
-        gain = 124 - gain;
+        gain = 124.0 - gain;
         for (int i=0; i<= MAX_LNA_STATE; i++) {
             // If selected gain reduction can be reach within current lnastate
-            if ((gain>= lnaGRdBs[i] + MIN_RSP_GAIN) && (gain <= lnaGRdBs[i] + MAX_RSP_GAIN)) {
+            if ((gain >= lnaGRdBs[i] + MIN_RSP_GAIN) && (gain <= lnaGRdBs[i] + MAX_RSP_GAIN)) {
                 gRdb = gain - lnaGRdBs[i];
                 SDRPlay.lna_state = i;
-                fprintf(stdout, "Selection gain reduction %d with LNA state %d\n", gRdb, SDRPlay.lna_state);
+                fprintf(stdout, "Select gain reduction %d with LNA state %d\n", gRdb, SDRPlay.lna_state);
                 break;
             }
         }
@@ -147,7 +184,7 @@ void sdrplay_init(vdl2_state_t *ctx, char *dev, char *antenna, uint32_t freq, fl
             _exit(1);
     }  
 
-    fprintf(stdout, "Device %s started\n", dev);
+    fprintf(stdout, "Device #%d started\n", device);
     // Wait for exit
     while(!do_exit) 
     {
@@ -156,7 +193,10 @@ void sdrplay_init(vdl2_state_t *ctx, char *dev, char *antenna, uint32_t freq, fl
 }
 
 void sdrplay_cancel() {
+    // Deinitialize stream
 	mir_sdr_Uninit();
+    // Release device
+    mir_sdr_ReleaseDeviceIdx();    
 }
 
 void sdrplay_streamCallback(short *xi, short *xq, unsigned int firstSampleNum,int grChanged, int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset,void *cbContext) {
@@ -201,7 +241,7 @@ void sdrplay_streamCallback(short *xi, short *xq, unsigned int firstSampleNum,in
 
     /* apply slowly decaying filter to max signal value */
 
-    SDRPlay->max_sig -= 127;
+    SDRPlay->max_sig -= 16384;
     SDRPlay->max_sig_acc += SDRPlay->max_sig;
     SDRPlay->max_sig = SDRPlay->max_sig_acc >> ACC_SHIFT;
     SDRPlay->max_sig_acc -= SDRPlay->max_sig;
