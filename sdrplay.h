@@ -23,10 +23,10 @@
 #define MIN_GAIN_THRESH 6               // increase gain if peaks below this 
 #define MAX_GAIN_THRESH 9               // decrease gain if peaks above this
 #define MAX_RSP_GAIN 59  					
-#define MIN_RSP_GAIN 20						// Not extended range so limit is 20
+#define MIN_RSP_GAIN 20					// Not extended range so limit is 20
 #define MAX_LNA_STATE 8					// 8 according to RSP2 documentation for frf < 420 Mhz
-#define ASYNC_BUF_NUMBER     		16
-#define ASYNC_BUF_SIZE       		(16*16384)                // 256k
+#define ASYNC_BUF_NUMBER     		15
+#define ASYNC_BUF_SIZE       		(32*16384)                // 512k
 #define MODES_AUTO_GAIN            -100                       // Use automatic gain 
 #define SDRPLAY_OVERSAMPLE 20
 #define SDRPLAY_RATE (SYMBOL_RATE * SPS * SDRPLAY_OVERSAMPLE)
