@@ -81,6 +81,7 @@
 #define __OPT_MSG_FILTER		15
 #define __OPT_OUTPUT_ACARS_PP		16
 #define __OPT_UTC			17
+#define __OPT_RAW_FRAMES		18
 #ifdef WITH_SDRPLAY
 #define __OPT_SDRPLAY			80
 #define __OPT_ANTENNA			81
@@ -221,7 +222,7 @@ uint16_t crc16_ccitt(uint8_t *data, uint32_t len);
 // avlc.c
 void parse_avlc_frames(vdl2_channel_t *v, uint8_t *buf, uint32_t len);
 uint32_t parse_dlc_addr(uint8_t *buf);
-void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f);
+void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f, uint8_t *raw_buf, uint32_t len);
 
 // rs.c
 int rs_init();
@@ -229,7 +230,7 @@ int rs_verify(uint8_t *data, int fec_octets);
 
 // output.c
 extern FILE *outf;
-extern uint8_t hourly, daily, utc;
+extern uint8_t hourly, daily, utc, output_raw_frames;
 extern int pp_sockfd;
 int init_output_file(char *file);
 int init_pp(char *pp_addr);
