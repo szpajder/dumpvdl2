@@ -273,7 +273,7 @@ static void process_samples(vdl2_channel_t *v, float *sbuf, uint32_t len) {
 	}
 	v->bufnum++;
 	if(DEBUG && v->bufnum % 10 == 0)
-		debug_print("noise_floor: %f\n", v->mag_nf);
+		debug_print("noise_floor: %.1f dBFS\n", 20.0f * log10f(v->mag_nf + 0.001f));
 }
 
 void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx) {

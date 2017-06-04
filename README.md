@@ -359,9 +359,9 @@ To verify that the signal strength is enough for the squelch to open, do the fol
 - Run the program as usual. It will display debugging info to standard error. Every second or so
   the current noise floor estimate will be printed:
 ```
-process_samples(): noise_floor: 0.006000
-process_samples(): noise_floor: 0.005624
-process_samples(): noise_floor: 0.005478
+process_samples(): noise_floor: -43.8 dBFS
+process_samples(): noise_floor: -42.1 dBFS
+process_samples(): noise_floor: -42.3 dBFS
 ```
 - If you only see these lines and nothing else, it means there is no transmission on the configured
   channel - or there is, but it's not strong enough for the squelch to open. If you see a lot of
