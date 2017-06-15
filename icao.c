@@ -42,7 +42,8 @@ static int decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf,
 		debug_print("uper_decode_complete left %zd unparsed octets\n", size - rval.consumed);
 		return size - rval.consumed;
 	}
-//	asn_fprint(outf, td, *struct_ptr);
+	if(DEBUG)
+		asn_fprint(stderr, td, *struct_ptr);
 	return 0;
 }
 
@@ -112,60 +113,70 @@ protected_ground_pdu_cleanup:
 	return ret;
 }
 
-static void decode_arbitrary_payload(icao_apdu_t *icao_apdu, AE_qualifier_form2_t ae_qualifier,
-uint8_t *buf, uint32_t size, uint32_t *msg_type) {
-// FIXME: skip unnecessary decoding attempts according to msg direction and ae_qualifier
-// FIXME: msg_type
-	CMAircraftMessage_t *msg = NULL;
-	if(decode_as(&asn_DEF_CMAircraftMessage, (void **)&msg, buf, size) == 0) {
-		icao_apdu->type = &asn_DEF_CMAircraftMessage;
-		icao_apdu->data = msg;
-		return;
-	}
-	ASN_STRUCT_FREE(asn_DEF_CMAircraftMessage, msg);
+#define APP_TYPE_MATCHES(type, value) ((type) == (value) || (type) == ICAO_APP_TYPE_UNKNOWN)
 
-	CMGroundMessage_t *gndmsg = NULL;
-	if(decode_as(&asn_DEF_CMGroundMessage, (void **)&gndmsg, buf, size) == 0) {
-		icao_apdu->type = &asn_DEF_CMGroundMessage;
-		icao_apdu->data = gndmsg;
-		return;
-	}
-	ASN_STRUCT_FREE(asn_DEF_CMGroundMessage, gndmsg);
+static void decode_arbitrary_payload(icao_apdu_t *icao_apdu, AE_qualifier_form2_t app_type,
+uint8_t *buf, uint32_t size, uint32_t *msg_type) {
+	void *msg = NULL;
+	if(*msg_type & MSGFLT_SRC_AIR) {
+		if(APP_TYPE_MATCHES(app_type, ICAO_APP_TYPE_CMA) &&
+		   decode_as(&asn_DEF_CMAircraftMessage, (void **)&msg, buf, size) == 0) {
+			icao_apdu->type = &asn_DEF_CMAircraftMessage;
+			icao_apdu->data = msg;
+			return;
+		}
+		ASN_STRUCT_FREE(asn_DEF_CMAircraftMessage, msg);
+		msg = NULL;
 
 // First try protected PDUs, because they are more commonly used than unprotected ones.
 // FIXME: verify ATN checksum to be 100% sure that the guessed PDU type is correct
-	ATCDownlinkMessage_t *atcdownmsg = NULL;
-	if(decode_protected_ATCDownlinkMessage((void **)&atcdownmsg, buf, size) == 0) {
-		icao_apdu->type = &asn_DEF_ATCDownlinkMessage;
-		icao_apdu->data = atcdownmsg;
-		return;
-	}
-	ASN_STRUCT_FREE(asn_DEF_ATCDownlinkMessage, atcdownmsg);
+		if(APP_TYPE_MATCHES(app_type, ICAO_APP_TYPE_CPC) &&
+		   decode_protected_ATCDownlinkMessage((void **)&msg, buf, size) == 0) {
+			icao_apdu->type = &asn_DEF_ATCDownlinkMessage;
+			icao_apdu->data = msg;
+			return;
+		}
+		ASN_STRUCT_FREE(asn_DEF_ATCDownlinkMessage, msg);
+		msg = NULL;
 
-	ATCUplinkMessage_t *atcupmsg = NULL;
-	if(decode_protected_ATCUplinkMessage((void **)&atcupmsg, buf, size) == 0) {
-		icao_apdu->type = &asn_DEF_ATCUplinkMessage;
-		icao_apdu->data = atcupmsg;
-		return;
-	}
-	ASN_STRUCT_FREE(asn_DEF_ATCUplinkMessage, atcupmsg);
+		if(APP_TYPE_MATCHES(app_type, ICAO_APP_TYPE_CPC) &&
+		   decode_as(&asn_DEF_AircraftPDUs, (void **)&msg, buf, size) == 0) {
+			icao_apdu->type = &asn_DEF_AircraftPDUs;
+			icao_apdu->data = msg;
+			return;
+		}
+		ASN_STRUCT_FREE(asn_DEF_AircraftPDUs, msg);
+		msg = NULL;
 
-	AircraftPDUs_t *airpdu = NULL;
-	if(decode_as(&asn_DEF_AircraftPDUs, (void **)&airpdu, buf, size) == 0) {
-		icao_apdu->type = &asn_DEF_AircraftPDUs;
-		icao_apdu->data = airpdu;
-		return;
-	}
-	ASN_STRUCT_FREE(asn_DEF_AircraftPDUs, airpdu);
+	} else {	// MSGFLT_SRC_GND implied
+		if(APP_TYPE_MATCHES(app_type, ICAO_APP_TYPE_CMA) &&
+		   decode_as(&asn_DEF_CMGroundMessage, (void **)&msg, buf, size) == 0) {
+			icao_apdu->type = &asn_DEF_CMGroundMessage;
+			icao_apdu->data = msg;
+			return;
+		}
+		ASN_STRUCT_FREE(asn_DEF_CMGroundMessage, msg);
+		msg = NULL;
 
-	GroundPDUs_t *gndpdu = NULL;
-	if(decode_as(&asn_DEF_GroundPDUs, (void **)&gndpdu, buf, size) == 0) {
-		icao_apdu->type = &asn_DEF_GroundPDUs;
-		icao_apdu->data = gndpdu;
-		return;
-	}
-	ASN_STRUCT_FREE(asn_DEF_GroundPDUs, gndpdu);
+		if(APP_TYPE_MATCHES(app_type, ICAO_APP_TYPE_CPC) &&
+		   decode_protected_ATCUplinkMessage((void **)&msg, buf, size) == 0) {
+			icao_apdu->type = &asn_DEF_ATCUplinkMessage;
+			icao_apdu->data = msg;
+			return;
+		}
+		ASN_STRUCT_FREE(asn_DEF_ATCUplinkMessage, msg);
+		msg = NULL;
 
+		if(APP_TYPE_MATCHES(app_type, ICAO_APP_TYPE_CPC) &&
+		   decode_as(&asn_DEF_GroundPDUs, (void **)&msg, buf, size) == 0) {
+			icao_apdu->type = &asn_DEF_GroundPDUs;
+			icao_apdu->data = msg;
+			return;
+		}
+		ASN_STRUCT_FREE(asn_DEF_GroundPDUs, msg);
+		msg = NULL;
+
+	}
 	debug_print("%s", "unknown APDU type\n");
 }
 
@@ -177,9 +188,10 @@ void decode_ulcs_acse(icao_apdu_t *icao_apdu, uint8_t *buf, uint32_t len, uint32
 		fprintf(stderr, "Decoding failed at position %ld\n", (long)rval.consumed);
 		goto ulcs_acse_cleanup;
 	}
-//	asn_fprint(outf, &asn_DEF_ACSE_apdu, acse_apdu);
+	if(DEBUG)
+		asn_fprint(stderr, &asn_DEF_ACSE_apdu, acse_apdu);
 
-	AE_qualifier_form2_t ae_qualifier = -1;
+	AE_qualifier_form2_t ae_qualifier = ICAO_APP_TYPE_UNKNOWN;
 	Association_information_t *user_info = NULL;
 	switch(acse_apdu->present) {
 	case ACSE_apdu_PR_aarq:
@@ -231,8 +243,10 @@ static void decode_fully_encoded_data(icao_apdu_t *icao_apdu, uint8_t *buf, uint
 		debug_print("uper_decode_complete() failed at position %ld\n", (long)rval.consumed);
 		goto fed_cleanup;
 	}
-//	asn_fprint(outf, &asn_DEF_Fully_encoded_data, fed);
-//	printf("%ld bytes consumed, %ld left\n", (long)rval.consumed, (long)(len) - (long)rval.consumed);
+	if(DEBUG) {
+		asn_fprint(stderr, &asn_DEF_Fully_encoded_data, fed);
+		debug_print("%ld bytes consumed, %ld left\n", (long)rval.consumed, (long)(len) - (long)rval.consumed);
+	}
 
 	if(fed->data.presentation_data_values.present != PDV_list__presentation_data_values_PR_arbitrary) {
 		debug_print("%s", "unsupported encoding of fully-encoded-data\n");

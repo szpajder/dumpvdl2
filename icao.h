@@ -26,6 +26,11 @@ typedef struct {
 	uint32_t datalen;
 } icao_apdu_t;
 
+// app-type values for ATN applications
+#define ICAO_APP_TYPE_CMA	1
+#define ICAO_APP_TYPE_CPC	22
+#define ICAO_APP_TYPE_UNKNOWN	-1
+
 // icao.c
 icao_apdu_t *parse_icao_apdu(uint8_t *buf, uint32_t datalen, uint32_t *msg_type);
 void output_icao_apdu(icao_apdu_t *pdu);
