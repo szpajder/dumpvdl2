@@ -66,8 +66,12 @@ static int decode_protected_ATCDownlinkMessage(void **atcdownmsg, uint8_t *buf, 
 	default:
 		break;
 	}
-	if(p_downlink_msg == NULL || p_downlink_msg->protectedMessage == NULL)
+	if(p_downlink_msg == NULL)
 		goto protected_aircraft_pdu_cleanup;
+	if(p_downlink_msg->protectedMessage == NULL) {	// NULL message is valid
+		ret = 0;
+		goto protected_aircraft_pdu_cleanup;
+	}
 	if(decode_as(&asn_DEF_ATCDownlinkMessage, atcdownmsg,
 	   p_downlink_msg->protectedMessage->buf,
 	   p_downlink_msg->protectedMessage->size) == 0) {
@@ -99,8 +103,12 @@ static int decode_protected_ATCUplinkMessage(void **atcupmsg, uint8_t *buf, int 
 	default:
 		break;
 	}
-	if(p_uplink_msg == NULL || p_uplink_msg->protectedMessage == NULL)
+	if(p_uplink_msg == NULL)
 		goto protected_ground_pdu_cleanup;
+	if(p_uplink_msg->protectedMessage == NULL) {	// NULL message is valid
+		ret = 0;
+		goto protected_ground_pdu_cleanup;
+	}
 	if(decode_as(&asn_DEF_ATCUplinkMessage, atcupmsg,
 	   p_uplink_msg->protectedMessage->buf,
 	   p_uplink_msg->protectedMessage->size) == 0) {
@@ -334,8 +342,11 @@ void output_icao_apdu(icao_apdu_t *icao_apdu) {
 	}
 // temporary, for debugging
 	output_raw(icao_apdu->raw_data, icao_apdu->datalen);
-	if(icao_apdu->type != NULL)
-		asn_fprint(outf, icao_apdu->type, icao_apdu->data);
-	else
+	if(icao_apdu->type != NULL) {
+		if(icao_apdu->data != NULL)
+			asn_fprint(outf, icao_apdu->type, icao_apdu->data);
+		else
+			fprintf(outf, "%s: <empty PDU>\n", icao_apdu->type->name);
+	} else
 		output_raw(icao_apdu->data, icao_apdu->datalen);
 }
