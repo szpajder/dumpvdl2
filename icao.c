@@ -119,17 +119,6 @@ static void decode_arbitrary_payload(icao_apdu_t *icao_apdu, AE_qualifier_form2_
 uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 	void *msg = NULL;
 	if(*msg_type & MSGFLT_SRC_AIR) {
-		if(APP_TYPE_MATCHES(app_type, ICAO_APP_TYPE_CMA) &&
-		   decode_as(&asn_DEF_CMAircraftMessage, (void **)&msg, buf, size) == 0) {
-			icao_apdu->type = &asn_DEF_CMAircraftMessage;
-			icao_apdu->data = msg;
-			return;
-		}
-		ASN_STRUCT_FREE(asn_DEF_CMAircraftMessage, msg);
-		msg = NULL;
-
-// First try protected PDUs, because they are more commonly used than unprotected ones.
-// FIXME: verify ATN checksum to be 100% sure that the guessed PDU type is correct
 		if(APP_TYPE_MATCHES(app_type, ICAO_APP_TYPE_CPC) &&
 		   decode_protected_ATCDownlinkMessage((void **)&msg, buf, size) == 0) {
 			icao_apdu->type = &asn_DEF_ATCDownlinkMessage;
@@ -139,6 +128,8 @@ uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 		ASN_STRUCT_FREE(asn_DEF_ATCDownlinkMessage, msg);
 		msg = NULL;
 
+/* Is this still in use?
+ * Disabled, because it clashes with some types of CMAircraftMessages.
 		if(APP_TYPE_MATCHES(app_type, ICAO_APP_TYPE_CPC) &&
 		   decode_as(&asn_DEF_AircraftPDUs, (void **)&msg, buf, size) == 0) {
 			icao_apdu->type = &asn_DEF_AircraftPDUs;
@@ -147,17 +138,17 @@ uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 		}
 		ASN_STRUCT_FREE(asn_DEF_AircraftPDUs, msg);
 		msg = NULL;
-
-	} else {	// MSGFLT_SRC_GND implied
+*/
 		if(APP_TYPE_MATCHES(app_type, ICAO_APP_TYPE_CMA) &&
-		   decode_as(&asn_DEF_CMGroundMessage, (void **)&msg, buf, size) == 0) {
-			icao_apdu->type = &asn_DEF_CMGroundMessage;
+		   decode_as(&asn_DEF_CMAircraftMessage, (void **)&msg, buf, size) == 0) {
+			icao_apdu->type = &asn_DEF_CMAircraftMessage;
 			icao_apdu->data = msg;
 			return;
 		}
-		ASN_STRUCT_FREE(asn_DEF_CMGroundMessage, msg);
+		ASN_STRUCT_FREE(asn_DEF_CMAircraftMessage, msg);
 		msg = NULL;
 
+	} else {	// MSGFLT_SRC_GND implied
 		if(APP_TYPE_MATCHES(app_type, ICAO_APP_TYPE_CPC) &&
 		   decode_protected_ATCUplinkMessage((void **)&msg, buf, size) == 0) {
 			icao_apdu->type = &asn_DEF_ATCUplinkMessage;
@@ -167,6 +158,8 @@ uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 		ASN_STRUCT_FREE(asn_DEF_ATCUplinkMessage, msg);
 		msg = NULL;
 
+/* Is this still in use?
+ * Disabled, because it clashes with some types of CMAircraftMessages.
 		if(APP_TYPE_MATCHES(app_type, ICAO_APP_TYPE_CPC) &&
 		   decode_as(&asn_DEF_GroundPDUs, (void **)&msg, buf, size) == 0) {
 			icao_apdu->type = &asn_DEF_GroundPDUs;
@@ -174,6 +167,15 @@ uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 			return;
 		}
 		ASN_STRUCT_FREE(asn_DEF_GroundPDUs, msg);
+		msg = NULL;
+*/
+		if(APP_TYPE_MATCHES(app_type, ICAO_APP_TYPE_CMA) &&
+		   decode_as(&asn_DEF_CMGroundMessage, (void **)&msg, buf, size) == 0) {
+			icao_apdu->type = &asn_DEF_CMGroundMessage;
+			icao_apdu->data = msg;
+			return;
+		}
+		ASN_STRUCT_FREE(asn_DEF_CMGroundMessage, msg);
 		msg = NULL;
 
 	}
