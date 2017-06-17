@@ -31,6 +31,9 @@
 #include "dumpvdl2.h"	// outf
 #include "icao.h"
 
+#define ACSE_APDU_TYPE_MATCHES(type, value) ((type) == (value) || (type) == ACSE_apdu_PR_NOTHING)
+#define APP_TYPE_MATCHES(type, value) ((type) == (value) || (type) == ICAO_APP_TYPE_UNKNOWN)
+
 static int decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, int size) {
 	asn_dec_rval_t rval;
 	rval = uper_decode_complete(0, td, struct_ptr, buf, size);
@@ -47,8 +50,8 @@ static int decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf,
 	return 0;
 }
 
-// Decodes ATCDownlinkMessage encapsulated in ProtectedAircraftPDU
-static int decode_protected_ATCDownlinkMessage(void **decoded_result, asn_TYPE_descriptor_t **decoded_apdu_type, uint8_t *buf, int size) {
+static int decode_protected_ATCDownlinkMessage(void **decoded_result, asn_TYPE_descriptor_t **decoded_apdu_type,
+ACSE_apdu_PR acse_apdu_type, uint8_t *buf, int size) {
 	ProtectedAircraftPDUs_t *pairpdu = NULL;
 	int ret = -1;	// error by default
 
@@ -65,6 +68,11 @@ static int decode_protected_ATCDownlinkMessage(void **decoded_result, asn_TYPE_d
 		break;
 	case ProtectedAircraftPDUs_PR_abortUser:
 	case ProtectedAircraftPDUs_PR_abortProvider:
+// First do a check on ACSE APDU type, if present, to avoid possible clashing with
+// other message types (eg. CMContactResponse). abortUser and abortProvider shall
+// appear in ABRT APDUs only.
+		if(!ACSE_APDU_TYPE_MATCHES(acse_apdu_type, ACSE_apdu_PR_abrt))
+			break;
 // These messages have no ATCDownlinkMessage inside.
 // Return the whole ProtectedAircraftPDUs for output.
 		*decoded_result = pairpdu;
@@ -93,8 +101,8 @@ protected_aircraft_pdu_cleanup:
 	return ret;
 }
 
-// Decodes ATCUplinkMessage encapsulated in ProtectedAircraftPDU
-static int decode_protected_ATCUplinkMessage(void **decoded_result, asn_TYPE_descriptor_t **decoded_apdu_type, uint8_t *buf, int size) {
+static int decode_protected_ATCUplinkMessage(void **decoded_result, asn_TYPE_descriptor_t **decoded_apdu_type,
+ACSE_apdu_PR acse_apdu_type, uint8_t *buf, int size) {
 	ProtectedGroundPDUs_t *pgndpdu = NULL;
 	int ret = -1;   // error by default
 
@@ -111,6 +119,11 @@ static int decode_protected_ATCUplinkMessage(void **decoded_result, asn_TYPE_des
 		break;
 	case ProtectedGroundPDUs_PR_abortUser:
 	case ProtectedGroundPDUs_PR_abortProvider:
+// First do a check on ACSE APDU type, if present, to avoid possible clashing with
+// other message types (eg. CMContactResponse). abortUser and abortProvider shall
+// appear in ABRT APDUs only.
+		if(!ACSE_APDU_TYPE_MATCHES(acse_apdu_type, ACSE_apdu_PR_abrt))
+			break;
 // These messages have no ATCUplinkMessage inside.
 // Return the whole ProtectedGroundPDUs for output.
 		*decoded_result = pgndpdu;
@@ -139,15 +152,13 @@ protected_ground_pdu_cleanup:
 	return ret;
 }
 
-#define APP_TYPE_MATCHES(type, value) ((type) == (value) || (type) == ICAO_APP_TYPE_UNKNOWN)
-
 static void decode_arbitrary_payload(icao_apdu_t *icao_apdu, AE_qualifier_form2_t app_type,
-uint8_t *buf, uint32_t size, uint32_t *msg_type) {
+ACSE_apdu_PR acse_apdu_type, uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 	void *msg = NULL;
 	asn_TYPE_descriptor_t *decoded_apdu_type = NULL;
 	if(*msg_type & MSGFLT_SRC_AIR) {
 		if(APP_TYPE_MATCHES(app_type, ICAO_APP_TYPE_CPC) &&
-		   decode_protected_ATCDownlinkMessage((void **)&msg, &decoded_apdu_type, buf, size) == 0) {
+		   decode_protected_ATCDownlinkMessage((void **)&msg, &decoded_apdu_type, acse_apdu_type, buf, size) == 0) {
 			icao_apdu->type = decoded_apdu_type;
 			icao_apdu->data = msg;
 			return;
@@ -177,7 +188,7 @@ uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 
 	} else {	// MSGFLT_SRC_GND implied
 		if(APP_TYPE_MATCHES(app_type, ICAO_APP_TYPE_CPC) &&
-		   decode_protected_ATCUplinkMessage((void **)&msg, &decoded_apdu_type, buf, size) == 0) {
+		   decode_protected_ATCUplinkMessage((void **)&msg, &decoded_apdu_type, acse_apdu_type, buf, size) == 0) {
 			icao_apdu->type = decoded_apdu_type;
 			icao_apdu->data = msg;
 			return;
@@ -255,7 +266,7 @@ void decode_ulcs_acse(icao_apdu_t *icao_apdu, uint8_t *buf, uint32_t len, uint32
 		debug_print("unsupported encoding: %d\n", user_info->data.encoding.present);
 		goto ulcs_acse_cleanup;
 	}
-	decode_arbitrary_payload(icao_apdu, ae_qualifier,
+	decode_arbitrary_payload(icao_apdu, ae_qualifier, acse_apdu->present,
 				 user_info->data.encoding.choice.arbitrary.buf,
 				 user_info->data.encoding.choice.arbitrary.size,
 				 msg_type);
@@ -289,7 +300,8 @@ static void decode_fully_encoded_data(icao_apdu_t *icao_apdu, uint8_t *buf, uint
 				 msg_type);
 		break;
 	case Presentation_context_identifier_user_ase_apdu:
-		decode_arbitrary_payload(icao_apdu, -1,
+// AE-qualifier and ACSE APDU type are unknown here
+		decode_arbitrary_payload(icao_apdu, ICAO_APP_TYPE_UNKNOWN, ACSE_apdu_PR_NOTHING, 
 				 fed->data.presentation_data_values.choice.arbitrary.buf,
 				 fed->data.presentation_data_values.choice.arbitrary.size,
 				 msg_type);
