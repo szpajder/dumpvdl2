@@ -48,7 +48,7 @@ static int decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf,
 }
 
 // Decodes ATCDownlinkMessage encapsulated in ProtectedAircraftPDU
-static int decode_protected_ATCDownlinkMessage(void **atcdownmsg, uint8_t *buf, int size) {
+static int decode_protected_ATCDownlinkMessage(void **decoded_result, asn_TYPE_descriptor_t **decoded_apdu_type, uint8_t *buf, int size) {
 	ProtectedAircraftPDUs_t *pairpdu = NULL;
 	int ret = -1;	// error by default
 
@@ -63,6 +63,13 @@ static int decode_protected_ATCDownlinkMessage(void **atcdownmsg, uint8_t *buf, 
 	case ProtectedAircraftPDUs_PR_send:
 		p_downlink_msg = &pairpdu->choice.send;
 		break;
+	case ProtectedAircraftPDUs_PR_abortUser:
+	case ProtectedAircraftPDUs_PR_abortProvider:
+// These messages have no ATCDownlinkMessage inside.
+// Return the whole ProtectedAircraftPDUs for output.
+		*decoded_result = pairpdu;
+		*decoded_apdu_type = &asn_DEF_ProtectedAircraftPDUs;
+		return 0;
 	default:
 		break;
 	}
@@ -70,12 +77,14 @@ static int decode_protected_ATCDownlinkMessage(void **atcdownmsg, uint8_t *buf, 
 		goto protected_aircraft_pdu_cleanup;
 	if(p_downlink_msg->protectedMessage == NULL) {	// NULL message is valid
 		ret = 0;
+		*decoded_apdu_type = &asn_DEF_ATCDownlinkMessage;
 		goto protected_aircraft_pdu_cleanup;
 	}
-	if(decode_as(&asn_DEF_ATCDownlinkMessage, atcdownmsg,
+	if(decode_as(&asn_DEF_ATCDownlinkMessage, decoded_result,
 	   p_downlink_msg->protectedMessage->buf,
 	   p_downlink_msg->protectedMessage->size) == 0) {
 		ret = 0;
+		*decoded_apdu_type = &asn_DEF_ATCDownlinkMessage;
 		goto protected_aircraft_pdu_cleanup;
 	}
 	debug_print("%s", "unable to decode ProtectedAircraftPDU as ATCDownlinkMessage\n");
@@ -85,7 +94,7 @@ protected_aircraft_pdu_cleanup:
 }
 
 // Decodes ATCUplinkMessage encapsulated in ProtectedAircraftPDU
-static int decode_protected_ATCUplinkMessage(void **atcupmsg, uint8_t *buf, int size) {
+static int decode_protected_ATCUplinkMessage(void **decoded_result, asn_TYPE_descriptor_t **decoded_apdu_type, uint8_t *buf, int size) {
 	ProtectedGroundPDUs_t *pgndpdu = NULL;
 	int ret = -1;   // error by default
 
@@ -100,6 +109,13 @@ static int decode_protected_ATCUplinkMessage(void **atcupmsg, uint8_t *buf, int 
 	case ProtectedGroundPDUs_PR_send:
 		p_uplink_msg = &pgndpdu->choice.send;
 		break;
+	case ProtectedGroundPDUs_PR_abortUser:
+	case ProtectedGroundPDUs_PR_abortProvider:
+// These messages have no ATCUplinkMessage inside.
+// Return the whole ProtectedGroundPDUs for output.
+		*decoded_result = pgndpdu;
+		*decoded_apdu_type = &asn_DEF_ProtectedGroundPDUs;
+		return 0;
 	default:
 		break;
 	}
@@ -107,12 +123,14 @@ static int decode_protected_ATCUplinkMessage(void **atcupmsg, uint8_t *buf, int 
 		goto protected_ground_pdu_cleanup;
 	if(p_uplink_msg->protectedMessage == NULL) {	// NULL message is valid
 		ret = 0;
+		*decoded_apdu_type = &asn_DEF_ATCUplinkMessage;
 		goto protected_ground_pdu_cleanup;
 	}
-	if(decode_as(&asn_DEF_ATCUplinkMessage, atcupmsg,
+	if(decode_as(&asn_DEF_ATCUplinkMessage, decoded_result,
 	   p_uplink_msg->protectedMessage->buf,
 	   p_uplink_msg->protectedMessage->size) == 0) {
 		ret = 0;
+		*decoded_apdu_type = &asn_DEF_ATCUplinkMessage;
 		goto protected_ground_pdu_cleanup;
 	}
 	debug_print("%s", "unable to decode ProtectedGroundPDU as ATCUplinkMessage\n");
@@ -126,10 +144,11 @@ protected_ground_pdu_cleanup:
 static void decode_arbitrary_payload(icao_apdu_t *icao_apdu, AE_qualifier_form2_t app_type,
 uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 	void *msg = NULL;
+	asn_TYPE_descriptor_t *decoded_apdu_type = NULL;
 	if(*msg_type & MSGFLT_SRC_AIR) {
 		if(APP_TYPE_MATCHES(app_type, ICAO_APP_TYPE_CPC) &&
-		   decode_protected_ATCDownlinkMessage((void **)&msg, buf, size) == 0) {
-			icao_apdu->type = &asn_DEF_ATCDownlinkMessage;
+		   decode_protected_ATCDownlinkMessage((void **)&msg, &decoded_apdu_type, buf, size) == 0) {
+			icao_apdu->type = decoded_apdu_type;
 			icao_apdu->data = msg;
 			return;
 		}
@@ -158,8 +177,8 @@ uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 
 	} else {	// MSGFLT_SRC_GND implied
 		if(APP_TYPE_MATCHES(app_type, ICAO_APP_TYPE_CPC) &&
-		   decode_protected_ATCUplinkMessage((void **)&msg, buf, size) == 0) {
-			icao_apdu->type = &asn_DEF_ATCUplinkMessage;
+		   decode_protected_ATCUplinkMessage((void **)&msg, &decoded_apdu_type, buf, size) == 0) {
+			icao_apdu->type = decoded_apdu_type;
 			icao_apdu->data = msg;
 			return;
 		}
