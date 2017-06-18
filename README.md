@@ -164,11 +164,11 @@ for the task.
 
 ##### SDRPLAY RSP1/2 Native
 
- Sdrplay RSP native driver have some advanced option to support different antenna port, Bias-T, notch filter on AM/FM. 
+ Sdrplay RSP native driver have some advanced option to support different antenna port, Bias-T, notch filter on AM/FM.
  A sample start with antenna A selection, bias-t off and notch filter :
- 
-        ./dumpvdl2 --sdrplay 0 --gain 80 --antenna A --biast 0 --notch-filter 1 136975000 
- 
+
+        ./dumpvdl2 --sdrplay 0 --gain 80 --antenna A --biast 0 --notch-filter 1 136975000
+
 ### Output options
 
 - Decoded messages are printed to standard output by default. You can direct them to a

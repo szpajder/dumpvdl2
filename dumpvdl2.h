@@ -28,8 +28,8 @@
 #ifndef DUMPVDL2_VERSION
 #define DUMPVDL2_VERSION "1.0.0"
 #endif
-#define RS_K 249        // Reed-Solomon vector length (bytes)
-#define RS_N 255        // Reed-Solomon codeword length (bytes)
+#define RS_K 249	// Reed-Solomon vector length (bytes)
+#define RS_N 255	// Reed-Solomon codeword length (bytes)
 #define BSLEN 32768UL
 #define TRLEN 17
 #define CRCLEN 5
@@ -85,9 +85,9 @@
 #ifdef WITH_SDRPLAY
 #define __OPT_SDRPLAY			80
 #define __OPT_ANTENNA			81
-#define __OPT_BIAST				82
+#define __OPT_BIAST			82
 #define __OPT_NOTCH_FILTER		83
-#define __OPT_AGC				84
+#define __OPT_AGC			84
 #endif
 
 #define __OPT_HELP			99

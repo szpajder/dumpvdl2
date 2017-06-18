@@ -85,7 +85,7 @@ void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
 	uint32_t len;
 	unsigned char buf[FILE_BUFSIZE];
 	void (*process_buf)() = NULL;
-	
+
 	if((f = fopen(path, "r")) == NULL) {
 		perror("fopen()");
 		_exit(2);
@@ -164,9 +164,9 @@ void usage() {
 	fprintf(stderr, "\t--correction <correction>\tSet freq correction (ppm)\n");
 	fprintf(stderr, "\t--centerfreq <center_frequency>\tSet center frequency in Hz (default: auto)\n");
 	fprintf(stderr, "\t--antenna <A/B>\t\t\tA - Antenna port A (default), B - antenna port B\n");
-    fprintf(stderr, "\t--biast <power>\t\t\t0 - BiasT off (default), 1 - BiasT on\n");
-    fprintf(stderr, "\t--notch-filter <power>\t\t0 - Notch AM/FM off (default), 1 - Notch AM/FM on\n");
-    fprintf(stderr, "\t--agc <set point in dBfs>\t0 - Automatic Gain Control off (default),  set point in dBfs ( ex : -30 )\n");
+	fprintf(stderr, "\t--biast <power>\t\t\t0 - BiasT off (default), 1 - BiasT on\n");
+	fprintf(stderr, "\t--notch-filter <power>\t\t0 - Notch AM/FM off (default), 1 - Notch AM/FM on\n");
+	fprintf(stderr, "\t--agc <set point in dBfs>\t0 - Automatic Gain Control off (default),  set point in dBfs ( ex : -30 )\n");
 #endif
 	fprintf(stderr, "\nfile_options:\n");
 	fprintf(stderr, "\t--iq-file <input_file>\t\tRead I/Q samples from file\n");
@@ -291,8 +291,8 @@ int main(int argc, char **argv) {
 #if WITH_SDRPLAY
 	char* sdrplay_antenna = "A";
 	int sdrplay_biast = 0;
-    int sdrplay_notch_filter = 0;
-    int sdrplay_agc = 0;
+	int sdrplay_notch_filter = 0;
+	int sdrplay_agc = 0;
 #endif
 	int opt;
 	struct option long_opts[] = {
@@ -316,8 +316,8 @@ int main(int argc, char **argv) {
 		{ "sdrplay",		required_argument,	NULL,	__OPT_SDRPLAY },
 		{ "antenna",		required_argument,	NULL,	__OPT_ANTENNA },
 		{ "biast",		required_argument,	NULL,	__OPT_BIAST },
-        { "notch-filter",	required_argument,	NULL,	__OPT_NOTCH_FILTER },
-        { "agc",	required_argument,	NULL,	__OPT_AGC },
+		{ "notch-filter",	required_argument,	NULL,	__OPT_NOTCH_FILTER },
+		{ "agc",		required_argument,	NULL,	__OPT_AGC },
 #endif
 #if WITH_RTLSDR
 		{ "rtlsdr",		required_argument,	NULL,	__OPT_RTLSDR },
@@ -390,7 +390,7 @@ int main(int argc, char **argv) {
 		case __OPT_SDRPLAY:
 			device = optarg;
 			input = INPUT_SDRPLAY;
-			oversample = SDRPLAY_OVERSAMPLE; 
+			oversample = SDRPLAY_OVERSAMPLE;
 			break;
 		case __OPT_ANTENNA:
 			sdrplay_antenna = strdup(optarg);

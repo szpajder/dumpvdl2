@@ -288,7 +288,7 @@ void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx) {
 
 void process_buf_uchar_init() {
 	levels = XCALLOC(256, sizeof(float));
-	for (int i=0; i<256; i++) {
+	for (int i = 0; i < 256; i++) {
 		levels[i] = (i-127.5f)/127.5f;
 	}
 }

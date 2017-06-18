@@ -305,7 +305,7 @@ static void decode_fully_encoded_data(icao_apdu_t *icao_apdu, uint8_t *buf, uint
 		break;
 	case Presentation_context_identifier_user_ase_apdu:
 // AE-qualifier and ACSE APDU type are unknown here
-		decode_arbitrary_payload(icao_apdu, ICAO_APP_TYPE_UNKNOWN, ACSE_apdu_PR_NOTHING, 
+		decode_arbitrary_payload(icao_apdu, ICAO_APP_TYPE_UNKNOWN, ACSE_apdu_PR_NOTHING,
 				 fed->data.presentation_data_values.choice.arbitrary.buf,
 				 fed->data.presentation_data_values.choice.arbitrary.size,
 				 msg_type);
