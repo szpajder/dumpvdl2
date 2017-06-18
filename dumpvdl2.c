@@ -200,6 +200,8 @@ const msg_filterspec_t filters[] = {
 	{ "idrp_keepalive",	MSGFLT_IDRP_KEEPALIVE,		"IDRP Keepalive PDUs" },
 	{ "idrp",		MSGFLT_IDRP_NO_KEEPALIVE | MSGFLT_IDRP_KEEPALIVE, "All IDRP PDUs (shorthand for \"idrp_no_keepalive,idrp_keepalive\")" },
 	{ "esis",		MSGFLT_ESIS,			"ES-IS PDUs" },
+	{ "cm",			MSGFLT_CM,			"ICAO Context Management Protocol PDUs" },
+	{ "cpdlc",		MSGFLT_CPDLC,			"Controller-Pilot Data Link Communication PDUs" },
 	{ 0,			0,				0 }
 };
 

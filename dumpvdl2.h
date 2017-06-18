@@ -109,6 +109,8 @@
 #define MSGFLT_IDRP_NO_KEEPALIVE	(1 << 11)
 #define MSGFLT_IDRP_KEEPALIVE		(1 << 12)
 #define MSGFLT_ESIS			(1 << 13)
+#define MSGFLT_CM			(1 << 14)
+#define MSGFLT_CPDLC			(1 << 15)
 
 typedef struct {
 	char *token;
