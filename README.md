@@ -7,7 +7,7 @@ dumpvdl2 is a lightweight, standalone VDL Mode 2 message decoder and protocol an
 - Runs under Linux (tested on: x86, x86-64, Raspberry Pi)
 - Supports following SDR hardware:
   - RTLSDR (via [rtl-sdr library] (http://osmocom.org/projects/sdr/wiki/rtl-sdr))
-  - Mirics SDR, eg. SDRPlay (via [libmirisdr-4] (https://github.com/f4exb/libmirisdr-4))
+  - Mirics SDR (via [libmirisdr-4] (https://github.com/f4exb/libmirisdr-4))
   - SDRPlay RSP1/2, (Native support through API (http://www.sdrplay.com/docs/SDRplay_SDR_API_Specification.pdf))
   - reads prerecorded IQ data from file
 - Decodes up to 8 VDL2 channels simultaneously
@@ -19,7 +19,7 @@ dumpvdl2 is a lightweight, standalone VDL Mode 2 message decoder and protocol an
 ### Example
 ![dumpvdl2 screenshot](example.png?raw=true)
 
-### Supported protocols
+### Protocol support status
 - [X] AVLC - supported
 - [X] ACARS over AVLC - supported
 - [X] ISO 8208 (X.25) control packets - supported
@@ -27,18 +27,25 @@ dumpvdl2 is a lightweight, standalone VDL Mode 2 message decoder and protocol an
 - [X] ISO 9542 (ES-IS) - supported
 - [X] ISO 10747 (IDRP) - partially supported (decoding of some less important attributes is TODO)
 - [X] ISO 8073 (COTP) - supported
-- [X] ICAO Applications (CM, CPDLC) - supported, currently at alpha-stage, may be buggy
+- [X] ICAO CM (Context Management) - supported
+- [X] ICAO CPDLC (Controller-Pilot Data Link Communications) - supported
+- [ ] ICAO ADS-C - not supported
 
 ### Installation
 
 Install necessary dependencies (unless you have them already). Example for Debian / Raspbian:
 
-        sudo apt-get install git gcc autoconf make cmake libusb-1.0-0-dev libtool libglib2.0-dev pkg-config
+        sudo apt-get install gcc make libtool libglib2.0-dev pkg-config
 
-##### RTLSDR support
+##### RTLSDR support (optional)
 
-Install `librtlsdr` library (unless you have it already):
+Install `librtlsdr` library (unless you have it already). Under Raspbian you can install packaged version:
 
+        apt-get install librtlsdr-dev
+
+or get the source from Git and compile by yourself:
+
+	apt-get install git autoconf libusb-1.0-0-dev
         cd
         git clone git://git.osmocom.org/rtl-sdr.git
         cd rtl-sdr/
@@ -49,10 +56,17 @@ Install `librtlsdr` library (unless you have it already):
         sudo ldconfig
         sudo cp $HOME/rtl-sdr/rtl-sdr.rules /etc/udev/rules.d/rtl-sdr.rules
 
-##### Mirics support
+##### Mirics support (optional)
+
+Mirics support is based on open-source libmirisdr-4 library. Use it if you have a DVB-T
+receiver based on this chipset. SDRPlay RSP will also work (it's based on Mirics, after all),
+however if you have SDRPlay, it's probably better to use native closed-source driver
+instead (see next section). It supports more configuration options and reportedly gives
+better results on this hardware.
 
 Install `libmirisdr-4` library:
 
+	apt-get install git cmake libusb-1.0-0-dev
         cd
         git clone https://github.com/f4exb/libmirisdr-4.git
         cd libmirisdr-4
@@ -62,9 +76,11 @@ Install `libmirisdr-4` library:
         sudo ldconfig
         sudo cp $HOME/libmirisdr-4/mirisdr.rules /etc/udev/rules.d/mirisdr.rules
 
-##### SDRPLAY RSP1/2 support
+##### SDRPLAY RSP1/2 support (optional)
 
-Install `http://www.sdrplay.com/linuxdl.php` library.
+Download and install API/hardware driver package from http://www.sdrplay.com/downloads/.
+Make sure you have selected the right hardware platform before downloading, otherwise
+the installer will fail.
 
 ##### Compiling dumpvdl2
 
@@ -164,8 +180,16 @@ for the task.
 
 ##### SDRPLAY RSP1/2 Native
 
- Sdrplay RSP native driver have some advanced option to support different antenna port, Bias-T, notch filter on AM/FM.
- A sample start with antenna A selection, bias-t off and notch filter :
+SDRPlay RSP native driver supports several advanced configuration options:
+
+- switching antenna ports,
+- bias-t
+- notch filter on AM/FM
+- AGC
+
+Type `./dumpvdl2 --help` to find out all the options and their default values.
+
+Example: start the program with antenna A selection, bias-t off and notch filter on:
 
         ./dumpvdl2 --sdrplay 0 --gain 80 --antenna A --biast 0 --notch-filter 1 136975000
 
@@ -184,6 +208,8 @@ for the task.
   `_YYYYMMDD` in this case. If file extension is present, it will be placed after the suffix.
 
 - Add `--utc` option if you prefer UTC timestamps rather than local timezone in output and filenames.
+
+- Add `--raw-frames` option to display payload of AVLC frames in raw hex for debugging purposes.
 
 ### Integration with Planeplotter
 
