@@ -37,7 +37,7 @@ int rs_verify(uint8_t *data, int fec_octets) {
 	int ret;
 	debug_print("erasure_cnt=%d\n", erasure_cnt);
 	if(erasure_cnt > 0) {
-		int erasures[erasure_cnt];
+		int erasures[RS_N - RS_K];
 		for(int i = 0; i < erasure_cnt; i++)
 			erasures[i] = RS_K + fec_octets + i;
 		debug_print_buf_hex(erasures, erasure_cnt, "%s", "Erasures:\n");

@@ -30,6 +30,9 @@
 #if WITH_MIRISDR
 #include "mirisdr.h"
 #endif
+#if WITH_SDRPLAY
+#include "sdrplay.h"
+#endif
 #include "dumpvdl2.h"
 
 int do_exit = 0;
@@ -43,6 +46,9 @@ void sighandler(int sig) {
 #endif
 #if WITH_MIRISDR
 	mirisdr_cancel();
+#endif
+#if WITH_SDRPLAY
+	sdrplay_cancel();
 #endif
 }
 
@@ -79,7 +85,7 @@ void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
 	uint32_t len;
 	unsigned char buf[FILE_BUFSIZE];
 	void (*process_buf)() = NULL;
-	
+
 	if((f = fopen(path, "r")) == NULL) {
 		perror("fopen()");
 		_exit(2);
@@ -115,6 +121,10 @@ void usage() {
 	fprintf(stderr, "MIRI-SDR receiver:\n");
 	fprintf(stderr, "\tdumpvdl2 [output_options] --mirisdr <device_id> [mirisdr_options] [<freq_1> [freq_2 [...]]]\n");
 #endif
+#if WITH_SDRPLAY
+	fprintf(stderr, "SDRPLAY RSP receiver:\n");
+	fprintf(stderr, "\tdumpvdl2 [output_options] --sdrplay <device_id> [sdrplay_options] [<freq_1> [freq_2 [...]]]\n");
+#endif
 	fprintf(stderr, "I/Q input from file:\n");
 	fprintf(stderr, "\tdumpvdl2 [output_options] --iq-file <input_file> [file_options] [<freq_1> [freq_2 [...]]]\n");
 	fprintf(stderr, "\ncommon options:\n");
@@ -125,6 +135,7 @@ void usage() {
 	fprintf(stderr, "\t--hourly\t\t\tRotate output file hourly\n");
 	fprintf(stderr, "\t--daily\t\t\t\tRotate output file daily\n");
 	fprintf(stderr, "\t--utc\t\t\t\tUse UTC timestamps in output and file names\n");
+	fprintf(stderr, "\t--raw-frames\t\t\tOutput AVLC payload as raw bytes\n");
 	fprintf(stderr, "\t--msg-filter <filter_spec>\tMessage types to display (default: all) (\"--msg-filter help\" for details)\n");
 	fprintf(stderr, "\t--output-acars-pp <host:port>\tSend ACARS messages to Planeplotter over UDP/IP\n");
 #if USE_STATSD
@@ -145,6 +156,17 @@ void usage() {
 	fprintf(stderr, "\t--correction <correction>\tSet freq correction (in Hertz)\n");
 	fprintf(stderr, "\t--centerfreq <center_frequency>\tSet center frequency in Hz (default: auto)\n");
 	fprintf(stderr, "\t--usb-mode <usb_transfer_mode>\t0 - isochronous (default), 1 - bulk\n");
+#endif
+#if WITH_SDRPLAY
+	fprintf(stderr, "\nsdrplay_options:\n");
+	fprintf(stderr, "\t--sdrplay <device_id>\t\tUse SDRPLAY RSP device with specified ID or serial number (default: ID=0)\n");
+	fprintf(stderr, "\t--gain <gain>\t\t\tSet gain (in decibels, from 0 to 104 dB)\n");
+	fprintf(stderr, "\t--correction <correction>\tSet freq correction (ppm)\n");
+	fprintf(stderr, "\t--centerfreq <center_frequency>\tSet center frequency in Hz (default: auto)\n");
+	fprintf(stderr, "\t--antenna <A/B>\t\t\tA - Antenna port A (default), B - antenna port B\n");
+	fprintf(stderr, "\t--biast <power>\t\t\t0 - BiasT off (default), 1 - BiasT on\n");
+	fprintf(stderr, "\t--notch-filter <power>\t\t0 - Notch AM/FM off (default), 1 - Notch AM/FM on\n");
+	fprintf(stderr, "\t--agc <set point in dBfs>\t0 - Automatic Gain Control off (default),  set point in dBfs ( ex : -30 )\n");
 #endif
 	fprintf(stderr, "\nfile_options:\n");
 	fprintf(stderr, "\t--iq-file <input_file>\t\tRead I/Q samples from file\n");
@@ -178,6 +200,8 @@ const msg_filterspec_t filters[] = {
 	{ "idrp_keepalive",	MSGFLT_IDRP_KEEPALIVE,		"IDRP Keepalive PDUs" },
 	{ "idrp",		MSGFLT_IDRP_NO_KEEPALIVE | MSGFLT_IDRP_KEEPALIVE, "All IDRP PDUs (shorthand for \"idrp_no_keepalive,idrp_keepalive\")" },
 	{ "esis",		MSGFLT_ESIS,			"ES-IS PDUs" },
+	{ "cm",			MSGFLT_CM,			"ICAO Context Management Protocol PDUs" },
+	{ "cpdlc",		MSGFLT_CPDLC,			"Controller-Pilot Data Link Communication PDUs" },
 	{ 0,			0,				0 }
 };
 
@@ -255,7 +279,7 @@ int main(int argc, char **argv) {
 	int num_channels = 0;
 	enum input_types input = INPUT_UNDEF;
 	enum sample_formats sample_fmt = SFMT_UNDEF;
-#if WITH_RTLSDR || WITH_MIRISDR
+#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY
 	char *device = NULL;
 	float gain = SDR_AUTO_GAIN;
 	int correction = 0;
@@ -264,12 +288,19 @@ int main(int argc, char **argv) {
 	int mirisdr_hw_flavour = 0;
 	int mirisdr_usb_xfer_mode = 0;
 #endif
+#if WITH_SDRPLAY
+	char* sdrplay_antenna = "A";
+	int sdrplay_biast = 0;
+	int sdrplay_notch_filter = 0;
+	int sdrplay_agc = 0;
+#endif
 	int opt;
 	struct option long_opts[] = {
 		{ "centerfreq",		required_argument,	NULL,	__OPT_CENTERFREQ },
 		{ "daily",		no_argument,		NULL,	__OPT_DAILY },
 		{ "hourly",		no_argument,		NULL, 	__OPT_HOURLY },
 		{ "utc",		no_argument,		NULL,	__OPT_UTC },
+		{ "raw-frames",		no_argument,		NULL,	__OPT_RAW_FRAMES },
 		{ "output-file",	required_argument,	NULL,	__OPT_OUTPUT_FILE },
 		{ "iq-file",		required_argument,	NULL,	__OPT_IQ_FILE },
 		{ "oversample",		required_argument,	NULL,	__OPT_OVERSAMPLE },
@@ -281,10 +312,17 @@ int main(int argc, char **argv) {
 		{ "hw-type",		required_argument,	NULL,	__OPT_HW_TYPE },
 		{ "usb-mode",		required_argument,	NULL,	__OPT_USB_MODE },
 #endif
+#if WITH_SDRPLAY
+		{ "sdrplay",		required_argument,	NULL,	__OPT_SDRPLAY },
+		{ "antenna",		required_argument,	NULL,	__OPT_ANTENNA },
+		{ "biast",		required_argument,	NULL,	__OPT_BIAST },
+		{ "notch-filter",	required_argument,	NULL,	__OPT_NOTCH_FILTER },
+		{ "agc",		required_argument,	NULL,	__OPT_AGC },
+#endif
 #if WITH_RTLSDR
 		{ "rtlsdr",		required_argument,	NULL,	__OPT_RTLSDR },
 #endif
-#if WITH_RTLSDR || WITH_MIRISDR
+#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY
 		{ "gain",		required_argument,	NULL,	__OPT_GAIN },
 		{ "correction",		required_argument,	NULL,	__OPT_CORRECTION },
 #endif
@@ -329,6 +367,9 @@ int main(int argc, char **argv) {
 		case __OPT_UTC:
 			utc = 1;
 			break;
+		case __OPT_RAW_FRAMES:
+			output_raw_frames = 1;
+			break;
 		case __OPT_CENTERFREQ:
 			centerfreq = strtoul(optarg, NULL, 10);
 			break;
@@ -345,6 +386,25 @@ int main(int argc, char **argv) {
 			mirisdr_usb_xfer_mode = atoi(optarg);
 			break;
 #endif
+#if WITH_SDRPLAY
+		case __OPT_SDRPLAY:
+			device = optarg;
+			input = INPUT_SDRPLAY;
+			oversample = SDRPLAY_OVERSAMPLE;
+			break;
+		case __OPT_ANTENNA:
+			sdrplay_antenna = strdup(optarg);
+			break;
+		case __OPT_BIAST:
+			sdrplay_biast = atoi(optarg);
+			break;
+		case __OPT_NOTCH_FILTER:
+			sdrplay_notch_filter = atoi(optarg);
+			break;
+		case __OPT_AGC:
+			sdrplay_agc = atoi(optarg);
+			break;
+#endif
 #if WITH_RTLSDR
 		case __OPT_RTLSDR:
 			device = optarg;
@@ -352,7 +412,7 @@ int main(int argc, char **argv) {
 			oversample = RTL_OVERSAMPLE;
 			break;
 #endif
-#if WITH_RTLSDR || WITH_MIRISDR
+#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY
 		case __OPT_GAIN:
 			gain = atof(optarg);
 			break;
@@ -469,6 +529,11 @@ int main(int argc, char **argv) {
 #if WITH_MIRISDR
 	case INPUT_MIRISDR:
 		mirisdr_init(&ctx, device, mirisdr_hw_flavour, centerfreq, gain, correction, mirisdr_usb_xfer_mode);
+		break;
+#endif
+#if WITH_SDRPLAY
+	case INPUT_SDRPLAY:
+		sdrplay_init(&ctx, device, sdrplay_antenna, centerfreq, gain, correction, sdrplay_biast, sdrplay_notch_filter, sdrplay_agc);
 		break;
 #endif
 	default:

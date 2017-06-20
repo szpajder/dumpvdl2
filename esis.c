@@ -81,6 +81,7 @@ static const tlv_dict esis_option_names[] = {
 	{ 0xcf, &fmt_hexstring,		"Priority" },
 /* QoS Maintenance not used in ATN (ICAO 9705 Table 5.8-2) */
 	{ 0x81, &fmt_subnet_caps,	"Mobile Subnetwork Capabilities" },
+	{ 0x88, &fmt_hexstring,		"ATN Data Link Capabilities" },
 	{ 0,				NULL }
 };
 

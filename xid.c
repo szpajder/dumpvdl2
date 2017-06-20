@@ -92,6 +92,20 @@ static char *fmt_vdl_modulation(uint8_t *data, uint16_t len) {
 	return buf;
 }
 
+static char *fmt_vdl_frequency(uint8_t *data, uint16_t len) {
+	if(len < 2) return strdup("<empty>");
+	char *buf = XCALLOC(64, sizeof(char));
+	uint8_t modulation = data[0] >> 4;
+	char *modulation_descr = fmt_vdl_modulation(&modulation, 1);
+	uint16_t freq = (((uint16_t)data[0] << 8) | data[1]) & 0x0fff;
+	uint32_t freq_khz = (freq + 10000) * 10;
+	if(freq_khz % 25)
+		freq_khz = freq_khz + 25 - freq_khz % 25;
+	sprintf(buf, "%.3f MHz (%s)", (float)freq_khz / 1000.f, modulation_descr);
+	free(modulation_descr);
+	return buf;
+}
+
 static char *fmt_dlc_addrs(uint8_t *data, uint16_t len) {
 	if(len % 4 != 0) return strdup("<field truncated>");
 	uint8_t *ptr = data;
@@ -106,6 +120,30 @@ static char *fmt_dlc_addrs(uint8_t *data, uint16_t len) {
 		strcat(buf, addrstring);
 		ptr += 4; len -= 4;
 	}
+	return buf;
+}
+
+static char *fmt_freq_support_list(uint8_t *data, uint16_t len) {
+	if(len % 6 != 0) return strdup("<field truncated>");
+	uint8_t *ptr = data;
+	uint32_t buflen = len / 6 * 64;
+	char *buf = XCALLOC(buflen, sizeof(char));
+	char tmp[64];
+	while(len > 0) {
+		char *freq = fmt_vdl_frequency(ptr, 2);
+		ptr += 2; len -= 2;
+		char *gs_addr = fmt_dlc_addrs(ptr, 4);
+		ptr += 4; len -= 4;
+		sprintf(tmp, "%s(%s); ", gs_addr, freq);
+		strcat(buf, tmp);
+		free(freq);
+		free(gs_addr);
+	}
+	int slen = strlen(buf);
+	if(slen == 0)
+		strcat(buf, "<empty>");
+	else
+		buf[slen-2] = '\0';	// throw out trailing delimiter
 	return buf;
 }
 
@@ -193,8 +231,8 @@ static const tlv_dict xid_vdl_params[] = {
 	{ 0x82, &fmt_dlc_addrs, "Alternate ground stations" },
 	{ 0x83, &fmt_string, "Destination airport" },
 	{ 0x84, &fmt_loc_alt, "Aircraft location" },
-	{ 0x40, &fmt_hexstring, "Autotune frequency" },
-	{ 0x41, &fmt_hexstring, "Repl. ground station" },
+	{ 0x40, &fmt_vdl_frequency, "Autotune frequency" },
+	{ 0x41, &fmt_dlc_addrs, "Replacement ground stations" },
 	{ 0x42, &fmt_hexstring, "Timer T4" },
 	{ 0x43, &fmt_hexstring, "MAC persistence" },
 	{ 0x44, &fmt_hexstring, "Counter M1" },
@@ -203,7 +241,7 @@ static const tlv_dict xid_vdl_params[] = {
 	{ 0x47, &fmt_hexstring, "Timer T3min" },
 	{ 0x48, &fmt_hexstring, "Address filter" },
 	{ 0x49, &fmt_hexstring, "Broadcast connection" },
-	{ 0xC0, &fmt_hexstring, "Frequency support" },
+	{ 0xC0, &fmt_freq_support_list, "Frequency support" },
 	{ 0xC1, &fmt_string, "Airport coverage" },
 	{ 0xC3, &fmt_string, "Nearest airport ID" },
 	{ 0xC4, &fmt_hexstring_with_ascii, "ATN router NETs" },

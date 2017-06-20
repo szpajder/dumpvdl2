@@ -1,0 +1,11 @@
+--- RelativeDistinguishedName.c.orig	2017-04-17 13:35:45.779263030 +0200
++++ RelativeDistinguishedName.c	2017-04-17 13:36:13.067799850 +0200
+@@ -42,7 +42,7 @@
+ 	SET_OF_decode_xer,
+ 	SET_OF_encode_xer,
+ 	SET_OF_decode_uper,
+-	SET_OF_encode_uper,
++	NULL,
+ 	0,	/* Use generic outmost tag fetcher */
+ 	asn_DEF_RelativeDistinguishedName_tags_1,
+ 	sizeof(asn_DEF_RelativeDistinguishedName_tags_1)

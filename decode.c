@@ -259,7 +259,6 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 					if(ret > 0)
 						debug_print_buf_hex(rs_tab[r], RS_N, "Corrected block %d:\n", r);
 				}
-				
 				if(r != v->num_blocks - 1)
 					ret = bitstream_append_lsbfirst(v->bs, (uint8_t *)&rs_tab[r], RS_K, 8);
 				else

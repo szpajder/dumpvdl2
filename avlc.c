@@ -164,7 +164,7 @@ static void parse_avlc(vdl2_channel_t *v, uint8_t *buf, uint32_t len) {
 	}
 	if((msg_type & msg_filter) == msg_type) {
 		debug_print("msg_type: %x msg_filter: %x (accepted)\n", msg_type, msg_filter);
-		output_avlc(v, &frame);
+		output_avlc(v, &frame, ptr, len);
 	} else {
 		debug_print("msg_type: %x msg_filter: %x (filtered out)\n", msg_type, msg_filter);
 	}
@@ -219,7 +219,7 @@ static void output_avlc_U(const avlc_frame_t *f) {
 	}
 }
 
-void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f) {
+void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f, uint8_t *raw_buf, uint32_t len) {
 	if(f == NULL) return;
 	if((daily || hourly) && rotate_outfile() < 0)
 		_exit(1);
@@ -237,6 +237,8 @@ void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f) {
 		addrtype_descr[f->dst.a_addr.type],
 		status_cr_descr[f->src.a_addr.status]	// C/R
 	);
+	if(output_raw_frames)
+		output_raw(raw_buf, len);
 	if(IS_S(f->lcf)) {
 		fprintf(outf, "AVLC: type: S (%s) P/F: %x rseq: %x\n", S_cmd[f->lcf.S.sfunc], f->lcf.S.pf, f->lcf.S.recv_seq);
 		output_raw((uint8_t *)f->data, f->datalen);

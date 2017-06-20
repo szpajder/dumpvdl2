@@ -28,8 +28,8 @@
 #ifndef DUMPVDL2_VERSION
 #define DUMPVDL2_VERSION "1.0.0"
 #endif
-#define RS_K 249        // Reed-Solomon vector length (bytes)
-#define RS_N 255        // Reed-Solomon codeword length (bytes)
+#define RS_K 249	// Reed-Solomon vector length (bytes)
+#define RS_N 255	// Reed-Solomon codeword length (bytes)
 #define BSLEN 32768UL
 #define TRLEN 17
 #define CRCLEN 5
@@ -71,7 +71,7 @@
 #if WITH_RTLSDR
 #define __OPT_RTLSDR			11
 #endif
-#if WITH_MIRISDR || WITH_RTLSDR
+#if WITH_MIRISDR || WITH_RTLSDR || WITH_SDRPLAY
 #define __OPT_GAIN			12
 #define __OPT_CORRECTION		13
 #endif
@@ -81,6 +81,15 @@
 #define __OPT_MSG_FILTER		15
 #define __OPT_OUTPUT_ACARS_PP		16
 #define __OPT_UTC			17
+#define __OPT_RAW_FRAMES		18
+#ifdef WITH_SDRPLAY
+#define __OPT_SDRPLAY			80
+#define __OPT_ANTENNA			81
+#define __OPT_BIAST			82
+#define __OPT_NOTCH_FILTER		83
+#define __OPT_AGC			84
+#endif
+
 #define __OPT_HELP			99
 
 // message filters
@@ -100,6 +109,8 @@
 #define MSGFLT_IDRP_NO_KEEPALIVE	(1 << 11)
 #define MSGFLT_IDRP_KEEPALIVE		(1 << 12)
 #define MSGFLT_ESIS			(1 << 13)
+#define MSGFLT_CM			(1 << 14)
+#define MSGFLT_CPDLC			(1 << 15)
 
 typedef struct {
 	char *token;
@@ -139,6 +150,9 @@ enum input_types {
 #endif
 #if WITH_MIRISDR
 	INPUT_MIRISDR,
+#endif
+#if WITH_SDRPLAY
+	INPUT_SDRPLAY,
 #endif
 	INPUT_FILE,
 	INPUT_UNDEF
@@ -210,7 +224,7 @@ uint16_t crc16_ccitt(uint8_t *data, uint32_t len);
 // avlc.c
 void parse_avlc_frames(vdl2_channel_t *v, uint8_t *buf, uint32_t len);
 uint32_t parse_dlc_addr(uint8_t *buf);
-void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f);
+void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f, uint8_t *raw_buf, uint32_t len);
 
 // rs.c
 int rs_init();
@@ -218,7 +232,7 @@ int rs_verify(uint8_t *data, int fec_octets);
 
 // output.c
 extern FILE *outf;
-extern uint8_t hourly, daily, utc;
+extern uint8_t hourly, daily, utc, output_raw_frames;
 extern int pp_sockfd;
 int init_output_file(char *file);
 int init_pp(char *pp_addr);

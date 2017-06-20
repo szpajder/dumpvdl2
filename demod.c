@@ -273,7 +273,7 @@ static void process_samples(vdl2_channel_t *v, float *sbuf, uint32_t len) {
 	}
 	v->bufnum++;
 	if(DEBUG && v->bufnum % 10 == 0)
-		debug_print("noise_floor: %f\n", v->mag_nf);
+		debug_print("%u: noise_floor: %.1f dBFS\n", v->freq, 20.0f * log10f(v->mag_nf + 0.001f));
 }
 
 void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx) {
@@ -288,7 +288,7 @@ void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx) {
 
 void process_buf_uchar_init() {
 	levels = XCALLOC(256, sizeof(float));
-	for (int i=0; i<256; i++) {
+	for (int i = 0; i < 256; i++) {
 		levels[i] = (i-127.5f)/127.5f;
 	}
 }
