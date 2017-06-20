@@ -2,7 +2,7 @@ export DEBUG ?= 0
 CC = gcc
 AR = ar
 RANLIB = ranlib
-CFLAGS = -std=c99 -g -Wall -O3 -fno-omit-frame-pointer -DEMIT_ASN_DEBUG=$(DEBUG) -I. -D_XOPEN_SOURCE=500
+CFLAGS += -std=c99 -g -Wall -O3 -fno-omit-frame-pointer -DEMIT_ASN_DEBUG=$(DEBUG) -I. -D_XOPEN_SOURCE=500
 ASN_MODULE_SOURCES=	\
 	Fully-encoded-data.c	\
 	PDV-list.c	\

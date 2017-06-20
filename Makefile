@@ -4,7 +4,7 @@ export WITH_RTLSDR ?= 1
 export WITH_MIRISDR ?= 0
 export WITH_SDRPLAY ?= 0
 CC = gcc
-CFLAGS = -std=c99 -g -Wall -O3 -fno-omit-frame-pointer -ffast-math -D_XOPEN_SOURCE=500 -DDEBUG=$(DEBUG)
+CFLAGS += -std=c99 -g -Wall -O3 -fno-omit-frame-pointer -ffast-math -D_XOPEN_SOURCE=500 -DDEBUG=$(DEBUG)
 DUMPVDL2_VERSION:=\"$(shell git describe --always --tags --dirty)\"
 ifneq ($(DUMPVDL2_VERSION), \"\")
   CFLAGS+=-DDUMPVDL2_VERSION=$(DUMPVDL2_VERSION)
