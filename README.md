@@ -6,9 +6,9 @@ dumpvdl2 is a lightweight, standalone VDL Mode 2 message decoder and protocol an
 
 - Runs under Linux (tested on: x86, x86-64, Raspberry Pi)
 - Supports following SDR hardware:
-  - RTLSDR (via [rtl-sdr library] (http://osmocom.org/projects/sdr/wiki/rtl-sdr))
-  - Mirics SDR (via [libmirisdr-4] (https://github.com/f4exb/libmirisdr-4))
-  - SDRPlay RSP1/2, (Native support through API (http://www.sdrplay.com/docs/SDRplay_SDR_API_Specification.pdf))
+  - RTLSDR (via [rtl-sdr library](http://osmocom.org/projects/sdr/wiki/rtl-sdr))
+  - Mirics SDR (via [libmirisdr-4](https://github.com/f4exb/libmirisdr-4))
+  - SDRPlay RSP1/2, (Native support through [official API](http://www.sdrplay.com/docs/SDRplay_SDR_API_Specification.pdf))
   - reads prerecorded IQ data from file
 - Decodes up to 8 VDL2 channels simultaneously
 - Outputs messages to standard output or to a file (with optional daily or hourly file rotation)
@@ -45,7 +45,7 @@ Install `librtlsdr` library (unless you have it already). Under Raspbian you can
 
 or get the source from Git and compile by yourself:
 
-	apt-get install git autoconf libusb-1.0-0-dev
+        apt-get install git autoconf libusb-1.0-0-dev
         cd
         git clone git://git.osmocom.org/rtl-sdr.git
         cd rtl-sdr/
@@ -84,7 +84,7 @@ the installer will fail.
 
 ##### Compiling dumpvdl2
 
-Clone the `dumpvdl2` repository:
+Clone the dumpvdl2 repository:
 
         git clone https://github.com/szpajder/dumpvdl2.git
         cd dumpvdl2
@@ -122,7 +122,7 @@ Install `statsd-c-client` library from https://github.com/romanbsd/statsd-c-clie
         sudo make install
         sudo ldconfig
 
-Compile `dumpvdl2` as above, but add `USE_STATSD=1`:
+Compile dumpvdl2 as above, but add `USE_STATSD=1`:
 
         make USE_STATSD=1
 
@@ -142,14 +142,14 @@ behavior:
 
         ./dumpvdl2 --rtlsdr 771111153 --gain 40 --correction 42
 
-Use `rtl_test` utility to get serial numbers of your devices. `dumpvdl2` will print them to
+Use rtl_test utility to get serial numbers of your devices. dumpvdl2 will print them to
 the screen on startup as well.
 
 If you want to listen to a different VDL2 channel, just give its frequency as a last parameter:
 
         ./dumpvdl2 --rtlsdr 0 --gain 40 --correction 42 136725000
 
-`dumpvdl2` can decode up to 8 VDL2 channels simultaneously. Just add them at the end:
+dumpvdl2 can decode up to 8 VDL2 channels simultaneously. Just add them at the end:
 
         ./dumpvdl2 --rtlsdr 0 --gain 40 --correction 42 136725000 136975000 136875000
 
@@ -213,7 +213,7 @@ Example: start the program with antenna A selection, bias-t off and notch filter
 
 ### Integration with Planeplotter
 
-`dumpvdl2` can send ACARS messages to Planeplotter, which in turn can extract aircraft position
+dumpvdl2 can send ACARS messages to Planeplotter, which in turn can extract aircraft position
 information from them and display blips on the map. First, configure your Planeplotter as follows:
 
 - Stop data processing (press 'Stop' button on the toolbar)
@@ -226,7 +226,7 @@ information from them and display blips on the map. First, configure your Planep
 
 - Close the settings window by clicking OK and restart data processing
 
-Supply `dumpvdl2` with the address (or host name) and port where the Planeplotter is listening:
+Supply dumpvdl2 with the address (or host name) and port where the Planeplotter is listening:
 
         ./dumpvdl2 --output-acars-pp 10.10.10.12:9742 [other_options]
 
@@ -234,7 +234,7 @@ That's all. Switch to 'Message view' in Planeplotter and look for incoming messa
 
 ### Message filtering
 
-By default `dumpvdl2` logs all decoded messages. You can use `--msg-filter` option to ignore
+By default dumpvdl2 logs all decoded messages. You can use `--msg-filter` option to ignore
 things you don't want to see. If you do not want messages sent by ground stations, run
 the program like this:
 
@@ -260,7 +260,7 @@ for this purpose:
 - [Collectd](https://collectd.org/) is a statistics collection daemon which supports a lot of
   metric sources by using various [plugins](https://collectd.org/wiki/index.php/Table_of_Plugins).
   It has a [StatsD](https://collectd.org/wiki/index.php/Plugin:StatsD) plugin which can receive
-  statistics emitted by `dumpvdl2`, aggregate them and write to various time-series databases
+  statistics emitted by dumpvdl2, aggregate them and write to various time-series databases
   like RRD, Graphite, MongoDB or TSDB.
 
 - [Graphite](https://graphiteapp.org/) is a time-series database with powerful analytics and
@@ -269,15 +269,15 @@ for this purpose:
 - [Grafana](http://grafana.org/) is a sophisticated and elegant graphing solution supporting
   a variety of data sources.
 
-Here is an example of some `dumpvdl2` metrics being graphed by Grafana:
+Here is an example of some dumpvdl2 metrics being graphed by Grafana:
 
 ![Statistics](statistics.png?raw=true)
 
 Metrics are quite handy when tuning the antenna installation or receiving parameters (like gain
 or correction). Full list of currently supported counters can be found in `statsd.c` source file.
-`dumpvdl2` produces a separate set of counters for each configured VDL2 channel.
+dumpvdl2 produces a separate set of counters for each configured VDL2 channel.
 
-To enable statistics just give `dumpvdl2` your StatsD collector's hostname (or IP address)
+To enable statistics just give dumpvdl2 your StatsD collector's hostname (or IP address)
 and UDP port number, for example:
 
         ./dumpvdl2 --statsd 10.10.10.15:1234 [other_options]
@@ -289,7 +289,7 @@ The syntax is:
 dumpvdl2 --iq-file <file_name> [--sample-format <sample_format>] [--oversample <oversample_rate>]
   [--centerfreq <center_frequency>] [vdl_freq_1] [vdl_freq_2] [...]
 ```
-The symbol rate for VDL2 is 10500 symbols/sec. `dumpvdl2` internal processing rate is 10 samples
+The symbol rate for VDL2 is 10500 symbols/sec. dumpvdl2 internal processing rate is 10 samples
 per symbol. Therefore the file must be recorded with sampling rate set to an integer multiple
 of 105000. Specify the multiplier value with `--oversample` option. The default value is 10, which is
 valid for files sampled as 1050000 samples/sec. For example, if you have recorded your file at
@@ -297,7 +297,7 @@ valid for files sampled as 1050000 samples/sec. For example, if you have recorde
 
 The program accepts raw data files without any header. Files produced by `rtl_sdr` and `miri_sdr`
 programs are perfectly valid input files. Different radios produce samples in different formats,
-though. The following sample formats are currently supported by `dumpvdl2`:
+though. dumpvdl2 currently supports following sample formats:
 
 - `U8` - unsigned 8-bit samples. This is the format produced by `rtl_sdr` utility.
 - `S16_LE` - 16-bit signed, little endian. Produced by `miri_sdr` utility (by default).
@@ -337,15 +337,15 @@ Civil airlines - not all, but many. Military? Umm, no.
 ##### What frequencies it runs on?
 
 The most ubiquitous is 136.975 MHz (so called Common Signalling Channel). In some areas where
-the capacity of a single channel is not enough, 136.725 or 136.875 is used as well. Because
-they are closely spaced, `dumpvdl2` can receive all of them simultaneously with a single RTLSDR
+the capacity of a single channel is not enough, 136.725, 136.775 or 136.875 is used as well.
+Because they are closely spaced, dumpvdl2 can receive all of them simultaneously with a single
 receiver.
 
 ##### Is it used in my area?
 
-If you are in EU or US, that's quite probable. Launch your favorite SDR Console (like SDRSharp
-or GQRX), tune 136.975 MHz and place your antenna outside (or near the window, at least). If you
-can see short bursts every now and then, it's there.
+Yup, it's quite probable. Launch your favorite SDR Console (like SDRSharp or GQRX), tune
+136.975 MHz and place your antenna outside (or near the window, at least). If you see short
+bursts every now and then, it's there.
 
 ##### What antenna shall I use?
 
@@ -361,8 +361,10 @@ It basically comes down to three things:
 
 ###### The signal has to be strong enough (preferably 20 dB over noise floor, or better)
 
-- set your tuner gain quite high. I get good results with 42 dB for RTLSDR and 100 dB for Mirics
+- set your tuner gain quite high. I get good results with 40 dB for RTLSDR and 100 dB for Mirics
   dongles. 75-85 dB is reported to work well on SDRPlay. However, it depends on the used antenna.
+  But do not be tempted to crank the gain up to the max. Keep your noise floor as low as possible,
+  because higher noise yields higher bit error rate.
 
 - check SDR Console with the same gain setting - do you see data bursts clearly? (they are
   very short, like pops).
@@ -375,7 +377,7 @@ It basically comes down to three things:
 
 To verify that the signal strength is enough for the squelch to open, do the following:
 
-- Go to `dumpvdl2` source directory
+- Go to dumpvdl2 source directory
 
 - Recompile with debug output enabled:
 
@@ -450,7 +452,7 @@ observe the output:
 
 After a couple of minutes the cumulative PPM value converges to a stable reading. This is
 the value for your dongle. However, some people reported that this method is not always 100%
-accurate, so it's good to double-check with method 2.
+accurate, so it's good to double-check with method 2 or 3.
 
 **Method 2:** use your favorite SDR console (like SDRSharp, HDSDR, GQRX, etc). Tune it to a
 frequency of some local narrowband transmitter which transmits constantly (or very often) and
@@ -459,6 +461,11 @@ airport. Zoom in on the channel peak and adjust the correction value in the rece
 to bring the peak exactly to the tuned frequency. If it's a voice channel, judge it by your ear -
 aim for the lowest possible background noise. See this video tutorial for reference:
 [Frequency calibration in SDRSharp](https://www.youtube.com/watch?v=gFXMbr1dgng).
+
+**Method 3:** use [kalibrate-rtl](https://github.com/steve-m/kalibrate-rtl) utility. It estimates
+the correction value using GSM signal from nearby base stations. The estimate is quite accurate
+provided that you supply the program with approximate PPM offset value using `-e` option. This
+is even more important if your dongle has a large offset value (say, 50 or more).
 
 ##### What do these numbers in the message header mean?
 
@@ -477,10 +484,61 @@ From left to right:
 
 - signal to noise ratio (ie. signal power level minus noise floor power level).
 
+##### What do these cryptic codewords in CPDLC messages mean?
+
+These are object names and type names from ICAO ASN.1 module which describe the abstract
+syntax of CPDLC messages. Currently dumpvdl2 outputs the decoded ASN.1 structure with
+a generic printing routine. It's not very pretty, but it can print every possible type
+of message which complies to the standard.  For now it looks like this:
+
+```
+ATCUplinkMessage ::= {
+    header: ATCMessageHeader ::= {
+        messageIdNumber: 4
+        dateTime: DateTimeGroup ::= {
+            date: Date ::= {
+                year: 2017
+                month: 6
+                day: 5
+            }
+            timehhmmss: Timehhmmss ::= {
+                hoursminutes: Time ::= {
+                    hours: 12
+                    minutes: 28
+                }
+                seconds: 59
+            }
+        }
+        logicalAck: 0
+    }
+    messageData: ATCUplinkMessageData ::= {
+        elementIds: elementIds ::= {
+            uM74Position: fixName: FixName ::= {
+                name: MIKOV
+            }
+        }
+    }
+}
+```
+
+This is a message sent by ATC to the crew. There is a fix name (MIKOV) in the message data
+section, but what's the actual clearance? To find out, look up the parameter name
+`uM74Position` in `asn1/atn-cpdlc.asn1` file (in the dumpvdl2 source directory). The
+meaning of each parameter is given in the comment preceding it:
+
+```
+    -- PROCEED DIRECT TO [position]
+    -- Urg(N)/Alr(M)/Resp(W/U)
+    uM74Position  [74] Position,
+```
+So the clearance is: "proceed direct to MIKOV". Simple as that.
+
+Pretty-printing of these messages will be implemented in a future release of dumpvdl2.
+
 ##### Can you add support for [*my favourite SDR receiver type*]?
 
 Maybe. However do not expect me to purchase all SDRs available on the market just to make
-`dumpvdl2` work with them. If your life absolutely depends on it, consider donating, or at least
+dumpvdl2 work with them. If your life absolutely depends on it, consider donating, or at least
 lending me the hardware for some time for development and testing.
 
 Alternatively, if you can write code, you may do the work by yourself and submit it as a pull
@@ -507,6 +565,16 @@ To be honest, I don't use Windows very often and I don't know the programming in
 this OS. However, if you feel like you could port the code and maintain the port later on,
 please do so. Pull requests welcome.
 
+### Credits and thanks
+
+I hereby express my gratitude to everybody who helped with the development and testing of
+dumpvdl2. Special thanks go to:
+
+- Fabrice Crohas
+- Dick van Noort
+- acarslogger
+- Piotr Herko, SP5XSB
+
 ### License
 
 Copyright (c) 2017 Tomasz Lemiech <szpajder@gmail.com>
@@ -518,6 +586,8 @@ Contains code from the following software projects:
 - acarsdec, (c) 2015 Thierry Leconte
 
 - librtlsdr-keenerd, (c) 2013-2014 by Kyle Keen
+
+- asn1c, (c) 2003-2017 by Lev Walkin and contributors
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
