@@ -23,6 +23,8 @@
 #include "sdrplay.h"
 #include "mirsdrapi-rsp.h"
 
+static int initialized = 0;
+
 void sdrplay_init(vdl2_state_t *ctx, char *dev, char *antenna, uint32_t freq, float gain,
 int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
 	mir_sdr_ErrT err;
@@ -177,6 +179,7 @@ int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
 			(double)freq/1e6, (double)SDRPLAY_RATE/1e6, err);
 		_exit(1);
 	}
+	initialized = 1;
 	debug_print("Stream initialized with sdrplaySamplesPerPacket=%d gRdBsystem=%d\n", SDRPlay.sdrplaySamplesPerPacket, gRdBsystem);
 
 	/* Configure DC tracking in tuner */
@@ -195,10 +198,12 @@ int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
 }
 
 void sdrplay_cancel() {
-	// Deinitialize stream
-	mir_sdr_Uninit();
-	// Release device
-	mir_sdr_ReleaseDeviceIdx();
+	if(initialized) {
+// Deinitialize stream
+		mir_sdr_Uninit();
+// Release device
+		mir_sdr_ReleaseDeviceIdx();
+	}
 }
 
 void sdrplay_streamCallback(short *xi, short *xq, unsigned int firstSampleNum, int grChanged,
