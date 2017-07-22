@@ -512,8 +512,8 @@ int main(int argc, char **argv) {
 		_exit(4);
 	}
 	if(pp_addr && init_pp(pp_addr) < 0) {
-		fprintf(stderr, "Failed to initialize output socket to Planeplotter - aborting\n");
-		_exit(4);
+		fprintf(stderr, "Failed to initialize output socket to Planeplotter - disabling it\n");
+		free(pp_addr);
 	}
 	setup_signals();
 	sincosf_lut_init();
