@@ -498,12 +498,15 @@ int main(int argc, char **argv) {
 #if USE_STATSD
 	if(statsd_enabled && input != INPUT_FILE) {
 		if(statsd_initialize(statsd_addr) < 0) {
-				fprintf(stderr, "Failed to initialize statsd client\n");
-				_exit(4);
+				fprintf(stderr, "Failed to initialize statsd client - disabling\n");
+				free(statsd_addr);
+				statsd_enabled = 0;
+		} else {
+			for(int i = 0; i < num_channels; i++)
+				statsd_initialize_counters(freqs[i]);
 		}
-		for(int i = 0; i < num_channels; i++)
-			statsd_initialize_counters(freqs[i]);
 	} else {
+		free(statsd_addr);
 		statsd_enabled = 0;
 	}
 #endif
