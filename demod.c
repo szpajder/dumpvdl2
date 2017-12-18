@@ -205,35 +205,50 @@ static void demod(vdl2_channel_t *v) {
 	}
 }
 
+static void chebyshev_lp(float * const in, float * const out) {
+	static const float A0 =  8.663367e-04f;
+	static const float A1 =  1.732678e-03f;
+	static const float B1 =  1.919290e+00f;
+	static const float A2 =  8.663267e-04f;
+	static const float B2 = -9.225943e-01f;
+	out[0]  =  in[2] * A2 +  in[1] * A1 + in[0] * A0;
+	out[0] += out[2] * B2 + out[1] * B1;
+}
+
 static void process_samples(vdl2_channel_t *v, float *sbuf, uint32_t len) {
 	int i, available;
-	float re, im, mag;
+	float mag;
 	float cwf, swf;
-	static const float iq_lp2 = 1.0f - IQ_LP;
 	v->samplenum = -1;
 	for(i = 0; i < len;) {
 #if DEBUG
 		v->samplenum++;
 #endif
-		re = sbuf[i++];
-		im = sbuf[i++];
+		for(int k = 2; k > 0; k--) {
+			   v->re[k] =    v->re[k-1];
+			   v->im[k] =    v->im[k-1];
+			v->lp_re[k] = v->lp_re[k-1];
+			v->lp_im[k] = v->lp_im[k-1];
+		}
+		v->re[0] = sbuf[i++];
+		v->im[0] = sbuf[i++];
 // downmix
 		if(v->offset_tuning) {
 			sincosf_lut(v->dm_phi, &swf, &cwf);
-			multiply(re, im, cwf, swf, &re, &im);
+			multiply(v->re[0], v->im[0], cwf, swf, &v->re[0], &v->im[0]);
 			v->dm_phi += v->dm_dphi;
 			v->dm_phi &= 0xffffff;
 		}
 
 // lowpass IIR
-		v->lp_re = IQ_LP * v->lp_re + iq_lp2 * re;
-		v->lp_im = IQ_LP * v->lp_im + iq_lp2 * im;
+		chebyshev_lp(v->re, v->lp_re);
+		chebyshev_lp(v->im, v->lp_im);
 // decimation
 		v->cnt %= v->oversample;
 		if(v->cnt++ != 0)
 			continue;
 
-		mag = hypotf(v->lp_re, v->lp_im);
+		mag = hypotf(v->lp_re[0], v->lp_im[0]);
 		v->mag_lp = v->mag_lp * MAG_LP + mag * (1.0f - MAG_LP);
 		v->nfcnt %= 1000;
 // update noise floor estimate
@@ -255,8 +270,8 @@ static void process_samples(vdl2_channel_t *v, float *sbuf, uint32_t len) {
 			}
 		}
 		if(v->sq == 1) {
-			v->I[v->bufe] = v->lp_re;
-			v->Q[v->bufe] = v->lp_im;
+			v->I[v->bufe] = v->lp_re[0];
+			v->Q[v->bufe] = v->lp_im[0];
 			v->mag_buf[v->bufe] = mag;
 			v->mag_lpbuf[v->bufe] = v->mag_lp;
 			v->bufe++; v->bufe %= BUFSIZE;
