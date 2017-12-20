@@ -53,7 +53,6 @@
 #define MAG_LP 0.9f
 #define DPHI_LP 0.95f
 #define NF_LP 0.85f
-#define IQ_LP 0.92f
 
 // long command line options
 #define __OPT_CENTERFREQ		 1
@@ -162,7 +161,8 @@ enum sample_formats { SFMT_U8, SFMT_S16_LE, SFMT_UNDEF };
 typedef struct {
 	float mag_buf[BUFSIZE];
 	float mag_lpbuf[BUFSIZE];		// temporary for testing
-	float lp_re, lp_im;
+	float re[3], im[3];
+	float lp_re[3], lp_im[3];
 	float I[BUFSIZE];
 	float Q[BUFSIZE];
 	float pI, pQ;
