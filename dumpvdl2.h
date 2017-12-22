@@ -54,6 +54,11 @@
 #define DPHI_LP 0.95f
 #define NF_LP 0.85f
 
+// Chebyshev lowpass filter design constants
+#define CH_LP_CUTOFF_FREQ 10000
+#define CH_LP_RIPPLE_PERCENT 0.5f
+#define CH_LP_NPOLES 2
+
 // long command line options
 #define __OPT_CENTERFREQ		 1
 #define __OPT_DAILY			 2
@@ -161,8 +166,8 @@ enum sample_formats { SFMT_U8, SFMT_S16_LE, SFMT_UNDEF };
 typedef struct {
 	float mag_buf[BUFSIZE];
 	float mag_lpbuf[BUFSIZE];		// temporary for testing
-	float re[3], im[3];
-	float lp_re[3], lp_im[3];
+	float re[CH_LP_NPOLES+1], im[CH_LP_NPOLES+1];
+	float lp_re[CH_LP_NPOLES+1], lp_im[CH_LP_NPOLES+1];
 	float I[BUFSIZE];
 	float Q[BUFSIZE];
 	float pI, pQ;
@@ -213,6 +218,7 @@ void decode_vdl_frame(vdl2_channel_t *v);
 // demod.c
 vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample);
 void sincosf_lut_init();
+void chebyshev_lp_init(const float cutoff_freq, const float ripple, const int npoles);
 void process_buf_uchar_init();
 void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx);
 void process_buf_short_init();
