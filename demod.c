@@ -21,12 +21,18 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>		// calloc
-#include <math.h>		// exp, sincos, sin, cos, sqrt, pow
-#include <string.h>		// memcpy
+#include <math.h>		// sincosf, hypotf, atan2
+#include "chebyshev.h"		// chebyshev_lpf_init, chebyshev_lpf
 #include "dumpvdl2.h"
 
 static float *levels;
 static float sin_lut[257], cos_lut[257];
+// input lowpass filter design constants
+#define INP_LPF_CUTOFF_FREQ 10000
+#define INP_LPF_RIPPLE_PERCENT 0.5f
+#define INP_LPF_NPOLES 2
+// filter coefficient tables
+static float *A = NULL, *B = NULL;
 
 // phi range must be (0..1), rescaled to 0x0-0xFFFFFF
 static void sincosf_lut(uint32_t phi, float *sine, float *cosine) {
@@ -208,115 +214,6 @@ static void demod(vdl2_channel_t *v) {
 	}
 }
 
-#define MAX_POLES 20
-#define MAX_RIPPLE 29.f
-#define LP_BSIZE (MAX_POLES + 3)
-static float A[LP_BSIZE], B[LP_BSIZE];	// lowpass filter coefficients
-static int lp_npoles;			// number of lowpass filter poles
-
-static void chebyshev_lp(float * const in, float * const out) {
-/*	static const float A0 =  8.663367e-04f;
-	static const float A1 =  1.732678e-03f;
-	static const float B1 =  1.919290e+00f;
-	static const float A2 =  8.663267e-04f;
-	static const float B2 = -9.225943e-01f; */
-	out[0] = 0.f;
-	for(int i = 0; i <= lp_npoles; i++) {
-		out[0] += A[i] * in[i];
-	}
-	for(int i = 1; i <= lp_npoles; i++) {
-		out[0] += B[i] * out[i];
-	}
-}
-
-// Based on "The Scientist and Engineer's Guide to Digital Signal Processing"
-// Steven W. Smith, Ph.D.
-static void chebyshev_lp_calc_pole(const int p, const float cutoff_freq, const float ripple,
-				const int npoles, float * const AA, float * const BB) {
-	float rp, ip;
-	sincosf(M_PI/(2 * npoles) + (p-1) * M_PI / npoles, &ip, &rp);
-	rp = -rp;
-	if(ripple != 0.f) {
-		float es = sqrtf(pow(100.f / (100.f - ripple), 2.f) - 1.f);
-		float vx = (1.f / npoles) * logf((1.f/es) + sqrtf(1.f/(es*es) + 1.f));
-		float kx = (1.f / npoles) * logf((1.f/es) + sqrtf(1.f/(es*es) - 1.f));
-		kx = (expf(kx) + expf(-kx)) / 2.f;
-		rp *= ((expf(vx) - expf(-vx)) / 2.f) / kx;
-		ip *= ((expf(vx) + expf(-vx)) / 2.f) / kx;
-		fprintf(stderr, "es=%f, vx=%f, kx=%f\n", es, vx, kx);
-	}
-	debug_print("rp=%f ip=%f\n", rp, ip);
-	float t = 2.f * tanf(0.5f);
-	float w = 2.f * M_PI * cutoff_freq;
-	float m = rp * rp + ip * ip;
-	float d = 4.f - 4.f * rp * t + m * t * t;
-	float x0 = t * t / d;
-	float x1 = 2.f * x0;
-	float x2 = x0;
-	float y1 = (8.f - 2.f * m * t * t) / d;
-	float y2 = (-4.f - 4.f * rp * t - m * t * t) / d;
-	debug_print("t=%f w=%f m=%f d=%f\n", t, w, m, d);
-	debug_print("x0=%f x1=%f x2=%f y1=%f y2=%f\n", x0, x1, x2, y1, y2);
-	float k = sinf(0.5f - w / 2.f) / sinf(0.5f + w / 2.f);
-	d = 1 + y1 * k - y2 * k * k;
-	AA[0] = (x0 - x1 * k + x2 * k * k) / d;
-	AA[1] = (-2.f * x0 * k + x1 + x1 * k * k - 2.f * x2 * k) / d;
-	AA[2] = (x0 * k * k - x1 * k + x2) / d;
-	BB[1] = (2.f * k + y1 + y1 * k * k - 2.f * y2 * k) / d;
-	BB[2] = (-(k * k) - y1 * k + y2) / d;
-}
-
-void chebyshev_lp_init(const float cutoff_freq, const float ripple, const int npoles) {
-	assert(npoles > 0);
-	assert(npoles <= MAX_POLES);
-	assert((npoles & 1) == 0);
-	assert(cutoff_freq >= 0.f);
-	assert(cutoff_freq <= 0.5f);
-	assert(ripple >= 0.f);
-	assert(ripple <= MAX_RIPPLE);
-
-	float TA[LP_BSIZE], TB[LP_BSIZE];
-	float AA[3], BB[3];
-	memset(A, 0, LP_BSIZE * sizeof(float));
-	memset(B, 0, LP_BSIZE * sizeof(float));
-	memset(TA, 0, LP_BSIZE * sizeof(float));
-	memset(TB, 0, LP_BSIZE * sizeof(float));
-	memset(AA, 0, 3 * sizeof(float));
-	memset(BB, 0, 3 * sizeof(float));
-	A[2] = 1.f; B[2] = 1.f;
-	lp_npoles = npoles;
-	for(int p = 1; p <= npoles / 2; p++) {
-		chebyshev_lp_calc_pole(p, cutoff_freq, ripple, npoles, AA, BB);
-		debug_print("AA[0] = %f\n", AA[0]);
-		for(int i = 1; i < 3; i++)
-			debug_print("AA[%d] = %f\tBB[%d] = %f\n", i, AA[i], i, BB[i]);
-		memcpy(TA, A, LP_BSIZE * sizeof(float));
-		memcpy(TB, B, LP_BSIZE * sizeof(float));
-		for(int i = 2; i < LP_BSIZE; i++) {
-			A[i] = AA[0] * TA[i] + AA[1] * TA[i-1] + AA[2] * TA[i-2];
-			B[i] =         TB[i] - BB[1] * TB[i-1] - BB[2] * TB[i-2];
-		}
-	}
-	B[2] = 0.f;
-	for(int i = 0; i < LP_BSIZE-2; i++) {
-		A[i] = A[i+2];
-		B[i] = -B[i+2];
-	}
-	float sa = 0.f, sb = 0.f;
-	for(int i = 0; i < LP_BSIZE-2; i++) {
-		sa += A[i];
-		sb += B[i];
-	}
-	float gain = sa / (1.f - sb);
-	for(int i = 0; i < LP_BSIZE-2; i++) {
-		A[i] /= gain;
-	}
-	debug_print("a%d = %.12f\n", 0, A[0]);
-	for(int i = 1; i <= npoles; i++) {
-		debug_print("a%d = %.12f\tb%d = %.12f\n", i, A[i], i, B[i]);
-	}
-}
-
 static void process_samples(vdl2_channel_t *v, float *sbuf, uint32_t len) {
 	int i, available;
 	float mag;
@@ -326,7 +223,7 @@ static void process_samples(vdl2_channel_t *v, float *sbuf, uint32_t len) {
 #if DEBUG
 		v->samplenum++;
 #endif
-		for(int k = lp_npoles; k > 0; k--) {
+		for(int k = INP_LPF_NPOLES; k > 0; k--) {
 			   v->re[k] =    v->re[k-1];
 			   v->im[k] =    v->im[k-1];
 			v->lp_re[k] = v->lp_re[k-1];
@@ -343,8 +240,8 @@ static void process_samples(vdl2_channel_t *v, float *sbuf, uint32_t len) {
 		}
 
 // lowpass IIR
-		chebyshev_lp(v->re, v->lp_re);
-		chebyshev_lp(v->im, v->lp_im);
+		chebyshev_lpf(v->re, v->lp_re, A, B, INP_LPF_NPOLES);
+		chebyshev_lpf(v->im, v->lp_im, A, B, INP_LPF_NPOLES);
 // decimation
 		v->cnt %= v->oversample;
 		if(v->cnt++ != 0)
@@ -422,6 +319,11 @@ void process_buf_short(unsigned char *buf, uint32_t len, void *ctx) {
 		process_samples(v->channels[i], sbuf, len);
 }
 
+void input_lpf_init(uint32_t sample_rate) {
+	assert(sample_rate != 0);
+	chebyshev_lpf_init((float)INP_LPF_CUTOFF_FREQ / (float)sample_rate, INP_LPF_RIPPLE_PERCENT, INP_LPF_NPOLES, &A, &B);
+}
+
 void sincosf_lut_init() {
 	for(uint32_t i = 0; i < 256; i++)
 		sincosf(2.0f * M_PI * (float)i / 256.0f, sin_lut + i, cos_lut + i);
@@ -431,7 +333,11 @@ void sincosf_lut_init() {
 
 vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample) {
 	vdl2_channel_t *v;
-	v = XCALLOC(1, sizeof(vdl2_channel_t));
+	v        = XCALLOC(1, sizeof(vdl2_channel_t));
+	v->re    = XCALLOC(INP_LPF_NPOLES+1, sizeof(float));
+	v->im    = XCALLOC(INP_LPF_NPOLES+1, sizeof(float));
+	v->lp_re = XCALLOC(INP_LPF_NPOLES+1, sizeof(float));
+	v->lp_im = XCALLOC(INP_LPF_NPOLES+1, sizeof(float));
 	v->bs = bitstream_init(BSLEN);
 	v->mag_nf = 2.0f;
 // Cast to signed first, because casting negative float to uint is not portable

@@ -520,7 +520,7 @@ int main(int argc, char **argv) {
 	}
 	setup_signals();
 	sincosf_lut_init();
-	chebyshev_lp_init((float)CH_LP_CUTOFF_FREQ / (float)sample_rate, CH_LP_RIPPLE_PERCENT, CH_LP_NPOLES);
+	input_lpf_init(sample_rate);
 	switch(input) {
 	case INPUT_FILE:
 		process_file(&ctx, infile, sample_fmt);
