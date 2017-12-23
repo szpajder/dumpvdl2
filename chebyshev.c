@@ -40,7 +40,7 @@ static void chebyshev_lpf_calc_pole(int const p, float const cutoff_freq, float 
 		kx = (expf(kx) + expf(-kx)) / 2.f;
 		rp *= ((expf(vx) - expf(-vx)) / 2.f) / kx;
 		ip *= ((expf(vx) + expf(-vx)) / 2.f) / kx;
-		fprintf(stderr, "es=%f, vx=%f, kx=%f\n", es, vx, kx);
+		debug_print("es=%f, vx=%f, kx=%f\n", es, vx, kx);
 	}
 	debug_print("rp=%f ip=%f\n", rp, ip);
 	float t = 2.f * tanf(0.5f);
