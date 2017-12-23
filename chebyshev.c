@@ -26,16 +26,6 @@
 #include "dumpvdl2.h"		// debug_print, XCALLOC
 #define LP_BSIZE (MAX_POLES + 3)
 
-void chebyshev_lpf(float * const in, float * const out, float * const A, float * const B, int const npoles) {
-	out[0] = 0.f;
-	for(int i = 0; i <= npoles; i++) {
-		out[0] += A[i] * in[i];
-	}
-	for(int i = 1; i <= npoles; i++) {
-		out[0] += B[i] * out[i];
-	}
-}
-
 // Based on "The Scientist and Engineer's Guide to Digital Signal Processing"
 // Steven W. Smith, Ph.D.
 static void chebyshev_lpf_calc_pole(int const p, float const cutoff_freq, float const ripple,
