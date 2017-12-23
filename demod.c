@@ -17,13 +17,24 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #define _GNU_SOURCE
+#include <assert.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <math.h>
+#include <stdlib.h>		// calloc
+#include <math.h>		// sincosf, hypotf, atan2
+#include "chebyshev.h"		// chebyshev_lpf_init
 #include "dumpvdl2.h"
 
 static float *levels;
 static float sin_lut[257], cos_lut[257];
+
+// input lowpass filter design constants
+#define INP_LPF_CUTOFF_FREQ 10000
+#define INP_LPF_RIPPLE_PERCENT 0.5f
+// do not change this; filtering routine is currently hardcoded to 2 poles to minimize CPU usage
+#define INP_LPF_NPOLES 2
+// filter coefficients
+static float *A = NULL, *B = NULL;
 
 // phi range must be (0..1), rescaled to 0x0-0xFFFFFF
 static void sincosf_lut(uint32_t phi, float *sine, float *cosine) {
@@ -40,6 +51,13 @@ static void sincosf_lut(uint32_t phi, float *sine, float *cosine) {
 	v1 = cos_lut[idx];
 	v2 = cos_lut[idx+1];
 	*cosine = v1 + (v2 - v1) * fract;
+}
+
+static float chebyshev_lpf_2pole(float const * const in, float const * const out) {
+	float r = A[0] * in[0];
+	r += A[1] * in[1] + A[2] * in[2];
+	r += B[1] * out[1] + B[2] * out[2];
+	return r;
 }
 
 static void correlate_and_sync(vdl2_channel_t *v) {
@@ -205,16 +223,6 @@ static void demod(vdl2_channel_t *v) {
 	}
 }
 
-static void chebyshev_lp(float * const in, float * const out) {
-	static const float A0 =  8.663367e-04f;
-	static const float A1 =  1.732678e-03f;
-	static const float B1 =  1.919290e+00f;
-	static const float A2 =  8.663267e-04f;
-	static const float B2 = -9.225943e-01f;
-	out[0]  =  in[2] * A2 +  in[1] * A1 + in[0] * A0;
-	out[0] += out[2] * B2 + out[1] * B1;
-}
-
 static void process_samples(vdl2_channel_t *v, float *sbuf, uint32_t len) {
 	int i, available;
 	float mag;
@@ -224,7 +232,7 @@ static void process_samples(vdl2_channel_t *v, float *sbuf, uint32_t len) {
 #if DEBUG
 		v->samplenum++;
 #endif
-		for(int k = 2; k > 0; k--) {
+		for(int k = INP_LPF_NPOLES; k > 0; k--) {
 			   v->re[k] =    v->re[k-1];
 			   v->im[k] =    v->im[k-1];
 			v->lp_re[k] = v->lp_re[k-1];
@@ -241,8 +249,8 @@ static void process_samples(vdl2_channel_t *v, float *sbuf, uint32_t len) {
 		}
 
 // lowpass IIR
-		chebyshev_lp(v->re, v->lp_re);
-		chebyshev_lp(v->im, v->lp_im);
+		v->lp_re[0] = chebyshev_lpf_2pole(v->re, v->lp_re);
+		v->lp_im[0] = chebyshev_lpf_2pole(v->im, v->lp_im);
 // decimation
 		v->cnt %= v->oversample;
 		if(v->cnt++ != 0)
@@ -320,6 +328,11 @@ void process_buf_short(unsigned char *buf, uint32_t len, void *ctx) {
 		process_samples(v->channels[i], sbuf, len);
 }
 
+void input_lpf_init(uint32_t sample_rate) {
+	assert(sample_rate != 0);
+	chebyshev_lpf_init((float)INP_LPF_CUTOFF_FREQ / (float)sample_rate, INP_LPF_RIPPLE_PERCENT, INP_LPF_NPOLES, &A, &B);
+}
+
 void sincosf_lut_init() {
 	for(uint32_t i = 0; i < 256; i++)
 		sincosf(2.0f * M_PI * (float)i / 256.0f, sin_lut + i, cos_lut + i);
@@ -329,7 +342,11 @@ void sincosf_lut_init() {
 
 vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample) {
 	vdl2_channel_t *v;
-	v = XCALLOC(1, sizeof(vdl2_channel_t));
+	v        = XCALLOC(1, sizeof(vdl2_channel_t));
+	v->re    = XCALLOC(INP_LPF_NPOLES+1, sizeof(float));
+	v->im    = XCALLOC(INP_LPF_NPOLES+1, sizeof(float));
+	v->lp_re = XCALLOC(INP_LPF_NPOLES+1, sizeof(float));
+	v->lp_im = XCALLOC(INP_LPF_NPOLES+1, sizeof(float));
 	v->bs = bitstream_init(BSLEN);
 	v->mag_nf = 2.0f;
 // Cast to signed first, because casting negative float to uint is not portable

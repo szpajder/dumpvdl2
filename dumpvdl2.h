@@ -159,10 +159,10 @@ enum input_types {
 enum sample_formats { SFMT_U8, SFMT_S16_LE, SFMT_UNDEF };
 
 typedef struct {
+	float *re, *im;
+	float *lp_re, *lp_im;
 	float mag_buf[BUFSIZE];
 	float mag_lpbuf[BUFSIZE];		// temporary for testing
-	float re[3], im[3];
-	float lp_re[3], lp_im[3];
 	float I[BUFSIZE];
 	float Q[BUFSIZE];
 	float pI, pQ;
@@ -213,6 +213,7 @@ void decode_vdl_frame(vdl2_channel_t *v);
 // demod.c
 vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample);
 void sincosf_lut_init();
+void input_lpf_init(uint32_t sample_rate);
 void process_buf_uchar_init();
 void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx);
 void process_buf_short_init();

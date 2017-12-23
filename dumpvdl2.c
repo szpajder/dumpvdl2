@@ -520,6 +520,7 @@ int main(int argc, char **argv) {
 	}
 	setup_signals();
 	sincosf_lut_init();
+	input_lpf_init(sample_rate);
 	switch(input) {
 	case INPUT_FILE:
 		process_file(&ctx, infile, sample_fmt);

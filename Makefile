@@ -21,6 +21,7 @@ BIN = dumpvdl2
 OBJ =	acars.o \
 	avlc.o \
 	bitstream.o \
+	chebyshev.o \
 	clnp.o \
 	cotp.o \
 	crc.o \
@@ -74,9 +75,11 @@ cotp.o: dumpvdl2.h tlv.h cotp.h icao.h
 
 decode.o: dumpvdl2.h
 
-demod.o: dumpvdl2.h
+demod.o: dumpvdl2.h chebyshev.h
 
 bitstream.o: dumpvdl2.h
+
+chebyshev.o: dumpvdl2.h chebyshev.h
 
 esis.o: dumpvdl2.h esis.h tlv.h
 
