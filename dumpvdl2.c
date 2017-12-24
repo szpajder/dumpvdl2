@@ -139,7 +139,7 @@ void usage() {
 	fprintf(stderr, "\t--msg-filter <filter_spec>\tMessage types to display (default: all) (\"--msg-filter help\" for details)\n");
 	fprintf(stderr, "\t--output-acars-pp <host:port>\tSend ACARS messages to Planeplotter over UDP/IP\n");
 #if USE_STATSD
-	fprintf(stderr, "\t--statsd <host>:<port>\tSend statistics to Etsy StatsD server <host>:<port> (default: disabled)\n");
+	fprintf(stderr, "\t--statsd <host>:<port>\t\tSend statistics to Etsy StatsD server <host>:<port> (default: disabled)\n");
 #endif
 #if WITH_RTLSDR
 	fprintf(stderr, "\nrtlsdr_options:\n");
