@@ -112,11 +112,11 @@ int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
 	}
 
 	/* DC Offset Mode */
-//	err = mir_sdr_DCoffsetIQimbalanceControl(1, 0);
-//	if (err!= mir_sdr_Success) {
-//		fprintf(stderr, "Unable to set DC and IQ correction, error : %d\n", err);
-//		_exit(1);
-//	}
+	err = mir_sdr_DCoffsetIQimbalanceControl(1, 0);
+	if (err!= mir_sdr_Success) {
+		fprintf(stderr, "Failed to set DC/IQ correction, error %d\n", err);
+		_exit(1);
+	}
 	/* Frequency correction */
 	err = mir_sdr_SetPpm(ppm_error);
 	if (err!= mir_sdr_Success) {
@@ -190,13 +190,13 @@ int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
 		}
 	}
 	/* Configure DC tracking in tuner */
-/*	err = mir_sdr_SetDcMode(4, 0);
+	err = mir_sdr_SetDcMode(4, 0);
 	err |= mir_sdr_SetDcTrackTime(63);
 	if (err) {
 		fprintf(stderr, "Set DC tracking failed, %d\n", err);
 		_exit(1);
 	}
-*/
+
 	fprintf(stderr, "Device #%d started\n", device);
 	// Wait for exit
 	while(!do_exit) {
