@@ -74,7 +74,7 @@ static void correlate_and_sync(vdl2_channel_t *v) {
  * (it's actually a second notch in the preamble, because it's always
  * deeper than the first one). Reject it if it's not deep enough. */
 	minv1 = avgmax;
-	for(i = 0; i < 7 * SPS; i++) {
+	for(i = 2 * SPS; i < 7 * SPS; i++) {
 		if(buf[i] < minv1) {
 			minv1 = buf[i];
 			min1 = i;
@@ -100,7 +100,7 @@ static void correlate_and_sync(vdl2_channel_t *v) {
 /* Allow some clock variance */
 	min_dist = min2 - min1;
 	if((float)min_dist > 1.1f * 4.0f * (float)SPS) {
-		debug_print("min_dist %d too high\n", min_dist);
+		debug_print("min_dist %d too high (min1=%d min2=%d)\n", min_dist, min1, min2);
 		return;
 	}
 	if((float)min_dist < 0.9f * 4.0f * (float)SPS) {
