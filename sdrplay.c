@@ -26,18 +26,33 @@
 
 static int initialized = 0;
 
+static int lnaGRtables[NUM_HW_TYPES][NUM_LNA_STATES] = {
+	[HW_RSP1]  = { 0, 24, 19, 43, 0, 0, 0, 0, 0, 0 },
+	[HW_RSP2]  = { 0, 10, 15, 21, 24, 34, 39, 45, 64, 0 },
+	[HW_RSP1A] = { 0, 6, 12, 18, 20, 26, 32, 38, 57, 62 }
+};
+static int num_lnaGRs[NUM_HW_TYPES] = {
+	[HW_RSP1] = 4,
+	[HW_RSP2] = 9,
+	[HW_RSP1A] = 10
+};
+static char *hw_descr[NUM_HW_TYPES] = {
+	[HW_RSP1] = "RSP1",
+	[HW_RSP2] = "RSP2",
+	[HW_RSP1A] = "RSP1A"
+};
+
 void sdrplay_init(vdl2_state_t *ctx, char *dev, char *antenna, uint32_t freq, float gain,
 int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
 	mir_sdr_ErrT err;
 	float ver;
 	struct sdrplay_t SDRPlay;
 	mir_sdr_DeviceT devices[4];
+	sdrplay_hw_type hw_type = HW_UNKNOWN;
 	unsigned int numDevs;
 	int devAvail = 0;
 	int device = atoi(dev);
-	// Add ctx to local sdrplay context
 	SDRPlay.context = ctx;
-	/* initialize LNA State to 0 */
 	SDRPlay.lna_state = 0;
 	SDRPlay.autogain = 0;
 	/* Check API version */
@@ -70,6 +85,16 @@ int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
 		fprintf(stderr, "ERROR: RSP selected #%d is not available.\n", device);
 		_exit(1);
 	}
+	if(devices[device].hwVer == 1) {
+		hw_type = HW_RSP1;
+	} else if(devices[device].hwVer == 2) {
+		hw_type = HW_RSP2;
+	} else if(devices[device].hwVer > 253) {
+		hw_type = HW_RSP1A;
+	} else {
+		fprintf(stderr, "Unsupported device: hardware version %d\n", devices[device].hwVer);
+		_exit(1);
+	}
 
 	// Select device
 	err = mir_sdr_SetDeviceIdx(device);
@@ -77,9 +102,12 @@ int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
 		fprintf(stderr, "Unable to select device #%d, error %d\n", device, err);
 		_exit(1);
 	}
-	fprintf(stderr, "Using SDRPlay RSP%d with API version %.3f\n", devices[device].hwVer, ver);
+	fprintf(stderr, "Using SDRPlay %s (serial %s) with API version %.3f\n",
+		hw_descr[hw_type],
+		(devices[device].SerNo != NULL ? devices[device].SerNo : "unknown"),
+		ver);
 	// Those options are only available on RSP2
-	if (devices[device].hwVer == 2) {
+	if (hw_type == HW_RSP2) {
 		/* Activate biast */
 		if (enable_biast) {
 			fprintf(stderr, "Bias-t activated\n");
@@ -124,37 +152,38 @@ int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
 		_exit(1);
 	}
 	fprintf(stderr, "Frequency correction set to %d ppm\n", ppm_error);
+
 	/* Allocate 16-bit interleaved I and Q buffers */
 	SDRPlay.sdrplay_data = XCALLOC(ASYNC_BUF_SIZE * ASYNC_BUF_NUMBER, sizeof(short));
 	ctx->sbuf = XCALLOC(ASYNC_BUF_SIZE, sizeof(float));
-	int gRdBsystem = 39;
+	int gRdBsystem = 0;
 	int gRdb = 0;
 	if (gain == MODES_AUTO_GAIN) {
 		SDRPlay.autogain = 1;
-		SDRPlay.lna_state = 3;
-		gRdb = 38;
+		SDRPlay.lna_state = 3;	// ?
+		gRdb = 38;		// ?
 	} else {
-		// Gain setting is gain reduction
-		// Found correct setting using lna Gr table
-		int lnaGRdBs[9] = { 0 , 10, 15, 21, 24, 34, 39, 45, 64 };
-		// Start from position 0
-		if ((gain < 0.f) || (gain > 102.f)) {
-			fprintf(stderr, "Gain setting must be in range <0; 102>\n" );
-			_exit(1);
-		}
-		SDRPlay.lna_state = 0;
-		// So convert gain to gain reduction
-		gain = 102.f - gain;
-		for (int i = 0; i <= MAX_LNA_STATE; i++) {
+		SDRPlay.lna_state = -1;
+		// Convert gain to gain reduction
+		// FIXME: the constant probably depends on hw_type due to different max gr of LNA
+		gRdBsystem = 102.f - gain;
+		// Find correct LNA state setting using LNA Gr table
+		// Start from lowest LNA Gr
+		for (int i = 0; i < num_lnaGRs[hw_type]; i++) {
 			// If selected gain reduction can be reach within current lnastate
-			if ((gain >= lnaGRdBs[i] + MIN_RSP_GAIN) && (gain <= lnaGRdBs[i] + MAX_RSP_GAIN)) {
-				gRdb = gain - lnaGRdBs[i];
+			if ((gRdBsystem >= lnaGRtables[hw_type][i] + MIN_RSP_GR) && (gRdBsystem <= lnaGRtables[hw_type][i] + MAX_RSP_GR)) {
+				gRdb = gRdBsystem - lnaGRtables[hw_type][i];
 				SDRPlay.lna_state = i;
-				fprintf(stderr, "Select gain reduction %d with LNA state %d\n", gRdb, SDRPlay.lna_state);
+				fprintf(stderr, "Selected IF gain reduction: %d dB, LNA gain reduction: %d dB (state=%d)\n",
+					gRdb, lnaGRtables[hw_type][i], SDRPlay.lna_state);
 				break;
 			}
 		}
-		SDRPlay.lna_state = 1;
+		// Bail out on impossible gain reduction setting
+		if(SDRPlay.lna_state < 0) {
+			fprintf(stderr, "Unable to set gain: out of range\n");
+			_exit(1);
+		}
 	}
 	// Initialize SDRPLAY ACC
 	SDRPlay.max_sig = MIN_GAIN_THRESH << ACC_SHIFT;
@@ -163,16 +192,17 @@ int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
 	// Setup data stream
 	debug_print("gainR=%d samp_rate=%f frequency=%f bwKHz=%d ifkHz=%d rspLNA=%d gRdBsystem=%d, grMode=%d, samplesperpacket=%d\n",
 		gRdb, SDRPLAY_RATE/1e6, freq/1e6, mir_sdr_BW_1_536, mir_sdr_IF_Zero, SDRPlay.lna_state,
-		gRdBsystem, mir_sdr_USE_SET_GR_ALT_MODE, SDRPlay.sdrplaySamplesPerPacket);
+		gRdBsystem, mir_sdr_USE_RSP_SET_GR, SDRPlay.sdrplaySamplesPerPacket);
 	err = mir_sdr_StreamInit (&gRdb, (double)SDRPLAY_RATE/1e6, (double)freq/1e6, mir_sdr_BW_1_536, mir_sdr_IF_Zero,
-		SDRPlay.lna_state, &gRdBsystem, mir_sdr_USE_SET_GR_ALT_MODE, &SDRPlay.sdrplaySamplesPerPacket,
+		SDRPlay.lna_state, &gRdBsystem, mir_sdr_USE_RSP_SET_GR, &SDRPlay.sdrplaySamplesPerPacket,
 		sdrplay_streamCallback, sdrplay_gainCallback, &SDRPlay);
 	if (err != mir_sdr_Success) {
 		fprintf(stderr, "Unable to initialize RSP stream, error %d\n", err);
 		_exit(1);
 	}
 	initialized = 1;
-	debug_print("Stream initialized with sdrplaySamplesPerPacket=%d gRdBsystem=%d\n", SDRPlay.sdrplaySamplesPerPacket, gRdBsystem);
+	fprintf(stderr, "Stream initialized (sdrplaySamplesPerPacket=%d gRdB=%d gRdBsystem=%d)\n",
+		SDRPlay.sdrplaySamplesPerPacket, gRdb, gRdBsystem);
 
 	/* Enable AGC control */
 	if (enable_agc != 0) {
@@ -264,26 +294,26 @@ int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, void 
 			if (SDRPlay->max_sig > MAX_GAIN_THRESH) {
 				// If max gain reached for this LNA state
 				// Increase LNA state
-				if (SDRPlay->gRdB >= MAX_RSP_GAIN) {
-					if (SDRPlay->lna_state < MAX_LNA_STATE) {
+				if (SDRPlay->gRdB >= MAX_RSP_GR) {
+					if (SDRPlay->lna_state < NUM_LNA_STATES - 1) {
 						SDRPlay->lna_state += 1;
 						// move gain to min as we move on higher lna state attenuation
 						// Absolute to force new gain
-						mir_sdr_RSP_SetGr(MIN_RSP_GAIN, SDRPlay->lna_state, 1, 0);
+						mir_sdr_RSP_SetGr(MIN_RSP_GR, SDRPlay->lna_state, 1, 0);
 					}
 				} else {
 					mir_sdr_RSP_SetGr (1, SDRPlay->lna_state, 0, 0);
 				}
 			}
 			if (SDRPlay->max_sig < MIN_GAIN_THRESH) {
-				if (SDRPlay->gRdB <= MIN_RSP_GAIN) {
+				if (SDRPlay->gRdB <= MIN_RSP_GR) {
 					// Only for positive LNA state
 					if (SDRPlay->lna_state > 0) {
 						// Decrease LNA gain
 						SDRPlay->lna_state -= 1;
 						// move gain to max as we move on lower lna state attenuation
 						// Absolute to force new gain
-						mir_sdr_RSP_SetGr(MAX_RSP_GAIN, SDRPlay->lna_state, 1, 0);
+						mir_sdr_RSP_SetGr(MAX_RSP_GR, SDRPlay->lna_state, 1, 0);
 					}
 				} else {
 					mir_sdr_RSP_SetGr (-1, SDRPlay->lna_state, 0, 0);

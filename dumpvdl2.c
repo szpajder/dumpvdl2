@@ -160,7 +160,7 @@ void usage() {
 #if WITH_SDRPLAY
 	fprintf(stderr, "\nsdrplay_options:\n");
 	fprintf(stderr, "\t--sdrplay <device_id>\t\tUse SDRPLAY RSP device with specified ID or serial number (default: ID=0)\n");
-	fprintf(stderr, "\t--gain <gain>\t\t\tSet gain (in decibels, from 0 to 104 dB)\n");
+	fprintf(stderr, "\t--gain <gain>\t\t\tSet gain (in decibels, from 0 to 102 dB)\n");
 	fprintf(stderr, "\t--correction <correction>\tSet freq correction (ppm)\n");
 	fprintf(stderr, "\t--centerfreq <center_frequency>\tSet center frequency in Hz (default: auto)\n");
 	fprintf(stderr, "\t--antenna <A/B>\t\t\tA - Antenna port A (default), B - antenna port B\n");

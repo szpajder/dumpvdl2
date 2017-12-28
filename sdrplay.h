@@ -22,9 +22,9 @@
 #define ACC_SHIFT		14		// sets time constant of averaging filter
 #define MIN_GAIN_THRESH		6		// increase gain if peaks below this
 #define MAX_GAIN_THRESH		9		// decrease gain if peaks above this
-#define MAX_RSP_GAIN		59
-#define MIN_RSP_GAIN		20		// Not extended range so limit is 20
-#define MAX_LNA_STATE		8		// 8 according to RSP2 documentation for frf < 420 Mhz
+#define MAX_RSP_GR		59
+#define MIN_RSP_GR		20		// Not extended range so limit is 20
+#define NUM_LNA_STATES		10		// Max value of all hw types (RSP1A in this case)
 #define ASYNC_BUF_NUMBER	15
 #define ASYNC_BUF_SIZE	 	(32*16384)	// 512k shorts
 #define MODES_AUTO_GAIN		-100		// Use automatic gain
@@ -47,6 +47,14 @@ struct sdrplay_t {
 	int data_index;
 	void *context;
 };
+
+typedef enum {
+	HW_UNKNOWN	= 0,
+	HW_RSP1		= 1,
+	HW_RSP2		= 2,
+	HW_RSP1A	= 3
+} sdrplay_hw_type;
+#define NUM_HW_TYPES 4
 
 // sdrplay basic methods
 void sdrplay_init(vdl2_state_t *ctx, char *dev, char *antenna, uint32_t freq, float gain, int ppm_error,
