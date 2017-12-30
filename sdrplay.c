@@ -195,6 +195,9 @@ int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
 	ctx->sbuf = XCALLOC(ASYNC_BUF_SIZE, sizeof(float));
 
 	int gRdBsystem = gr;
+	if(gr == SDR_AUTO_GAIN) {
+		gRdBsystem = MIN_IF_GR;		// too high, but we enable AGC, which shall correct this
+	}
 	int gRdb = 0;
 	int lna_state = -1;
 
@@ -237,16 +240,20 @@ int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
 	fprintf(stderr, "Stream initialized (sdrplaySamplesPerPacket=%d gRdB=%d gRdBsystem=%d)\n",
 		SDRPlay.sdrplaySamplesPerPacket, gRdb, gRdBsystem);
 
-	/* Enable AGC control */
+	// If no GR was specified, enable AGC with a default set point (unless configured otherwise)
+	if(gr == SDR_AUTO_GAIN && enable_agc == 0) {
+		enable_agc = DEFAULT_AGC_SETPOINT;
+	}
+	// Enable AGC control
 	if (enable_agc != 0) {
-		err = mir_sdr_AgcControl(mir_sdr_AGC_5HZ, enable_agc, 0, 0, 0, 0, 0); // 5 Hz?
+		err = mir_sdr_AgcControl(mir_sdr_AGC_5HZ, enable_agc, 0, 0, 0, 0, 0);
 		if (err!= mir_sdr_Success) {
 			fprintf(stderr, "Unable to activate AGC, error %d\n", err);
 			_exit(1);
 		}
 		fprintf(stderr, "AGC activated with set point at %d dBFS\n", enable_agc);
 	} else {
-		err = mir_sdr_AgcControl(mir_sdr_AGC_DISABLE, -30, 0, 0, 0, 0, 0);
+		err = mir_sdr_AgcControl(mir_sdr_AGC_DISABLE, DEFAULT_AGC_SETPOINT, 0, 0, 0, 0, 0);
 		if (err!= mir_sdr_Success) {
 			fprintf(stderr, "Unable to deactivate AGC, error %d\n", err);
 			_exit(1);

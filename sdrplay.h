@@ -22,6 +22,7 @@
 #define MAX_IF_GR		59		// Upper limit of IF GR
 #define MIN_IF_GR		20		// Lower limit of IF GR (in normal IF GR range)
 #define MIXER_GR		19
+#define DEFAULT_AGC_SETPOINT	-35
 #define ASYNC_BUF_NUMBER	15
 #define ASYNC_BUF_SIZE	 	(32*16384)	// 512k shorts
 #define SDRPLAY_OVERSAMPLE	20
