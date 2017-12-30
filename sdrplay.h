@@ -19,15 +19,11 @@
 #include <stdint.h>
 #include <signal.h>
 #include "dumpvdl2.h"
-#define ACC_SHIFT		14		// sets time constant of averaging filter
-#define MIN_GAIN_THRESH		6		// increase gain if peaks below this
-#define MAX_GAIN_THRESH		9		// decrease gain if peaks above this
 #define MAX_RSP_GR		59
 #define MIN_RSP_GR		20		// Not extended range so limit is 20
 #define NUM_LNA_STATES		10		// Max value of all hw types (RSP1A in this case)
 #define ASYNC_BUF_NUMBER	15
 #define ASYNC_BUF_SIZE	 	(32*16384)	// 512k shorts
-#define MODES_AUTO_GAIN		-100		// Use automatic gain
 #define SDRPLAY_OVERSAMPLE	20
 #define SDRPLAY_RATE (SYMBOL_RATE * SPS * SDRPLAY_OVERSAMPLE)
 
@@ -36,10 +32,8 @@ extern int do_exit;
 
 // sdrplay struct
 struct sdrplay_t {
-	int autogain;
 	int sdrplaySamplesPerPacket;
 	unsigned char *sdrplay_data;
-	int lna_state;
 	int gRdB;
 	int stop;
 	int max_sig;
