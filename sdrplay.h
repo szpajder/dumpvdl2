@@ -19,9 +19,9 @@
 #include <stdint.h>
 #include <signal.h>
 #include "dumpvdl2.h"
-#define MAX_RSP_GR		59
-#define MIN_RSP_GR		20		// Not extended range so limit is 20
-#define NUM_LNA_STATES		10		// Max value of all hw types (RSP1A in this case)
+#define MAX_IF_GR		59		// Upper limit of IF GR
+#define MIN_IF_GR		20		// Lower limit of IF GR (in normal IF GR range)
+#define MIXER_GR		19
 #define ASYNC_BUF_NUMBER	15
 #define ASYNC_BUF_SIZE	 	(32*16384)	// 512k shorts
 #define SDRPLAY_OVERSAMPLE	20
@@ -51,7 +51,7 @@ typedef enum {
 #define NUM_HW_TYPES 4
 
 // sdrplay basic methods
-void sdrplay_init(vdl2_state_t *ctx, char *dev, char *antenna, uint32_t freq, float gain, int ppm_error,
+void sdrplay_init(vdl2_state_t *ctx, char *dev, char *antenna, uint32_t freq, int gr, int ppm_error,
 	int enable_biast, int enable_notch_filter, int enable_agc);
 void sdrplay_cancel();
 void sdrplay_streamCallback(short *xi, short *xq, unsigned int firstSampleNum, int grChanged, int rfChanged,

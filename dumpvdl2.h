@@ -62,18 +62,25 @@
 #define __OPT_IQ_FILE			 5
 #define __OPT_OVERSAMPLE		 6
 #define __OPT_SAMPLE_FORMAT		 7
+
 #ifdef WITH_MIRISDR
 #define __OPT_MIRISDR			 8
 #define __OPT_HW_TYPE			 9
 #define __OPT_USB_MODE			10
 #endif
+
 #if WITH_RTLSDR
 #define __OPT_RTLSDR			11
 #endif
-#if WITH_MIRISDR || WITH_RTLSDR || WITH_SDRPLAY
+
+#if WITH_MIRISDR || WITH_RTLSDR
 #define __OPT_GAIN			12
+#endif
+
+#if WITH_MIRISDR || WITH_RTLSDR || WITH_SDRPLAY
 #define __OPT_CORRECTION		13
 #endif
+
 #if USE_STATSD
 #define __OPT_STATSD			14
 #endif
@@ -81,12 +88,14 @@
 #define __OPT_OUTPUT_ACARS_PP		16
 #define __OPT_UTC			17
 #define __OPT_RAW_FRAMES		18
+
 #ifdef WITH_SDRPLAY
 #define __OPT_SDRPLAY			80
 #define __OPT_ANTENNA			81
 #define __OPT_BIAST			82
 #define __OPT_NOTCH_FILTER		83
 #define __OPT_AGC			84
+#define __OPT_GR			85
 #endif
 
 #define __OPT_HELP			99

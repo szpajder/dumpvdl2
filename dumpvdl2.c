@@ -160,7 +160,7 @@ void usage() {
 #if WITH_SDRPLAY
 	fprintf(stderr, "\nsdrplay_options:\n");
 	fprintf(stderr, "\t--sdrplay <device_id>\t\tUse SDRPLAY RSP device with specified ID or serial number (default: ID=0)\n");
-	fprintf(stderr, "\t--gain <gain>\t\t\tSet gain (in decibels, from 0 to 102 dB)\n");
+	fprintf(stderr, "\t--gr <gr>\t\t\tSet system gain reduction (in decibels, -100 = enables AGC)\n");
 	fprintf(stderr, "\t--correction <correction>\tSet freq correction (ppm)\n");
 	fprintf(stderr, "\t--centerfreq <center_frequency>\tSet center frequency in Hz (default: auto)\n");
 	fprintf(stderr, "\t--antenna <A/B>\t\t\tA - Antenna port A (default), B - antenna port B\n");
@@ -293,6 +293,7 @@ int main(int argc, char **argv) {
 	int sdrplay_biast = 0;
 	int sdrplay_notch_filter = 0;
 	int sdrplay_agc = 0;
+	int sdrplay_gr = SDR_AUTO_GAIN;
 #endif
 	int opt;
 	struct option long_opts[] = {
@@ -318,12 +319,15 @@ int main(int argc, char **argv) {
 		{ "biast",		required_argument,	NULL,	__OPT_BIAST },
 		{ "notch-filter",	required_argument,	NULL,	__OPT_NOTCH_FILTER },
 		{ "agc",		required_argument,	NULL,	__OPT_AGC },
+		{ "gr",			required_argument,	NULL,	__OPT_GR },
 #endif
 #if WITH_RTLSDR
 		{ "rtlsdr",		required_argument,	NULL,	__OPT_RTLSDR },
 #endif
-#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY
+#if WITH_RTLSDR || WITH_MIRISDR
 		{ "gain",		required_argument,	NULL,	__OPT_GAIN },
+#endif
+#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY
 		{ "correction",		required_argument,	NULL,	__OPT_CORRECTION },
 #endif
 #if USE_STATSD
@@ -404,6 +408,9 @@ int main(int argc, char **argv) {
 		case __OPT_AGC:
 			sdrplay_agc = atoi(optarg);
 			break;
+		case __OPT_GR:
+			sdrplay_gr = atoi(optarg);
+			break;
 #endif
 #if WITH_RTLSDR
 		case __OPT_RTLSDR:
@@ -412,10 +419,12 @@ int main(int argc, char **argv) {
 			oversample = RTL_OVERSAMPLE;
 			break;
 #endif
-#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY
+#if WITH_RTLSDR || WITH_MIRISDR
 		case __OPT_GAIN:
 			gain = atof(optarg);
 			break;
+#endif
+#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY
 		case __OPT_CORRECTION:
 			correction = atoi(optarg);
 			break;
@@ -537,7 +546,7 @@ int main(int argc, char **argv) {
 #endif
 #if WITH_SDRPLAY
 	case INPUT_SDRPLAY:
-		sdrplay_init(&ctx, device, sdrplay_antenna, centerfreq, gain, correction, sdrplay_biast, sdrplay_notch_filter, sdrplay_agc);
+		sdrplay_init(&ctx, device, sdrplay_antenna, centerfreq, sdrplay_gr, correction, sdrplay_biast, sdrplay_notch_filter, sdrplay_agc);
 		break;
 #endif
 	default:

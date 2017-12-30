@@ -27,6 +27,7 @@
 
 static int initialized = 0;
 
+#define NUM_LNA_STATES	10	// Max number of LNA states of all hw types
 static int lnaGRtables[NUM_HW_TYPES][NUM_LNA_STATES] = {
 	[HW_RSP1]  = { 0, 24, 19, 43, 0, 0, 0, 0, 0, 0 },
 	[HW_RSP2]  = { 0, 10, 15, 21, 24, 34, 39, 45, 64, 0 },
@@ -115,7 +116,7 @@ dev_found:
 	return devIdx;
 }
 
-void sdrplay_init(vdl2_state_t *ctx, char *dev, char *antenna, uint32_t freq, float gain,
+void sdrplay_init(vdl2_state_t *ctx, char *dev, char *antenna, uint32_t freq, int gr,
 int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
 	mir_sdr_ErrT err;
 	float ver;
@@ -192,28 +193,31 @@ int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
 	/* Allocate 16-bit interleaved I and Q buffers */
 	SDRPlay.sdrplay_data = XCALLOC(ASYNC_BUF_SIZE * ASYNC_BUF_NUMBER, sizeof(short));
 	ctx->sbuf = XCALLOC(ASYNC_BUF_SIZE, sizeof(float));
-	int gRdBsystem = 0;
-	int gRdb = 0;
 
+	int gRdBsystem = gr;
+	int gRdb = 0;
 	int lna_state = -1;
-	// Convert gain to gain reduction
-	// FIXME: the constant probably depends on hw_type due to different max gr of LNA
-	gRdBsystem = 102.f - gain;
+
 	// Find correct LNA state setting using LNA Gr table
 	// Start from lowest LNA Gr
 	for (int i = 0; i < num_lnaGRs[hw_type]; i++) {
-		// If selected, gain reduction can be reach within current lnastate
-		if ((gRdBsystem >= lnaGRtables[hw_type][i] + MIN_RSP_GR) && (gRdBsystem <= lnaGRtables[hw_type][i] + MAX_RSP_GR)) {
+		// Can requested gain reduction be reached with this LNA Gr?
+		if ((gRdBsystem >= lnaGRtables[hw_type][i] + MIN_IF_GR) && (gRdBsystem <= lnaGRtables[hw_type][i] + MAX_IF_GR)) {
 			gRdb = gRdBsystem - lnaGRtables[hw_type][i];
 			lna_state = i;
-			fprintf(stderr, "Selected IF gain reduction: %d dB, LNA gain reduction: %d dB (state=%d)\n",
-				gRdb, lnaGRtables[hw_type][i], lna_state);
+			fprintf(stderr, "Selected IF gain reduction: %d dB, LNA gain reduction: %d dB\n",
+				gRdb, lnaGRtables[hw_type][i]);
 			break;
 		}
 	}
 	// Bail out on impossible gain reduction setting
 	if(lna_state < 0) {
-		fprintf(stderr, "Unable to set gain: out of range\n");
+		int min_gr = MIN_IF_GR + lnaGRtables[hw_type][0];
+		int max_gr = MAX_IF_GR + lnaGRtables[hw_type][num_lnaGRs[hw_type]-1];
+		if(hw_type == HW_RSP1A) {
+			max_gr += MIXER_GR;	// other RSP types have mixer GR included in the highest LNA state
+		}
+		fprintf(stderr, "Gain reduction value is out of range (min=%d max=%d)\n", min_gr, max_gr);
 		_exit(1);
 	}
 
