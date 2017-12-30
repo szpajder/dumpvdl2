@@ -193,6 +193,8 @@ Example: start the program with antenna A selection, bias-t off and notch filter
 
         ./dumpvdl2 --sdrplay 0 --gain 80 --antenna A --biast 0 --notch-filter 1 136975000
 
+Device serial number can be given instead of ID, the same way, as for RTLSDR receivers.
+
 ### Output options
 
 - Decoded messages are printed to standard output by default. You can direct them to a

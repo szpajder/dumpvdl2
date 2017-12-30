@@ -17,6 +17,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <assert.h>			// assert
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,70 +43,107 @@ static char *hw_descr[NUM_HW_TYPES] = {
 	[HW_RSP1A] = "RSP1A"
 };
 
+static int sdrplay_verbose_device_search(char * const dev, sdrplay_hw_type *hw_type) {
+	assert(hw_type != NULL);
+	*hw_type = HW_UNKNOWN;
+	int devIdx = -1;
+	if(dev == NULL) {
+		return -1;
+	}
+	mir_sdr_DeviceT devices[4];
+	unsigned int numDevs;
+	mir_sdr_ErrT err = mir_sdr_GetDevices(devices, &numDevs, 4);
+	if (err!= mir_sdr_Success) {
+		fprintf(stderr, "Unable to enumerate connected SDRPlay devices, error %d\n", err);
+		return -1;
+	}
+	if(numDevs < 1) {
+		fprintf(stderr, "No RSP devices found\n");
+		return -1;
+	}
+	fprintf(stderr, "\nFound %d device(s):\n", numDevs);
+	for(int i = 0; i < numDevs; i++) {
+		fprintf(stderr, "  %s %d:  SN: %s\n",
+			devices[i].devAvail ? "        " : "(in use)",
+			i,
+			devices[i].SerNo != NULL ? devices[i].SerNo : "<none>"
+		);
+	}
+	fprintf(stderr, "\n");
+	// Does the string look like a raw ID number?
+	char *endptr = dev;
+	long num = strtol(dev, &endptr, 0);
+	if (endptr[0] == '\0' && num >= 0 && num < numDevs) {
+		devIdx = (unsigned int)num;
+		goto dev_found;
+	}
+	// Does the string match a serial number?
+	for (int i = 0; i < numDevs; i++) {
+		if(devices[i].SerNo == NULL) {
+			continue;
+		} else if(strcmp(dev, devices[i].SerNo) != 0) {
+			continue;
+		}
+		devIdx = (unsigned int)i;
+		goto dev_found;
+	}
+	fprintf(stderr, "No matching devices found\n");
+	return -1;
+
+dev_found:
+	if (devices[devIdx].devAvail != 1) {
+		fprintf(stderr, "Selected device #%d is not available\n", devIdx);
+		return -1;
+	}
+	if(devices[devIdx].hwVer == 1) {
+		*hw_type = HW_RSP1;
+	} else if(devices[devIdx].hwVer == 2) {
+		*hw_type = HW_RSP2;
+	} else if(devices[devIdx].hwVer > 253) {
+		*hw_type = HW_RSP1A;
+	} else {
+		fprintf(stderr, "Selected device #%d is unsupported: hardware version %d\n",
+			devIdx, devices[devIdx].hwVer);
+		return -1;
+	}
+
+	fprintf(stderr, "Selected device #%d (type: %s SN: %s)\n",
+		devIdx,
+		hw_descr[*hw_type],
+		(devices[devIdx].SerNo != NULL ? devices[devIdx].SerNo : "unknown")
+	);
+	return devIdx;
+}
+
 void sdrplay_init(vdl2_state_t *ctx, char *dev, char *antenna, uint32_t freq, float gain,
 int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
 	mir_sdr_ErrT err;
 	float ver;
 	struct sdrplay_t SDRPlay;
-	mir_sdr_DeviceT devices[4];
 	sdrplay_hw_type hw_type = HW_UNKNOWN;
-	unsigned int numDevs;
-	int devAvail = 0;
-	int device = atoi(dev);
 	SDRPlay.context = ctx;
 	SDRPlay.lna_state = 0;
 	SDRPlay.autogain = 0;
+
 	/* Check API version */
 	err = mir_sdr_ApiVersion(&ver);
 	if ((err!= mir_sdr_Success) || (ver != MIR_SDR_API_VERSION)) {
 		fprintf(stderr, "Incorrect API version %f\n", ver);
 		_exit(1);
 	}
+	fprintf(stderr, "Using SDRPlay API version %.3f\n", ver);
 #if DEBUG
 	mir_sdr_DebugEnable(1);
 #endif
-	err = mir_sdr_GetDevices(&devices[0], &numDevs, 4);
-	if (err!= mir_sdr_Success) {
-		fprintf(stderr, "Unable to get connected devices, error %d\n", err);
+	int devIdx = sdrplay_verbose_device_search(dev, &hw_type);
+	if(devIdx < 0) {
 		_exit(1);
 	}
-	// Check how much devices are available
-	for(int i = 0; i < numDevs; i++) {
-		if(devices[i].devAvail == 1) {
-			devAvail++;
-		}
-	}
-	// No device
-	if (devAvail == 0) {
-		fprintf(stderr, "ERROR: No RSP devices available.\n");
+	err = mir_sdr_SetDeviceIdx(devIdx);
+	if (err != mir_sdr_Success) {
+		fprintf(stderr, "Unable to select device #%d, error %d\n", devIdx, err);
 		_exit(1);
 	}
-	// Check if selected device is available
-	if (devices[device].devAvail != 1) {
-		fprintf(stderr, "ERROR: RSP selected #%d is not available.\n", device);
-		_exit(1);
-	}
-	if(devices[device].hwVer == 1) {
-		hw_type = HW_RSP1;
-	} else if(devices[device].hwVer == 2) {
-		hw_type = HW_RSP2;
-	} else if(devices[device].hwVer > 253) {
-		hw_type = HW_RSP1A;
-	} else {
-		fprintf(stderr, "Unsupported device: hardware version %d\n", devices[device].hwVer);
-		_exit(1);
-	}
-
-	// Select device
-	err = mir_sdr_SetDeviceIdx(device);
-	if (err!= mir_sdr_Success) {
-		fprintf(stderr, "Unable to select device #%d, error %d\n", device, err);
-		_exit(1);
-	}
-	fprintf(stderr, "Using SDRPlay %s (serial %s) with API version %.3f\n",
-		hw_descr[hw_type],
-		(devices[device].SerNo != NULL ? devices[device].SerNo : "unknown"),
-		ver);
 	// Those options are only available on RSP2
 	if (hw_type == HW_RSP2) {
 		/* Activate biast */
@@ -227,7 +265,7 @@ int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
 		_exit(1);
 	}
 
-	fprintf(stderr, "Device #%d started\n", device);
+	fprintf(stderr, "Device #%d started\n", devIdx);
 	// Wait for exit
 	while(!do_exit) {
 		usleep(1000000);
