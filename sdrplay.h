@@ -16,9 +16,8 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <stdint.h>
-#include <signal.h>
-#include "dumpvdl2.h"
+#include <stdint.h>				// uint32_t
+#include "dumpvdl2.h"				// vdl2_state_t
 #define MAX_IF_GR		59		// Upper limit of IF GR
 #define MIN_IF_GR		20		// Lower limit of IF GR (in normal IF GR range)
 #define MIXER_GR		19
@@ -28,20 +27,13 @@
 #define SDRPLAY_OVERSAMPLE	20
 #define SDRPLAY_RATE (SYMBOL_RATE * SPS * SDRPLAY_OVERSAMPLE)
 
-// exit flag sighandler
 extern int do_exit;
 
-// sdrplay struct
-struct sdrplay_t {
-	int sdrplaySamplesPerPacket;
-	unsigned char *sdrplay_data;
-	int gRdB;
-	int stop;
-	int max_sig;
-	int max_sig_acc;
-	int data_index;
+typedef struct {
 	void *context;
-};
+	unsigned char *sdrplay_data;
+	int data_index;
+} sdrplay_ctx_t;
 
 typedef enum {
 	HW_UNKNOWN	= 0,
@@ -51,10 +43,7 @@ typedef enum {
 } sdrplay_hw_type;
 #define NUM_HW_TYPES 4
 
-// sdrplay basic methods
-void sdrplay_init(vdl2_state_t *ctx, char *dev, char *antenna, uint32_t freq, int gr, int ppm_error,
-	int enable_biast, int enable_notch_filter, int enable_agc);
+void sdrplay_init(vdl2_state_t * const ctx, char * const dev, char * const antenna,
+	uint32_t const freq, int const gr, int const ppm_error,	int const enable_biast,
+	int const enable_notch_filter, int enable_agc);
 void sdrplay_cancel();
-void sdrplay_streamCallback(short *xi, short *xq, unsigned int firstSampleNum, int grChanged, int rfChanged,
-	int fsChanged, unsigned int numSamples, unsigned int reset, void *cbContext);
-void sdrplay_gainCallback(unsigned int gRdB, unsigned int lnaGRdB, void *cbContext);

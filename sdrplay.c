@@ -17,13 +17,12 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <assert.h>			// assert
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
+#include <stdio.h>			// fprintf
+#include <stdlib.h>			// calloc, strtol
+#include <string.h>			// strcmp
+#include <unistd.h>			// _exit, usleep
+#include <mirsdrapi-rsp.h>
 #include "sdrplay.h"
-#include "mirsdrapi-rsp.h"
 
 static int initialized = 0;
 
@@ -44,8 +43,69 @@ static char *hw_descr[NUM_HW_TYPES] = {
 	[HW_RSP1A] = "RSP1A"
 };
 
+static void sdrplay_streamCallback(short *xi, short *xq, unsigned int firstSampleNum, int grChanged,
+int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, void *cbContext) {
+	int i, j, count1, count2, new_buf_flag;
+	int end, input_index;
+	sdrplay_ctx_t *SDRPlay = (sdrplay_ctx_t*)cbContext;
+	if(numSamples == 0) {
+		return;
+	}
+	unsigned char *dptr = SDRPlay->sdrplay_data;
+// data_index counts samples
+// numSamples counts I/Q sample pairs
+	end = SDRPlay->data_index + (numSamples * 2);
+	count2 = end - (ASYNC_BUF_SIZE * ASYNC_BUF_NUMBER);
+	if(count2 < 0) count2 = 0;			// count2 is samples wrapping around to start of buf
+	count1 = (numSamples * 2) - count2;		// count1 is samples fitting before the end of buf
+
+	// flag is set if this packet takes us past a multiple of ASYNC_BUF_SIZE
+	new_buf_flag = (SDRPlay->data_index / ASYNC_BUF_SIZE == end / ASYNC_BUF_SIZE ? 0 : 1);
+
+	// now interleave data from I/Q into circular buffer
+	input_index = 0;
+	for (i = 0, j = SDRPlay->data_index * sizeof(short); i < count1 / 2; i++) {
+		// Copy I low / high part
+		dptr[j++] = xi[input_index] & 0xff;
+		dptr[j++] = (xi[input_index] >> 8) & 0xff;
+		// Copy Q low / high part
+		dptr[j++] = xq[input_index] & 0xff;
+		dptr[j++] = (xq[input_index] >> 8 ) & 0xff;
+		input_index++;
+	}
+	SDRPlay->data_index += count1;
+
+	if(SDRPlay->data_index >= ASYNC_BUF_SIZE * ASYNC_BUF_NUMBER) {
+		SDRPlay->data_index = 0;	// pointer back to start of buffer */
+	}
+
+	// insert remaining samples at the start of the buffer
+	for (i = 0, j = SDRPlay->data_index * sizeof(short); i < count2 / 2; i++) {
+		// Copy I low / high part
+		dptr[j++] = xi[input_index] & 0xff;
+		dptr[j++] = (xi[input_index] >> 8) & 0xff;
+		// Copy Q low / high part
+		dptr[j++] = xq[input_index] & 0xff;
+		dptr[j++] = (xq[input_index] >> 8 ) & 0xff;
+		input_index++;
+	}
+	SDRPlay->data_index += count2;
+
+	// send ASYNC_BUF_SIZE samples downstream, if available
+	if(new_buf_flag) {
+		/* go back by one buffer length, then round down further to start of buffer */
+		end = SDRPlay->data_index - ASYNC_BUF_SIZE;
+		if(end < 0) end += ASYNC_BUF_SIZE * ASYNC_BUF_NUMBER;
+		end -= end % ASYNC_BUF_SIZE;
+		process_buf_short(&SDRPlay->sdrplay_data[end * sizeof(short)], ASYNC_BUF_SIZE * sizeof(short), SDRPlay->context);
+	}
+}
+
+static void sdrplay_gainCallback(unsigned int gRdB, unsigned int lnaGRdB, void *cbContext) {
+	debug_print("Gain change: gRdb=%d lnaGRdB=%d \n", gRdB, lnaGRdB);
+}
+
 static int sdrplay_verbose_device_search(char * const dev, sdrplay_hw_type *hw_type) {
-	assert(hw_type != NULL);
 	*hw_type = HW_UNKNOWN;
 	int devIdx = -1;
 	if(dev == NULL) {
@@ -53,8 +113,9 @@ static int sdrplay_verbose_device_search(char * const dev, sdrplay_hw_type *hw_t
 	}
 	mir_sdr_DeviceT devices[4];
 	unsigned int numDevs;
+
 	mir_sdr_ErrT err = mir_sdr_GetDevices(devices, &numDevs, 4);
-	if (err!= mir_sdr_Success) {
+	if(err != mir_sdr_Success) {
 		fprintf(stderr, "Unable to enumerate connected SDRPlay devices, error %d\n", err);
 		return -1;
 	}
@@ -62,6 +123,7 @@ static int sdrplay_verbose_device_search(char * const dev, sdrplay_hw_type *hw_t
 		fprintf(stderr, "No RSP devices found\n");
 		return -1;
 	}
+
 	fprintf(stderr, "\nFound %d device(s):\n", numDevs);
 	for(int i = 0; i < numDevs; i++) {
 		fprintf(stderr, "  %s %d:  SN: %s\n",
@@ -71,13 +133,15 @@ static int sdrplay_verbose_device_search(char * const dev, sdrplay_hw_type *hw_t
 		);
 	}
 	fprintf(stderr, "\n");
+
 	// Does the string look like a raw ID number?
 	char *endptr = dev;
 	long num = strtol(dev, &endptr, 0);
-	if (endptr[0] == '\0' && num >= 0 && num < numDevs) {
+	if(endptr[0] == '\0' && num >= 0 && num < numDevs) {
 		devIdx = (unsigned int)num;
 		goto dev_found;
 	}
+
 	// Does the string match a serial number?
 	for (int i = 0; i < numDevs; i++) {
 		if(devices[i].SerNo == NULL) {
@@ -88,11 +152,12 @@ static int sdrplay_verbose_device_search(char * const dev, sdrplay_hw_type *hw_t
 		devIdx = (unsigned int)i;
 		goto dev_found;
 	}
+
 	fprintf(stderr, "No matching devices found\n");
 	return -1;
 
 dev_found:
-	if (devices[devIdx].devAvail != 1) {
+	if(devices[devIdx].devAvail != 1) {
 		fprintf(stderr, "Selected device #%d is not available\n", devIdx);
 		return -1;
 	}
@@ -116,17 +181,17 @@ dev_found:
 	return devIdx;
 }
 
-void sdrplay_init(vdl2_state_t *ctx, char *dev, char *antenna, uint32_t freq, int gr,
-int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
+void sdrplay_init(vdl2_state_t * const ctx, char * const dev, char * const antenna,
+uint32_t const freq, int const gr, int const ppm_error, int const enable_biast,
+int const enable_notch_filter, int enable_agc) {
 	mir_sdr_ErrT err;
 	float ver;
-	struct sdrplay_t SDRPlay;
+	sdrplay_ctx_t SDRPlay;
 	sdrplay_hw_type hw_type = HW_UNKNOWN;
 	SDRPlay.context = ctx;
 
-	/* Check API version */
 	err = mir_sdr_ApiVersion(&ver);
-	if ((err!= mir_sdr_Success) || (ver != MIR_SDR_API_VERSION)) {
+	if((err != mir_sdr_Success) || (ver != MIR_SDR_API_VERSION)) {
 		fprintf(stderr, "Incorrect API version %f\n", ver);
 		_exit(1);
 	}
@@ -139,73 +204,73 @@ int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
 		_exit(1);
 	}
 	err = mir_sdr_SetDeviceIdx(devIdx);
-	if (err != mir_sdr_Success) {
+	if(err != mir_sdr_Success) {
 		fprintf(stderr, "Unable to select device #%d, error %d\n", devIdx, err);
 		_exit(1);
 	}
-	// Those options are only available on RSP2
-	if (hw_type == HW_RSP2) {
-		/* Activate biast */
-		if (enable_biast) {
-			fprintf(stderr, "Bias-t activated\n");
+
+	if(hw_type == HW_RSP2) {
+		if(enable_biast) {
+			fprintf(stderr, "Bias-T activated\n");
 			err = mir_sdr_RSPII_BiasTControl(1);
-			if (err!= mir_sdr_Success) {
-				fprintf(stderr, "Unable to activate bias-t, error : %d\n", err);
+			if(err != mir_sdr_Success) {
+				fprintf(stderr, "Unable to activate Bias-T, error %d\n", err);
 				_exit(1);
 			}
 		}
-		/* Activate antenna */
-		if (strcmp(antenna, "A") == 0) {
+
+		if(strcmp(antenna, "A") == 0) {
 			err = mir_sdr_RSPII_AntennaControl(mir_sdr_RSPII_ANTENNA_A);
-		} else {
+		} else if(strcmp(antenna, "B") == 0) {
 			err = mir_sdr_RSPII_AntennaControl(mir_sdr_RSPII_ANTENNA_B);
-		}
-		if (err!= mir_sdr_Success) {
-			fprintf(stderr, "Unable to select antenna %s, error : %d\n", antenna, err);
+		} else {
+			fprintf(stderr, "Invalid antenna port specified\n");
 			_exit(1);
 		}
-		fprintf(stderr, "Antenna %s activated\n", antenna);
-		// Activate notch filter ?
-		if (enable_notch_filter) {
-			fprintf(stderr, "Notch AM/FM filter activated\n");
+		if(err != mir_sdr_Success) {
+			fprintf(stderr, "Unable to select antenna port %s, error %d\n", antenna, err);
+			_exit(1);
+		}
+		fprintf(stderr, "Using antenna port %s\n", antenna);
+
+		if(enable_notch_filter) {
+			fprintf(stderr, "AM/FM notch filter enabled\n");
 			err = mir_sdr_RSPII_RfNotchEnable(1);
-			if (err!= mir_sdr_Success) {
-				fprintf(stderr, "Unable to activate notch filter, error : %d\n", err);
+			if(err != mir_sdr_Success) {
+				fprintf(stderr, "Unable to activate notch filter, error %d\n", err);
 				_exit(1);
 			}
 		}
 	}
 
-	/* DC Offset Mode */
 	err = mir_sdr_DCoffsetIQimbalanceControl(1, 0);
-	if (err!= mir_sdr_Success) {
+	if(err != mir_sdr_Success) {
 		fprintf(stderr, "Failed to set DC/IQ correction, error %d\n", err);
 		_exit(1);
 	}
-	/* Frequency correction */
+
 	err = mir_sdr_SetPpm(ppm_error);
-	if (err!= mir_sdr_Success) {
+	if(err != mir_sdr_Success) {
 		fprintf(stderr, "Unable to set frequency correction, error %d\n", err);
 		_exit(1);
 	}
 	fprintf(stderr, "Frequency correction set to %d ppm\n", ppm_error);
 
-	/* Allocate 16-bit interleaved I and Q buffers */
 	SDRPlay.sdrplay_data = XCALLOC(ASYNC_BUF_SIZE * ASYNC_BUF_NUMBER, sizeof(short));
 	ctx->sbuf = XCALLOC(ASYNC_BUF_SIZE, sizeof(float));
 
 	int gRdBsystem = gr;
 	if(gr == SDR_AUTO_GAIN) {
-		gRdBsystem = MIN_IF_GR;		// too high, but we enable AGC, which shall correct this
+		gRdBsystem = MIN_IF_GR;		// too low, but we enable AGC, which shall correct this
 	}
 	int gRdb = 0;
 	int lna_state = -1;
 
-	// Find correct LNA state setting using LNA Gr table
+	// Find the correct LNA state setting using LNA Gr table
 	// Start from lowest LNA Gr
 	for (int i = 0; i < num_lnaGRs[hw_type]; i++) {
 		// Can requested gain reduction be reached with this LNA Gr?
-		if ((gRdBsystem >= lnaGRtables[hw_type][i] + MIN_IF_GR) && (gRdBsystem <= lnaGRtables[hw_type][i] + MAX_IF_GR)) {
+		if((gRdBsystem >= lnaGRtables[hw_type][i] + MIN_IF_GR) && (gRdBsystem <= lnaGRtables[hw_type][i] + MAX_IF_GR)) {
 			gRdb = gRdBsystem - lnaGRtables[hw_type][i];
 			lna_state = i;
 			fprintf(stderr, "Selected IF gain reduction: %d dB, LNA gain reduction: %d dB\n",
@@ -225,50 +290,45 @@ int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
 	}
 
 	SDRPlay.data_index = 0;
-	// Setup data stream
-	debug_print("gainR=%d samp_rate=%f frequency=%f bwKHz=%d ifkHz=%d rspLNA=%d gRdBsystem=%d, grMode=%d, samplesperpacket=%d\n",
-		gRdb, SDRPLAY_RATE/1e6, freq/1e6, mir_sdr_BW_1_536, mir_sdr_IF_Zero, lna_state,
-		gRdBsystem, mir_sdr_USE_RSP_SET_GR, SDRPlay.sdrplaySamplesPerPacket);
+	int sdrplaySamplesPerPacket = 0;
+
 	err = mir_sdr_StreamInit (&gRdb, (double)SDRPLAY_RATE/1e6, (double)freq/1e6, mir_sdr_BW_1_536, mir_sdr_IF_Zero,
-		lna_state, &gRdBsystem, mir_sdr_USE_RSP_SET_GR, &SDRPlay.sdrplaySamplesPerPacket,
+		lna_state, &gRdBsystem, mir_sdr_USE_RSP_SET_GR, &sdrplaySamplesPerPacket,
 		sdrplay_streamCallback, sdrplay_gainCallback, &SDRPlay);
-	if (err != mir_sdr_Success) {
+	if(err != mir_sdr_Success) {
 		fprintf(stderr, "Unable to initialize RSP stream, error %d\n", err);
 		_exit(1);
 	}
 	initialized = 1;
-	fprintf(stderr, "Stream initialized (sdrplaySamplesPerPacket=%d gRdB=%d gRdBsystem=%d)\n",
-		SDRPlay.sdrplaySamplesPerPacket, gRdb, gRdBsystem);
+	debug_print("Stream initialized (sdrplaySamplesPerPacket=%d gRdB=%d gRdBsystem=%d)\n",
+		sdrplaySamplesPerPacket, gRdb, gRdBsystem);
 
-	// If no GR was specified, enable AGC with a default set point (unless configured otherwise)
+	// If no GR has been specified, enable AGC with a default set point (unless configured otherwise)
 	if(gr == SDR_AUTO_GAIN && enable_agc == 0) {
 		enable_agc = DEFAULT_AGC_SETPOINT;
 	}
-	// Enable AGC control
-	if (enable_agc != 0) {
+
+	if(enable_agc != 0) {
 		err = mir_sdr_AgcControl(mir_sdr_AGC_5HZ, enable_agc, 0, 0, 0, 0, 0);
-		if (err!= mir_sdr_Success) {
+		if(err != mir_sdr_Success) {
 			fprintf(stderr, "Unable to activate AGC, error %d\n", err);
 			_exit(1);
 		}
 		fprintf(stderr, "AGC activated with set point at %d dBFS\n", enable_agc);
 	} else {
 		err = mir_sdr_AgcControl(mir_sdr_AGC_DISABLE, DEFAULT_AGC_SETPOINT, 0, 0, 0, 0, 0);
-		if (err!= mir_sdr_Success) {
+		if(err != mir_sdr_Success) {
 			fprintf(stderr, "Unable to deactivate AGC, error %d\n", err);
 			_exit(1);
 		}
 	}
-	/* Configure DC tracking in tuner */
-	err = mir_sdr_SetDcMode(4, 0);
-	err |= mir_sdr_SetDcTrackTime(63);
-	if (err) {
+
+	if(mir_sdr_SetDcMode(4, 0) != mir_sdr_Success || mir_sdr_SetDcTrackTime(63) != mir_sdr_Success) {
 		fprintf(stderr, "Set DC tracking failed, %d\n", err);
 		_exit(1);
 	}
 
 	fprintf(stderr, "Device #%d started\n", devIdx);
-	// Wait for exit
 	while(!do_exit) {
 		usleep(1000000);
 	}
@@ -276,74 +336,7 @@ int ppm_error, int enable_biast, int enable_notch_filter, int enable_agc) {
 
 void sdrplay_cancel() {
 	if(initialized) {
-// Deinitialize stream
-		mir_sdr_Uninit();
-// Release device
+		mir_sdr_StreamUninit();
 		mir_sdr_ReleaseDeviceIdx();
 	}
-}
-
-void sdrplay_streamCallback(short *xi, short *xq, unsigned int firstSampleNum, int grChanged,
-int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, void *cbContext) {
-	int i, j, count1, count2, new_buf_flag;
-	int end, input_index;
-	struct sdrplay_t *SDRPlay = (struct sdrplay_t*)cbContext;
-	if (numSamples == 0) {
-		return;
-	}
-	unsigned char *dptr = SDRPlay->sdrplay_data;
-// data_index is in samples
-// numSamples is I/Q sample pairs
-	end = SDRPlay->data_index + (numSamples * 2);
-	count2 = end - (ASYNC_BUF_SIZE * ASYNC_BUF_NUMBER);
-	if (count2 < 0) count2 = 0;			// count2 is samples wrapping around to start of buf
-	count1 = (numSamples * 2) - count2;		// count1 is samples fitting before the end of buf
-
-	// flag is set if this packet takes us past a multiple of ASYNC_BUF_SIZE
-	new_buf_flag = (SDRPlay->data_index / ASYNC_BUF_SIZE == end / ASYNC_BUF_SIZE ? 0 : 1);
-
-	// now interleave data from I/Q into circular buffer
-	input_index = 0;
-
-	for (i = 0, j = SDRPlay->data_index * sizeof(short); i < count1 / 2; i++) {
-		// Copy I low / high part
-		dptr[j++] = xi[input_index] & 0xff;
-		dptr[j++] = (xi[input_index] >> 8) & 0xff;
-		// Copy Q low / high part
-		dptr[j++] = xq[input_index] & 0xff;
-		dptr[j++] = (xq[input_index] >> 8 ) & 0xff;
-		input_index++;
-	}
-	SDRPlay->data_index += count1;
-
-	if (SDRPlay->data_index >= ASYNC_BUF_SIZE * ASYNC_BUF_NUMBER) {
-		SDRPlay->data_index = 0;	// pointer back to start of buffer */
-	}
-
-	// insert remaining samples at the start of the buffer
-	for (i = 0, j = SDRPlay->data_index * sizeof(short); i < count2 / 2; i++) {
-		// Copy I low / high part
-		dptr[j++] = xi[input_index] & 0xff;
-		dptr[j++] = (xi[input_index] >> 8) & 0xff;
-		// Copy Q low / high part
-		dptr[j++] = xq[input_index] & 0xff;
-		dptr[j++] = (xq[input_index] >> 8 ) & 0xff;
-		input_index++;
-	}
-	SDRPlay->data_index += count2;
-
-	// send ASYNC_BUF_SIZE samples downstream, if available
-	if (new_buf_flag) {
-		/* go back by one buffer length, then round down further to start of buffer */
-		end = SDRPlay->data_index - ASYNC_BUF_SIZE;
-		if(end < 0) end += ASYNC_BUF_SIZE * ASYNC_BUF_NUMBER;
-		end -= end % ASYNC_BUF_SIZE;
-		process_buf_short(&SDRPlay->sdrplay_data[end * sizeof(short)], ASYNC_BUF_SIZE * sizeof(short), SDRPlay->context);
-	}
-}
-
-void sdrplay_gainCallback(unsigned int gRdB, unsigned int lnaGRdB, void *cbContext) {
-	struct sdrplay_t *SDRPlay = (struct sdrplay_t*)cbContext;
-	SDRPlay->gRdB = gRdB;
-	debug_print("Gain callback event gRdb=%d lnaGRdB=%d \n", gRdB, lnaGRdB);
 }
