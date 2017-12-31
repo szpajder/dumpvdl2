@@ -159,14 +159,14 @@ void usage() {
 #endif
 #if WITH_SDRPLAY
 	fprintf(stderr, "\nsdrplay_options:\n");
-	fprintf(stderr, "\t--sdrplay <device_id>\t\tUse SDRPLAY RSP device with specified ID or serial number (default: ID=0)\n");
-	fprintf(stderr, "\t--gr <gr>\t\t\tSet system gain reduction (in decibels, -100 = enables AGC)\n");
+	fprintf(stderr, "\t--sdrplay <device_id>\t\tUse SDRPlay RSP device with specified ID or serial number (default: ID=0)\n");
+	fprintf(stderr, "\t--gr <gr>\t\t\tSet system gain reduction, in dB, positive (-100 = enables AGC)\n");
+	fprintf(stderr, "\t--agc <set point in dBFS>\tAutomatic Gain Control set point in dBFS, negative (default: 0 = AGC off)\n");
 	fprintf(stderr, "\t--correction <correction>\tSet freq correction (ppm)\n");
 	fprintf(stderr, "\t--centerfreq <center_frequency>\tSet center frequency in Hz (default: auto)\n");
-	fprintf(stderr, "\t--antenna <A/B>\t\t\tA - Antenna port A (default), B - antenna port B\n");
-	fprintf(stderr, "\t--biast <power>\t\t\t0 - BiasT off (default), 1 - BiasT on\n");
-	fprintf(stderr, "\t--notch-filter <power>\t\t0 - Notch AM/FM off (default), 1 - Notch AM/FM on\n");
-	fprintf(stderr, "\t--agc <set point in dBfs>\t0 - Automatic Gain Control off (default),  set point in dBfs ( ex : -30 )\n");
+	fprintf(stderr, "\t--antenna <A/B>\t\t\tRSP2 antenna port selection (default: A)\n");
+	fprintf(stderr, "\t--biast <0/1>\t\t\tRSP2 Bias-T control: 0 - off (default), 1 - on\n");
+	fprintf(stderr, "\t--notch-filter <0/1>\t\tRSP2 AM/FM notch filter control: 0 - off (default), 1 - on\n");
 #endif
 	fprintf(stderr, "\nfile_options:\n");
 	fprintf(stderr, "\t--iq-file <input_file>\t\tRead I/Q samples from file\n");
