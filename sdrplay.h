@@ -16,42 +16,34 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <stdint.h>
-#include <signal.h>
-#include "dumpvdl2.h"
-#define ACC_SHIFT		14		// sets time constant of averaging filter
-#define MIN_GAIN_THRESH		6		// increase gain if peaks below this
-#define MAX_GAIN_THRESH		9		// decrease gain if peaks above this
-#define MAX_RSP_GAIN		59
-#define MIN_RSP_GAIN		20		// Not extended range so limit is 20
-#define MAX_LNA_STATE		8		// 8 according to RSP2 documentation for frf < 420 Mhz
+#include <stdint.h>				// uint32_t
+#include "dumpvdl2.h"				// vdl2_state_t
+#define MAX_IF_GR		59		// Upper limit of IF GR
+#define MIN_IF_GR		20		// Lower limit of IF GR (in normal IF GR range)
+#define MIXER_GR		19
+#define DEFAULT_AGC_SETPOINT	-35
 #define ASYNC_BUF_NUMBER	15
-#define ASYNC_BUF_SIZE	 	(32*16384)	// 512k
-#define MODES_AUTO_GAIN		-100		// Use automatic gain
+#define ASYNC_BUF_SIZE	 	(32*16384)	// 512k shorts
 #define SDRPLAY_OVERSAMPLE	20
 #define SDRPLAY_RATE (SYMBOL_RATE * SPS * SDRPLAY_OVERSAMPLE)
 
-// exit flag sighandler
 extern int do_exit;
 
-// sdrplay struct
-struct sdrplay_t {
-	int autogain;
-	int sdrplaySamplesPerPacket;
-	unsigned char *sdrplay_data;
-	int lna_state;
-	int gRdB;
-	int stop;
-	int max_sig;
-	int max_sig_acc;
-	unsigned int data_index;
+typedef struct {
 	void *context;
-};
+	unsigned char *sdrplay_data;
+	int data_index;
+} sdrplay_ctx_t;
 
-// sdrplay basic methods
-void sdrplay_init(vdl2_state_t *ctx, char *dev, char *antenna, uint32_t freq, float gain, int ppm_error,
-	int enable_biast, int enable_notch_filter, int enable_agc);
+typedef enum {
+	HW_UNKNOWN	= 0,
+	HW_RSP1		= 1,
+	HW_RSP2		= 2,
+	HW_RSP1A	= 3
+} sdrplay_hw_type;
+#define NUM_HW_TYPES 4
+
+void sdrplay_init(vdl2_state_t * const ctx, char * const dev, char * const antenna,
+	uint32_t const freq, int const gr, int const ppm_error,	int const enable_biast,
+	int const enable_notch_filter, int enable_agc);
 void sdrplay_cancel();
-void sdrplay_streamCallback(short *xi, short *xq, unsigned int firstSampleNum, int grChanged, int rfChanged,
-	int fsChanged, unsigned int numSamples, unsigned int reset, void *cbContext);
-void sdrplay_gainCallback(unsigned int gRdB, unsigned int lnaGRdB, void *cbContext);

@@ -139,7 +139,7 @@ void usage() {
 	fprintf(stderr, "\t--msg-filter <filter_spec>\tMessage types to display (default: all) (\"--msg-filter help\" for details)\n");
 	fprintf(stderr, "\t--output-acars-pp <host:port>\tSend ACARS messages to Planeplotter over UDP/IP\n");
 #if USE_STATSD
-	fprintf(stderr, "\t--statsd <host>:<port>\tSend statistics to Etsy StatsD server <host>:<port> (default: disabled)\n");
+	fprintf(stderr, "\t--statsd <host>:<port>\t\tSend statistics to Etsy StatsD server <host>:<port> (default: disabled)\n");
 #endif
 #if WITH_RTLSDR
 	fprintf(stderr, "\nrtlsdr_options:\n");
@@ -159,14 +159,14 @@ void usage() {
 #endif
 #if WITH_SDRPLAY
 	fprintf(stderr, "\nsdrplay_options:\n");
-	fprintf(stderr, "\t--sdrplay <device_id>\t\tUse SDRPLAY RSP device with specified ID or serial number (default: ID=0)\n");
-	fprintf(stderr, "\t--gain <gain>\t\t\tSet gain (in decibels, from 0 to 104 dB)\n");
+	fprintf(stderr, "\t--sdrplay <device_id>\t\tUse SDRPlay RSP device with specified ID or serial number (default: ID=0)\n");
+	fprintf(stderr, "\t--gr <gr>\t\t\tSet system gain reduction, in dB, positive (-100 = enables AGC)\n");
+	fprintf(stderr, "\t--agc <set point in dBFS>\tAutomatic Gain Control set point in dBFS, negative (default: 0 = AGC off)\n");
 	fprintf(stderr, "\t--correction <correction>\tSet freq correction (ppm)\n");
 	fprintf(stderr, "\t--centerfreq <center_frequency>\tSet center frequency in Hz (default: auto)\n");
-	fprintf(stderr, "\t--antenna <A/B>\t\t\tA - Antenna port A (default), B - antenna port B\n");
-	fprintf(stderr, "\t--biast <power>\t\t\t0 - BiasT off (default), 1 - BiasT on\n");
-	fprintf(stderr, "\t--notch-filter <power>\t\t0 - Notch AM/FM off (default), 1 - Notch AM/FM on\n");
-	fprintf(stderr, "\t--agc <set point in dBfs>\t0 - Automatic Gain Control off (default),  set point in dBfs ( ex : -30 )\n");
+	fprintf(stderr, "\t--antenna <A/B>\t\t\tRSP2 antenna port selection (default: A)\n");
+	fprintf(stderr, "\t--biast <0/1>\t\t\tRSP2 Bias-T control: 0 - off (default), 1 - on\n");
+	fprintf(stderr, "\t--notch-filter <0/1>\t\tRSP2 AM/FM notch filter control: 0 - off (default), 1 - on\n");
 #endif
 	fprintf(stderr, "\nfile_options:\n");
 	fprintf(stderr, "\t--iq-file <input_file>\t\tRead I/Q samples from file\n");
@@ -293,6 +293,7 @@ int main(int argc, char **argv) {
 	int sdrplay_biast = 0;
 	int sdrplay_notch_filter = 0;
 	int sdrplay_agc = 0;
+	int sdrplay_gr = SDR_AUTO_GAIN;
 #endif
 	int opt;
 	struct option long_opts[] = {
@@ -318,12 +319,15 @@ int main(int argc, char **argv) {
 		{ "biast",		required_argument,	NULL,	__OPT_BIAST },
 		{ "notch-filter",	required_argument,	NULL,	__OPT_NOTCH_FILTER },
 		{ "agc",		required_argument,	NULL,	__OPT_AGC },
+		{ "gr",			required_argument,	NULL,	__OPT_GR },
 #endif
 #if WITH_RTLSDR
 		{ "rtlsdr",		required_argument,	NULL,	__OPT_RTLSDR },
 #endif
-#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY
+#if WITH_RTLSDR || WITH_MIRISDR
 		{ "gain",		required_argument,	NULL,	__OPT_GAIN },
+#endif
+#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY
 		{ "correction",		required_argument,	NULL,	__OPT_CORRECTION },
 #endif
 #if USE_STATSD
@@ -404,6 +408,9 @@ int main(int argc, char **argv) {
 		case __OPT_AGC:
 			sdrplay_agc = atoi(optarg);
 			break;
+		case __OPT_GR:
+			sdrplay_gr = atoi(optarg);
+			break;
 #endif
 #if WITH_RTLSDR
 		case __OPT_RTLSDR:
@@ -412,10 +419,12 @@ int main(int argc, char **argv) {
 			oversample = RTL_OVERSAMPLE;
 			break;
 #endif
-#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY
+#if WITH_RTLSDR || WITH_MIRISDR
 		case __OPT_GAIN:
 			gain = atof(optarg);
 			break;
+#endif
+#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY
 		case __OPT_CORRECTION:
 			correction = atoi(optarg);
 			break;
@@ -498,12 +507,15 @@ int main(int argc, char **argv) {
 #if USE_STATSD
 	if(statsd_enabled && input != INPUT_FILE) {
 		if(statsd_initialize(statsd_addr) < 0) {
-				fprintf(stderr, "Failed to initialize statsd client\n");
-				_exit(4);
+				fprintf(stderr, "Failed to initialize statsd client - disabling\n");
+				free(statsd_addr);
+				statsd_enabled = 0;
+		} else {
+			for(int i = 0; i < num_channels; i++)
+				statsd_initialize_counters(freqs[i]);
 		}
-		for(int i = 0; i < num_channels; i++)
-			statsd_initialize_counters(freqs[i]);
 	} else {
+		free(statsd_addr);
 		statsd_enabled = 0;
 	}
 #endif
@@ -512,11 +524,12 @@ int main(int argc, char **argv) {
 		_exit(4);
 	}
 	if(pp_addr && init_pp(pp_addr) < 0) {
-		fprintf(stderr, "Failed to initialize output socket to Planeplotter - aborting\n");
-		_exit(4);
+		fprintf(stderr, "Failed to initialize output socket to Planeplotter - disabling it\n");
+		free(pp_addr);
 	}
 	setup_signals();
 	sincosf_lut_init();
+	input_lpf_init(sample_rate);
 	switch(input) {
 	case INPUT_FILE:
 		process_file(&ctx, infile, sample_fmt);
@@ -533,7 +546,7 @@ int main(int argc, char **argv) {
 #endif
 #if WITH_SDRPLAY
 	case INPUT_SDRPLAY:
-		sdrplay_init(&ctx, device, sdrplay_antenna, centerfreq, gain, correction, sdrplay_biast, sdrplay_notch_filter, sdrplay_agc);
+		sdrplay_init(&ctx, device, sdrplay_antenna, centerfreq, sdrplay_gr, correction, sdrplay_biast, sdrplay_notch_filter, sdrplay_agc);
 		break;
 #endif
 	default:

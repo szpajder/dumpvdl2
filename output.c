@@ -119,9 +119,11 @@ int init_pp(char *pp_addr) {
 		if (pp_sockfd == -1) continue;
 		if (connect(pp_sockfd, rptr->ai_addr, rptr->ai_addrlen) != -1) break;
 		close(pp_sockfd);
+		pp_sockfd = 0;
 	}
 	if (rptr == NULL) {
 		fprintf(stderr, "Could not connect to Planeplotter: all addresses failed\n");
+		pp_sockfd = 0;
 		return -1;
 	}
 	freeaddrinfo(result);

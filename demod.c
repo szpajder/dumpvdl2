@@ -17,13 +17,24 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #define _GNU_SOURCE
+#include <assert.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <math.h>
+#include <stdlib.h>		// calloc
+#include <math.h>		// sincosf, hypotf, atan2
+#include "chebyshev.h"		// chebyshev_lpf_init
 #include "dumpvdl2.h"
 
 static float *levels;
 static float sin_lut[257], cos_lut[257];
+
+// input lowpass filter design constants
+#define INP_LPF_CUTOFF_FREQ 10000
+#define INP_LPF_RIPPLE_PERCENT 0.5f
+// do not change this; filtering routine is currently hardcoded to 2 poles to minimize CPU usage
+#define INP_LPF_NPOLES 2
+// filter coefficients
+static float *A = NULL, *B = NULL;
 
 // phi range must be (0..1), rescaled to 0x0-0xFFFFFF
 static void sincosf_lut(uint32_t phi, float *sine, float *cosine) {
@@ -42,6 +53,13 @@ static void sincosf_lut(uint32_t phi, float *sine, float *cosine) {
 	*cosine = v1 + (v2 - v1) * fract;
 }
 
+static float chebyshev_lpf_2pole(float const * const in, float const * const out) {
+	float r = A[0] * in[0];
+	r += A[1] * in[1] + A[2] * in[2];
+	r += B[1] * out[1] + B[2] * out[2];
+	return r;
+}
+
 static void correlate_and_sync(vdl2_channel_t *v) {
 	int i, min1 = 0, min2 = 0, min_dist, pos;
 	float avgmax, minv1, minv2;
@@ -56,7 +74,7 @@ static void correlate_and_sync(vdl2_channel_t *v) {
  * (it's actually a second notch in the preamble, because it's always
  * deeper than the first one). Reject it if it's not deep enough. */
 	minv1 = avgmax;
-	for(i = 0; i < 7 * SPS; i++) {
+	for(i = 2 * SPS; i < 7 * SPS; i++) {
 		if(buf[i] < minv1) {
 			minv1 = buf[i];
 			min1 = i;
@@ -82,7 +100,7 @@ static void correlate_and_sync(vdl2_channel_t *v) {
 /* Allow some clock variance */
 	min_dist = min2 - min1;
 	if((float)min_dist > 1.1f * 4.0f * (float)SPS) {
-		debug_print("min_dist %d too high\n", min_dist);
+		debug_print("min_dist %d too high (min1=%d min2=%d)\n", min_dist, min1, min2);
 		return;
 	}
 	if((float)min_dist < 0.9f * 4.0f * (float)SPS) {
@@ -207,33 +225,38 @@ static void demod(vdl2_channel_t *v) {
 
 static void process_samples(vdl2_channel_t *v, float *sbuf, uint32_t len) {
 	int i, available;
-	float re, im, mag;
+	float mag;
 	float cwf, swf;
-	static const float iq_lp2 = 1.0f - IQ_LP;
 	v->samplenum = -1;
 	for(i = 0; i < len;) {
 #if DEBUG
 		v->samplenum++;
 #endif
-		re = sbuf[i++];
-		im = sbuf[i++];
+		for(int k = INP_LPF_NPOLES; k > 0; k--) {
+			   v->re[k] =    v->re[k-1];
+			   v->im[k] =    v->im[k-1];
+			v->lp_re[k] = v->lp_re[k-1];
+			v->lp_im[k] = v->lp_im[k-1];
+		}
+		v->re[0] = sbuf[i++];
+		v->im[0] = sbuf[i++];
 // downmix
 		if(v->offset_tuning) {
 			sincosf_lut(v->dm_phi, &swf, &cwf);
-			multiply(re, im, cwf, swf, &re, &im);
+			multiply(v->re[0], v->im[0], cwf, swf, &v->re[0], &v->im[0]);
 			v->dm_phi += v->dm_dphi;
 			v->dm_phi &= 0xffffff;
 		}
 
 // lowpass IIR
-		v->lp_re = IQ_LP * v->lp_re + iq_lp2 * re;
-		v->lp_im = IQ_LP * v->lp_im + iq_lp2 * im;
+		v->lp_re[0] = chebyshev_lpf_2pole(v->re, v->lp_re);
+		v->lp_im[0] = chebyshev_lpf_2pole(v->im, v->lp_im);
 // decimation
 		v->cnt %= v->oversample;
 		if(v->cnt++ != 0)
 			continue;
 
-		mag = hypotf(v->lp_re, v->lp_im);
+		mag = hypotf(v->lp_re[0], v->lp_im[0]);
 		v->mag_lp = v->mag_lp * MAG_LP + mag * (1.0f - MAG_LP);
 		v->nfcnt %= 1000;
 // update noise floor estimate
@@ -255,8 +278,8 @@ static void process_samples(vdl2_channel_t *v, float *sbuf, uint32_t len) {
 			}
 		}
 		if(v->sq == 1) {
-			v->I[v->bufe] = v->lp_re;
-			v->Q[v->bufe] = v->lp_im;
+			v->I[v->bufe] = v->lp_re[0];
+			v->Q[v->bufe] = v->lp_im[0];
 			v->mag_buf[v->bufe] = mag;
 			v->mag_lpbuf[v->bufe] = v->mag_lp;
 			v->bufe++; v->bufe %= BUFSIZE;
@@ -305,6 +328,11 @@ void process_buf_short(unsigned char *buf, uint32_t len, void *ctx) {
 		process_samples(v->channels[i], sbuf, len);
 }
 
+void input_lpf_init(uint32_t sample_rate) {
+	assert(sample_rate != 0);
+	chebyshev_lpf_init((float)INP_LPF_CUTOFF_FREQ / (float)sample_rate, INP_LPF_RIPPLE_PERCENT, INP_LPF_NPOLES, &A, &B);
+}
+
 void sincosf_lut_init() {
 	for(uint32_t i = 0; i < 256; i++)
 		sincosf(2.0f * M_PI * (float)i / 256.0f, sin_lut + i, cos_lut + i);
@@ -314,7 +342,11 @@ void sincosf_lut_init() {
 
 vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample) {
 	vdl2_channel_t *v;
-	v = XCALLOC(1, sizeof(vdl2_channel_t));
+	v        = XCALLOC(1, sizeof(vdl2_channel_t));
+	v->re    = XCALLOC(INP_LPF_NPOLES+1, sizeof(float));
+	v->im    = XCALLOC(INP_LPF_NPOLES+1, sizeof(float));
+	v->lp_re = XCALLOC(INP_LPF_NPOLES+1, sizeof(float));
+	v->lp_im = XCALLOC(INP_LPF_NPOLES+1, sizeof(float));
 	v->bs = bitstream_init(BSLEN);
 	v->mag_nf = 2.0f;
 // Cast to signed first, because casting negative float to uint is not portable

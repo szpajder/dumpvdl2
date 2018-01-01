@@ -8,7 +8,7 @@ dumpvdl2 is a lightweight, standalone VDL Mode 2 message decoder and protocol an
 - Supports following SDR hardware:
   - RTLSDR (via [rtl-sdr library](http://osmocom.org/projects/sdr/wiki/rtl-sdr))
   - Mirics SDR (via [libmirisdr-4](https://github.com/f4exb/libmirisdr-4))
-  - SDRPlay RSP1/2, (Native support through [official API](http://www.sdrplay.com/docs/SDRplay_SDR_API_Specification.pdf))
+  - SDRPlay RSP, (native support through [official API](http://www.sdrplay.com/docs/SDRplay_SDR_API_Specification.pdf))
   - reads prerecorded IQ data from file
 - Decodes up to 8 VDL2 channels simultaneously
 - Outputs messages to standard output or to a file (with optional daily or hourly file rotation)
@@ -27,9 +27,11 @@ dumpvdl2 is a lightweight, standalone VDL Mode 2 message decoder and protocol an
 - [X] ISO 9542 (ES-IS) - supported
 - [X] ISO 10747 (IDRP) - partially supported (decoding of some less important attributes is TODO)
 - [X] ISO 8073 (COTP) - supported
-- [X] ICAO CM (Context Management) - supported
-- [X] ICAO CPDLC (Controller-Pilot Data Link Communications) - supported
-- [ ] ICAO ADS-C - not supported
+- [X] ATN B1 CM (Context Management) - supported
+- [X] ATN B1 CPDLC (Controller-Pilot Data Link Communications) - supported
+- [ ] ATN B1 ADS-C (Automatic Dependent Surveillance - Contract) - not supported
+- [ ] FANS 1/A CPDLC - not supported
+- [ ] FANS 1/A ADS-C - not supported
 
 ### Installation
 
@@ -58,11 +60,13 @@ or get the source from Git and compile by yourself:
 
 ##### Mirics support (optional)
 
-Mirics support is based on open-source libmirisdr-4 library. Use it if you have a DVB-T
-receiver based on this chipset. SDRPlay RSP will also work (it's based on Mirics, after all),
-however if you have SDRPlay, it's probably better to use native closed-source driver
-instead (see next section). It supports more configuration options and reportedly gives
-better results on this hardware.
+libmirisdr-4 is an open-source alternative to SDRPlay binary driver (Mirics is the
+chipset brand which SDRPlay RSPs are based on). However, as of December 2017, it works
+properly with RSP1 only. For other RSP types (RSP2, RSP/1A) gain control does not
+work too well, so the native closed source driver is a better option (see next section).
+libmirisdr-4 is a good choice for RSP1 and various Mirics-based DVB-T dongles which
+are detected as RSP1 device. An advantage over RSP binary API is lower CPU utilization
+in dumpvdl2 thanks to a lower sampling rate.
 
 Install `libmirisdr-4` library:
 
@@ -84,7 +88,11 @@ the installer will fail.
 
 ##### Compiling dumpvdl2
 
-Clone the dumpvdl2 repository:
+Download a stable release package from:
+
+	https://github.com/szpajder/dumpvdl2/releases
+
+or clone the repository:
 
         git clone https://github.com/szpajder/dumpvdl2.git
         cd dumpvdl2
@@ -97,18 +105,18 @@ Mirics support has to be explicitly enabled, like this:
 
         make WITH_MIRISDR=1
 
-If you want Mirics only, you may disable RTLSDR support:
+If you only need Mirics or SDRPlay, you may disable RTLSDR support:
 
         make WITH_MIRISDR=1 WITH_RTLSDR=0
 
-If you want SDRPLAY RSP1/2 only, you may disable RTLSDR support:
+or:
 
         make WITH_SDRPLAY=1 WITH_RTLSDR=0
 
 **Note:** every time you decide to recompile with different `WITH_*` or `USE_*` options,
 clean the old build first using `make clean`.
 
-For available command line options, run:
+To list available command line options, run:
 
         ./dumpvdl2 --help
 
@@ -145,18 +153,18 @@ behavior:
 Use rtl_test utility to get serial numbers of your devices. dumpvdl2 will print them to
 the screen on startup as well.
 
-If you want to listen to a different VDL2 channel, just give its frequency as a last parameter:
+If you want to decode another VDL2 channel, just add its frequency as a last parameter:
 
         ./dumpvdl2 --rtlsdr 0 --gain 40 --correction 42 136725000
 
-dumpvdl2 can decode up to 8 VDL2 channels simultaneously. Just add them at the end:
+dumpvdl2 can decode up to 8 VDL2 channels simultaneously. Just list all of them at the end:
 
         ./dumpvdl2 --rtlsdr 0 --gain 40 --correction 42 136725000 136975000 136875000
 
-If your receiver has a large DC spike, you can set the center frequency a bit to the side
+If your receiver has a large center spike, you can set the center frequency a bit to the side
 of the desired channel frequency, like this:
 
-        ./dumpvdl2 --rtlsdr 0 --gain 40 --correction 42 --centerfreq 136955000
+        ./dumpvdl2 --rtlsdr 0 --gain 40 --correction 42 --centerfreq 137100000 <channel freqs here...>
 
 ##### Mirics
 
@@ -176,22 +184,38 @@ and reportedly gives better results than the default mode.
 If you get error messages about lost samples on Raspberry Pi, try adding `--usb-mode 1`.
 This switches USB transfer mode from isochronous to bulk, which is usually enough to rectify
 this problem. If it does not help, it might be that your Pi is overloaded or not beefy enough
-for the task.
+for the task. Try reducing the number of decoded VDL2 channels as a workaround.
 
-##### SDRPLAY RSP1/2 Native
+##### SDRPLAY RSP native driver
 
 SDRPlay RSP native driver supports several advanced configuration options:
 
-- switching antenna ports,
-- bias-t
-- notch filter on AM/FM
-- AGC
+- switching antenna ports (RSP2 only)
+- bias-T (RSP2 only)
+- notch filter on AM/FM (RSP2 only)
+- Automatic Gain Control
 
 Type `./dumpvdl2 --help` to find out all the options and their default values.
 
-Example: start the program with antenna A selection, bias-t off and notch filter on:
+SDRPlay driver has a concept of "gain reduction", which is an amount of gain (in decibels)
+which shall be deducted from the maximum gain. As a result, `--gain` option is not available
+with this driver - use `--gr` option to specify requested end-to-end gain reduction instead.
+The smallest possible value is 20. The highest value depends on receiver type, but it's
+not that important, because in dumpvdl2 you will hardly be using a GR larger than 59 dB.
 
-        ./dumpvdl2 --sdrplay 0 --gain 80 --antenna A --biast 0 --notch-filter 1 136975000
+Another option is to skip the `--gr` option. This will enable Automatic Gain Control
+with a default set point of -35 dBFS, which shall converge to a reasonable gain reduction
+value in a couple of seconds after the program starts. AGC set point can be changed
+with `--agc` option, but treat this as an "expert mode" knob, which is hardly ever needed.
+
+Example 1: use SDrplay device ID=0, with auto gain and three VDL2 channels:
+
+        ./dumpvdl2 --sdrplay 0 136975000 136875000 136775000
+
+Example 2: use SDRplay device with serial number 35830222, set gain reduction to 40 dB,
+use antenna A port, disable Bias-T, enable AM/FM notch filter, set frequency correction to -1ppm:
+
+        ./dumpvdl2 --sdrplay 35830222 --gr 40 --correction -1 --antenna A --biast 0 --notch-filter 1 136975000
 
 ### Output options
 
@@ -359,11 +383,11 @@ use short and good quality feeder cable, shield your radio from external RF inte
 
 It basically comes down to three things:
 
-###### The signal has to be strong enough (preferably 20 dB over noise floor, or better)
+###### The signal has to be strong enough (preferably 15 dB over noise floor, or better)
 
-- set your tuner gain quite high. I get good results with 40 dB for RTLSDR and 100 dB for Mirics
-  dongles. 75-85 dB is reported to work well on SDRPlay. However, it depends on the used antenna.
-  But do not be tempted to crank the gain up to the max. Keep your noise floor as low as possible,
+- set your tuner gain quite high. I get good results with 40 dB for RTLSDR and 75 dB for Mirics
+  dongles. Gain reduction of 30-40 reportedly works well on SDRPlay. However, it depends on the
+  used antenna. Do not be tempted to crank the gain up to the max. Keep your noise floor low
   because higher noise yields higher bit error rate.
 
 - check SDR Console with the same gain setting - do you see data bursts clearly? (they are
@@ -397,11 +421,14 @@ process_samples(): 136975000: noise_floor: -42.3 dBFS
   can figure out, how it's doing and where it fails. However if the squelch opens all the time,
   several times a second and there are still no messages, it means your gain is probably set too
   high and the receiver front end is saturated. Reduce the gain a bit (like 1-2 dB) and see if
-  it helps.
+  it helps. When using RTLSDR, the noise floor shall preferably stay between -47 and -50 dBFS.
+  On SDRPlay, which has a better sampling resolution, this is less critical. Auto gain should
+  do a good job on it.
 
 ###### Tuned frequency has to be correct
 
-- initially, just don't set it manually, use the default of 136.975 MHz.
+- initially, just don't set it manually, use the default of 136.975 MHz. It is used everywhere
+  where VDL2 is deployed.
 
 ###### PPM correction setting has to be accurate
 
@@ -466,6 +493,34 @@ aim for the lowest possible background noise. See this video tutorial for refere
 the correction value using GSM signal from nearby base stations. The estimate is quite accurate
 provided that you supply the program with approximate PPM offset value using `-e` option. This
 is even more important if your dongle has a large offset value (say, 50 or more).
+
+##### CPU usage on Raspberry Pi is very high
+
+Default compiler flags should work fine on most platforms. However you may get a performance
+boost (read: lower CPU usage) by adjusting the flags to the CPU which you intend to run
+dumpvdl2 on.
+
+dumpvdl2 has predefined knobs for three flavours of Raspberries:
+
+        make PLATFORM=rpiv1 (or rpiv2 or rpiv3)
+
+Using a recent version of GCC is important as well. Version 4.9 (supplied with Raspbian
+Jessie) is ancient and generates suboptimal code for ARM platforms. 6.3 (available in
+Raspbian Stretch) or 7.1 (available in Arch Linux) both perform significantly better.
+
+dumpvdl2 CPU usage depends mostly on two factors:
+
+- the sampling rate of the SDR device - dumpvdl2 sets it as low as possible, but it can't go
+  down beyond the lower limit of the device. On RTLSDR it's possible to use a sampling rate
+  of 1.05 Msps, while on SDRplay it has to be twice as large, which implies twice the amount
+  of work in the initial sample processing stage. In fact, the difference is even larger than
+  twice, because RTLSDR samples are 8-bit, while SDRPlay uses 16-bit.
+
+- the number of configured VDL2 channels. If the CPU usage is near 100%, it's better to reduce
+  the number of channels rather than get USB sample drops which are detrimental to the
+  decoding performance (read: you will get less frames decoded). dumpvdl2 currently decodes
+  all configured channels in a single program thread. A multithreaded decoder is TODO - once
+  it's ready, this problem will become less important.
 
 ##### What do these numbers in the message header mean?
 

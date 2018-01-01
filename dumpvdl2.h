@@ -53,7 +53,6 @@
 #define MAG_LP 0.9f
 #define DPHI_LP 0.95f
 #define NF_LP 0.85f
-#define IQ_LP 0.92f
 
 // long command line options
 #define __OPT_CENTERFREQ		 1
@@ -63,18 +62,25 @@
 #define __OPT_IQ_FILE			 5
 #define __OPT_OVERSAMPLE		 6
 #define __OPT_SAMPLE_FORMAT		 7
+
 #ifdef WITH_MIRISDR
 #define __OPT_MIRISDR			 8
 #define __OPT_HW_TYPE			 9
 #define __OPT_USB_MODE			10
 #endif
+
 #if WITH_RTLSDR
 #define __OPT_RTLSDR			11
 #endif
-#if WITH_MIRISDR || WITH_RTLSDR || WITH_SDRPLAY
+
+#if WITH_MIRISDR || WITH_RTLSDR
 #define __OPT_GAIN			12
+#endif
+
+#if WITH_MIRISDR || WITH_RTLSDR || WITH_SDRPLAY
 #define __OPT_CORRECTION		13
 #endif
+
 #if USE_STATSD
 #define __OPT_STATSD			14
 #endif
@@ -82,12 +88,14 @@
 #define __OPT_OUTPUT_ACARS_PP		16
 #define __OPT_UTC			17
 #define __OPT_RAW_FRAMES		18
+
 #ifdef WITH_SDRPLAY
 #define __OPT_SDRPLAY			80
 #define __OPT_ANTENNA			81
 #define __OPT_BIAST			82
 #define __OPT_NOTCH_FILTER		83
 #define __OPT_AGC			84
+#define __OPT_GR			85
 #endif
 
 #define __OPT_HELP			99
@@ -160,9 +168,10 @@ enum input_types {
 enum sample_formats { SFMT_U8, SFMT_S16_LE, SFMT_UNDEF };
 
 typedef struct {
+	float *re, *im;
+	float *lp_re, *lp_im;
 	float mag_buf[BUFSIZE];
 	float mag_lpbuf[BUFSIZE];		// temporary for testing
-	float lp_re, lp_im;
 	float I[BUFSIZE];
 	float Q[BUFSIZE];
 	float pI, pQ;
@@ -213,6 +222,7 @@ void decode_vdl_frame(vdl2_channel_t *v);
 // demod.c
 vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample);
 void sincosf_lut_init();
+void input_lpf_init(uint32_t sample_rate);
 void process_buf_uchar_init();
 void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx);
 void process_buf_short_init();
