@@ -70,7 +70,7 @@ in dumpvdl2 thanks to a lower sampling rate.
 
 Install `libmirisdr-4` library:
 
-	apt-get install git cmake libusb-1.0-0-dev
+        apt-get install git cmake libusb-1.0-0-dev
         cd
         git clone https://github.com/f4exb/libmirisdr-4.git
         cd libmirisdr-4
@@ -88,10 +88,7 @@ the installer will fail.
 
 ##### Compiling dumpvdl2
 
-Download a stable release package from:
-
-	https://github.com/szpajder/dumpvdl2/releases
-
+Download a stable release package from [here](https://github.com/szpajder/dumpvdl2/releases)
 or clone the repository:
 
         git clone https://github.com/szpajder/dumpvdl2.git
@@ -184,7 +181,8 @@ and reportedly gives better results than the default mode.
 If you get error messages about lost samples on Raspberry Pi, try adding `--usb-mode 1`.
 This switches USB transfer mode from isochronous to bulk, which is usually enough to rectify
 this problem. If it does not help, it might be that your Pi is overloaded or not beefy enough
-for the task. Try reducing the number of decoded VDL2 channels as a workaround.
+for the task. Try reducing the number of decoded VDL2 channels as a workaround. See also the
+FAQ section "CPU usage on Raspberry Pi is very high" below.
 
 ##### SDRPLAY RSP native driver
 
@@ -208,7 +206,7 @@ with a default set point of -35 dBFS, which shall converge to a reasonable gain 
 value in a couple of seconds after the program starts. AGC set point can be changed
 with `--agc` option, but treat this as an "expert mode" knob, which is hardly ever needed.
 
-Example 1: use SDrplay device ID=0, with auto gain and three VDL2 channels:
+Example 1: use SDRplay device ID=0, with auto gain and three VDL2 channels:
 
         ./dumpvdl2 --sdrplay 0 136975000 136875000 136775000
 
@@ -629,6 +627,7 @@ dumpvdl2. Special thanks go to:
 - Dick van Noort
 - acarslogger
 - Piotr Herko, SP5XSB
+- LamaBleu
 
 ### License
 
