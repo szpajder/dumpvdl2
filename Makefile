@@ -5,6 +5,15 @@ export WITH_MIRISDR ?= 0
 export WITH_SDRPLAY ?= 0
 CC = gcc
 CFLAGS += -std=c99 -g -Wall -O3 -fno-omit-frame-pointer -ffast-math -D_XOPEN_SOURCE=500 -DDEBUG=$(DEBUG)
+
+ifeq ($(PLATFORM), rpiv1)
+  CFLAGS += -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard
+else ifeq ($(PLATFORM), rpiv2)
+  CFLAGS += -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard
+else ifeq ($(PLATFORM), rpiv3)
+  CFLAGS += -march=armv8-a -mtune=cortex-a53 -mfpu=neon-vfpv4 -mfloat-abi=hard
+endif
+
 DUMPVDL2_VERSION:=\"$(shell git describe --always --tags --dirty)\"
 ifneq ($(DUMPVDL2_VERSION), \"\")
   CFLAGS+=-DDUMPVDL2_VERSION=$(DUMPVDL2_VERSION)

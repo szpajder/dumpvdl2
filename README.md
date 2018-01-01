@@ -494,6 +494,34 @@ the correction value using GSM signal from nearby base stations. The estimate is
 provided that you supply the program with approximate PPM offset value using `-e` option. This
 is even more important if your dongle has a large offset value (say, 50 or more).
 
+##### CPU usage on Raspberry Pi is very high
+
+Default compiler flags should work fine on most platforms. However you may get a performance
+boost (read: lower CPU usage) by adjusting the flags to the CPU which you intend to run
+dumpvdl2 on.
+
+dumpvdl2 has predefined knobs for three flavours of Raspberries:
+
+        make PLATFORM=rpiv1 (or rpiv2 or rpiv3)
+
+Using a recent version of GCC is important as well. Version 4.9 (supplied with Raspbian
+Jessie) is ancient and generates suboptimal code for ARM platforms. 6.3 (available in
+Raspbian Stretch) or 7.1 (available in Arch Linux) both perform significantly better.
+
+dumpvdl2 CPU usage depends mostly on two factors:
+
+- the sampling rate of the SDR device - dumpvdl2 sets it as low as possible, but it can't go
+  down beyond the lower limit of the device. On RTLSDR it's possible to use a sampling rate
+  of 1.05 Msps, while on SDRplay it has to be twice as large, which implies twice the amount
+  of work in the initial sample processing stage. In fact, the difference is even larger than
+  twice, because RTLSDR samples are 8-bit, while SDRPlay uses 16-bit.
+
+- the number of configured VDL2 channels. If the CPU usage is near 100%, it's better to reduce
+  the number of channels rather than get USB sample drops which are detrimental to the
+  decoding performance (read: you will get less frames decoded). dumpvdl2 currently decodes
+  all configured channels in a single program thread. A multithreaded decoder is TODO - once
+  it's ready, this problem will become less important.
+
 ##### What do these numbers in the message header mean?
 
         [2017-02-26 19:18:00 GMT] [136.975] [-18.9/-43.9 dBFS] [25.0 dB]
