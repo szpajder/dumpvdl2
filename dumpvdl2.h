@@ -214,6 +214,7 @@ int bitstream_read_word_msbfirst(bitstream_t *bs, uint32_t *ret, const uint32_t 
 int bitstream_hdlc_unstuff(bitstream_t *bs);
 void bitstream_descramble(bitstream_t *bs, uint16_t *lfsr);
 void bitstream_reset(bitstream_t *bs);
+void bitstream_destroy(bitstream_t *bs);
 uint32_t reverse(uint32_t v, int numbits);
 
 // decode.c

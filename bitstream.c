@@ -39,6 +39,14 @@ void bitstream_reset(bitstream_t *bs) {
 	bs->start = bs->end = bs->descrambler_pos = 0;
 }
 
+void bitstream_destroy(bitstream_t *bs) {
+	if(bs == NULL)
+		return;
+	if(bs->buf != NULL)
+		free(bs->buf);
+	free(bs);
+}
+
 int bitstream_append_msbfirst(bitstream_t *bs, const uint8_t *v, const uint32_t numbytes, const uint32_t numbits) {
 	if(bs->end + numbits * numbytes > bs->len)
 		return -1;
