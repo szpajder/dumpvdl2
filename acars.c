@@ -55,7 +55,7 @@ static int try_fans1a_adsc(acars_msg_t *msg, uint32_t *msg_type) {
 		ret = 0;
 	}
 end:
-	free(buf);
+	XFREE(buf);
 	return ret;
 }
 

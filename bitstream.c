@@ -40,11 +40,8 @@ void bitstream_reset(bitstream_t *bs) {
 }
 
 void bitstream_destroy(bitstream_t *bs) {
-	if(bs == NULL)
-		return;
-	if(bs->buf != NULL)
-		free(bs->buf);
-	free(bs);
+	if(bs != NULL) XFREE(bs->buf);
+	XFREE(bs);
 }
 
 int bitstream_append_msbfirst(bitstream_t *bs, const uint8_t *v, const uint32_t numbytes, const uint32_t numbits) {

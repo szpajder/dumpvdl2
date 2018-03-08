@@ -31,8 +31,8 @@ static void cotp_pdu_free(gpointer pdu) {
 	if(pdu == NULL) return;
 /*	cotp_pdu_t *p = (cotp_pdu_t *)pdu;
 	if(p->data_valid)
-		free(p->data); */
-	free(pdu);
+		XFREE(p->data); */
+	XFREE(pdu);
 }
 
 static int parse_cotp_pdu(cotp_pdu_t *pdu, uint8_t *buf, uint32_t len, uint32_t *msg_type) {

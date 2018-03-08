@@ -300,8 +300,8 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 		parse_avlc_frames(v, data, v->datalen_octets);
 		statsd_timing_delta(v->freq, "decoder.msg.processing_time", &v->tstart);
 cleanup:
-		if(data) free(data);
-		if(fec) free(fec);
+		XFREE(data);
+		XFREE(fec);
 		v->decoder_state = DEC_IDLE;
 		debug_print("%s", "DEC_IDLE\n");
 		return;

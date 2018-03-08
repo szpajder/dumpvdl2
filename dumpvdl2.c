@@ -508,14 +508,14 @@ int main(int argc, char **argv) {
 	if(statsd_enabled && input != INPUT_FILE) {
 		if(statsd_initialize(statsd_addr) < 0) {
 				fprintf(stderr, "Failed to initialize statsd client - disabling\n");
-				free(statsd_addr);
+				XFREE(statsd_addr);
 				statsd_enabled = 0;
 		} else {
 			for(int i = 0; i < num_channels; i++)
 				statsd_initialize_counters(freqs[i]);
 		}
 	} else {
-		free(statsd_addr);
+		XFREE(statsd_addr);
 		statsd_enabled = 0;
 	}
 #endif
@@ -525,7 +525,7 @@ int main(int argc, char **argv) {
 	}
 	if(pp_addr && init_pp(pp_addr) < 0) {
 		fprintf(stderr, "Failed to initialize output socket to Planeplotter - disabling it\n");
-		free(pp_addr);
+		XFREE(pp_addr);
 	}
 	setup_signals();
 	sincosf_lut_init();

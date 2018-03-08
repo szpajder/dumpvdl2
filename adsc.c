@@ -359,8 +359,8 @@ static void adsc_destroy_noncomp_notify(void *data) {
 	if(data == NULL)
 		return;
 	CAST_PTR(n, adsc_noncomp_notify_t *, data);
-	free(n->groups);
-	free(data);
+	XFREE(n->groups);
+	XFREE(data);
 	return;
 }
 
@@ -398,7 +398,7 @@ ADSC_PARSER_PROTOTYPE(adsc_parse_nack) {
 	t->data = n;
 	return tag_len;
 fail:
-	free(n);
+	XFREE(n);
 	return -1;
 }
 
@@ -729,7 +729,7 @@ ADSC_FORMATTER_PROTOTYPE(adsc_format_nack) {
 		reason_code_table[n->reason],
 		tmp ? tmp : ""
 	);
-	free(tmp);
+	XFREE(tmp);
 	return str;
 }
 
@@ -758,7 +758,7 @@ ADSC_FORMATTER_PROTOTYPE(adsc_format_noncomp_group) {
 	}
 	str = XCALLOC(total_len + 1, sizeof(char));
 	strcat(str, grp_header);
-	free(grp_header);
+	XFREE(grp_header);
 	if(strlen(param_numbers) > 0) {
 		strcat(str, param_numbers);
 	}
@@ -788,14 +788,14 @@ ADSC_FORMATTER_PROTOTYPE(adsc_format_noncomp_notify) {
 	}
 	str = XCALLOC(total_len + 1, sizeof(char));	// add room for '\0'
 	strcat(str, header);
-	free(header);
+	XFREE(header);
 	if(n->group_cnt > 0) {
 		for(int i = 0; i < n->group_cnt; i++) {
 			strcat(str, "\n  ");
 			strcat(str, tmp[i]);
-			free(tmp[i]);
+			XFREE(tmp[i]);
 		}
-		free(tmp);
+		XFREE(tmp);
 	}
 	return str;
 }
@@ -1171,7 +1171,7 @@ static void adsc_tag_destroy(gpointer tag) {
 		return;
 	CAST_PTR(t, adsc_tag_t *, tag);
 	if(t->data == NULL || t->type == NULL) {
-		free(tag);
+		XFREE(tag);
 		return;
 	}
 	if(t->type->destroy != NULL)
@@ -1179,8 +1179,8 @@ static void adsc_tag_destroy(gpointer tag) {
 // and can be freed directly
 		t->type->destroy(t->data);
 	else
-		free(t->data);
-	free(tag);
+		XFREE(t->data);
+	XFREE(tag);
 }
 
 static void adsc_destroy_contract_request(void *data) {
@@ -1190,7 +1190,7 @@ static void adsc_destroy_contract_request(void *data) {
 		g_slist_free_full(r->req_tag_list, adsc_tag_destroy);
 		r->req_tag_list = NULL;
 	}
-	free(data);
+	XFREE(data);
 }
 
 /****************
@@ -1297,11 +1297,11 @@ ADSC_FORMATTER_PROTOTYPE(adsc_format_contract_request) {
 	}
 	char *str = XCALLOC(total_len + 1, sizeof(char));	// add room for '\0'
 	strcat(str, header);
-	free(header);
+	XFREE(header);
 	for(GSList *ptr = str_list; ptr != NULL; ptr = g_slist_next(ptr)) {
 		strcat(str, "\n  ");
 		strcat(str, (char const *)(ptr->data));
-		free(ptr->data);
+		XFREE(ptr->data);
 	}
 	g_slist_free(str_list);
 	return str;
@@ -1496,7 +1496,7 @@ static void adsc_output_tag(gpointer p, gpointer user_data) {
 		char *str = (*(t->type->format))(t->type->label, t->data);
 		if(str != NULL) {
 			fprintf(outf, " %s\n", str);
-			free(str);
+			XFREE(str);
 		}
 	}
 }

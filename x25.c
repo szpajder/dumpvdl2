@@ -312,7 +312,7 @@ void output_x25(x25_pkt_t *pkt) {
 		output_tlv(outf, pkt->facilities, x25_facility_names);
 		char *comp = fmt_bitfield(pkt->compression, x25_comp_algos);
 		fprintf(outf, "Compression support: %s\n", comp);
-		free(comp);
+		XFREE(comp);
 		/* FALLTHROUGH because Fast Select is on, so there might be a data PDU in call req or accept */
 	case X25_DATA:
 		switch(pkt->proto) {
