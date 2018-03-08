@@ -20,6 +20,11 @@
 #define MIN_ACARS_LEN		16	// including CRC and DEL
 #define ACARSMSG_BUFSIZE	2048
 
+typedef enum {
+	ACARS_APP_NONE		= 0,
+	ACARS_APP_FANS1A_ADSC	= 1
+} acars_app_t;
+
 typedef struct {
 	uint8_t mode;
 	uint8_t reg[8];
@@ -30,6 +35,8 @@ typedef struct {
 	uint8_t no[5];
 	uint8_t fid[7];
 	char txt[ACARSMSG_BUFSIZE];
+	acars_app_t application;
+	void *data;
 } acars_msg_t;
 
 acars_msg_t *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type);

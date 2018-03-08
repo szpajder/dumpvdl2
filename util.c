@@ -16,7 +16,9 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#define _GNU_SOURCE	// for vasprintf()
 #include <stdio.h>
+#include <stdarg.h>	// va_list, etc
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,6 +45,18 @@ void *xrealloc(void *ptr, size_t size, const char *file, const int line, const c
 		_exit(1);
 	}
 	return ptr;
+}
+
+int xasprintf(const char *file, const int line, const char *func, char **strp, const char *fmt, ...) {
+	va_list ap;
+	va_start(ap, fmt);
+	int r = vasprintf(strp, fmt, ap);
+	va_end(ap);
+	if(r == -1) {
+		fprintf(stderr, "%s:%d: %s(): vasprintf() failed (out of memory?)\n",
+			file, line, func);
+	}
+	return r;
 }
 
 char *fmt_hexstring(uint8_t *data, uint16_t len) {
@@ -97,4 +111,33 @@ char *fmt_bitfield(uint8_t val, const dict *d) {
 	else
 		buf[slen-2] = '\0';	// throw out trailing delimiter
 	return buf;
+}
+
+size_t slurp_hexstring(char* string, uint8_t **buf) {
+	if(string == NULL)
+		return 0;
+	size_t slen = strlen(string);
+	if(slen & 1)
+		slen--;
+	size_t dlen = slen / 2;
+	if(dlen == 0)
+		return 0;
+	*buf = XCALLOC(dlen, sizeof(uint8_t));
+
+	for(size_t i = 0; i < slen; i++) {
+		char c = string[i];
+		int value = 0;
+		if(c >= '0' && c <= '9') {
+			value = (c - '0');
+		} else if (c >= 'A' && c <= 'F') {
+			value = (10 + (c - 'A'));
+		} else if (c >= 'a' && c <= 'f') {
+			 value = (10 + (c - 'a'));
+		} else {
+			debug_print("stopped at invalid char %u at pos %zu\n", c, i);
+			return i/2;
+		}
+		(*buf)[(i/2)] |= value << (((i + 1) % 2) * 4);
+	}
+	return dlen;
 }

@@ -24,10 +24,49 @@
 #include <errno.h>
 #include "dumpvdl2.h"
 #include "acars.h"
+#include "adsc.h"
 
 #define ETX 0x83
 #define ETB 0x97
 #define DEL 0x7f
+
+static int try_fans1a_adsc(acars_msg_t *msg, uint32_t *msg_type) {
+	uint8_t *buf = NULL;
+	int ret = -1;
+
+	char *s = strstr(msg->txt, ".ADS");
+	if(s == NULL) {
+		debug_print("%s", "not an ADS message\n");
+		goto end;
+	}
+	s += 4;
+	if(strlen(s) < 7 || memcmp(s, msg->reg, 7)) {
+		debug_print("%s", "regnr not found\n");
+		goto end;
+	}
+	s += 7;
+	int64_t buflen = slurp_hexstring(s, &buf);
+	if(buflen < 0) {
+		goto end;
+	}
+	msg->data = adsc_parse_msg(buf, (size_t)buflen, msg_type);
+	if(msg->data != NULL) {
+		msg->application = ACARS_APP_FANS1A_ADSC;
+		ret = 0;
+	}
+end:
+	free(buf);
+	return ret;
+}
+
+static void try_acars_apps(acars_msg_t *msg, uint32_t *msg_type) {
+	if(	!memcmp(msg->label, "A6", 2) ||
+		!memcmp(msg->label, "B6", 2) ||
+		!memcmp(msg->label, "H1", 2)) {
+			if(try_fans1a_adsc(msg, msg_type) == 0)
+				return;
+	}
+}
 
 /*
  * ACARS message decoder
@@ -90,6 +129,7 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	msg->no[0] = '\0';
 	msg->fid[0] = '\0';
 	msg->txt[0] = '\0';
+	msg->application = ACARS_APP_NONE;
 
 	if(k >= len) {		// empty txt
 		msg->txt[0] = '\0';
@@ -123,6 +163,9 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 			*msg_type &= ~MSGFLT_ACARS_NODATA;
 		}
 		msg->txt[len] = '\0';
+		if(len > 0) {
+			try_acars_apps(msg, msg_type);
+		}
 	}
 	/* txt end */
 	return msg;
@@ -151,6 +194,14 @@ void output_acars(const acars_msg_t *msg) {
 	fprintf(outf, "Mode: %1c Label: %s Blk id: %c Ack: %c Msg no.: %s\n",
 		msg->mode, msg->label, msg->bid, msg->ack, msg->no);
 	fprintf(outf, "Message:\n%s\n", msg->txt);
+	switch(msg->application) {
+	case ACARS_APP_FANS1A_ADSC:
+		adsc_output_msg(msg->data);
+		break;
+	case ACARS_APP_NONE:
+	default:
+		break;
+	}
 	if(pp_sockfd > 0)
 		output_acars_pp(msg);
 }

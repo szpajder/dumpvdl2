@@ -28,6 +28,7 @@ SUBDIRS = libfec asn1
 CLEANDIRS = $(SUBDIRS:%=clean-%)
 BIN = dumpvdl2
 OBJ =	acars.o \
+	adsc.o \
 	avlc.o \
 	bitstream.o \
 	chebyshev.o \
@@ -78,6 +79,8 @@ $(FEC): libfec ;
 
 $(ASN1): asn1 ;
 
+adsc.o: dumpvdl2.h adsc.h tlv.h
+
 clnp.o: dumpvdl2.h clnp.h idrp.h cotp.h
 
 cotp.o: dumpvdl2.h tlv.h cotp.h icao.h
@@ -102,7 +105,7 @@ dumpvdl2.o: dumpvdl2.h rtl.h mirisdr.h
 
 avlc.o: dumpvdl2.h avlc.h xid.h acars.h x25.h
 
-acars.o: dumpvdl2.h acars.h
+acars.o: dumpvdl2.h acars.h adsc.h
 
 mirisdr.o: dumpvdl2.h mirisdr.h
 
