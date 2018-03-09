@@ -161,7 +161,7 @@ ACSE_apdu_PR acse_apdu_type, uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 		   decode_protected_ATCDownlinkMessage((void **)&msg, &decoded_apdu_type, acse_apdu_type, buf, size) == 0) {
 			icao_apdu->type = decoded_apdu_type;
 			icao_apdu->data = msg;
-			*msg_type = MSGFLT_CPDLC;
+			*msg_type |= MSGFLT_CPDLC;
 			return;
 		}
 		ASN_STRUCT_FREE(asn_DEF_ATCDownlinkMessage, msg);
@@ -182,7 +182,7 @@ ACSE_apdu_PR acse_apdu_type, uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 		   decode_as(&asn_DEF_CMAircraftMessage, (void **)&msg, buf, size) == 0) {
 			icao_apdu->type = &asn_DEF_CMAircraftMessage;
 			icao_apdu->data = msg;
-			*msg_type = MSGFLT_CM;
+			*msg_type |= MSGFLT_CM;
 			return;
 		}
 		ASN_STRUCT_FREE(asn_DEF_CMAircraftMessage, msg);
@@ -193,7 +193,7 @@ ACSE_apdu_PR acse_apdu_type, uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 		   decode_protected_ATCUplinkMessage((void **)&msg, &decoded_apdu_type, acse_apdu_type, buf, size) == 0) {
 			icao_apdu->type = decoded_apdu_type;
 			icao_apdu->data = msg;
-			*msg_type = MSGFLT_CPDLC;
+			*msg_type |= MSGFLT_CPDLC;
 			return;
 		}
 		ASN_STRUCT_FREE(asn_DEF_ATCUplinkMessage, msg);
@@ -214,7 +214,7 @@ ACSE_apdu_PR acse_apdu_type, uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 		   decode_as(&asn_DEF_CMGroundMessage, (void **)&msg, buf, size) == 0) {
 			icao_apdu->type = &asn_DEF_CMGroundMessage;
 			icao_apdu->data = msg;
-			*msg_type = MSGFLT_CM;
+			*msg_type |= MSGFLT_CM;
 			return;
 		}
 		ASN_STRUCT_FREE(asn_DEF_CMGroundMessage, msg);
