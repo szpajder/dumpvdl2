@@ -823,10 +823,10 @@ ADSC_FORMATTER_PROTOTYPE(adsc_format_basic_report) {
 	char *str = NULL;
 	XASPRINTF(NULL, &str,
 		"%s:\n"
-		"  Lat: %3.7f\n"
-		"  Lon: %3.7f\n"
+		"  Lat: %.7f\n"
+		"  Lon: %.7f\n"
 		"  Alt: %d ft\n"
-		"  Time: %.3f sec past hour (:%02.0f:%02.3f)\n"
+		"  Time: %.3f sec past hour (:%02.0f:%06.3f)\n"
 		"  Position accuracy: %s\n"
 		"  NAV unit redundancy: %s\n"
 		"  TCAS: %s",
@@ -862,13 +862,13 @@ ADSC_FORMATTER_PROTOTYPE(adsc_format_predicted_route) {
 	XASPRINTF(NULL, &str,
 		"%s:\n"
 		"  Next waypoint:\n"
-		"   Lat: %3.7f\n"
-		"   Lon: %3.7f\n"
+		"   Lat: %.7f\n"
+		"   Lon: %.7f\n"
 		"   Alt: %d ft\n"
 		"   ETA: %d sec\n"
 		"  Next+1 waypoint:\n"
-		"   Lat: %3.7f\n"
-		"   Lon: %3.7f\n"
+		"   Lat: %.7f\n"
+		"   Lon: %.7f\n"
 		"   Alt: %d ft",
 		label,
 		r->lat_next,
@@ -940,8 +940,8 @@ ADSC_FORMATTER_PROTOTYPE(adsc_format_fixed_projection) {
 	char *str = NULL;
 	XASPRINTF(NULL, &str,
 		"%s:\n"
-		"  Lat: %3.7f\n"
-		"  Lon: %3.7f\n"
+		"  Lat: %.7f\n"
+		"  Lon: %.7f\n"
 		"  Alt: %d ft\n"
 		"  ETA: %d sec",
 		label,
@@ -1232,7 +1232,7 @@ ADSC_FORMATTER_PROTOTYPE(adsc_format_lat_dev_change) {
 	CAST_PTR(e, adsc_lat_dev_chg_event_t const * const, data);
 	char *str = NULL;
 	XASPRINTF(NULL, &str,
-		"%s: %0.3f nm",
+		"%s: %.3f nm",
 		label,
 		e->lat_dev_threshold
 	);
