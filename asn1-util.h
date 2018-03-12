@@ -21,4 +21,4 @@
 #include "asn1/constr_TYPE.h"		// asn_TYPE_descriptor_t
 
 // asn1-util.c
-int decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, int size);
+int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, int size);
