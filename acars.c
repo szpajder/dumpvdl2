@@ -30,21 +30,29 @@
 #define ETB 0x97
 #define DEL 0x7f
 
-static int try_fans1a_adsc(acars_msg_t *msg, uint32_t *msg_type) {
-	uint8_t *buf = NULL;
-	int ret = -1;
-
-	char *s = strstr(msg->txt, ".ADS");
+static char *skip_fans1a_msg_prefix(acars_msg_t *msg, char const * const prefix) {
+	char *s = strstr(msg->txt, prefix);
 	if(s == NULL) {
-		debug_print("%s", "not an ADS message\n");
-		goto end;
+		debug_print("FANS-1/A prefix %s not found\n", prefix);
+		return NULL;
 	}
 	s += 4;
 	if(strlen(s) < 7 || memcmp(s, msg->reg, 7)) {
 		debug_print("%s", "regnr not found\n");
-		goto end;
+		return NULL;
 	}
 	s += 7;
+	return s;
+}
+
+static int try_fans1a_adsc(acars_msg_t *msg, uint32_t *msg_type) {
+	uint8_t *buf = NULL;
+	int ret = -1;
+
+	char *s = skip_fans1a_msg_prefix(msg, ".ADS");
+	if(s == NULL) {
+		goto end;
+	}
 	int64_t buflen = slurp_hexstring(s, &buf);
 	if(buflen < 0) {
 		goto end;
@@ -60,11 +68,28 @@ end:
 }
 
 static void try_acars_apps(acars_msg_t *msg, uint32_t *msg_type) {
-	if(	!memcmp(msg->label, "A6", 2) ||
-		!memcmp(msg->label, "B6", 2) ||
-		!memcmp(msg->label, "H1", 2)) {
-			if(try_fans1a_adsc(msg, msg_type) == 0)
+	switch(msg->label[0]) {
+	case 'A':
+		if(msg->label[1] == '6') {
+			if(try_fans1a_adsc(msg, msg_type) == 0) {
 				return;
+			}
+		}
+		break;
+	case 'B':
+		if(msg->label[1] == '6') {
+			if(try_fans1a_adsc(msg, msg_type) == 0) {
+				return;
+			}
+		}
+		break;
+	case 'H':
+		if(msg->label[1] == '1') {
+			if(try_fans1a_adsc(msg, msg_type) == 0) {
+				return;
+			}
+		}
+		break;
 	}
 }
 
