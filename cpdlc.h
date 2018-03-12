@@ -1,7 +1,7 @@
 /*
  *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
  *
- *  Copyright (c) 2017 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2018 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,29 +16,28 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include <stdint.h>
-#define MIN_ACARS_LEN		16	// including CRC and DEL
-#define ACARSMSG_BUFSIZE	2048
+#include "asn1/constr_TYPE.h"	// asn_TYPE_descriptor_t
+
+#define CPDLC_CRC_LEN 2
 
 typedef enum {
-	ACARS_APP_NONE		= 0,
-	ACARS_APP_FANS1A_ADSC	= 1,
-	ACARS_APP_FANS1A_CPDLC	= 2
-} acars_app_t;
+	CPDLC_MSG_UNKNOWN,
+	CPDLC_MSG_CR1,
+	CPDLC_MSG_CC1,
+	CPDLC_MSG_DR1,
+	CPDLC_MSG_AT1
+} cpdlc_msgid_t;
+#define CPDLC_MSGID_CNT 5
 
 typedef struct {
-	uint8_t mode;
-	uint8_t reg[8];
-	uint8_t ack;
-	uint8_t label[3];
-	uint8_t bid;
-	uint8_t bs;
-	uint8_t no[5];
-	uint8_t fid[7];
-	char txt[ACARSMSG_BUFSIZE];
-	acars_app_t application;
+	asn_TYPE_descriptor_t *asn_type;
 	void *data;
-} acars_msg_t;
+	cpdlc_msgid_t id;
+	uint8_t err;
+} cpdlc_msg_t;
 
-acars_msg_t *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type);
-void output_acars(const acars_msg_t *msg);
+// cpdlc.c
+cpdlc_msg_t *cpdlc_parse_msg(cpdlc_msgid_t msgid, uint8_t *buf, size_t len, uint32_t *msg_type);
+void cpdlc_output_msg(cpdlc_msg_t *msg);

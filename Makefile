@@ -35,6 +35,7 @@ OBJ =	acars.o \
 	chebyshev.o \
 	clnp.o \
 	cotp.o \
+	cpdlc.o \
 	crc.o \
 	decode.o \
 	demod.o \
@@ -88,6 +89,8 @@ clnp.o: dumpvdl2.h clnp.h idrp.h cotp.h
 
 cotp.o: dumpvdl2.h tlv.h cotp.h icao.h
 
+cpdlc.o: dumpvdl2.h asn1-util.h cpdlc.h
+
 decode.o: dumpvdl2.h
 
 demod.o: dumpvdl2.h chebyshev.h
@@ -108,7 +111,7 @@ dumpvdl2.o: dumpvdl2.h rtl.h mirisdr.h
 
 avlc.o: dumpvdl2.h avlc.h xid.h acars.h x25.h
 
-acars.o: dumpvdl2.h acars.h adsc.h
+acars.o: dumpvdl2.h acars.h adsc.h cpdlc.h
 
 mirisdr.o: dumpvdl2.h mirisdr.h
 
