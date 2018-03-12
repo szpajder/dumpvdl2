@@ -30,8 +30,8 @@ dumpvdl2 is a lightweight, standalone VDL Mode 2 message decoder and protocol an
 - [X] ATN B1 CM (Context Management) - supported
 - [X] ATN B1 CPDLC (Controller-Pilot Data Link Communications) - supported
 - [ ] ATN B1 ADS-C (Automatic Dependent Surveillance - Contract) - not supported
-- [ ] FANS 1/A CPDLC - not supported
-- [ ] FANS 1/A ADS-C - not supported
+- [X] FANS 1/A CPDLC - supported
+- [X] FANS 1/A ADS-C - supported
 
 ### Installation
 
