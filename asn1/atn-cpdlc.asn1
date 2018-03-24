@@ -315,7 +315,7 @@ LogicalAck ::= ENUMERATED
 -- ----------------------------------------------------------------------------------
 ATCUplinkMsgElementId ::= CHOICE
 {
-    --  UNABLE
+    -- UNABLE
     -- Urg(N)/Alr(M)/Resp(N)
     uM0NULL [0] NULL,
 
@@ -335,10 +335,12 @@ ATCUplinkMsgElementId ::= CHOICE
     -- Urg(N)/Alr(L)/Resp(N)
     uM4NULL [4] NULL,
 
-    -- NEGATIVE Urg(N)/Alr(L)/Resp(N)
+    -- NEGATIVE
+    -- Urg(N)/Alr(L)/Resp(N)
     uM5NULL [5] NULL,
 
-    -- EXPECT [level] Urg(L)/Alr(L)/Resp(R)
+    -- EXPECT [level]
+    -- Urg(L)/Alr(L)/Resp(R)
     uM6Level [6] Level,
 
     -- EXPECT CLIMB AT [time]
@@ -369,16 +371,16 @@ ATCUplinkMsgElementId ::= CHOICE
     -- Urg(L)/Alr(L)/Resp(R)
     uM13TimeLevel [13] TimeLevel,
 
-  -- AT [position] EXPECT CLIMB TO [level]
-  -- Urg(L)/Alr(L)/Resp(R)
+    -- AT [position] EXPECT CLIMB TO [level]
+    -- Urg(L)/Alr(L)/Resp(R)
     uM14PositionLevel [14] PositionLevel,
 
     -- AT [time] EXPECT DESCENT TO [level]
     -- Urg(L)/Alr(L)/Resp(R)
     uM15TimeLevel [15] TimeLevel,
 
-  -- AT [position] EXPECT DESCENT TO [level]
-  -- Urg(L)/Alr(L)/Resp(R)
+    -- AT [position] EXPECT DESCENT TO [level]
+    -- Urg(L)/Alr(L)/Resp(R)
     uM16PositionLevel [16] PositionLevel,
 
     -- AT [time] EXPECT CRUISE CLIMB TO [level]
@@ -477,7 +479,8 @@ ATCUplinkMsgElementId ::= CHOICE
     -- Urg(L)/Alr(L)/Resp(Y)
     uM40NULL [40] NULL,
 
-    -- Reserved Urg(L)/Alr(L)/Resp(Y)
+    -- Reserved
+    -- Urg(L)/Alr(L)/Resp(Y)
     uM41NULL [41] NULL,
 
     -- EXPECT TO CROSS [position] AT [level]
@@ -815,7 +818,7 @@ ATCUplinkMsgElementId ::= CHOICE
 
     -- SQUAWK MODE CHARLIE
     -- Urg(N)/Alr(M)/Resp(W/U)
-   uM125NULL [125] NULL,
+    uM125NULL [125] NULL,
 
     -- STOP SQUAWK MODE CHARLIE
     -- Urg(N)/Alr(M)/Resp(W/U)
@@ -865,8 +868,8 @@ ATCUplinkMsgElementId ::= CHOICE
     -- Urg(N)/Alr(L)/Resp(Y)
     uM137NULL [137] NULL,
 
-  -- CONFIRM TIME OVER REPORTED WAYPOINT
-  -- Urg(N)/Alr(L)/Resp(Y)
+    -- CONFIRM TIME OVER REPORTED WAYPOINT
+    -- Urg(N)/Alr(L)/Resp(Y)
     uM138NULL [138] NULL,
 
     -- CONFIRM REPORTED WAYPOINT
@@ -1209,8 +1212,8 @@ ATCUplinkMsgElementId ::= CHOICE
     -- Urg(N)/Alr(M)/Resp(W/U)
     uM223NULL [223] NULL,
 
-  -- NO DELAY EXPECTED
-  -- Urg(N)/Alr(L)/Resp(R)
+    -- NO DELAY EXPECTED
+    -- Urg(N)/Alr(L)/Resp(R)
     uM224NULL [224] NULL,
 
     -- DELAY NOT DETERMINED
@@ -1485,7 +1488,8 @@ ATCDownlinkMsgElementId ::= CHOICE
     -- Urg(L)/Alr(L)/Resp(Y)
     dM52NULL [52] NULL,
 
-    -- WHEN CAN WE EXPECT HIGHER LEVEL Urg(L)/Alr(L)/Resp(Y)
+    -- WHEN CAN WE EXPECT HIGHER LEVEL
+    -- Urg(L)/Alr(L)/Resp(Y)
     dM53NULL [53] NULL,
 
     -- WHEN CAN WE EXPECT CRUISE CLIMB TO [level]
