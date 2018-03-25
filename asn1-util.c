@@ -18,8 +18,11 @@
  */
 
 #include <stdint.h>
+#include <search.h>
 #include "asn1/asn_application.h"
-#include "dumpvdl2.h"		// debug_print()
+
+#include "dumpvdl2.h"			// debug_print()
+#include "asn1-util.h"
 
 int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, int size) {
 	asn_dec_rval_t rval;
@@ -33,6 +36,6 @@ int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, i
 		return size - rval.consumed;
 	}
 	if(DEBUG)
-		asn_fprint(stderr, td, *struct_ptr);
+		asn_fprint(stderr, td, *struct_ptr, 1);
 	return 0;
 }

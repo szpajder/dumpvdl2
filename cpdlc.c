@@ -83,7 +83,7 @@ void cpdlc_output_msg(cpdlc_msg_t *msg) {
 	}
 	if(msg->asn_type != NULL) {
 		if(msg->data != NULL)
-			asn_fprint(outf, msg->asn_type, msg->data);
+			asn_fprint(outf, msg->asn_type, msg->data, 1);
 		else
 			fprintf(outf, "%s: <empty PDU>\n", msg->asn_type->name);
 	}

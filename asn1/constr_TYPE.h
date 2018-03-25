@@ -171,7 +171,8 @@ typedef struct asn_TYPE_tag2member_s {
  */
 int asn_fprint(FILE *stream,		/* Destination stream descriptor */
 	asn_TYPE_descriptor_t *td,	/* ASN.1 type descriptor */
-	const void *struct_ptr);	/* Structure to be printed */
+	const void *struct_ptr,		/* Structure to be printed */
+	int indent);			/* Indentation level */
 
 #ifdef __cplusplus
 }
