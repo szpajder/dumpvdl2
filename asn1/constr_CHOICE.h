@@ -50,6 +50,8 @@ per_type_decoder_f CHOICE_decode_uper;
 per_type_encoder_f CHOICE_encode_uper;
 asn_outmost_tag_f CHOICE_outmost_tag;
 
+int _fetch_present_idx(const void *struct_ptr, int pres_offset, int pres_size);
+
 #ifdef __cplusplus
 }
 #endif
