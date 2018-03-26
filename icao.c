@@ -30,6 +30,7 @@
 #include "asn1/ProtectedGroundPDUs.h"
 #include "dumpvdl2.h"			// outf
 #include "asn1-util.h"			// asn1_decode_as()
+#include "asn1-format.h"		// asn1_output()
 #include "icao.h"
 
 #define ACSE_APDU_TYPE_MATCHES(type, value) ((type) == (value) || (type) == ACSE_apdu_PR_NOTHING)
@@ -218,7 +219,7 @@ void decode_ulcs_acse(icao_apdu_t *icao_apdu, uint8_t *buf, uint32_t len, uint32
 		goto ulcs_acse_cleanup;
 	}
 	if(DEBUG)
-		asn_fprint(stderr, &asn_DEF_ACSE_apdu, acse_apdu);
+		asn_fprint(stderr, &asn_DEF_ACSE_apdu, acse_apdu, 1);
 
 	AE_qualifier_form2_t ae_qualifier = ICAO_APP_TYPE_UNKNOWN;
 	Association_information_t *user_info = NULL;
@@ -273,7 +274,7 @@ static void decode_fully_encoded_data(icao_apdu_t *icao_apdu, uint8_t *buf, uint
 		goto fed_cleanup;
 	}
 	if(DEBUG) {
-		asn_fprint(stderr, &asn_DEF_Fully_encoded_data, fed);
+		asn_fprint(stderr, &asn_DEF_Fully_encoded_data, fed, 1);
 		debug_print("%ld bytes consumed, %ld left\n", (long)rval.consumed, (long)(len) - (long)rval.consumed);
 	}
 
@@ -363,10 +364,12 @@ void output_icao_apdu(icao_apdu_t *icao_apdu) {
 // temporary, for debugging
 	output_raw(icao_apdu->raw_data, icao_apdu->datalen);
 	if(icao_apdu->type != NULL) {
-		if(icao_apdu->data != NULL)
-			asn_fprint(outf, icao_apdu->type, icao_apdu->data);
-		else
+		if(icao_apdu->data != NULL) {
+//			asn_fprint(outf, icao_apdu->type, icao_apdu->data, 1);
+			output_asn1(outf, icao_apdu->type, icao_apdu->data, 0);
+		} else {
 			fprintf(outf, "%s: <empty PDU>\n", icao_apdu->type->name);
+		}
 	} else
 		output_raw(icao_apdu->data, icao_apdu->datalen);
 }
