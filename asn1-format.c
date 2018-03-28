@@ -20,7 +20,11 @@
 #include <search.h>				// lfind()
 #include "asn1/ATCDownlinkMessage.h"		// ATCDownlinkMessage_t and dependencies
 #include "asn1/ATCUplinkMessage.h"		// ATCUplinkMessage_t and dependencies
+#include "asn1/CMAircraftMessage.h"		// AircraftMessge_t and dependencies
+#include "asn1/CMGroundMessage.h"		// CMGroundMessage_t and dependencies
+#include "asn1/ProtectedGroundPDUs.h"		// ProtectedGroundPDUs_t
 #include "asn1/constr_CHOICE.h"			// _fetch_present_idx()
+#include "asn1/asn_SET_OF.h"			// _A_CSET_FROM_VOID()
 #include "tlv.h"				// dict_search()
 #include "dumpvdl2.h"				// XCALLOC
 #include "asn1-format.h"
@@ -429,6 +433,17 @@ static void _format_CHOICE(FILE *stream, dict const * const choice_labels, asn_T
 	}
 }
 
+static void _format_SEQUENCE_OF(FILE *stream, asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
+	const asn_anonymous_set_ *list = _A_CSET_FROM_VOID(sptr);
+	for(int i = 0; i < list->count; i++) {
+		const void *element = list->array[i];
+		if(element == NULL) {
+			continue;
+		}
+		output_asn1(stream, td, element, indent);
+	}
+}
+
 static void _format_INTEGER_with_unit(FILE *stream, char const * const label, asn_TYPE_descriptor_t *td,
 	void const *sptr, int indent, char const * const unit, double multiplier, int decimal_places) {
 	CAST_PTR(val, long *, sptr);
@@ -495,6 +510,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE) {
 	}
 }
 
+// TODO: _format_SEQUENCE_OF
 ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCDownlinkMessageData) {
 	CAST_PTR(dmd, ATCDownlinkMessageData_t *, sptr);
 	IFPRINTF(stream, indent, "%s:\n", label);
@@ -515,6 +531,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCDownlinkMsgElementId) {
 	_format_CHOICE(stream, ATCDownlinkMsgElementId_labels, td, sptr, indent);
 }
 
+// TODO: _format_SEQUENCE_OF
 ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCUplinkMessageData) {
 	CAST_PTR(umd, ATCUplinkMessageData_t *, sptr);
 	IFPRINTF(stream, indent, "%s:\n", label);
@@ -547,6 +564,15 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_Code) {
 	);
 }
 
+ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTime) {
+	CAST_PTR(dtg, DateTime_t *, sptr);
+	Date_t *d = &dtg->date;
+	Time_t *t = &dtg->time;
+	IFPRINTF(stream, indent, "%s: %04ld-%02ld-%02ld %02ld:%02ld\n", label,
+		d->year, d->month, d->day,
+		t->hours, t->minutes);
+}
+
 ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTimeGroup) {
 	CAST_PTR(dtg, DateTimeGroup_t *, sptr);
 	Date_t *d = &dtg->date;
@@ -557,7 +583,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTimeGroup) {
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_Deg) {
-	_format_INTEGER_with_unit(stream, label, td, sptr, indent, "°", 1, 0);
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " deg", 1, 0);
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyvhf) {
@@ -570,14 +596,14 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_Latitude) {
 	char const *ldir_name = value2enum(&asn_DEF_LatitudeDirection, ldir);
 	switch(lat->latitudeType.present) {
 	case LatitudeType_PR_latitudeDegrees:
-		IFPRINTF(stream, indent, "%s:   %02ld° %s\n",
+		IFPRINTF(stream, indent, "%s:   %02ld %s\n",
 			label,
 			lat->latitudeType.choice.latitudeDegrees,
 			ldir_name
 		);
 		break;
 	case LatitudeType_PR_latitudeDegreesMinutes:
-		IFPRINTF(stream, indent, "%s:   %02ld°%02ld' %s\n",
+		IFPRINTF(stream, indent, "%s:   %02ld %02ld' %s\n",
 			label,
 			lat->latitudeType.choice.latitudeDegreesMinutes.latitudeWholeDegrees,
 			lat->latitudeType.choice.latitudeDegreesMinutes.minutesLatLon,
@@ -585,7 +611,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_Latitude) {
 		);
 		break;
 	case LatitudeType_PR_latitudeDMS:
-		IFPRINTF(stream, indent, "%s:   %02ld°%02ld'%02ld\" %s\n",
+		IFPRINTF(stream, indent, "%s:   %02ld %02ld'%02ld\" %s\n",
 			label,
 			lat->latitudeType.choice.latitudeDMS.latitudeWholeDegrees,
 			lat->latitudeType.choice.latitudeDMS.latlonWholeMinutes,
@@ -606,14 +632,14 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_Longitude) {
 	char const *ldir_name = value2enum(&asn_DEF_LongitudeDirection, ldir);
 	switch(lon->longitudeType.present) {
 	case LongitudeType_PR_longitudeDegrees:
-		IFPRINTF(stream, indent, "%s: %03ld° %s\n",
+		IFPRINTF(stream, indent, "%s: %03ld %s\n",
 			label,
 			lon->longitudeType.choice.longitudeDegrees,
 			ldir_name
 		);
 		break;
 	case LongitudeType_PR_longitudeDegreesMinutes:
-		IFPRINTF(stream, indent, "%s: %03ld°%02ld' %s\n",
+		IFPRINTF(stream, indent, "%s: %03ld %02ld' %s\n",
 			label,
 			lon->longitudeType.choice.longitudeDegreesMinutes.longitudeWholeDegrees,
 			lon->longitudeType.choice.longitudeDegreesMinutes.minutesLatLon,
@@ -621,7 +647,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_Longitude) {
 		);
 		break;
 	case LongitudeType_PR_longitudeDMS:
-		IFPRINTF(stream, indent, "%s: %03ld°%02ld'%02ld\" %s\n",
+		IFPRINTF(stream, indent, "%s: %03ld %02ld'%02ld\" %s\n",
 			label,
 			lon->longitudeType.choice.longitudeDMS.longitudeWholeDegrees,
 			lon->longitudeType.choice.longitudeDMS.latLonWholeMinutes,
@@ -634,6 +660,30 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_Longitude) {
 		IFPRINTF(stream, indent, "%s: none\n", label);
 		break;
 	}
+}
+
+// FIXME: change rDP type to something unique - then we'll be able to replace
+// this routine with asn1_format_SEQUENCE
+// FIXME: replace these cryptic labels with something human-readable
+ASN1_FORMATTER_PROTOTYPE(asn1_format_LongTsap) {
+	CAST_PTR(tsap, LongTsap_t *, sptr);
+	IFPRINTF(stream, indent, "%s:\n", label);
+	indent++;
+	asn1_format_any(stream, "RDP", &asn_DEF_OCTET_STRING, &tsap->rDP, indent);
+	output_asn1(stream, &asn_DEF_ShortTsap, &tsap->shortTsap, indent);
+}
+
+// FIXME: change aRS type to something unique - then we'll be able to replace
+// this routine with asn1_format_SEQUENCE
+// FIXME: replace these cryptic labels with something human-readable
+ASN1_FORMATTER_PROTOTYPE(asn1_format_ShortTsap) {
+	CAST_PTR(tsap, ShortTsap_t *, sptr);
+	IFPRINTF(stream, indent, "%s:\n", label);
+	indent++;
+	if(tsap->aRS != NULL) {
+		asn1_format_any(stream, "ARS", &asn_DEF_OCTET_STRING, tsap->aRS, indent);
+	}
+	asn1_format_any(stream, "locSysNselTsel", &asn_DEF_OCTET_STRING, &tsap->locSysNselTsel, indent);
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedIndicated) {
@@ -674,7 +724,52 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateMetric) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " m/min", 10, 0);
 }
 
+ASN1_FORMATTER_PROTOTYPE(asn1_format_CMLogonRequest) {
+	CAST_PTR(cmlr, CMLogonRequest_t *, sptr);
+	IFPRINTF(stream, indent, "%s:\n", label);
+	indent++;
+	output_asn1(stream, &asn_DEF_AircraftFlightIdentification, &cmlr->aircraftFlightIdentification, indent);
+	output_asn1(stream, &asn_DEF_LongTsap, &cmlr->cMLongTSAP, indent);
+	if(cmlr->groundInitiatedApplications != NULL) {
+		IFPRINTF(stream, indent, "%s:\n", "Ground-initiated applications");
+		_format_SEQUENCE_OF(stream, &asn_DEF_AEQualifierVersionAddress, cmlr->groundInitiatedApplications, indent+1);
+	}
+	if(cmlr->airOnlyInitiatedApplications != NULL) {
+		IFPRINTF(stream, indent, "%s:\n", "Air-initiated applications");
+		_format_SEQUENCE_OF(stream, &asn_DEF_AEQualifierVersion, cmlr->airOnlyInitiatedApplications, indent+1);
+	}
+	if(cmlr->facilityDesignation != NULL) {
+		output_asn1(stream, &asn_DEF_FacilityDesignation, cmlr->facilityDesignation, indent+1);
+	}
+// Can't use output_asn1 here - we have two different labels for the same type.
+	if(cmlr->airportDeparture != NULL) {
+		asn1_format_any(stream, "Departure airport", &asn_DEF_Airport, cmlr->airportDeparture, indent);
+	}
+	if(cmlr->airportDestination != NULL) {
+		asn1_format_any(stream, "Destination airport", &asn_DEF_Airport, cmlr->airportDestination, indent);
+	}
+	if(cmlr->dateTimeDepartureETD != NULL) {
+		asn1_format_DateTime(stream, "Departure time", &asn_DEF_DateTime, cmlr->dateTimeDepartureETD, indent);
+	}
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_CMLogonResponse) {
+	CAST_PTR(cmlr, CMLogonResponse_t *, sptr);
+	IFPRINTF(stream, indent, "%s:\n", label);
+	indent++;
+	if(cmlr->airInitiatedApplications != NULL) {
+		IFPRINTF(stream, indent, "%s:\n", "Air-initiated applications");
+		_format_SEQUENCE_OF(stream, &asn_DEF_AEQualifierVersionAddress, cmlr->airInitiatedApplications, indent+1);
+	}
+	if(cmlr->groundOnlyInitiatedApplications != NULL) {
+		IFPRINTF(stream, indent, "%s:\n", "Ground-initiated applications");
+		_format_SEQUENCE_OF(stream, &asn_DEF_AEQualifierVersion, cmlr->groundOnlyInitiatedApplications, indent+1);
+	}
+}
+
+
 static asn_formatter_t const asn1_formatter_table[] = {
+// atn-cpdlc.asn1
 	{ .type = &asn_DEF_ATCDownlinkMessage, .format = &asn1_format_SEQUENCE, .label = "CPDLC Downlink Message" },
 	{ .type = &asn_DEF_ATCMessageHeader, .format = &asn1_format_SEQUENCE, .label = "Header" },
 	{ .type = &asn_DEF_ATCDownlinkMessageData, .format = &asn1_format_ATCDownlinkMessageData, .label = "Message data" },
@@ -717,8 +812,11 @@ static asn_formatter_t const asn1_formatter_table[] = {
 	{ .type = &asn_DEF_NULL, .format = &asn1_format_NULL, .label = NULL },
 	{ .type = &asn_DEF_Navaid, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_NavaidName, .format = &asn1_format_any, .label = "Navaid" },
+	{ .type = &asn_DEF_PMCPDLCProviderAbortReason, .format = &asn1_format_ENUM, .label = "CPDLC Provider Abort Reason" },
+	{ .type = &asn_DEF_PMCPDLCUserAbortReason, .format = &asn1_format_ENUM, .label = "CPDLC User Abort Reason" },
 	{ .type = &asn_DEF_Position, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_PositionLevel, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_ProtectedGroundPDUs, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_Speed, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_SpeedIndicated, .format = &asn1_format_SpeedIndicated, .label = "Indicated airspeed" },
 	{ .type = &asn_DEF_SpeedMach, .format = &asn1_format_SpeedMach, .label = "Mach speed" },
@@ -727,7 +825,21 @@ static asn_formatter_t const asn1_formatter_table[] = {
 	{ .type = &asn_DEF_UnitName, .format = &asn1_format_UnitName, .label = "Unit name" },
 	{ .type = &asn_DEF_VerticalRate, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_VerticalRateEnglish, .format = &asn1_format_VerticalRateEnglish, .label = "Vertical rate" },
-	{ .type = &asn_DEF_VerticalRateMetric, .format = &asn1_format_VerticalRateMetric, .label = "Vertical rate" }
+	{ .type = &asn_DEF_VerticalRateMetric, .format = &asn1_format_VerticalRateMetric, .label = "Vertical rate" },
+// atn-cm.asn1
+	{ .type = &asn_DEF_APAddress, .format = &asn1_format_CHOICE, .label = "AP Address" },
+	{ .type = &asn_DEF_AEQualifier, .format = &asn1_format_any, .label = "Application Entity Qualifier" },
+	{ .type = &asn_DEF_AEQualifierVersion, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_AEQualifierVersionAddress, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_AircraftFlightIdentification, .format = &asn1_format_any, .label = "Flight ID" },
+	{ .type = &asn_DEF_CMAircraftMessage, .format = &asn1_format_CHOICE, .label = NULL },
+	{ .type = &asn_DEF_CMGroundMessage, .format = &asn1_format_CHOICE, .label = NULL },
+	{ .type = &asn_DEF_CMLogonRequest, .format = &asn1_format_CMLogonRequest, .label = "Context Management - Logon Request" },
+	{ .type = &asn_DEF_CMLogonResponse, .format = &asn1_format_CMLogonResponse, .label = "Context Management - Logon Response" },
+	{ .type = &asn_DEF_LongTsap, .format = &asn1_format_LongTsap, .label = "Long TSAP" },
+	{ .type = &asn_DEF_OCTET_STRING, .format = &asn1_format_any, .label = NULL },
+	{ .type = &asn_DEF_ShortTsap, .format = &asn1_format_ShortTsap, .label = "Short TSAP" },
+	{ .type = &asn_DEF_VersionNumber, .format = &asn1_format_any, .label = "Version number" },
 };
 
 static size_t asn1_formatter_table_len = sizeof(asn1_formatter_table) / sizeof(asn_formatter_t);

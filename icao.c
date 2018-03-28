@@ -365,7 +365,7 @@ void output_icao_apdu(icao_apdu_t *icao_apdu) {
 	output_raw(icao_apdu->raw_data, icao_apdu->datalen);
 	if(icao_apdu->type != NULL) {
 		if(icao_apdu->data != NULL) {
-//			asn_fprint(outf, icao_apdu->type, icao_apdu->data, 1);
+			asn_fprint(outf, icao_apdu->type, icao_apdu->data, 1);
 			output_asn1(outf, icao_apdu->type, icao_apdu->data, 0);
 		} else {
 			fprintf(outf, "%s: <empty PDU>\n", icao_apdu->type->name);
