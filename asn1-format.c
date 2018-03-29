@@ -20,9 +20,11 @@
 #include <search.h>				// lfind()
 #include "asn1/ATCDownlinkMessage.h"		// ATCDownlinkMessage_t and dependencies
 #include "asn1/ATCUplinkMessage.h"		// ATCUplinkMessage_t and dependencies
-#include "asn1/CMAircraftMessage.h"		// AircraftMessge_t and dependencies
-#include "asn1/CMGroundMessage.h"		// CMGroundMessage_t and dependencies
-#include "asn1/ProtectedGroundPDUs.h"		// ProtectedGroundPDUs_t
+#include "asn1/CMAircraftMessage.h"		// asn_DEF_AircraftMessage
+#include "asn1/CMContactRequest.h"		// asn_DEF_CMContactRequest
+#include "asn1/CMGroundMessage.h"		// asn_DEF_CMGroundMessage
+#include "asn1/ProtectedAircraftPDUs.h"		// asn_DEF_ProtectedAircraftPDUs
+#include "asn1/ProtectedGroundPDUs.h"		// asn_DEF_ProtectedGroundPDUs
 #include "asn1/constr_CHOICE.h"			// _fetch_present_idx()
 #include "asn1/asn_SET_OF.h"			// _A_CSET_FROM_VOID()
 #include "tlv.h"				// dict_search()
@@ -816,10 +818,11 @@ static asn_formatter_t const asn1_formatter_table[] = {
 	{ .type = &asn_DEF_PMCPDLCUserAbortReason, .format = &asn1_format_ENUM, .label = "CPDLC User Abort Reason" },
 	{ .type = &asn_DEF_Position, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_PositionLevel, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_ProtectedAircraftPDUs, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_ProtectedGroundPDUs, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_Speed, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_SpeedIndicated, .format = &asn1_format_SpeedIndicated, .label = "Indicated airspeed" },
-	{ .type = &asn_DEF_SpeedMach, .format = &asn1_format_SpeedMach, .label = "Mach speed" },
+	{ .type = &asn_DEF_SpeedMach, .format = &asn1_format_SpeedMach, .label = "Mach number" },
 	{ .type = &asn_DEF_Time, .format = &asn1_format_Time, .label = "Time" },
 	{ .type = &asn_DEF_UnitNameFrequency, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_UnitName, .format = &asn1_format_UnitName, .label = "Unit name" },
@@ -832,10 +835,16 @@ static asn_formatter_t const asn1_formatter_table[] = {
 	{ .type = &asn_DEF_AEQualifierVersion, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_AEQualifierVersionAddress, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_AircraftFlightIdentification, .format = &asn1_format_any, .label = "Flight ID" },
+	{ .type = &asn_DEF_CMAbortReason, .format = &asn1_format_ENUM, .label = "ATN Context Management - Abort Reason" },
 	{ .type = &asn_DEF_CMAircraftMessage, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_CMGroundMessage, .format = &asn1_format_CHOICE, .label = NULL },
-	{ .type = &asn_DEF_CMLogonRequest, .format = &asn1_format_CMLogonRequest, .label = "Context Management - Logon Request" },
-	{ .type = &asn_DEF_CMLogonResponse, .format = &asn1_format_CMLogonResponse, .label = "Context Management - Logon Response" },
+	{ .type = &asn_DEF_CMContactRequest, .format = &asn1_format_SEQUENCE, .label = "ATN Context Management - Contact Request" },
+	{ .type = &asn_DEF_CMContactResponse, .format = &asn1_format_ENUM, .label = "ATN Context Management - Contact Response" },
+	{ .type = &asn_DEF_CMForwardRequest, .format = &asn1_format_CMLogonRequest, .label = "ATN Context Management - Forward Request" },
+	{ .type = &asn_DEF_CMForwardResponse, .format = &asn1_format_ENUM, .label = "ATN Context Management - Forward Response" },
+	{ .type = &asn_DEF_CMLogonRequest, .format = &asn1_format_CMLogonRequest, .label = "ATN Context Management - Logon Request" },
+	{ .type = &asn_DEF_CMLogonResponse, .format = &asn1_format_CMLogonResponse, .label = "ATN Context Management - Logon Response" },
+	{ .type = &asn_DEF_CMUpdate, .format = &asn1_format_CMLogonResponse, .label = "ATN Context Management - Update" },
 	{ .type = &asn_DEF_LongTsap, .format = &asn1_format_LongTsap, .label = "Long TSAP" },
 	{ .type = &asn_DEF_OCTET_STRING, .format = &asn1_format_any, .label = NULL },
 	{ .type = &asn_DEF_ShortTsap, .format = &asn1_format_ShortTsap, .label = "Short TSAP" },
