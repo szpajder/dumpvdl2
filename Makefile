@@ -3,6 +3,10 @@ export USE_STATSD ?= 0
 export WITH_RTLSDR ?= 1
 export WITH_MIRISDR ?= 0
 export WITH_SDRPLAY ?= 0
+PREFIX = /usr/local
+BINDIR = $(PREFIX)/bin
+INSTALL_USER = root
+INSTALL_GROUP = root
 CC = gcc
 CFLAGS += -std=c99 -g -Wall -O3 -fno-omit-frame-pointer -ffast-math -D_XOPEN_SOURCE=500 -DDEBUG=$(DEBUG)
 
@@ -72,7 +76,7 @@ ifeq ($(WITH_SDRPLAY), 1)
   LDLIBS += -lmirsdrapi-rsp
 endif
 
-.PHONY: all clean $(SUBDIRS) $(CLEANDIRS)
+.PHONY: all clean install $(SUBDIRS) $(CLEANDIRS)
 
 all: $(BIN)
 
@@ -142,3 +146,7 @@ $(CLEANDIRS):
 
 clean: $(CLEANDIRS)
 	rm -f *.o $(BIN)
+
+install: $(BIN)
+	install -d -o $(INSTALL_USER) -g $(INSTALL_GROUP) $(BINDIR)
+	install -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 755 $(BIN) $(BINDIR)
