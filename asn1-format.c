@@ -97,9 +97,9 @@ static dict const ATCUplinkMsgElementId_labels[] = {
 	{ ATCUplinkMsgElementId_PR_uM61PositionLevelSpeed, "CROSS [position] AT AND MAINTAIN [level] AT [speed]" },
 	{ ATCUplinkMsgElementId_PR_uM62TimePositionLevel, "AT [time] CROSS [position] AT AND MAINTAIN [level]" },
 	{ ATCUplinkMsgElementId_PR_uM63TimePositionLevelSpeed, "AT [time] CROSS [position] AT AND MAINTAIN [level] AT [speed]" },
-	{ ATCUplinkMsgElementId_PR_uM64DistanceSpecifiedDirection, "OFFSET [specifiedDistance] [direction] OF ROUTE" },
-	{ ATCUplinkMsgElementId_PR_uM65PositionDistanceSpecifiedDirection, "AT [position] OFFSET [specifiedDistance] [direction] OF ROUTE" },
-	{ ATCUplinkMsgElementId_PR_uM66TimeDistanceSpecifiedDirection, "AT [time] OFFSET [specifiedDistance] [direction] OF ROUTE" },
+	{ ATCUplinkMsgElementId_PR_uM64DistanceSpecifiedDirection, "OFFSET [offset] [direction] OF ROUTE" },
+	{ ATCUplinkMsgElementId_PR_uM65PositionDistanceSpecifiedDirection, "AT [position] OFFSET [offset] [direction] OF ROUTE" },
+	{ ATCUplinkMsgElementId_PR_uM66TimeDistanceSpecifiedDirection, "AT [time] OFFSET [offset] [direction] OF ROUTE" },
 	{ ATCUplinkMsgElementId_PR_uM67NULL, "PROCEED BACK ON ROUTE" },
 	{ ATCUplinkMsgElementId_PR_uM68Position, "REJOIN ROUTE BY [position]" },
 	{ ATCUplinkMsgElementId_PR_uM69Time, "REJOIN ROUTE BY [time]" },
@@ -115,7 +115,7 @@ static dict const ATCUplinkMsgElementId_labels[] = {
 	{ ATCUplinkMsgElementId_PR_uM79PositionRouteClearance, "CLEARED TO [position] VIA [routeClearance]" },
 	{ ATCUplinkMsgElementId_PR_uM80RouteClearance, "CLEARED [routeClearance]" },
 	{ ATCUplinkMsgElementId_PR_uM81ProcedureName, "CLEARED [procedureName]" },
-	{ ATCUplinkMsgElementId_PR_uM82DistanceSpecifiedDirection, "CLEARED TO DEVIATE UP TO [specifiedDistance] [direction] OF ROUTE" },
+	{ ATCUplinkMsgElementId_PR_uM82DistanceSpecifiedDirection, "CLEARED TO DEVIATE UP TO [offset] [direction] OF ROUTE" },
 	{ ATCUplinkMsgElementId_PR_uM83PositionRouteClearance, "AT [position] CLEARED [routeClearance]" },
 	{ ATCUplinkMsgElementId_PR_uM84PositionProcedureName, "AT [position] CLEARED [procedureName]" },
 	{ ATCUplinkMsgElementId_PR_uM85RouteClearance, "EXPECT [routeClearance]" },
@@ -185,7 +185,7 @@ static dict const ATCUplinkMsgElementId_labels[] = {
 	{ ATCUplinkMsgElementId_PR_uM149LevelPosition, "CAN YOU ACCEPT [level] AT [position]" },
 	{ ATCUplinkMsgElementId_PR_uM150LevelTime, "CAN YOU ACCEPT [level] AT [time]" },
 	{ ATCUplinkMsgElementId_PR_uM151Speed, "WHEN CAN YOU ACCEPT [speed]" },
-	{ ATCUplinkMsgElementId_PR_uM152DistanceSpecifiedDirection, "WHEN CAN YOU ACCEPT [specifiedDistance] [direction] OFFSET" },
+	{ ATCUplinkMsgElementId_PR_uM152DistanceSpecifiedDirection, "WHEN CAN YOU ACCEPT [offset] [direction] OFFSET" },
 	{ ATCUplinkMsgElementId_PR_uM153Altimeter, "ALTIMETER [altimeter]" },
 	{ ATCUplinkMsgElementId_PR_uM154NULL, "RADAR SERVICE TERMINATED" },
 	{ ATCUplinkMsgElementId_PR_uM155Position, "RADAR CONTACT [position]" },
@@ -290,9 +290,9 @@ static dict const ATCDownlinkMsgElementId_labels[] = {
 	{ ATCDownlinkMsgElementId_PR_dM12PositionLevel, "AT [position] REQUEST DESCENT TO [level]" },
 	{ ATCDownlinkMsgElementId_PR_dM13TimeLevel, "AT [time] REQUEST CLIMB TO [level]" },
 	{ ATCDownlinkMsgElementId_PR_dM14TimeLevel, "AT [time] REQUEST DESCENT TO [level]" },
-	{ ATCDownlinkMsgElementId_PR_dM15DistanceSpecifiedDirection, "REQUEST OFFSET [specifiedDistance] [direction] OF ROUTE" },
-	{ ATCDownlinkMsgElementId_PR_dM16PositionDistanceSpecifiedDirection, "AT [position] REQUEST OFFSET [specifiedDistance] [direction] OF ROUTE" },
-	{ ATCDownlinkMsgElementId_PR_dM17TimeDistanceSpecifiedDirection, "AT [time] REQUEST OFFSET [specifiedDistance] [direction] OF ROUTE" },
+	{ ATCDownlinkMsgElementId_PR_dM15DistanceSpecifiedDirection, "REQUEST OFFSET [offset] [direction] OF ROUTE" },
+	{ ATCDownlinkMsgElementId_PR_dM16PositionDistanceSpecifiedDirection, "AT [position] REQUEST OFFSET [offset] [direction] OF ROUTE" },
+	{ ATCDownlinkMsgElementId_PR_dM17TimeDistanceSpecifiedDirection, "AT [time] REQUEST OFFSET [offset] [direction] OF ROUTE" },
 	{ ATCDownlinkMsgElementId_PR_dM18Speed, "REQUEST [speed]" },
 	{ ATCDownlinkMsgElementId_PR_dM19SpeedSpeed, "REQUEST [speed] TO [speed]" },
 	{ ATCDownlinkMsgElementId_PR_dM20NULL, "REQUEST VOICE CONTACT" },
@@ -302,7 +302,7 @@ static dict const ATCDownlinkMsgElementId_labels[] = {
 	{ ATCDownlinkMsgElementId_PR_dM24RouteClearance, "REQUEST CLEARANCE [routeClearance]" },
 	{ ATCDownlinkMsgElementId_PR_dM25ClearanceType, "REQUEST [clearanceType] CLEARANCE" },
 	{ ATCDownlinkMsgElementId_PR_dM26PositionRouteClearance, "REQUEST WEATHER DEVIATION TO [position] VIA [routeClearance]" },
-	{ ATCDownlinkMsgElementId_PR_dM27DistanceSpecifiedDirection, "REQUEST WEATHER DEVIATION UP TO [specifiedDistance] [direction] OF ROUTE" },
+	{ ATCDownlinkMsgElementId_PR_dM27DistanceSpecifiedDirection, "REQUEST WEATHER DEVIATION UP TO [offset] [direction] OF ROUTE" },
 	{ ATCDownlinkMsgElementId_PR_dM28Level, "LEAVING [level]" },
 	{ ATCDownlinkMsgElementId_PR_dM29Level, "CLIMBING TO [level]" },
 	{ ATCDownlinkMsgElementId_PR_dM30Level, "DESCENDING TO [level]" },
@@ -335,7 +335,7 @@ static dict const ATCDownlinkMsgElementId_labels[] = {
 	{ ATCDownlinkMsgElementId_PR_dM57RemainingFuelPersonsOnBoard, "[remainingFuel] OF FUEL REMAINING AND [personsonboard] PERSONS ON BOARD" },
 	{ ATCDownlinkMsgElementId_PR_dM58NULL, "CANCEL EMERGENCY" },
 	{ ATCDownlinkMsgElementId_PR_dM59PositionRouteClearance, "DIVERTING TO [position] VIA [routeClearance]" },
-	{ ATCDownlinkMsgElementId_PR_dM60DistanceSpecifiedDirection, "OFFSETTING [specifiedDistance] [direction] OF ROUTE" },
+	{ ATCDownlinkMsgElementId_PR_dM60DistanceSpecifiedDirection, "OFFSETTING [offset] [direction] OF ROUTE" },
 	{ ATCDownlinkMsgElementId_PR_dM61Level, "DESCENDING TO [level]" },
 	{ ATCDownlinkMsgElementId_PR_dM62ErrorInformation, "ERROR" },
 	{ ATCDownlinkMsgElementId_PR_dM63NULL, "NOT CURRENT DATA AUTHORITY" },
@@ -355,13 +355,13 @@ static dict const ATCDownlinkMsgElementId_labels[] = {
 	{ ATCDownlinkMsgElementId_PR_dM77LevelLevel, "ASSIGNED BLOCK [level] TO [level]" },
 	{ ATCDownlinkMsgElementId_PR_dM78TimeDistanceToFromPosition, "AT [time] [distance] [tofrom] [position]" },
 	{ ATCDownlinkMsgElementId_PR_dM79AtisCode, "ATIS [atiscode]" },
-	{ ATCDownlinkMsgElementId_PR_dM80DistanceSpecifiedDirection, "DEVIATING UP TO [specifiedDistance] [direction] OF ROUTE" },
+	{ ATCDownlinkMsgElementId_PR_dM80DistanceSpecifiedDirection, "DEVIATING UP TO [offset] [direction] OF ROUTE" },
 	{ ATCDownlinkMsgElementId_PR_dM81LevelTime, "WE CAN ACCEPT [level] AT [time]" },
 	{ ATCDownlinkMsgElementId_PR_dM82Level, "WE CANNOT ACCEPT [level]" },
 	{ ATCDownlinkMsgElementId_PR_dM83SpeedTime, "WE CAN ACCEPT [speed] AT [time]" },
 	{ ATCDownlinkMsgElementId_PR_dM84Speed, "WE CANNOT ACCEPT [speed]" },
-	{ ATCDownlinkMsgElementId_PR_dM85DistanceSpecifiedDirectionTime, "WE CAN ACCEPT [specifiedDistance] [direction] AT [time]" },
-	{ ATCDownlinkMsgElementId_PR_dM86DistanceSpecifiedDirection, "WE CANNOT ACCEPT [specifiedDistance] [direction]" },
+	{ ATCDownlinkMsgElementId_PR_dM85DistanceSpecifiedDirectionTime, "WE CAN ACCEPT [offset] [direction] AT [time]" },
+	{ ATCDownlinkMsgElementId_PR_dM86DistanceSpecifiedDirection, "WE CANNOT ACCEPT [offset] [direction]" },
 	{ ATCDownlinkMsgElementId_PR_dM87Level, "WHEN CAN WE EXPECT CLIMB TO [level]" },
 	{ ATCDownlinkMsgElementId_PR_dM88Level, "WHEN CAN WE EXPECT DESCENT TO [level]" },
 	{ ATCDownlinkMsgElementId_PR_dM89UnitnameFrequency, "MONITORING [unitname] [frequency]" },
@@ -584,12 +584,9 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTimeGroup) {
 		t->hoursminutes.hours, t->hoursminutes.minutes, t->seconds);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Deg) {
-	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " deg", 1, 0);
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyvhf) {
-	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " MHz", 0.005, 3);
+ASN1_FORMATTER_PROTOTYPE(asn1_format_Time) {
+	CAST_PTR(t, Time_t *, sptr);
+	IFPRINTF(stream, indent, "%s: %02ld:%02ld\n", label, t->hours, t->minutes);
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_Latitude) {
@@ -605,10 +602,10 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_Latitude) {
 		);
 		break;
 	case LatitudeType_PR_latitudeDegreesMinutes:
-		IFPRINTF(stream, indent, "%s:   %02ld %02ld' %s\n",
+		IFPRINTF(stream, indent, "%s:   %02ld %02.4f' %s\n",
 			label,
 			lat->latitudeType.choice.latitudeDegreesMinutes.latitudeWholeDegrees,
-			lat->latitudeType.choice.latitudeDegreesMinutes.minutesLatLon,
+			lat->latitudeType.choice.latitudeDegreesMinutes.minutesLatLon / 100.0,
 			ldir_name
 		);
 		break;
@@ -641,10 +638,10 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_Longitude) {
 		);
 		break;
 	case LongitudeType_PR_longitudeDegreesMinutes:
-		IFPRINTF(stream, indent, "%s: %03ld %02ld' %s\n",
+		IFPRINTF(stream, indent, "%s: %03ld %02.4f' %s\n",
 			label,
 			lon->longitudeType.choice.longitudeDegreesMinutes.longitudeWholeDegrees,
-			lon->longitudeType.choice.longitudeDegreesMinutes.minutesLatLon,
+			lon->longitudeType.choice.longitudeDegreesMinutes.minutesLatLon / 100.0,
 			ldir_name
 		);
 		break;
@@ -688,6 +685,86 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_ShortTsap) {
 	asn1_format_any(stream, "locSysNselTsel", &asn_DEF_OCTET_STRING, &tsap->locSysNselTsel, indent);
 }
 
+ASN1_FORMATTER_PROTOTYPE(asn1_format_AltimeterEnglish) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " inHg", 0.01, 2);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_AltimeterMetric) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " hPa", 0.1, 1);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_Deg) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " deg", 1, 0);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_DepartureMinimumInterval) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " min", 0.1, 1);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceKm) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " km", 0.25, 2);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceNm) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " nm", 0.1, 1);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_Humidity) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, "%%", 1, 0);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceEnglish) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " nm", 1, 0);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceMetric) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " km", 1, 0);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyvhf) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " MHz", 0.005, 3);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyuhf) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " MHz", 0.025, 3);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyhf) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " kHz", 1, 0);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_LegTime) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " min", 1, 0);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_LevelFeet) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " ft", 10, 0);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_LevelFlightLevelMetric) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " m", 10, 0);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_Meters) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " m", 1, 0);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_RTATolerance) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " min", 0.1, 1);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_Feet) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " ft", 1, 0);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedMetric) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " km/h", 1, 0);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedEnglish) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " kts", 1, 0);
+}
+
 ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedIndicated) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " kts", 1, 0);
 }
@@ -696,9 +773,49 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedMach) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, "", 0.001, 2);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Time) {
-	CAST_PTR(t, Time_t *, sptr);
-	IFPRINTF(stream, indent, "%s: %02ld:%02ld\n", label, t->hours, t->minutes);
+ASN1_FORMATTER_PROTOTYPE(asn1_format_Temperature) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " C", 1, 0);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateEnglish) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " ft/min", 10, 0);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateMetric) {
+	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " m/min", 10, 0);
+}
+
+// FIXME: get element type from td->elements.type and use generic asn1_format_SEQ_OF
+ASN1_FORMATTER_PROTOTYPE(asn1_format_ATWLevelSequence) {
+	if(label != NULL) {
+		IFPRINTF(stream, indent, "%s:\n", label);
+		indent++;
+	}
+	_format_SEQUENCE_OF(stream, &asn_DEF_ATWLevel, sptr, indent);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_LevelLevel) {
+	_format_SEQUENCE_OF(stream, &asn_DEF_Level, sptr, indent);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_PlaceBearingPlaceBearing) {
+	_format_SEQUENCE_OF(stream, &asn_DEF_PlaceBearing, sptr, indent);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_PositionPosition) {
+	_format_SEQUENCE_OF(stream, &asn_DEF_Position, sptr, indent);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedSpeed) {
+	_format_SEQUENCE_OF(stream, &asn_DEF_Speed, sptr, indent);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedTypeSpeedTypeSpeedType) {
+	_format_SEQUENCE_OF(stream, &asn_DEF_SpeedType, sptr, indent);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_TimeTime) {
+	_format_SEQUENCE_OF(stream, &asn_DEF_Time, sptr, indent);
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_UnitName) {
@@ -716,14 +833,6 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_UnitName) {
 	IFPRINTF(stream, indent, "%s: %s, %s, %s\n", label, fdes, fname ? fname : "", ffun_name);
 	XFREE(fdes);
 	XFREE(fname);
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateEnglish) {
-	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " ft/min", 10, 0);
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateMetric) {
-	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " m/min", 10, 0);
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_CMLogonRequest) {
@@ -769,66 +878,197 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_CMLogonResponse) {
 	}
 }
 
-
 static asn_formatter_t const asn1_formatter_table[] = {
 // atn-cpdlc.asn1
+	{ .type = &asn_DEF_AircraftAddress, .format = &asn1_format_any, .label = "Aircraft address" },
+	{ .type = &asn_DEF_Altimeter, .format = &asn1_format_CHOICE, .label = NULL },
+	{ .type = &asn_DEF_AltimeterEnglish, .format = &asn1_format_AltimeterEnglish, .label = "Altimeter" },
+	{ .type = &asn_DEF_AltimeterMetric, .format = &asn1_format_AltimeterMetric, .label = "Altimeter" },
 	{ .type = &asn_DEF_ATCDownlinkMessage, .format = &asn1_format_SEQUENCE, .label = "CPDLC Downlink Message" },
-	{ .type = &asn_DEF_ATCMessageHeader, .format = &asn1_format_SEQUENCE, .label = "Header" },
 	{ .type = &asn_DEF_ATCDownlinkMessageData, .format = &asn1_format_ATCDownlinkMessageData, .label = "Message data" },
 	{ .type = &asn_DEF_ATCDownlinkMsgElementId, .format = &asn1_format_ATCDownlinkMsgElementId, .label = NULL },
+	{ .type = &asn_DEF_ATCMessageHeader, .format = &asn1_format_SEQUENCE, .label = "Header" },
 	{ .type = &asn_DEF_ATCUplinkMessage, .format = &asn1_format_SEQUENCE, .label = "CPDLC Uplink Message" },
 	{ .type = &asn_DEF_ATCUplinkMessageData, .format = &asn1_format_ATCUplinkMessageData, .label = "Message data" },
 	{ .type = &asn_DEF_ATCUplinkMsgElementId, .format = &asn1_format_ATCUplinkMsgElementId, .label = NULL },
+	{ .type = &asn_DEF_ATISCode, .format = &asn1_format_any, .label = "ATIS code" },
+	{ .type = &asn_DEF_ATSRouteDesignator, .format = &asn1_format_any, .label = "ATS route" },
+	{ .type = &asn_DEF_ATWAlongTrackWaypoint, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_ATWDistance, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_ATWDistanceTolerance, .format = &asn1_format_ENUM, .label = "ATW Distance Tolerance" },
+	{ .type = &asn_DEF_ATWLevel, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_ATWLevelSequence, .format = &asn1_format_ATWLevelSequence, .label = "ATW Levels" },
+	{ .type = &asn_DEF_ATWLevelTolerance, .format = &asn1_format_ENUM, .label = "ATW Level Tolerance" },
+	{ .type = &asn_DEF_ClearanceType, .format = &asn1_format_ENUM, .label = "Clearance type" },
 	{ .type = &asn_DEF_Code, .format = &asn1_format_Code, .label = "Code" },
+	{ .type = &asn_DEF_ControlledTime, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_DateTimeGroup, .format = &asn1_format_DateTimeGroup, .label = "Timestamp" },
+	{ .type = &asn_DEF_DegreeIncrement, .format = &asn1_format_any, .label = "Degree increment" },
 	{ .type = &asn_DEF_Degrees, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_DegreesMagnetic, .format = &asn1_format_Deg, .label = "Degrees (magnetic)" },
 	{ .type = &asn_DEF_DegreesTrue, .format = &asn1_format_Deg, .label = "Degrees (true)" },
+	{ .type = &asn_DEF_DepartureClearance, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_DepartureMinimumInterval, .format = &asn1_format_DepartureMinimumInterval, .label = "Minimum interval of departures" },
 	{ .type = &asn_DEF_Direction, .format = &asn1_format_ENUM, .label = "Direction" },
 	{ .type = &asn_DEF_DirectionDegrees, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_Distance, .format = &asn1_format_CHOICE, .label = NULL },
+	{ .type = &asn_DEF_DistanceKm, .format = &asn1_format_DistanceKm, .label = "Distance" },
+	{ .type = &asn_DEF_DistanceNm, .format = &asn1_format_DistanceNm, .label = "Distance" },
+	{ .type = &asn_DEF_DistanceSpecified, .format = &asn1_format_CHOICE, .label = NULL },
+	{ .type = &asn_DEF_DistanceSpecifiedDirection, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_DistanceSpecifiedDirectionTime, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_DistanceSpecifiedKm, .format = &asn1_format_DistanceMetric, .label = "Offset" },
+	{ .type = &asn_DEF_DistanceSpecifiedNm, .format = &asn1_format_DistanceEnglish, .label = "Offset" },
+	{ .type = &asn_DEF_DMVersionNumber, .format = &asn1_format_any, .label = "Version number" },
 	{ .type = &asn_DEF_ErrorInformation, .format = &asn1_format_ENUM, .label = "Error information" },
 	{ .type = &asn_DEF_Facility, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_FacilityDesignation, .format = &asn1_format_any, .label = "Facility designation" },
+	{ .type = &asn_DEF_FacilityDesignationAltimeter, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_FacilityDesignationATISCode, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_FacilityName, .format = &asn1_format_any, .label = "Facility name" },
 	{ .type = &asn_DEF_Fix, .format = &asn1_format_any, .label = "Fix" },
 	{ .type = &asn_DEF_FixName, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_FlightInformation, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_FreeText, .format = &asn1_format_any, .label = NULL },
 	{ .type = &asn_DEF_Frequency, .format = &asn1_format_CHOICE, .label = NULL },
+	{ .type = &asn_DEF_Frequencyhf, .format = &asn1_format_Frequencyhf, .label = "HF" },
+	{ .type = &asn_DEF_Frequencysatchannel, .format = &asn1_format_any, .label = "Satcom channel" },
+	{ .type = &asn_DEF_Frequencyuhf, .format = &asn1_format_Frequencyuhf, .label = "UHF" },
 	{ .type = &asn_DEF_Frequencyvhf, .format = &asn1_format_Frequencyvhf, .label = "VHF" },
+	{ .type = &asn_DEF_FurtherInstructions, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_Holdatwaypoint, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_HoldClearance, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_Humidity, .format = &asn1_format_Humidity, .label = "Humidity" },
+	{ .type = &asn_DEF_Icing, .format = &asn1_format_ENUM, .label = "Icing" },
+	{ .type = &asn_DEF_InterceptCourseFrom, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_InterceptCourseFromSelection, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_Latitude, .format = &asn1_format_Latitude, .label = "Latitude" },
-	{ .type = &asn_DEF_LatitudeDegreesMinutesSeconds, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_LatitudeDirection, .format = &asn1_format_ENUM, .label = "Direction" },
-	{ .type = &asn_DEF_LatitudeType, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_LatitudeLongitude, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_LatitudeReportingPoints, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_LatitudeType, .format = &asn1_format_CHOICE, .label = NULL },
+	{ .type = &asn_DEF_LatLonReportingPoints, .format = &asn1_format_CHOICE, .label = NULL },
+	{ .type = &asn_DEF_LegDistance, .format = &asn1_format_CHOICE, .label = NULL },
+	{ .type = &asn_DEF_LegDistanceEnglish, .format = &asn1_format_DistanceEnglish, .label = "Leg distance" },
+	{ .type = &asn_DEF_LegDistanceMetric, .format = &asn1_format_DistanceMetric, .label = "Leg distance" },
+	{ .type = &asn_DEF_LegTime, .format = &asn1_format_LegTime, .label = "Leg time" },
+	{ .type = &asn_DEF_LegType, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_Level, .format = &asn1_format_CHOICE, .label = NULL },
+	{ .type = &asn_DEF_LevelFeet, .format = &asn1_format_LevelFeet, .label = "Flight level" },
 	{ .type = &asn_DEF_LevelFlightLevel, .format = &asn1_format_any, .label = "Flight level" },
+	{ .type = &asn_DEF_LevelFlightLevelMetric, .format = &asn1_format_LevelFlightLevelMetric, .label = "Flight level" },
+	{ .type = &asn_DEF_LevelLevel, .format = &asn1_format_LevelLevel, .label = NULL },
+	{ .type = &asn_DEF_LevelMeters, .format = &asn1_format_Meters, .label = "Flight level" },
 	{ .type = &asn_DEF_LevelPosition, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_LevelProcedureName, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_LevelsOfFlight, .format = &asn1_format_CHOICE, .label = NULL },
+	{ .type = &asn_DEF_LevelSpeed, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_LevelSpeedSpeed, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_LevelTime, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_LevelType, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_LogicalAck, .format = &asn1_format_ENUM, .label = "Logical ACK" },
 	{ .type = &asn_DEF_Longitude, .format = &asn1_format_Longitude, .label = "Longitude" },
-	{ .type = &asn_DEF_LongitudeDegreesMinutesSeconds, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_LongitudeDirection, .format = &asn1_format_ENUM, .label = "Direction" },
+	{ .type = &asn_DEF_LongitudeReportingPoints, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_LongitudeType, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_MsgIdentificationNumber, .format = &asn1_format_any, .label = "Msg ID" },
 	{ .type = &asn_DEF_MsgReferenceNumber, .format = &asn1_format_any, .label = "Msg Ref" },
-	{ .type = &asn_DEF_NULL, .format = &asn1_format_NULL, .label = NULL },
 	{ .type = &asn_DEF_Navaid, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_NavaidName, .format = &asn1_format_any, .label = "Navaid" },
+	{ .type = &asn_DEF_NULL, .format = &asn1_format_NULL, .label = NULL },
+	{ .type = &asn_DEF_PersonsOnBoard, .format = &asn1_format_any, .label = "Persons on board" },
+	{ .type = &asn_DEF_PlaceBearing, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_PlaceBearingDistance, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_PlaceBearingPlaceBearing, .format = &asn1_format_PlaceBearingPlaceBearing, .label = NULL },
 	{ .type = &asn_DEF_PMCPDLCProviderAbortReason, .format = &asn1_format_ENUM, .label = "CPDLC Provider Abort Reason" },
 	{ .type = &asn_DEF_PMCPDLCUserAbortReason, .format = &asn1_format_ENUM, .label = "CPDLC User Abort Reason" },
 	{ .type = &asn_DEF_Position, .format = &asn1_format_CHOICE, .label = NULL },
+	{ .type = &asn_DEF_PositionDegrees, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_PositionDistanceSpecifiedDirection, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_PositionLevel, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_PositionLevelLevel, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_PositionLevelSpeed, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_PositionPosition, .format = &asn1_format_PositionPosition, .label = NULL },
+	{ .type = &asn_DEF_PositionProcedureName, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_PositionReport, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_PositionRouteClearanceIndex, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_PositionSpeed, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_PositionSpeedSpeed, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_PositionTime, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_PositionTimeLevel, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_PositionTimeTime, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_PositionUnitNameFrequency, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_Procedure, .format = &asn1_format_any, .label = "Procedure" },
+	{ .type = &asn_DEF_ProcedureName, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_ProcedureTransition, .format = &asn1_format_any, .label = "Procedure transition" },
+	{ .type = &asn_DEF_ProcedureType, .format = &asn1_format_ENUM, .label = "Procedure type" },
 	{ .type = &asn_DEF_ProtectedAircraftPDUs, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_ProtectedGroundPDUs, .format = &asn1_format_CHOICE, .label = NULL },
+	{ .type = &asn_DEF_PublishedIdentifier, .format = &asn1_format_CHOICE, .label = NULL },
+	{ .type = &asn_DEF_RemainingFuel, .format = &asn1_format_Time, .label = "Remaining fuel" },
+	{ .type = &asn_DEF_RemainingFuelPersonsOnBoard, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_ReportingPoints, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_RevisionNumber, .format = &asn1_format_any, .label = "Revision number" },
+	{ .type = &asn_DEF_RouteAndLevels, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_RouteClearanceIndex, .format = &asn1_format_any, .label = "Route clearance index" },
+	{ .type = &asn_DEF_RouteInformation, .format = &asn1_format_CHOICE, .label = NULL },
+	{ .type = &asn_DEF_RouteInformationAdditional, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_RTARequiredTimeArrival, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_RTATime, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_RTATolerance, .format = &asn1_format_RTATolerance, .label = "RTA Tolerance" },
+	{ .type = &asn_DEF_Runway, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_RunwayConfiguration, .format = &asn1_format_ENUM, .label = "Runway configuration" },
+	{ .type = &asn_DEF_RunwayDirection, .format = &asn1_format_any, .label = "Runway direction" },
+	{ .type = &asn_DEF_RunwayRVR, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_RVR, .format = &asn1_format_CHOICE, .label = NULL },
+	{ .type = &asn_DEF_RVRFeet, .format = &asn1_format_Feet, .label = "RVR" },
+	{ .type = &asn_DEF_RVRMeters, .format = &asn1_format_Meters, .label = "RVR" },
 	{ .type = &asn_DEF_Speed, .format = &asn1_format_CHOICE, .label = NULL },
+	{ .type = &asn_DEF_SpeedGround, .format = &asn1_format_SpeedEnglish, .label = "Ground speed" },
+	{ .type = &asn_DEF_SpeedGroundMetric, .format = &asn1_format_SpeedMetric, .label = "Ground speed" },
 	{ .type = &asn_DEF_SpeedIndicated, .format = &asn1_format_SpeedIndicated, .label = "Indicated airspeed" },
+	{ .type = &asn_DEF_SpeedIndicatedMetric, .format = &asn1_format_SpeedMetric, .label = "Indicated speed" },
 	{ .type = &asn_DEF_SpeedMach, .format = &asn1_format_SpeedMach, .label = "Mach number" },
+	{ .type = &asn_DEF_SpeedSpeed, .format = &asn1_format_SpeedSpeed, .label = NULL },
+	{ .type = &asn_DEF_SpeedTime, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_SpeedTrue, .format = &asn1_format_SpeedEnglish, .label = "True speed" },
+	{ .type = &asn_DEF_SpeedTrueMetric, .format = &asn1_format_SpeedMetric, .label = "True speed" },
+	{ .type = &asn_DEF_SpeedType, .format = &asn1_format_ENUM, .label = "Speed type" },
+	{ .type = &asn_DEF_SpeedTypeSpeedTypeSpeedType, .format = &asn1_format_SpeedTypeSpeedTypeSpeedType, .label = NULL },
+	{ .type = &asn_DEF_SpeedTypeSpeedTypeSpeedTypeSpeed, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_Temperature, .format = &asn1_format_Temperature, .label = "Temperature" },
 	{ .type = &asn_DEF_Time, .format = &asn1_format_Time, .label = "Time" },
-	{ .type = &asn_DEF_UnitNameFrequency, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_TimeDeparture, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_TimeDistanceSpecifiedDirection, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_TimeDistanceToFromPosition, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_Timehhmmss, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_TimeLevel, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_TimePosition, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_TimePositionLevel, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_TimePositionLevelSpeed, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_TimeSpeed, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_TimeSpeedSpeed, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_TimeTime, .format = &asn1_format_TimeTime, .label = NULL },
+	{ .type = &asn_DEF_TimeToFromPosition, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_TimeTolerance, .format = &asn1_format_ENUM, .label = "Time tolerance" },
+	{ .type = &asn_DEF_TimeUnitNameFrequency, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_ToFrom, .format = &asn1_format_ENUM, .label = "To/From" },
+	{ .type = &asn_DEF_ToFromPosition, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_TrafficType, .format = &asn1_format_ENUM, .label = "Traffic type" },
+	{ .type = &asn_DEF_Turbulence, .format = &asn1_format_ENUM, .label = "Turbulence" },
 	{ .type = &asn_DEF_UnitName, .format = &asn1_format_UnitName, .label = "Unit name" },
+	{ .type = &asn_DEF_UnitNameFrequency, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_VerticalChange, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_VerticalDirection, .format = &asn1_format_ENUM, .label = "Vertical direction" },
 	{ .type = &asn_DEF_VerticalRate, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_VerticalRateEnglish, .format = &asn1_format_VerticalRateEnglish, .label = "Vertical rate" },
 	{ .type = &asn_DEF_VerticalRateMetric, .format = &asn1_format_VerticalRateMetric, .label = "Vertical rate" },
+	{ .type = &asn_DEF_WaypointSpeedLevel, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_WindDirection, .format = &asn1_format_Deg, .label = "Wind direction" },
+	{ .type = &asn_DEF_Winds, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_WindSpeed, .format = &asn1_format_CHOICE, .label = NULL },
+	{ .type = &asn_DEF_WindSpeedEnglish, .format = &asn1_format_SpeedEnglish, .label = "Wind speed" },
+	{ .type = &asn_DEF_WindSpeedMetric, .format = &asn1_format_SpeedMetric, .label = "Wind speed" },
 // atn-cm.asn1
 	{ .type = &asn_DEF_APAddress, .format = &asn1_format_CHOICE, .label = "AP Address" },
 	{ .type = &asn_DEF_AEQualifier, .format = &asn1_format_any, .label = "Application Entity Qualifier" },
@@ -848,7 +1088,7 @@ static asn_formatter_t const asn1_formatter_table[] = {
 	{ .type = &asn_DEF_LongTsap, .format = &asn1_format_LongTsap, .label = "Long TSAP" },
 	{ .type = &asn_DEF_OCTET_STRING, .format = &asn1_format_any, .label = NULL },
 	{ .type = &asn_DEF_ShortTsap, .format = &asn1_format_ShortTsap, .label = "Short TSAP" },
-	{ .type = &asn_DEF_VersionNumber, .format = &asn1_format_any, .label = "Version number" },
+	{ .type = &asn_DEF_VersionNumber, .format = &asn1_format_any, .label = "Version number" }
 };
 
 static size_t asn1_formatter_table_len = sizeof(asn1_formatter_table) / sizeof(asn_formatter_t);
@@ -873,5 +1113,4 @@ void output_asn1(FILE *stream, asn_TYPE_descriptor_t *td, const void *sptr, int 
 		IFPRINTF(stream, indent, "%s", "-- ASN.1 dump end\n");
 	}
 }
-
 
