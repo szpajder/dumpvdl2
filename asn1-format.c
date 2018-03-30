@@ -517,8 +517,9 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCDownlinkMessageData) {
 	IFPRINTF(stream, indent, "%s:\n", label);
 	indent++;
 	_format_SEQUENCE_OF(stream, &asn_DEF_ATCDownlinkMsgElementId, &dmd->elementIds, indent);
-	if(dmd->constrainedData != NULL) {
-		output_asn1(stream, &asn_DEF_RouteClearance, dmd->constrainedData, indent);
+	if(dmd->constrainedData != NULL && dmd->constrainedData->routeClearanceData != NULL) {
+		_format_SEQUENCE_OF(stream, &asn_DEF_RouteClearance,
+			dmd->constrainedData->routeClearanceData, indent);
 	}
 }
 
@@ -531,8 +532,9 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCUplinkMessageData) {
 	IFPRINTF(stream, indent, "%s:\n", label);
 	indent++;
 	_format_SEQUENCE_OF(stream, &asn_DEF_ATCUplinkMsgElementId, &umd->elementIds, indent);
-	if(umd->constrainedData != NULL) {
-		output_asn1(stream, &asn_DEF_RouteClearance, umd->constrainedData, indent);
+	if(umd->constrainedData != NULL && umd->constrainedData->routeClearanceData != NULL) {
+		_format_SEQUENCE_OF(stream, &asn_DEF_RouteClearance,
+			umd->constrainedData->routeClearanceData, indent);
 	}
 }
 
@@ -804,6 +806,47 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_TimeTime) {
 	_format_SEQUENCE_OF(stream, &asn_DEF_Time, sptr, indent);
 }
 
+ASN1_FORMATTER_PROTOTYPE(asn1_format_RouteClearance) {
+	CAST_PTR(rc, RouteClearance_t *, sptr);
+	if(label != NULL) {
+		IFPRINTF(stream, indent, "%s:\n", label);
+		indent++;
+	}
+// Can't use output_asn1 here - we have two different labels for the same type.
+// FIXME: replace this with unique types and switch to asn1_format_SEQUENCE.
+	if(rc->airportDeparture != NULL) {
+		asn1_format_any(stream, "Departure airport", &asn_DEF_Airport, rc->airportDeparture, indent);
+	}
+	if(rc->airportDestination != NULL) {
+		asn1_format_any(stream, "Destination airport", &asn_DEF_Airport, rc->airportDestination, indent);
+	}
+	if(rc->runwayDeparture != NULL) {
+		asn1_format_SEQUENCE(stream, "Departure runway", &asn_DEF_Runway, rc->runwayDeparture, indent);
+	}
+	if(rc->procedureDeparture != NULL) {
+		asn1_format_SEQUENCE(stream, "Departure procedure", &asn_DEF_ProcedureName, rc->procedureDeparture, indent);
+	}
+	if(rc->runwayArrival != NULL) {
+		asn1_format_SEQUENCE(stream, "Arrival runway", &asn_DEF_Runway, rc->runwayArrival, indent);
+	}
+	if(rc->procedureApproach != NULL) {
+		asn1_format_SEQUENCE(stream, "Approach procedure", &asn_DEF_ProcedureName, rc->procedureApproach, indent);
+	}
+	if(rc->procedureArrival != NULL) {
+		asn1_format_SEQUENCE(stream, "Arrival procedure", &asn_DEF_ProcedureName, rc->procedureArrival, indent);
+	}
+	if(rc->routeInformations != NULL) {
+		IFPRINTF(stream, indent, "%s:\n", "Route informations");
+		indent++;
+		_format_SEQUENCE_OF(stream, &asn_DEF_RouteInformation, rc->routeInformations, indent);
+		indent--;
+	}
+	if(rc->routeInformationAdditional != NULL) {
+		asn1_format_SEQUENCE(stream, "Additional route information", &asn_DEF_RouteInformationAdditional,
+			rc->routeInformationAdditional, indent);
+	}
+}
+
 ASN1_FORMATTER_PROTOTYPE(asn1_format_UnitName) {
 	CAST_PTR(un, UnitName_t *, sptr);
 	char *fdes = XCALLOC(un->facilityDesignation.size + 1, sizeof(char));
@@ -996,6 +1039,7 @@ static asn_formatter_t const asn1_formatter_table[] = {
 	{ .type = &asn_DEF_ReportingPoints, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_RevisionNumber, .format = &asn1_format_any, .label = "Revision number" },
 	{ .type = &asn_DEF_RouteAndLevels, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_RouteClearance, .format = &asn1_format_RouteClearance, .label = "Route clearance" },
 	{ .type = &asn_DEF_RouteClearanceIndex, .format = &asn1_format_any, .label = "Route clearance index" },
 	{ .type = &asn_DEF_RouteInformation, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_RouteInformationAdditional, .format = &asn1_format_SEQUENCE, .label = NULL },
