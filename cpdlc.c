@@ -68,6 +68,7 @@ cpdlc_msg_t *cpdlc_parse_msg(cpdlc_msgid_t msgid, uint8_t *buf, size_t len, uint
 	if(asn1_decode_as(msg.asn_type, &msg.data, buf, len) != 0)
 		msg.err = 1;
 
+	*msg_type |= MSGFLT_CPDLC;
 	return &msg;
 }
 
