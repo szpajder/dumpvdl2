@@ -512,18 +512,11 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE) {
 	}
 }
 
-// TODO: _format_SEQUENCE_OF
 ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCDownlinkMessageData) {
 	CAST_PTR(dmd, ATCDownlinkMessageData_t *, sptr);
 	IFPRINTF(stream, indent, "%s:\n", label);
 	indent++;
-	for(int i = 0; i < dmd->elementIds.list.count; i++) {
-		const void *element = dmd->elementIds.list.array[i];
-		if(element == NULL) {
-			continue;
-		}
-		output_asn1(stream, &asn_DEF_ATCDownlinkMsgElementId, element, indent);
-	}
+	_format_SEQUENCE_OF(stream, &asn_DEF_ATCDownlinkMsgElementId, &dmd->elementIds, indent);
 	if(dmd->constrainedData != NULL) {
 		output_asn1(stream, &asn_DEF_RouteClearance, dmd->constrainedData, indent);
 	}
@@ -533,18 +526,11 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCDownlinkMsgElementId) {
 	_format_CHOICE(stream, ATCDownlinkMsgElementId_labels, td, sptr, indent);
 }
 
-// TODO: _format_SEQUENCE_OF
 ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCUplinkMessageData) {
 	CAST_PTR(umd, ATCUplinkMessageData_t *, sptr);
 	IFPRINTF(stream, indent, "%s:\n", label);
 	indent++;
-	for(int i = 0; i < umd->elementIds.list.count; i++) {
-		const void *element = umd->elementIds.list.array[i];
-		if(element == NULL) {
-			continue;
-		}
-		output_asn1(stream, &asn_DEF_ATCUplinkMsgElementId, element, indent);
-	}
+	_format_SEQUENCE_OF(stream, &asn_DEF_ATCUplinkMsgElementId, &umd->elementIds, indent);
 	if(umd->constrainedData != NULL) {
 		output_asn1(stream, &asn_DEF_RouteClearance, umd->constrainedData, indent);
 	}
