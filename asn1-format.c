@@ -17,7 +17,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <search.h>				// lfind()
 #include "asn1/ATCDownlinkMessage.h"		// ATCDownlinkMessage_t and dependencies
 #include "asn1/ATCUplinkMessage.h"		// ATCUplinkMessage_t and dependencies
 #include "asn1/CMAircraftMessage.h"		// asn_DEF_AircraftMessage
@@ -29,9 +28,11 @@
 #include "asn1/asn_SET_OF.h"			// _A_CSET_FROM_VOID()
 #include "tlv.h"				// dict_search()
 #include "dumpvdl2.h"				// XCALLOC
-#include "asn1-format.h"
+#include "asn1-util.h"				// asn_formatter_t, asn1_output()
 
-// FIXME: bsearch
+// forward declaration
+void asn1_output_icao(FILE *stream, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
+
 static dict const ATCUplinkMsgElementId_labels[] = {
 	{ ATCUplinkMsgElementId_PR_uM0NULL, "UNABLE" },
 	{ ATCUplinkMsgElementId_PR_uM1NULL, "STANDBY" },
@@ -429,7 +430,7 @@ static void _format_CHOICE(FILE *stream, dict const * const choice_labels, asn_T
 			memb_ptr = (const void *)((const char *)sptr + elm->memb_offset);
 		}
 
-		output_asn1(stream, elm->type, memb_ptr, indent);
+		asn1_output_icao(stream, elm->type, memb_ptr, indent);
 	} else {
 		IFPRINTF(stream, indent, "-- %s: value %d out of range\n", td->name, present);
 	}
@@ -442,7 +443,7 @@ static void _format_SEQUENCE_OF(FILE *stream, asn_TYPE_descriptor_t *td, void co
 		if(element == NULL) {
 			continue;
 		}
-		output_asn1(stream, td, element, indent);
+		asn1_output_icao(stream, td, element, indent);
 	}
 }
 
@@ -508,7 +509,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE) {
 		} else {
 			memb_ptr = (const void *)((const char *)sptr + elm->memb_offset);
 		}
-		output_asn1(stream, elm->type, memb_ptr, indent);
+		asn1_output_icao(stream, elm->type, memb_ptr, indent);
 	}
 }
 
@@ -657,7 +658,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_LongTsap) {
 	IFPRINTF(stream, indent, "%s:\n", label);
 	indent++;
 	asn1_format_any(stream, "RDP", &asn_DEF_OCTET_STRING, &tsap->rDP, indent);
-	output_asn1(stream, &asn_DEF_ShortTsap, &tsap->shortTsap, indent);
+	asn1_output_icao(stream, &asn_DEF_ShortTsap, &tsap->shortTsap, indent);
 }
 
 // FIXME: change aRS type to something unique - then we'll be able to replace
@@ -812,7 +813,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_RouteClearance) {
 		IFPRINTF(stream, indent, "%s:\n", label);
 		indent++;
 	}
-// Can't use output_asn1 here - we have two different labels for the same type.
+// Can't use asn1_output_icao here - we have two different labels for the same type.
 // FIXME: replace this with unique types and switch to asn1_format_SEQUENCE.
 	if(rc->airportDeparture != NULL) {
 		asn1_format_any(stream, "Departure airport", &asn_DEF_Airport, rc->airportDeparture, indent);
@@ -868,8 +869,8 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_CMLogonRequest) {
 	CAST_PTR(cmlr, CMLogonRequest_t *, sptr);
 	IFPRINTF(stream, indent, "%s:\n", label);
 	indent++;
-	output_asn1(stream, &asn_DEF_AircraftFlightIdentification, &cmlr->aircraftFlightIdentification, indent);
-	output_asn1(stream, &asn_DEF_LongTsap, &cmlr->cMLongTSAP, indent);
+	asn1_output_icao(stream, &asn_DEF_AircraftFlightIdentification, &cmlr->aircraftFlightIdentification, indent);
+	asn1_output_icao(stream, &asn_DEF_LongTsap, &cmlr->cMLongTSAP, indent);
 	if(cmlr->groundInitiatedApplications != NULL) {
 		IFPRINTF(stream, indent, "%s:\n", "Ground-initiated applications");
 		_format_SEQUENCE_OF(stream, &asn_DEF_AEQualifierVersionAddress, cmlr->groundInitiatedApplications, indent+1);
@@ -879,9 +880,9 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_CMLogonRequest) {
 		_format_SEQUENCE_OF(stream, &asn_DEF_AEQualifierVersion, cmlr->airOnlyInitiatedApplications, indent+1);
 	}
 	if(cmlr->facilityDesignation != NULL) {
-		output_asn1(stream, &asn_DEF_FacilityDesignation, cmlr->facilityDesignation, indent+1);
+		asn1_output_icao(stream, &asn_DEF_FacilityDesignation, cmlr->facilityDesignation, indent+1);
 	}
-// Can't use output_asn1 here - we have two different labels for the same type.
+// Can't use asn1_output_icao here - we have two different labels for the same type.
 	if(cmlr->airportDeparture != NULL) {
 		asn1_format_any(stream, "Departure airport", &asn_DEF_Airport, cmlr->airportDeparture, indent);
 	}
@@ -907,7 +908,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_CMLogonResponse) {
 	}
 }
 
-static asn_formatter_t const asn1_formatter_table[] = {
+static asn_formatter_t const asn1_icao_formatter_table[] = {
 // atn-cpdlc.asn1
 	{ .type = &asn_DEF_AircraftAddress, .format = &asn1_format_any, .label = "Aircraft address" },
 	{ .type = &asn_DEF_Altimeter, .format = &asn1_format_CHOICE, .label = NULL },
@@ -1121,26 +1122,9 @@ static asn_formatter_t const asn1_formatter_table[] = {
 	{ .type = &asn_DEF_VersionNumber, .format = &asn1_format_any, .label = "Version number" }
 };
 
-static size_t asn1_formatter_table_len = sizeof(asn1_formatter_table) / sizeof(asn_formatter_t);
+static size_t asn1_icao_formatter_table_len = sizeof(asn1_icao_formatter_table) / sizeof(asn_formatter_t);
 
-static int compare_fmtr(const void *k, const void *m) {
-	asn_formatter_t *memb = (asn_formatter_t *)m;
-	return(k == memb->type ? 0 : 1);
-}
-
-void output_asn1(FILE *stream, asn_TYPE_descriptor_t *td, const void *sptr, int indent) {
-	if(td == NULL || sptr == NULL) return;
-	asn_formatter_t *formatter = lfind(td, asn1_formatter_table, &asn1_formatter_table_len,
-		sizeof(asn_formatter_t), &compare_fmtr);
-	if(formatter != NULL) {
-		(*formatter->format)(stream, formatter->label, td, sptr, indent);
-	} else {
-		IFPRINTF(stream, indent, "-- Formatter for type %s not found, ASN.1 dump follows:\n", td->name);
-		if(indent > 0) {
-			IFPRINTF(stream, indent * 4, "%s", "");	// asn_fprint does not indent the first line
-		}
-		asn_fprint(stream, td, sptr, indent+1);
-		IFPRINTF(stream, indent, "%s", "-- ASN.1 dump end\n");
-	}
+void asn1_output_icao(FILE *stream, asn_TYPE_descriptor_t *td, const void *sptr, int indent) {
+	asn1_output(stream, asn1_icao_formatter_table, asn1_icao_formatter_table_len, td, sptr, indent);
 }
 

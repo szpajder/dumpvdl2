@@ -17,8 +17,25 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef _ASN1_UTIL_H
+#define _ASN1_UTIL_H
 #include <stdint.h>			// uint8_t
 #include "asn1/constr_TYPE.h"		// asn_TYPE_descriptor_t
 
+typedef struct {
+	asn_TYPE_descriptor_t *type;
+	void (*format)(FILE *, char const * const label, asn_TYPE_descriptor_t *, const void *, int);
+	char const * const label;
+} asn_formatter_t;
+
+#define ASN1_FORMATTER_PROTOTYPE(x) static void x(FILE *stream, char const * const label, asn_TYPE_descriptor_t *td, void const *sptr, int indent)
+// FIXME: dedup with adsc.h
+#define CAST_PTR(x, t, y) t x = (t)(y)
+#define IFPRINTF(s, i, f, ...) fprintf(s, "%*s" f, i, "", __VA_ARGS__)
+
 // asn1-util.c
 int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, int size);
+void asn1_output(FILE *stream, asn_formatter_t const * const asn1_formatter_table,
+	size_t asn1_formatter_table_len, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
+
+#endif // _ASN1_UTIL_H

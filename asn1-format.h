@@ -19,16 +19,5 @@
 
 #include "asn1/constr_TYPE.h"		// asn_TYPE_descriptor_t
 
-typedef struct {
-	asn_TYPE_descriptor_t *type;
-	void (*format)(FILE *, char const * const label, asn_TYPE_descriptor_t *, const void *, int);
-	char const * const label;
-} asn_formatter_t;
-
-#define ASN1_FORMATTER_PROTOTYPE(x) static void x(FILE *stream, char const * const label, asn_TYPE_descriptor_t *td, void const *sptr, int indent)
-// FIXME: dedup with adsc.h
-#define CAST_PTR(x, t, y) t x = (t)(y)
-#define IFPRINTF(s, i, f, ...) fprintf(s, "%*s" f, i, "", __VA_ARGS__)
-
 // asn1-format.c
-void output_asn1(FILE *stream, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
+void asn1_output_icao(FILE *stream, asn_TYPE_descriptor_t *td, const void *sptr, int indent);

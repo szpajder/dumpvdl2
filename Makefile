@@ -88,9 +88,9 @@ $(ASN1): asn1 ;
 
 adsc.o: dumpvdl2.h adsc.h tlv.h
 
-asn1-format.o: tlv.h dumpvdl2.h asn1-format.h
+asn1-format.o: tlv.h dumpvdl2.h asn1-util.h
 
-asn1-util.o: dumpvdl2.h
+asn1-util.o: dumpvdl2.h asn1-util.h
 
 clnp.o: dumpvdl2.h clnp.h idrp.h cotp.h
 

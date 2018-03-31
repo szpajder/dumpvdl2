@@ -30,7 +30,7 @@
 #include "asn1/ProtectedGroundPDUs.h"
 #include "dumpvdl2.h"			// outf
 #include "asn1-util.h"			// asn1_decode_as()
-#include "asn1-format.h"		// asn1_output()
+#include "asn1-format.h"		// asn1_output_icao()
 #include "icao.h"
 
 #define ACSE_APDU_TYPE_MATCHES(type, value) ((type) == (value) || (type) == ACSE_apdu_PR_NOTHING)
@@ -367,7 +367,7 @@ void output_icao_apdu(icao_apdu_t *icao_apdu) {
 		if(icao_apdu->data != NULL) {
 			if(dump_asn1)
 				asn_fprint(outf, icao_apdu->type, icao_apdu->data, 1);
-			output_asn1(outf, icao_apdu->type, icao_apdu->data, 0);
+			asn1_output_icao(outf, icao_apdu->type, icao_apdu->data, 0);
 		} else {
 			fprintf(outf, "%s: <empty PDU>\n", icao_apdu->type->name);
 		}
