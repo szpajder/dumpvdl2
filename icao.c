@@ -30,7 +30,7 @@
 #include "asn1/ProtectedGroundPDUs.h"
 #include "dumpvdl2.h"			// outf
 #include "asn1-util.h"			// asn1_decode_as()
-#include "asn1-format.h"		// asn1_output_icao()
+#include "asn1-format-icao.h"		// asn1_output_icao()
 #include "icao.h"
 
 #define ACSE_APDU_TYPE_MATCHES(type, value) ((type) == (value) || (type) == ACSE_apdu_PR_NOTHING)

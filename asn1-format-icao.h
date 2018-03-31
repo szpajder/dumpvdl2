@@ -19,5 +19,5 @@
 
 #include "asn1/constr_TYPE.h"		// asn_TYPE_descriptor_t
 
-// asn1-format.c
+// asn1-format-icao.c
 void asn1_output_icao(FILE *stream, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
