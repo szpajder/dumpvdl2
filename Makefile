@@ -33,6 +33,7 @@ CLEANDIRS = $(SUBDIRS:%=clean-%)
 BIN = dumpvdl2
 OBJ =	acars.o \
 	adsc.o \
+	asn1-format-cpdlc.o \
 	asn1-format-icao.o \
 	asn1-util.o \
 	avlc.o \
@@ -88,6 +89,8 @@ $(ASN1): asn1 ;
 
 adsc.o: dumpvdl2.h adsc.h tlv.h
 
+asn1-format-cpdlc.o: tlv.h dumpvdl2.h asn1-util.h
+
 asn1-format-icao.o: tlv.h dumpvdl2.h asn1-util.h
 
 asn1-util.o: dumpvdl2.h asn1-util.h
@@ -96,7 +99,7 @@ clnp.o: dumpvdl2.h clnp.h idrp.h cotp.h
 
 cotp.o: dumpvdl2.h tlv.h cotp.h icao.h
 
-cpdlc.o: dumpvdl2.h asn1-util.h cpdlc.h
+cpdlc.o: dumpvdl2.h asn1-util.h cpdlc.h asn1-format-cpdlc.h
 
 decode.o: dumpvdl2.h
 

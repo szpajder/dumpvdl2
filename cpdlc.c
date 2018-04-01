@@ -25,6 +25,7 @@
 #include "asn1/asn_application.h"		// asn_fprint()
 #include "dumpvdl2.h"				// outf
 #include "asn1-util.h"				// asn1_decode_as()
+#include "asn1-format-cpdlc.h"			// asn1_output_cpdlc()
 #include "cpdlc.h"
 
 static char const * const cpdlc_msgid_descr_table[CPDLC_MSGID_CNT] = {
@@ -83,9 +84,12 @@ void cpdlc_output_msg(cpdlc_msg_t *msg) {
 		return;
 	}
 	if(msg->asn_type != NULL) {
-		if(msg->data != NULL)
-			asn_fprint(outf, msg->asn_type, msg->data, 1);
-		else
+		if(msg->data != NULL) {
+			if(dump_asn1)
+				asn_fprint(outf, msg->asn_type, msg->data, 1);
+			asn1_output_cpdlc(outf, msg->asn_type, msg->data, 0);
+		} else {
 			fprintf(outf, "%s: <empty PDU>\n", msg->asn_type->name);
+		}
 	}
 }
