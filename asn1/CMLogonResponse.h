@@ -12,8 +12,6 @@
 #include <asn_application.h>
 
 /* Including external dependencies */
-#include <asn_SEQUENCE_OF.h>
-#include <constr_SEQUENCE_OF.h>
 #include <constr_SEQUENCE.h>
 
 #ifdef __cplusplus
@@ -21,23 +19,13 @@ extern "C" {
 #endif
 
 /* Forward declarations */
-struct AEQualifierVersionAddress;
-struct AEQualifierVersion;
+struct AirInitiatedApplications;
+struct GroundOnlyInitiatedApplications;
 
 /* CMLogonResponse */
 typedef struct CMLogonResponse {
-	struct CMLogonResponse__airInitiatedApplications {
-		A_SEQUENCE_OF(struct AEQualifierVersionAddress) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *airInitiatedApplications;
-	struct CMLogonResponse__groundOnlyInitiatedApplications {
-		A_SEQUENCE_OF(struct AEQualifierVersion) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *groundOnlyInitiatedApplications;
+	struct AirInitiatedApplications	*airInitiatedApplications	/* OPTIONAL */;
+	struct GroundOnlyInitiatedApplications	*groundOnlyInitiatedApplications	/* OPTIONAL */;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
@@ -51,8 +39,8 @@ extern asn_TYPE_descriptor_t asn_DEF_CMLogonResponse;
 #endif
 
 /* Referred external types */
-#include "AEQualifierVersionAddress.h"
-#include "AEQualifierVersion.h"
+#include "AirInitiatedApplications.h"
+#include "GroundOnlyInitiatedApplications.h"
 
 #endif	/* _CMLogonResponse_H_ */
 #include <asn_internal.h>

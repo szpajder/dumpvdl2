@@ -17,8 +17,6 @@
 #include "FacilityDesignation.h"
 #include "AirportDeparture.h"
 #include "AirportDestination.h"
-#include <asn_SEQUENCE_OF.h>
-#include <constr_SEQUENCE_OF.h>
 #include <constr_SEQUENCE.h>
 
 #ifdef __cplusplus
@@ -26,26 +24,16 @@ extern "C" {
 #endif
 
 /* Forward declarations */
+struct GroundInitiatedApplications;
+struct AirOnlyInitiatedApplications;
 struct DateTime;
-struct AEQualifierVersionAddress;
-struct AEQualifierVersion;
 
 /* CMLogonRequest */
 typedef struct CMLogonRequest {
 	AircraftFlightIdentification_t	 aircraftFlightIdentification;
 	LongTsap_t	 cMLongTSAP;
-	struct CMLogonRequest__groundInitiatedApplications {
-		A_SEQUENCE_OF(struct AEQualifierVersionAddress) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *groundInitiatedApplications;
-	struct CMLogonRequest__airOnlyInitiatedApplications {
-		A_SEQUENCE_OF(struct AEQualifierVersion) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *airOnlyInitiatedApplications;
+	struct GroundInitiatedApplications	*groundInitiatedApplications	/* OPTIONAL */;
+	struct AirOnlyInitiatedApplications	*airOnlyInitiatedApplications	/* OPTIONAL */;
 	FacilityDesignation_t	*facilityDesignation	/* OPTIONAL */;
 	AirportDeparture_t	*airportDeparture	/* OPTIONAL */;
 	AirportDestination_t	*airportDestination	/* OPTIONAL */;
@@ -63,9 +51,9 @@ extern asn_TYPE_descriptor_t asn_DEF_CMLogonRequest;
 #endif
 
 /* Referred external types */
-#include "DateTime.h"
-#include "AEQualifierVersionAddress.h"
-#include "AEQualifierVersion.h"
+#include "GroundInitiatedApplications.h"
+#include "AirOnlyInitiatedApplications.h"
+#include "DateTimeDepartureETD.h"
 
 #endif	/* _CMLogonRequest_H_ */
 #include <asn_internal.h>

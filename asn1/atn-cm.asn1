@@ -61,6 +61,14 @@ AEQualifierVersionAddress ::= SEQUENCE
     apAddress   APAddress
 }
 
+AirInitiatedApplications ::= SEQUENCE SIZE (1..256) OF AEQualifierVersionAddress
+
+AirOnlyInitiatedApplications ::= SEQUENCE SIZE (1..256) OF AEQualifierVersion
+
+GroundInitiatedApplications ::= SEQUENCE SIZE (1..256) OF AEQualifierVersionAddress
+
+GroundOnlyInitiatedApplications ::= SEQUENCE SIZE (1..256) OF AEQualifierVersion
+
 CMAbortReason ::= ENUMERATED
 {
     timer-expired         (0),
@@ -99,20 +107,18 @@ CMLogonRequest ::= SEQUENCE
     aircraftFlightIdentification  [0] AircraftFlightIdentification,
     cMLongTSAP      [1] LongTsap,
 
-    groundInitiatedApplications [2] SEQUENCE SIZE (1..256) OF  AEQualifierVersionAddress OPTIONAL,
-    airOnlyInitiatedApplications  [3] SEQUENCE SIZE (1..256) OF  AEQualifierVersion OPTIONAL,
+    groundInitiatedApplications [2] GroundInitiatedApplications OPTIONAL,
+    airOnlyInitiatedApplications  [3] AirOnlyInitiatedApplications OPTIONAL,
     facilityDesignation   [4] FacilityDesignation     OPTIONAL,
     airportDeparture    [5] AirportDeparture       OPTIONAL,
     airportDestination    [6] AirportDestination       OPTIONAL,
-    dateTimeDepartureETD    [7] DateTime        OPTIONAL
+    dateTimeDepartureETD    [7] DateTimeDepartureETD        OPTIONAL
 }
 
 CMLogonResponse ::= SEQUENCE
 {
-    airInitiatedApplications    [0] SEQUENCE SIZE (1..256) OF  AEQualifierVersionAddress
-    OPTIONAL,
-    groundOnlyInitiatedApplications [1] SEQUENCE SIZE (1..256) OF  AEQualifierVersion
-    OPTIONAL
+    airInitiatedApplications    [0] AirInitiatedApplications OPTIONAL,
+    groundOnlyInitiatedApplications [1] GroundOnlyInitiatedApplications OPTIONAL
 }
 
 CMUpdate ::= CMLogonResponse
@@ -134,6 +140,8 @@ DateTime ::= SEQUENCE
     date    Date,
     time    Time
 }
+
+DateTimeDepartureETD ::= DateTime
 
 Day ::= INTEGER (1..31)
   --unit = Day, Range (1..31), resolution = 1

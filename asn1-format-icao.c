@@ -513,6 +513,22 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE) {
 	}
 }
 
+ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_OF) {
+	if(label != NULL) {
+		IFPRINTF(stream, indent, "%s:\n", label);
+		indent++;
+	}
+	asn_TYPE_member_t *elm = td->elements;
+	const asn_anonymous_set_ *list = _A_CSET_FROM_VOID(sptr);
+	for(int i = 0; i < list->count; i++) {
+		const void *memb_ptr = list->array[i];
+		if(memb_ptr == NULL) {
+			continue;
+		}
+		asn1_output_icao(stream, elm->type, memb_ptr, indent);
+	}
+}
+
 ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCDownlinkMessageData) {
 	CAST_PTR(dmd, ATCDownlinkMessageData_t *, sptr);
 	IFPRINTF(stream, indent, "%s:\n", label);
@@ -863,50 +879,10 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_UnitName) {
 	XFREE(fname);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_CMLogonRequest) {
-	CAST_PTR(cmlr, CMLogonRequest_t *, sptr);
-	IFPRINTF(stream, indent, "%s:\n", label);
-	indent++;
-	asn1_output_icao(stream, &asn_DEF_AircraftFlightIdentification, &cmlr->aircraftFlightIdentification, indent);
-	asn1_output_icao(stream, &asn_DEF_LongTsap, &cmlr->cMLongTSAP, indent);
-	if(cmlr->groundInitiatedApplications != NULL) {
-		IFPRINTF(stream, indent, "%s:\n", "Ground-initiated applications");
-		_format_SEQUENCE_OF(stream, &asn_DEF_AEQualifierVersionAddress, cmlr->groundInitiatedApplications, indent+1);
-	}
-	if(cmlr->airOnlyInitiatedApplications != NULL) {
-		IFPRINTF(stream, indent, "%s:\n", "Air-initiated applications");
-		_format_SEQUENCE_OF(stream, &asn_DEF_AEQualifierVersion, cmlr->airOnlyInitiatedApplications, indent+1);
-	}
-	if(cmlr->facilityDesignation != NULL) {
-		asn1_output_icao(stream, &asn_DEF_FacilityDesignation, cmlr->facilityDesignation, indent+1);
-	}
-	if(cmlr->airportDeparture != NULL) {
-		asn1_output_icao(stream, &asn_DEF_AirportDeparture, cmlr->airportDeparture, indent);
-	}
-	if(cmlr->airportDestination != NULL) {
-		asn1_output_icao(stream, &asn_DEF_AirportDestination, cmlr->airportDestination, indent);
-	}
-	if(cmlr->dateTimeDepartureETD != NULL) {
-		asn1_format_DateTime(stream, "Departure time", &asn_DEF_DateTime, cmlr->dateTimeDepartureETD, indent);
-	}
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_CMLogonResponse) {
-	CAST_PTR(cmlr, CMLogonResponse_t *, sptr);
-	IFPRINTF(stream, indent, "%s:\n", label);
-	indent++;
-	if(cmlr->airInitiatedApplications != NULL) {
-		IFPRINTF(stream, indent, "%s:\n", "Air-initiated applications");
-		_format_SEQUENCE_OF(stream, &asn_DEF_AEQualifierVersionAddress, cmlr->airInitiatedApplications, indent+1);
-	}
-	if(cmlr->groundOnlyInitiatedApplications != NULL) {
-		IFPRINTF(stream, indent, "%s:\n", "Ground-initiated applications");
-		_format_SEQUENCE_OF(stream, &asn_DEF_AEQualifierVersion, cmlr->groundOnlyInitiatedApplications, indent+1);
-	}
-}
-
 static asn_formatter_t const asn1_icao_formatter_table[] = {
 // atn-cpdlc.asn1
+	{ .type = &asn_DEF_AirInitiatedApplications, .format = &asn1_format_SEQUENCE_OF, .label = "Air-initiated applications" },
+	{ .type = &asn_DEF_AirOnlyInitiatedApplications, .format = &asn1_format_SEQUENCE_OF, .label = "Air-only-initiated applications" },
 	{ .type = &asn_DEF_Airport, .format = &asn1_format_any, .label = "Airport" },
 	{ .type = &asn_DEF_AirportDeparture, .format = &asn1_format_any, .label = "Departure airport" },
 	{ .type = &asn_DEF_AirportDestination, .format = &asn1_format_any, .label = "Destination airport" },
@@ -932,6 +908,7 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_ClearanceType, .format = &asn1_format_ENUM, .label = "Clearance type" },
 	{ .type = &asn_DEF_Code, .format = &asn1_format_Code, .label = "Code" },
 	{ .type = &asn_DEF_ControlledTime, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_DateTimeDepartureETD, .format = &asn1_format_DateTime, .label = "Departure time" },
 	{ .type = &asn_DEF_DateTimeGroup, .format = &asn1_format_DateTimeGroup, .label = "Timestamp" },
 	{ .type = &asn_DEF_DegreeIncrement, .format = &asn1_format_Deg, .label = "Degree increment" },
 	{ .type = &asn_DEF_Degrees, .format = &asn1_format_CHOICE, .label = NULL },
@@ -966,6 +943,8 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_Frequencyuhf, .format = &asn1_format_Frequencyuhf, .label = "UHF" },
 	{ .type = &asn_DEF_Frequencyvhf, .format = &asn1_format_Frequencyvhf, .label = "VHF" },
 	{ .type = &asn_DEF_FurtherInstructions, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_GroundInitiatedApplications, .format = &asn1_format_SEQUENCE_OF, .label = "Ground-initiated applications" },
+	{ .type = &asn_DEF_GroundOnlyInitiatedApplications, .format = &asn1_format_SEQUENCE_OF, .label = "Ground-only-initiated applications" },
 	{ .type = &asn_DEF_Holdatwaypoint, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_HoldClearance, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_Humidity, .format = &asn1_format_Humidity, .label = "Humidity" },
@@ -1111,11 +1090,11 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_CMGroundMessage, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_CMContactRequest, .format = &asn1_format_SEQUENCE, .label = "ATN Context Management - Contact Request" },
 	{ .type = &asn_DEF_CMContactResponse, .format = &asn1_format_ENUM, .label = "ATN Context Management - Contact Response" },
-	{ .type = &asn_DEF_CMForwardRequest, .format = &asn1_format_CMLogonRequest, .label = "ATN Context Management - Forward Request" },
+	{ .type = &asn_DEF_CMForwardRequest, .format = &asn1_format_SEQUENCE, .label = "ATN Context Management - Forward Request" },
 	{ .type = &asn_DEF_CMForwardResponse, .format = &asn1_format_ENUM, .label = "ATN Context Management - Forward Response" },
-	{ .type = &asn_DEF_CMLogonRequest, .format = &asn1_format_CMLogonRequest, .label = "ATN Context Management - Logon Request" },
-	{ .type = &asn_DEF_CMLogonResponse, .format = &asn1_format_CMLogonResponse, .label = "ATN Context Management - Logon Response" },
-	{ .type = &asn_DEF_CMUpdate, .format = &asn1_format_CMLogonResponse, .label = "ATN Context Management - Update" },
+	{ .type = &asn_DEF_CMLogonRequest, .format = &asn1_format_SEQUENCE, .label = "ATN Context Management - Logon Request" },
+	{ .type = &asn_DEF_CMLogonResponse, .format = &asn1_format_SEQUENCE, .label = "ATN Context Management - Logon Response" },
+	{ .type = &asn_DEF_CMUpdate, .format = &asn1_format_SEQUENCE, .label = "ATN Context Management - Update" },
 	{ .type = &asn_DEF_LongTsap, .format = &asn1_format_LongTsap, .label = "Long TSAP" },
 	{ .type = &asn_DEF_OCTET_STRING, .format = &asn1_format_any, .label = NULL },
 	{ .type = &asn_DEF_ShortTsap, .format = &asn1_format_ShortTsap, .label = "Short TSAP" },

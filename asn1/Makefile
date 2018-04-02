@@ -6,6 +6,8 @@ CFLAGS += -std=c99 -g -Wall -O3 -fno-omit-frame-pointer -DEMIT_ASN_DEBUG=$(DEBUG
 ASN_MODULE_SOURCES=	\
 	CMAircraftMessage.c	\
 	CMGroundMessage.c	\
+	AirInitiatedApplications.c \
+	AirOnlyInitiatedApplications.c \
 	AircraftFlightIdentification.c	\
 	Airport.c	\
 	AirportDeparture.c \
@@ -24,6 +26,7 @@ ASN_MODULE_SOURCES=	\
 	CMUpdate.c	\
 	Date.c	\
 	DateTime.c	\
+	DateTimeDepartureETD.c \
 	Day.c	\
 	FacilityDesignation.c	\
 	LongTsap.c	\
@@ -116,6 +119,8 @@ ASN_MODULE_SOURCES=	\
 	Frequencyuhf.c	\
 	Frequencyvhf.c	\
 	FurtherInstructions.c	\
+	GroundInitiatedApplications.c \
+	GroundOnlyInitiatedApplications.c \
 	Holdatwaypoint.c	\
 	HoldClearance.c	\
 	Humidity.c	\
@@ -500,6 +505,8 @@ ASN_MODULE_SOURCES=	\
 ASN_MODULE_HEADERS=	\
 	CMAircraftMessage.h	\
 	CMGroundMessage.h	\
+	AirInitiatedApplications.h \
+	AirOnlyInitiatedApplications.h \
 	AircraftFlightIdentification.h	\
 	Airport.h	\
 	AirportDeparture.h	\
@@ -518,6 +525,7 @@ ASN_MODULE_HEADERS=	\
 	CMUpdate.h	\
 	Date.h	\
 	DateTime.h	\
+	DateTimeDepartureETD.h \
 	Day.h	\
 	FacilityDesignation.h	\
 	LongTsap.h	\
@@ -610,6 +618,8 @@ ASN_MODULE_HEADERS=	\
 	Frequencyuhf.h	\
 	Frequencyvhf.h	\
 	FurtherInstructions.h	\
+	GroundInitiatedApplications.h \
+	GroundOnlyInitiatedApplications.h \
 	Holdatwaypoint.h	\
 	HoldClearance.h	\
 	Humidity.h	\
