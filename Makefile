@@ -90,7 +90,7 @@ $(ASN1): asn1 ;
 
 adsc.o: dumpvdl2.h adsc.h tlv.h
 
-asn1-format-common.o: asn1-util.h
+asn1-format-common.o: asn1-util.h tlv.h
 
 asn1-format-cpdlc.o: tlv.h dumpvdl2.h asn1-util.h asn1-format-common.h
 

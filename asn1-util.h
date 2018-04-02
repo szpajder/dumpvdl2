@@ -27,6 +27,7 @@ typedef struct {
 	void (*format)(FILE *, char const * const label, asn_TYPE_descriptor_t *, const void *, int);
 	char const * const label;
 } asn_formatter_t;
+typedef void (*asn1_output_fun_t)(FILE *, asn_TYPE_descriptor_t *, const void *, int);
 
 #define ASN1_FORMATTER_PROTOTYPE(x) void x(FILE *stream, char const * const label, asn_TYPE_descriptor_t *td, void const *sptr, int indent)
 // FIXME: dedup with adsc.h
