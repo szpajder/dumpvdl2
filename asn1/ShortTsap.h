@@ -12,7 +12,8 @@
 #include <asn_application.h>
 
 /* Including external dependencies */
-#include <OCTET_STRING.h>
+#include "ARS.h"
+#include "LocSysNselTsel.h"
 #include <constr_SEQUENCE.h>
 
 #ifdef __cplusplus
@@ -21,8 +22,8 @@ extern "C" {
 
 /* ShortTsap */
 typedef struct ShortTsap {
-	OCTET_STRING_t	*aRS	/* OPTIONAL */;
-	OCTET_STRING_t	 locSysNselTsel;
+	ARS_t	*aRS	/* OPTIONAL */;
+	LocSysNselTsel_t	 locSysNselTsel;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;

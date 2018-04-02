@@ -666,30 +666,6 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_Longitude) {
 	}
 }
 
-// FIXME: change rDP type to something unique - then we'll be able to replace
-// this routine with asn1_format_SEQUENCE
-// FIXME: replace these cryptic labels with something human-readable
-ASN1_FORMATTER_PROTOTYPE(asn1_format_LongTsap) {
-	CAST_PTR(tsap, LongTsap_t *, sptr);
-	IFPRINTF(stream, indent, "%s:\n", label);
-	indent++;
-	asn1_format_any(stream, "RDP", &asn_DEF_OCTET_STRING, &tsap->rDP, indent);
-	asn1_output_icao(stream, &asn_DEF_ShortTsap, &tsap->shortTsap, indent);
-}
-
-// FIXME: change aRS type to something unique - then we'll be able to replace
-// this routine with asn1_format_SEQUENCE
-// FIXME: replace these cryptic labels with something human-readable
-ASN1_FORMATTER_PROTOTYPE(asn1_format_ShortTsap) {
-	CAST_PTR(tsap, ShortTsap_t *, sptr);
-	IFPRINTF(stream, indent, "%s:\n", label);
-	indent++;
-	if(tsap->aRS != NULL) {
-		asn1_format_any(stream, "ARS", &asn_DEF_OCTET_STRING, tsap->aRS, indent);
-	}
-	asn1_format_any(stream, "locSysNselTsel", &asn_DEF_OCTET_STRING, &tsap->locSysNselTsel, indent);
-}
-
 ASN1_FORMATTER_PROTOTYPE(asn1_format_AltimeterEnglish) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " inHg", 0.01, 2);
 }
@@ -1084,6 +1060,7 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_AEQualifier, .format = &asn1_format_any, .label = "Application Entity Qualifier" },
 	{ .type = &asn_DEF_AEQualifierVersion, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_AEQualifierVersionAddress, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_ARS, .format = &asn1_format_any, .label = "ARS" },
 	{ .type = &asn_DEF_AircraftFlightIdentification, .format = &asn1_format_any, .label = "Flight ID" },
 	{ .type = &asn_DEF_CMAbortReason, .format = &asn1_format_ENUM, .label = "ATN Context Management - Abort Reason" },
 	{ .type = &asn_DEF_CMAircraftMessage, .format = &asn1_format_CHOICE, .label = NULL },
@@ -1095,9 +1072,11 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_CMLogonRequest, .format = &asn1_format_SEQUENCE, .label = "ATN Context Management - Logon Request" },
 	{ .type = &asn_DEF_CMLogonResponse, .format = &asn1_format_SEQUENCE, .label = "ATN Context Management - Logon Response" },
 	{ .type = &asn_DEF_CMUpdate, .format = &asn1_format_SEQUENCE, .label = "ATN Context Management - Update" },
-	{ .type = &asn_DEF_LongTsap, .format = &asn1_format_LongTsap, .label = "Long TSAP" },
+	{ .type = &asn_DEF_LocSysNselTsel, .format = &asn1_format_any, .label = "LOC/SYS/NSEL/TSEL" },
+	{ .type = &asn_DEF_LongTsap, .format = &asn1_format_SEQUENCE, .label = "Long TSAP" },
 	{ .type = &asn_DEF_OCTET_STRING, .format = &asn1_format_any, .label = NULL },
-	{ .type = &asn_DEF_ShortTsap, .format = &asn1_format_ShortTsap, .label = "Short TSAP" },
+	{ .type = &asn_DEF_RDP, .format = &asn1_format_any, .label = "RDP" },
+	{ .type = &asn_DEF_ShortTsap, .format = &asn1_format_SEQUENCE, .label = "Short TSAP" },
 	{ .type = &asn_DEF_VersionNumber, .format = &asn1_format_any, .label = "Version number" }
 };
 

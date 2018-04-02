@@ -16,6 +16,7 @@ ASN_MODULE_SOURCES=	\
 	AEQualifier.c	\
 	AEQualifierVersion.c	\
 	AEQualifierVersionAddress.c	\
+	ARS.c \
 	CMAbortReason.c	\
 	CMContactRequest.c	\
 	CMContactResponse.c	\
@@ -29,8 +30,10 @@ ASN_MODULE_SOURCES=	\
 	DateTimeDepartureETD.c \
 	Day.c	\
 	FacilityDesignation.c	\
+	LocSysNselTsel.c \
 	LongTsap.c	\
 	Month.c	\
+	RDP.c \
 	Response.c	\
 	ShortTsap.c	\
 	Time.c	\
@@ -515,6 +518,7 @@ ASN_MODULE_HEADERS=	\
 	AEQualifier.h	\
 	AEQualifierVersion.h	\
 	AEQualifierVersionAddress.h	\
+	ARS.h \
 	CMAbortReason.h	\
 	CMContactRequest.h	\
 	CMContactResponse.h	\
@@ -528,8 +532,10 @@ ASN_MODULE_HEADERS=	\
 	DateTimeDepartureETD.h \
 	Day.h	\
 	FacilityDesignation.h	\
+	LocSysNselTsel.h \
 	LongTsap.h	\
 	Month.h	\
+	RDP.h \
 	Response.h	\
 	ShortTsap.h	\
 	Time.h	\

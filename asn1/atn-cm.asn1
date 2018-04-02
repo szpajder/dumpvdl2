@@ -65,6 +65,8 @@ AirInitiatedApplications ::= SEQUENCE SIZE (1..256) OF AEQualifierVersionAddress
 
 AirOnlyInitiatedApplications ::= SEQUENCE SIZE (1..256) OF AEQualifierVersion
 
+ARS ::= OCTET STRING (SIZE(3))
+
 GroundInitiatedApplications ::= SEQUENCE SIZE (1..256) OF AEQualifierVersionAddress
 
 GroundOnlyInitiatedApplications ::= SEQUENCE SIZE (1..256) OF AEQualifierVersion
@@ -148,9 +150,11 @@ Day ::= INTEGER (1..31)
 
 FacilityDesignation ::= IA5String (SIZE(4..8))
 
+LocSysNselTsel ::= OCTET STRING  (SIZE(10..11))
+
 LongTsap ::= SEQUENCE
 {
-    rDP     OCTET STRING (SIZE(5)),
+    rDP     RDP,
     shortTsap   ShortTsap
 }
 
@@ -163,12 +167,14 @@ Response ::= ENUMERATED
     contactNotSuccessful    (1)
 }
 
+RDP ::= OCTET STRING (SIZE(5))
+
 ShortTsap ::= SEQUENCE
 {
-    aRS   [0] OCTET STRING (SIZE(3))    OPTIONAL,
+    aRS   [0] ARS OPTIONAL,
     -- the aRS contains the ICAO 24 bit aircraft address when the ShortTsap belongs to an aircraft;
     -- or a ground address when the Short Tsap belongs to a ground system
-    locSysNselTsel  [1] OCTET STRING  (SIZE(10..11))
+    locSysNselTsel  [1] LocSysNselTsel
 }
 
 Time ::= SEQUENCE
