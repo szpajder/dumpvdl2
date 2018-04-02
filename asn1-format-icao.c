@@ -766,30 +766,6 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateMetric) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " m/min", 10, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_LevelLevel) {
-	_format_SEQUENCE_OF(stream, &asn_DEF_Level, sptr, indent);
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_PlaceBearingPlaceBearing) {
-	_format_SEQUENCE_OF(stream, &asn_DEF_PlaceBearing, sptr, indent);
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_PositionPosition) {
-	_format_SEQUENCE_OF(stream, &asn_DEF_Position, sptr, indent);
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedSpeed) {
-	_format_SEQUENCE_OF(stream, &asn_DEF_Speed, sptr, indent);
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedTypeSpeedTypeSpeedType) {
-	_format_SEQUENCE_OF(stream, &asn_DEF_SpeedType, sptr, indent);
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_TimeTime) {
-	_format_SEQUENCE_OF(stream, &asn_DEF_Time, sptr, indent);
-}
-
 ASN1_FORMATTER_PROTOTYPE(asn1_format_RouteClearance) {
 	CAST_PTR(rc, RouteClearance_t *, sptr);
 	if(label != NULL) {
@@ -933,7 +909,7 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_LevelFeet, .format = &asn1_format_LevelFeet, .label = "Flight level" },
 	{ .type = &asn_DEF_LevelFlightLevel, .format = &asn1_format_any, .label = "Flight level" },
 	{ .type = &asn_DEF_LevelFlightLevelMetric, .format = &asn1_format_LevelFlightLevelMetric, .label = "Flight level" },
-	{ .type = &asn_DEF_LevelLevel, .format = &asn1_format_LevelLevel, .label = NULL },
+	{ .type = &asn_DEF_LevelLevel, .format = &asn1_format_SEQUENCE_OF, .label = NULL },
 	{ .type = &asn_DEF_LevelMeters, .format = &asn1_format_Meters, .label = "Flight level" },
 	{ .type = &asn_DEF_LevelPosition, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_LevelProcedureName, .format = &asn1_format_SEQUENCE, .label = NULL },
@@ -955,7 +931,7 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_PersonsOnBoard, .format = &asn1_format_any, .label = "Persons on board" },
 	{ .type = &asn_DEF_PlaceBearing, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_PlaceBearingDistance, .format = &asn1_format_SEQUENCE, .label = NULL },
-	{ .type = &asn_DEF_PlaceBearingPlaceBearing, .format = &asn1_format_PlaceBearingPlaceBearing, .label = NULL },
+	{ .type = &asn_DEF_PlaceBearingPlaceBearing, .format = &asn1_format_SEQUENCE_OF, .label = NULL },
 	{ .type = &asn_DEF_PMCPDLCProviderAbortReason, .format = &asn1_format_ENUM, .label = "CPDLC Provider Abort Reason" },
 	{ .type = &asn_DEF_PMCPDLCUserAbortReason, .format = &asn1_format_ENUM, .label = "CPDLC User Abort Reason" },
 	{ .type = &asn_DEF_Position, .format = &asn1_format_CHOICE, .label = NULL },
@@ -964,7 +940,7 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_PositionLevel, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_PositionLevelLevel, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_PositionLevelSpeed, .format = &asn1_format_SEQUENCE, .label = NULL },
-	{ .type = &asn_DEF_PositionPosition, .format = &asn1_format_PositionPosition, .label = NULL },
+	{ .type = &asn_DEF_PositionPosition, .format = &asn1_format_SEQUENCE_OF, .label = NULL },
 	{ .type = &asn_DEF_PositionProcedureName, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_PositionReport, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_PositionRouteClearanceIndex, .format = &asn1_format_SEQUENCE, .label = NULL },
@@ -1006,12 +982,12 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_SpeedIndicated, .format = &asn1_format_SpeedIndicated, .label = "Indicated airspeed" },
 	{ .type = &asn_DEF_SpeedIndicatedMetric, .format = &asn1_format_SpeedMetric, .label = "Indicated airspeed" },
 	{ .type = &asn_DEF_SpeedMach, .format = &asn1_format_SpeedMach, .label = "Mach number" },
-	{ .type = &asn_DEF_SpeedSpeed, .format = &asn1_format_SpeedSpeed, .label = NULL },
+	{ .type = &asn_DEF_SpeedSpeed, .format = &asn1_format_SEQUENCE_OF, .label = NULL },
 	{ .type = &asn_DEF_SpeedTime, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_SpeedTrue, .format = &asn1_format_SpeedEnglish, .label = "True airspeed" },
 	{ .type = &asn_DEF_SpeedTrueMetric, .format = &asn1_format_SpeedMetric, .label = "True airspeed" },
 	{ .type = &asn_DEF_SpeedType, .format = &asn1_format_ENUM, .label = "Speed type" },
-	{ .type = &asn_DEF_SpeedTypeSpeedTypeSpeedType, .format = &asn1_format_SpeedTypeSpeedTypeSpeedType, .label = NULL },
+	{ .type = &asn_DEF_SpeedTypeSpeedTypeSpeedType, .format = &asn1_format_SEQUENCE_OF, .label = NULL },
 	{ .type = &asn_DEF_SpeedTypeSpeedTypeSpeedTypeSpeed, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_Temperature, .format = &asn1_format_Temperature, .label = "Temperature" },
 	{ .type = &asn_DEF_Time, .format = &asn1_format_Time, .label = "Time" },
@@ -1025,7 +1001,7 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_TimePositionLevelSpeed, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_TimeSpeed, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_TimeSpeedSpeed, .format = &asn1_format_SEQUENCE, .label = NULL },
-	{ .type = &asn_DEF_TimeTime, .format = &asn1_format_TimeTime, .label = NULL },
+	{ .type = &asn_DEF_TimeTime, .format = &asn1_format_SEQUENCE_OF, .label = NULL },
 	{ .type = &asn_DEF_TimeToFromPosition, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_TimeTolerance, .format = &asn1_format_ENUM, .label = "Time tolerance" },
 	{ .type = &asn_DEF_TimeUnitNameFrequency, .format = &asn1_format_SEQUENCE, .label = NULL },
