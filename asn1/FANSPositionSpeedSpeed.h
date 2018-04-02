@@ -13,26 +13,17 @@
 
 /* Including external dependencies */
 #include "FANSPosition.h"
-#include <asn_SEQUENCE_OF.h>
-#include <constr_SEQUENCE_OF.h>
+#include "FANSSpeedSpeed.h"
 #include <constr_SEQUENCE.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Forward declarations */
-struct FANSSpeed;
-
 /* FANSPositionSpeedSpeed */
 typedef struct FANSPositionSpeedSpeed {
 	FANSPosition_t	 position;
-	struct FANSPositionSpeedSpeed__speed_seqOf {
-		A_SEQUENCE_OF(struct FANSSpeed) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} speed_seqOf;
+	FANSSpeedSpeed_t	 speed_seqOf;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
@@ -44,9 +35,6 @@ extern asn_TYPE_descriptor_t asn_DEF_FANSPositionSpeedSpeed;
 #ifdef __cplusplus
 }
 #endif
-
-/* Referred external types */
-#include "FANSSpeed.h"
 
 #endif	/* _FANSPositionSpeedSpeed_H_ */
 #include <asn_internal.h>

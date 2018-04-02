@@ -13,26 +13,17 @@
 
 /* Including external dependencies */
 #include "FANSTrackName.h"
-#include <asn_SEQUENCE_OF.h>
-#include <constr_SEQUENCE_OF.h>
+#include "FANSLatitudeLongitudeSequence.h"
 #include <constr_SEQUENCE.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Forward declarations */
-struct FANSLatitudeLongitude;
-
 /* FANSTrackDetail */
 typedef struct FANSTrackDetail {
 	FANSTrackName_t	 trackName;
-	struct FANSTrackDetail__latitudeLongitude_seqOf {
-		A_SEQUENCE_OF(struct FANSLatitudeLongitude) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} latitudeLongitude_seqOf;
+	FANSLatitudeLongitudeSequence_t	 latitudeLongitude_seqOf;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
@@ -44,9 +35,6 @@ extern asn_TYPE_descriptor_t asn_DEF_FANSTrackDetail;
 #ifdef __cplusplus
 }
 #endif
-
-/* Referred external types */
-#include "FANSLatitudeLongitude.h"
 
 #endif	/* _FANSTrackDetail_H_ */
 #include <asn_internal.h>

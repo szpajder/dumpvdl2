@@ -14,12 +14,14 @@
 /* Including external dependencies */
 #include <NULL.h>
 #include "FANSAltitude.h"
+#include "FANSAltitudeAltitude.h"
 #include "FANSPositionAltitude.h"
 #include "FANSTimeAltitude.h"
 #include "FANSDistanceOffsetDirection.h"
 #include "FANSPositionDistanceOffsetDirection.h"
 #include "FANSTimeDistanceOffsetDirection.h"
 #include "FANSSpeed.h"
+#include "FANSSpeedSpeed.h"
 #include "FANSFrequency.h"
 #include "FANSPosition.h"
 #include "FANSProcedureName.h"
@@ -36,8 +38,6 @@
 #include "FANSVersionNumber.h"
 #include "FANSTimeDistanceToFromPosition.h"
 #include "FANSATISCode.h"
-#include <asn_SEQUENCE_OF.h>
-#include <constr_SEQUENCE_OF.h>
 #include <constr_CHOICE.h>
 
 #ifdef __cplusplus
@@ -178,10 +178,6 @@ typedef enum FANSATCDownlinkMsgElementId_PR {
 	FANSATCDownlinkMsgElementId_PR_dM128NULL
 } FANSATCDownlinkMsgElementId_PR;
 
-/* Forward declarations */
-struct FANSAltitude;
-struct FANSSpeed;
-
 /* FANSATCDownlinkMsgElementId */
 typedef struct FANSATCDownlinkMsgElementId {
 	FANSATCDownlinkMsgElementId_PR present;
@@ -193,12 +189,7 @@ typedef struct FANSATCDownlinkMsgElementId {
 		NULL_t	 dM4NULL;
 		NULL_t	 dM5NULL;
 		FANSAltitude_t	 dM6Altitude;
-		struct FANSATCDownlinkMsgElementId__dM7AltitudeAltitude {
-			A_SEQUENCE_OF(struct FANSAltitude) list;
-			
-			/* Context for parsing across buffer boundaries */
-			asn_struct_ctx_t _asn_ctx;
-		} dM7AltitudeAltitude;
+		FANSAltitudeAltitude_t	 dM7AltitudeAltitude;
 		FANSAltitude_t	 dM8Altitude;
 		FANSAltitude_t	 dM9Altitude;
 		FANSAltitude_t	 dM10Altitude;
@@ -210,12 +201,7 @@ typedef struct FANSATCDownlinkMsgElementId {
 		FANSPositionDistanceOffsetDirection_t	 dM16PositionDistanceOffsetDirection;
 		FANSTimeDistanceOffsetDirection_t	 dM17TimeDistanceOffsetDirection;
 		FANSSpeed_t	 dM18Speed;
-		struct FANSATCDownlinkMsgElementId__dM19SpeedSpeed {
-			A_SEQUENCE_OF(struct FANSSpeed) list;
-			
-			/* Context for parsing across buffer boundaries */
-			asn_struct_ctx_t _asn_ctx;
-		} dM19SpeedSpeed;
+		FANSSpeedSpeed_t	 dM19SpeedSpeed;
 		NULL_t	 dM20NULL;
 		FANSFrequency_t	 dM21Frequency;
 		FANSPosition_t	 dM22Position;
@@ -246,12 +232,7 @@ typedef struct FANSATCDownlinkMsgElementId {
 		FANSBeaconCode_t	 dM47BeaconCode;
 		FANSPositionReport_t	 dM48PositionReport;
 		FANSSpeed_t	 dM49Speed;
-		struct FANSATCDownlinkMsgElementId__dM50SpeedSpeed {
-			A_SEQUENCE_OF(struct FANSSpeed) list;
-			
-			/* Context for parsing across buffer boundaries */
-			asn_struct_ctx_t _asn_ctx;
-		} dM50SpeedSpeed;
+		FANSSpeedSpeed_t	 dM50SpeedSpeed;
 		NULL_t	 dM51NULL;
 		NULL_t	 dM52NULL;
 		NULL_t	 dM53NULL;
@@ -277,18 +258,8 @@ typedef struct FANSATCDownlinkMsgElementId {
 		FANSVersionNumber_t	 dM73VersionNumber;
 		NULL_t	 dM74NULL;
 		NULL_t	 dM75NULL;
-		struct FANSATCDownlinkMsgElementId__dM76AltitudeAltitude {
-			A_SEQUENCE_OF(struct FANSAltitude) list;
-			
-			/* Context for parsing across buffer boundaries */
-			asn_struct_ctx_t _asn_ctx;
-		} dM76AltitudeAltitude;
-		struct FANSATCDownlinkMsgElementId__dM77AltitudeAltitude {
-			A_SEQUENCE_OF(struct FANSAltitude) list;
-			
-			/* Context for parsing across buffer boundaries */
-			asn_struct_ctx_t _asn_ctx;
-		} dM77AltitudeAltitude;
+		FANSAltitudeAltitude_t	 dM76AltitudeAltitude;
+		FANSAltitudeAltitude_t	 dM77AltitudeAltitude;
 		FANSTimeDistanceToFromPosition_t	 dM78TimeDistanceToFromPosition;
 		FANSATISCode_t	 dM79ATISCode;
 		FANSDistanceOffsetDirection_t	 dM80DistanceOffsetDirection;
@@ -352,10 +323,6 @@ extern asn_TYPE_descriptor_t asn_DEF_FANSATCDownlinkMsgElementId;
 #ifdef __cplusplus
 }
 #endif
-
-/* Referred external types */
-#include "FANSAltitude.h"
-#include "FANSSpeed.h"
 
 #endif	/* _FANSATCDownlinkMsgElementId_H_ */
 #include <asn_internal.h>

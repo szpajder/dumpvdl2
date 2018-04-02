@@ -15,8 +15,6 @@
 #include "FANSAirportDeparture.h"
 #include "FANSAirportDestination.h"
 #include "FANSAirwayIntercept.h"
-#include <asn_SEQUENCE_OF.h>
-#include <constr_SEQUENCE_OF.h>
 #include <constr_SEQUENCE.h>
 
 #ifdef __cplusplus
@@ -26,8 +24,8 @@ extern "C" {
 /* Forward declarations */
 struct FANSRunway;
 struct FANSProcedureName;
+struct FANSRouteInformationSequence;
 struct FANSRouteInformationAdditional;
-struct FANSRouteInformation;
 
 /* FANSRouteClearance */
 typedef struct FANSRouteClearance {
@@ -39,12 +37,7 @@ typedef struct FANSRouteClearance {
 	struct FANSProcedureName	*procedureApproach	/* OPTIONAL */;
 	struct FANSProcedureName	*procedureArrival	/* OPTIONAL */;
 	FANSAirwayIntercept_t	*airwayIntercept	/* OPTIONAL */;
-	struct FANSRouteClearance__routeinformation_seqOf {
-		A_SEQUENCE_OF(struct FANSRouteInformation) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *routeinformation_seqOf;
+	struct FANSRouteInformationSequence	*routeinformation_seqOf	/* OPTIONAL */;
 	struct FANSRouteInformationAdditional	*routeInformationAdditional	/* OPTIONAL */;
 	
 	/* Context for parsing across buffer boundaries */
@@ -64,8 +57,8 @@ extern asn_TYPE_descriptor_t asn_DEF_FANSRouteClearance;
 #include "FANSRunwayArrival.h"
 #include "FANSProcedureApproach.h"
 #include "FANSProcedureArrival.h"
+#include "FANSRouteInformationSequence.h"
 #include "FANSRouteInformationAdditional.h"
-#include "FANSRouteInformation.h"
 
 #endif	/* _FANSRouteClearance_H_ */
 #include <asn_internal.h>

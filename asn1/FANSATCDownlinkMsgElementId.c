@@ -7,421 +7,11 @@
 
 #include "FANSATCDownlinkMsgElementId.h"
 
-static int
-memb_dM7AltitudeAltitude_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
-			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	size_t size;
-	
-	if(!sptr) {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: value not given (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-	
-	/* Determine the number of elements */
-	size = _A_CSEQUENCE_FROM_VOID(sptr)->count;
-	
-	if((size == 2)) {
-		/* Perform validation of the inner elements */
-		return td->check_constraints(td, sptr, ctfailcb, app_key);
-	} else {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: constraint failed (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-}
-
-static int
-memb_dM19SpeedSpeed_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
-			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	size_t size;
-	
-	if(!sptr) {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: value not given (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-	
-	/* Determine the number of elements */
-	size = _A_CSEQUENCE_FROM_VOID(sptr)->count;
-	
-	if((size == 2)) {
-		/* Perform validation of the inner elements */
-		return td->check_constraints(td, sptr, ctfailcb, app_key);
-	} else {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: constraint failed (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-}
-
-static int
-memb_dM50SpeedSpeed_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
-			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	size_t size;
-	
-	if(!sptr) {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: value not given (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-	
-	/* Determine the number of elements */
-	size = _A_CSEQUENCE_FROM_VOID(sptr)->count;
-	
-	if((size == 2)) {
-		/* Perform validation of the inner elements */
-		return td->check_constraints(td, sptr, ctfailcb, app_key);
-	} else {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: constraint failed (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-}
-
-static int
-memb_dM76AltitudeAltitude_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
-			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	size_t size;
-	
-	if(!sptr) {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: value not given (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-	
-	/* Determine the number of elements */
-	size = _A_CSEQUENCE_FROM_VOID(sptr)->count;
-	
-	if((size == 2)) {
-		/* Perform validation of the inner elements */
-		return td->check_constraints(td, sptr, ctfailcb, app_key);
-	} else {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: constraint failed (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-}
-
-static int
-memb_dM77AltitudeAltitude_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
-			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	size_t size;
-	
-	if(!sptr) {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: value not given (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-	
-	/* Determine the number of elements */
-	size = _A_CSEQUENCE_FROM_VOID(sptr)->count;
-	
-	if((size == 2)) {
-		/* Perform validation of the inner elements */
-		return td->check_constraints(td, sptr, ctfailcb, app_key);
-	} else {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: constraint failed (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-}
-
-static asn_per_constraints_t asn_PER_type_dM7AltitudeAltitude_constr_9 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 0,  0,  2,  2 }	/* (SIZE(2..2)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_type_dM19SpeedSpeed_constr_22 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 0,  0,  2,  2 }	/* (SIZE(2..2)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_type_dM50SpeedSpeed_constr_54 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 0,  0,  2,  2 }	/* (SIZE(2..2)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_type_dM76AltitudeAltitude_constr_81 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 0,  0,  2,  2 }	/* (SIZE(2..2)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_type_dM77AltitudeAltitude_constr_83 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 0,  0,  2,  2 }	/* (SIZE(2..2)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_memb_dM7AltitudeAltitude_constr_9 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 0,  0,  2,  2 }	/* (SIZE(2..2)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_memb_dM19SpeedSpeed_constr_22 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 0,  0,  2,  2 }	/* (SIZE(2..2)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_memb_dM50SpeedSpeed_constr_54 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 0,  0,  2,  2 }	/* (SIZE(2..2)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_memb_dM76AltitudeAltitude_constr_81 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 0,  0,  2,  2 }	/* (SIZE(2..2)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_memb_dM77AltitudeAltitude_constr_83 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 0,  0,  2,  2 }	/* (SIZE(2..2)) */,
-	0, 0	/* No PER value map */
-};
 static asn_per_constraints_t asn_PER_type_FANSATCDownlinkMsgElementId_constr_1 GCC_NOTUSED = {
 	{ APC_CONSTRAINED,	 8,  8,  0,  128 }	/* (0..128) */,
 	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
 	0, 0	/* No PER value map */
 };
-static asn_TYPE_member_t asn_MBR_dM7AltitudeAltitude_9[] = {
-	{ ATF_POINTER, 0, 0,
-		-1 /* Ambiguous tag (CHOICE?) */,
-		0,
-		&asn_DEF_FANSAltitude,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		""
-		},
-};
-static const ber_tlv_tag_t asn_DEF_dM7AltitudeAltitude_tags_9[] = {
-	(ASN_TAG_CLASS_CONTEXT | (7 << 2)),
-	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
-};
-static asn_SET_OF_specifics_t asn_SPC_dM7AltitudeAltitude_specs_9 = {
-	sizeof(struct FANSATCDownlinkMsgElementId__dM7AltitudeAltitude),
-	offsetof(struct FANSATCDownlinkMsgElementId__dM7AltitudeAltitude, _asn_ctx),
-	2,	/* XER encoding is XMLValueList */
-};
-static /* Use -fall-defs-global to expose */
-asn_TYPE_descriptor_t asn_DEF_dM7AltitudeAltitude_9 = {
-	"dM7AltitudeAltitude",
-	"dM7AltitudeAltitude",
-	SEQUENCE_OF_free,
-	SEQUENCE_OF_print,
-	SEQUENCE_OF_constraint,
-	SEQUENCE_OF_decode_ber,
-	SEQUENCE_OF_encode_der,
-	SEQUENCE_OF_decode_xer,
-	SEQUENCE_OF_encode_xer,
-	SEQUENCE_OF_decode_uper,
-	SEQUENCE_OF_encode_uper,
-	0,	/* Use generic outmost tag fetcher */
-	asn_DEF_dM7AltitudeAltitude_tags_9,
-	sizeof(asn_DEF_dM7AltitudeAltitude_tags_9)
-		/sizeof(asn_DEF_dM7AltitudeAltitude_tags_9[0]) - 1, /* 1 */
-	asn_DEF_dM7AltitudeAltitude_tags_9,	/* Same as above */
-	sizeof(asn_DEF_dM7AltitudeAltitude_tags_9)
-		/sizeof(asn_DEF_dM7AltitudeAltitude_tags_9[0]), /* 2 */
-	&asn_PER_type_dM7AltitudeAltitude_constr_9,
-	asn_MBR_dM7AltitudeAltitude_9,
-	1,	/* Single element */
-	&asn_SPC_dM7AltitudeAltitude_specs_9	/* Additional specs */
-};
-
-static asn_TYPE_member_t asn_MBR_dM19SpeedSpeed_22[] = {
-	{ ATF_POINTER, 0, 0,
-		-1 /* Ambiguous tag (CHOICE?) */,
-		0,
-		&asn_DEF_FANSSpeed,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		""
-		},
-};
-static const ber_tlv_tag_t asn_DEF_dM19SpeedSpeed_tags_22[] = {
-	(ASN_TAG_CLASS_CONTEXT | (19 << 2)),
-	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
-};
-static asn_SET_OF_specifics_t asn_SPC_dM19SpeedSpeed_specs_22 = {
-	sizeof(struct FANSATCDownlinkMsgElementId__dM19SpeedSpeed),
-	offsetof(struct FANSATCDownlinkMsgElementId__dM19SpeedSpeed, _asn_ctx),
-	2,	/* XER encoding is XMLValueList */
-};
-static /* Use -fall-defs-global to expose */
-asn_TYPE_descriptor_t asn_DEF_dM19SpeedSpeed_22 = {
-	"dM19SpeedSpeed",
-	"dM19SpeedSpeed",
-	SEQUENCE_OF_free,
-	SEQUENCE_OF_print,
-	SEQUENCE_OF_constraint,
-	SEQUENCE_OF_decode_ber,
-	SEQUENCE_OF_encode_der,
-	SEQUENCE_OF_decode_xer,
-	SEQUENCE_OF_encode_xer,
-	SEQUENCE_OF_decode_uper,
-	SEQUENCE_OF_encode_uper,
-	0,	/* Use generic outmost tag fetcher */
-	asn_DEF_dM19SpeedSpeed_tags_22,
-	sizeof(asn_DEF_dM19SpeedSpeed_tags_22)
-		/sizeof(asn_DEF_dM19SpeedSpeed_tags_22[0]) - 1, /* 1 */
-	asn_DEF_dM19SpeedSpeed_tags_22,	/* Same as above */
-	sizeof(asn_DEF_dM19SpeedSpeed_tags_22)
-		/sizeof(asn_DEF_dM19SpeedSpeed_tags_22[0]), /* 2 */
-	&asn_PER_type_dM19SpeedSpeed_constr_22,
-	asn_MBR_dM19SpeedSpeed_22,
-	1,	/* Single element */
-	&asn_SPC_dM19SpeedSpeed_specs_22	/* Additional specs */
-};
-
-static asn_TYPE_member_t asn_MBR_dM50SpeedSpeed_54[] = {
-	{ ATF_POINTER, 0, 0,
-		-1 /* Ambiguous tag (CHOICE?) */,
-		0,
-		&asn_DEF_FANSSpeed,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		""
-		},
-};
-static const ber_tlv_tag_t asn_DEF_dM50SpeedSpeed_tags_54[] = {
-	(ASN_TAG_CLASS_CONTEXT | (50 << 2)),
-	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
-};
-static asn_SET_OF_specifics_t asn_SPC_dM50SpeedSpeed_specs_54 = {
-	sizeof(struct FANSATCDownlinkMsgElementId__dM50SpeedSpeed),
-	offsetof(struct FANSATCDownlinkMsgElementId__dM50SpeedSpeed, _asn_ctx),
-	2,	/* XER encoding is XMLValueList */
-};
-static /* Use -fall-defs-global to expose */
-asn_TYPE_descriptor_t asn_DEF_dM50SpeedSpeed_54 = {
-	"dM50SpeedSpeed",
-	"dM50SpeedSpeed",
-	SEQUENCE_OF_free,
-	SEQUENCE_OF_print,
-	SEQUENCE_OF_constraint,
-	SEQUENCE_OF_decode_ber,
-	SEQUENCE_OF_encode_der,
-	SEQUENCE_OF_decode_xer,
-	SEQUENCE_OF_encode_xer,
-	SEQUENCE_OF_decode_uper,
-	SEQUENCE_OF_encode_uper,
-	0,	/* Use generic outmost tag fetcher */
-	asn_DEF_dM50SpeedSpeed_tags_54,
-	sizeof(asn_DEF_dM50SpeedSpeed_tags_54)
-		/sizeof(asn_DEF_dM50SpeedSpeed_tags_54[0]) - 1, /* 1 */
-	asn_DEF_dM50SpeedSpeed_tags_54,	/* Same as above */
-	sizeof(asn_DEF_dM50SpeedSpeed_tags_54)
-		/sizeof(asn_DEF_dM50SpeedSpeed_tags_54[0]), /* 2 */
-	&asn_PER_type_dM50SpeedSpeed_constr_54,
-	asn_MBR_dM50SpeedSpeed_54,
-	1,	/* Single element */
-	&asn_SPC_dM50SpeedSpeed_specs_54	/* Additional specs */
-};
-
-static asn_TYPE_member_t asn_MBR_dM76AltitudeAltitude_81[] = {
-	{ ATF_POINTER, 0, 0,
-		-1 /* Ambiguous tag (CHOICE?) */,
-		0,
-		&asn_DEF_FANSAltitude,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		""
-		},
-};
-static const ber_tlv_tag_t asn_DEF_dM76AltitudeAltitude_tags_81[] = {
-	(ASN_TAG_CLASS_CONTEXT | (76 << 2)),
-	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
-};
-static asn_SET_OF_specifics_t asn_SPC_dM76AltitudeAltitude_specs_81 = {
-	sizeof(struct FANSATCDownlinkMsgElementId__dM76AltitudeAltitude),
-	offsetof(struct FANSATCDownlinkMsgElementId__dM76AltitudeAltitude, _asn_ctx),
-	2,	/* XER encoding is XMLValueList */
-};
-static /* Use -fall-defs-global to expose */
-asn_TYPE_descriptor_t asn_DEF_dM76AltitudeAltitude_81 = {
-	"dM76AltitudeAltitude",
-	"dM76AltitudeAltitude",
-	SEQUENCE_OF_free,
-	SEQUENCE_OF_print,
-	SEQUENCE_OF_constraint,
-	SEQUENCE_OF_decode_ber,
-	SEQUENCE_OF_encode_der,
-	SEQUENCE_OF_decode_xer,
-	SEQUENCE_OF_encode_xer,
-	SEQUENCE_OF_decode_uper,
-	SEQUENCE_OF_encode_uper,
-	0,	/* Use generic outmost tag fetcher */
-	asn_DEF_dM76AltitudeAltitude_tags_81,
-	sizeof(asn_DEF_dM76AltitudeAltitude_tags_81)
-		/sizeof(asn_DEF_dM76AltitudeAltitude_tags_81[0]) - 1, /* 1 */
-	asn_DEF_dM76AltitudeAltitude_tags_81,	/* Same as above */
-	sizeof(asn_DEF_dM76AltitudeAltitude_tags_81)
-		/sizeof(asn_DEF_dM76AltitudeAltitude_tags_81[0]), /* 2 */
-	&asn_PER_type_dM76AltitudeAltitude_constr_81,
-	asn_MBR_dM76AltitudeAltitude_81,
-	1,	/* Single element */
-	&asn_SPC_dM76AltitudeAltitude_specs_81	/* Additional specs */
-};
-
-static asn_TYPE_member_t asn_MBR_dM77AltitudeAltitude_83[] = {
-	{ ATF_POINTER, 0, 0,
-		-1 /* Ambiguous tag (CHOICE?) */,
-		0,
-		&asn_DEF_FANSAltitude,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		""
-		},
-};
-static const ber_tlv_tag_t asn_DEF_dM77AltitudeAltitude_tags_83[] = {
-	(ASN_TAG_CLASS_CONTEXT | (77 << 2)),
-	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
-};
-static asn_SET_OF_specifics_t asn_SPC_dM77AltitudeAltitude_specs_83 = {
-	sizeof(struct FANSATCDownlinkMsgElementId__dM77AltitudeAltitude),
-	offsetof(struct FANSATCDownlinkMsgElementId__dM77AltitudeAltitude, _asn_ctx),
-	2,	/* XER encoding is XMLValueList */
-};
-static /* Use -fall-defs-global to expose */
-asn_TYPE_descriptor_t asn_DEF_dM77AltitudeAltitude_83 = {
-	"dM77AltitudeAltitude",
-	"dM77AltitudeAltitude",
-	SEQUENCE_OF_free,
-	SEQUENCE_OF_print,
-	SEQUENCE_OF_constraint,
-	SEQUENCE_OF_decode_ber,
-	SEQUENCE_OF_encode_der,
-	SEQUENCE_OF_decode_xer,
-	SEQUENCE_OF_encode_xer,
-	SEQUENCE_OF_decode_uper,
-	SEQUENCE_OF_encode_uper,
-	0,	/* Use generic outmost tag fetcher */
-	asn_DEF_dM77AltitudeAltitude_tags_83,
-	sizeof(asn_DEF_dM77AltitudeAltitude_tags_83)
-		/sizeof(asn_DEF_dM77AltitudeAltitude_tags_83[0]) - 1, /* 1 */
-	asn_DEF_dM77AltitudeAltitude_tags_83,	/* Same as above */
-	sizeof(asn_DEF_dM77AltitudeAltitude_tags_83)
-		/sizeof(asn_DEF_dM77AltitudeAltitude_tags_83[0]), /* 2 */
-	&asn_PER_type_dM77AltitudeAltitude_constr_83,
-	asn_MBR_dM77AltitudeAltitude_83,
-	1,	/* Single element */
-	&asn_SPC_dM77AltitudeAltitude_specs_83	/* Additional specs */
-};
-
 static asn_TYPE_member_t asn_MBR_FANSATCDownlinkMsgElementId_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct FANSATCDownlinkMsgElementId, choice.dM0NULL),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
@@ -488,10 +78,10 @@ static asn_TYPE_member_t asn_MBR_FANSATCDownlinkMsgElementId_1[] = {
 		},
 	{ ATF_NOFLAGS, 0, offsetof(struct FANSATCDownlinkMsgElementId, choice.dM7AltitudeAltitude),
 		(ASN_TAG_CLASS_CONTEXT | (7 << 2)),
-		0,
-		&asn_DEF_dM7AltitudeAltitude_9,
-		memb_dM7AltitudeAltitude_constraint_1,
-		&asn_PER_memb_dM7AltitudeAltitude_constr_9,
+		-1,	/* IMPLICIT tag at current level */
+		&asn_DEF_FANSAltitudeAltitude,
+		0,	/* Defer constraints checking to the member type */
+		0,	/* No PER visible constraints */
 		0,
 		"dM7AltitudeAltitude"
 		},
@@ -596,10 +186,10 @@ static asn_TYPE_member_t asn_MBR_FANSATCDownlinkMsgElementId_1[] = {
 		},
 	{ ATF_NOFLAGS, 0, offsetof(struct FANSATCDownlinkMsgElementId, choice.dM19SpeedSpeed),
 		(ASN_TAG_CLASS_CONTEXT | (19 << 2)),
-		0,
-		&asn_DEF_dM19SpeedSpeed_22,
-		memb_dM19SpeedSpeed_constraint_1,
-		&asn_PER_memb_dM19SpeedSpeed_constr_22,
+		-1,	/* IMPLICIT tag at current level */
+		&asn_DEF_FANSSpeedSpeed,
+		0,	/* Defer constraints checking to the member type */
+		0,	/* No PER visible constraints */
 		0,
 		"dM19SpeedSpeed"
 		},
@@ -875,10 +465,10 @@ static asn_TYPE_member_t asn_MBR_FANSATCDownlinkMsgElementId_1[] = {
 		},
 	{ ATF_NOFLAGS, 0, offsetof(struct FANSATCDownlinkMsgElementId, choice.dM50SpeedSpeed),
 		(ASN_TAG_CLASS_CONTEXT | (50 << 2)),
-		0,
-		&asn_DEF_dM50SpeedSpeed_54,
-		memb_dM50SpeedSpeed_constraint_1,
-		&asn_PER_memb_dM50SpeedSpeed_constr_54,
+		-1,	/* IMPLICIT tag at current level */
+		&asn_DEF_FANSSpeedSpeed,
+		0,	/* Defer constraints checking to the member type */
+		0,	/* No PER visible constraints */
 		0,
 		"dM50SpeedSpeed"
 		},
@@ -1109,19 +699,19 @@ static asn_TYPE_member_t asn_MBR_FANSATCDownlinkMsgElementId_1[] = {
 		},
 	{ ATF_NOFLAGS, 0, offsetof(struct FANSATCDownlinkMsgElementId, choice.dM76AltitudeAltitude),
 		(ASN_TAG_CLASS_CONTEXT | (76 << 2)),
-		0,
-		&asn_DEF_dM76AltitudeAltitude_81,
-		memb_dM76AltitudeAltitude_constraint_1,
-		&asn_PER_memb_dM76AltitudeAltitude_constr_81,
+		-1,	/* IMPLICIT tag at current level */
+		&asn_DEF_FANSAltitudeAltitude,
+		0,	/* Defer constraints checking to the member type */
+		0,	/* No PER visible constraints */
 		0,
 		"dM76AltitudeAltitude"
 		},
 	{ ATF_NOFLAGS, 0, offsetof(struct FANSATCDownlinkMsgElementId, choice.dM77AltitudeAltitude),
 		(ASN_TAG_CLASS_CONTEXT | (77 << 2)),
-		0,
-		&asn_DEF_dM77AltitudeAltitude_83,
-		memb_dM77AltitudeAltitude_constraint_1,
-		&asn_PER_memb_dM77AltitudeAltitude_constr_83,
+		-1,	/* IMPLICIT tag at current level */
+		&asn_DEF_FANSAltitudeAltitude,
+		0,	/* Defer constraints checking to the member type */
+		0,	/* No PER visible constraints */
 		0,
 		"dM77AltitudeAltitude"
 		},

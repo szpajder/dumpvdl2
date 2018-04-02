@@ -158,15 +158,15 @@ uM29AltitudePosition                      [29] FANSAltitudePosition,
 
 -- MAINTAIN BLOCK [altitude] TO [altitude]
 -- Urg(N)/Alr(A)/Resp(W/U)/Rec(VC)
-uM30AltitudeAltitude                      [30] SEQUENCE SIZE (2) OF FANSAltitude,
+uM30AltitudeAltitude                      [30] FANSAltitudeAltitude,
 
 -- CLIMB TO AND MAINTAIN BLOCK [altitude] TO [altitude]
 -- Urg(N)/Alr(A)/Resp(W/U)/Rec(VC)
-uM31AltitudeAltitude                    [31] SEQUENCE SIZE (2) OF FANSAltitude,
+uM31AltitudeAltitude                    [31] FANSAltitudeAltitude,
 
 -- DESCEND TO AND MAINTAIN BLOCK [altitude] TO [altitude]
 -- Urg(N)/Alr(A)/Resp(W/U)/Rec(VC)
-uM32AltitudeAltitude                    [32] SEQUENCE SIZE (2) OF FANSAltitude,
+uM32AltitudeAltitude                    [32] FANSAltitudeAltitude,
 
 -- CRUISE [altitude]
 -- Urg(N)/Alr(A)/Resp(W/U)/Rec(VC)
@@ -346,7 +346,7 @@ uM76TimePosition   [76] FANSTimePosition,
 
 -- AT [position] PROCEED DIRECT TO [position]
 -- Urg(N)/Alr(A)/Resp(W/U)/Rec( )
-uM77PositionPosition                        [77] SEQUENCE SIZE (2) OF FANSPosition,
+uM77PositionPosition                        [77] FANSPositionPosition,
 
 -- AT [altitude] PROCEED DIRECT TO [position]
 -- Urg(N)/Alr(A)/Resp(W/U)/Rec( )
@@ -390,7 +390,7 @@ uM87Position                                [87] FANSPosition,
 
 -- AT [position] EXPECT DIRECT TO [position]
 -- Urg(L)/Alr(V)/Resp(R)/Rec( )
-uM88PositionPosition                        [88] SEQUENCE SIZE (2) OF FANSPosition,
+uM88PositionPosition                        [88] FANSPositionPosition,
 
 -- AT [time] EXPECT DIRECT TO [position]
 -- Urg(L)/Alr(V)/Resp(R)/Rec( )
@@ -478,7 +478,7 @@ uM109Speed                              [109] FANSSpeed,
 
 -- MAINTAIN [speed] TO [speed]
 -- Urg(N)/Alr(A)/Resp(W/U)/Rec( )
-uM110SpeedSpeed                         [110] SEQUENCE SIZE (2) OF FANSSpeed,
+uM110SpeedSpeed                         [110] FANSSpeedSpeed,
 
 -- INCREASE SPEED TO [speed]
 -- Urg(N)/Alr(A)/Resp(W/U)/Rec( )
@@ -758,7 +758,7 @@ uM179NULL                                       [179] NULL,
 
 -- REPORT REACHING BLOCK [altitude] TO [altitude]
 -- Urg(N)/Alr(A)/Resp(R)/Rec( )
-uM180AltitudeAltitude                     [180] SEQUENCE SIZE (2) OF FANSAltitude,
+uM180AltitudeAltitude                     [180] FANSAltitudeAltitude,
 
 -- REPORT DISTANCE [tofrom] [position]
 -- Urg(N)/Alr(A)/Resp(NE)/Rec( )
@@ -809,7 +809,7 @@ dM6Altitude                                  [6] FANSAltitude,
 
 -- REQUEST BLOCK [altitude] TO [altitude]
 -- Resp(Y)
-dM7AltitudeAltitude                  [7] SEQUENCE SIZE (2) OF FANSAltitude,
+dM7AltitudeAltitude                  [7] FANSAltitudeAltitude,
 
 -- REQUEST CRUISE CLIMB TO [altitude]
 -- Resp(Y)
@@ -857,7 +857,7 @@ dM18Speed                                    [18] FANSSpeed,
 
 -- REQUEST [speed] TO [speed]
 -- Resp(Y)
-dM19SpeedSpeed                               [19] SEQUENCE SIZE (2) OF FANSSpeed,
+dM19SpeedSpeed                               [19] FANSSpeedSpeed,
 
 -- REQUEST VOICE CONTACT
 -- Resp(Y)
@@ -981,7 +981,7 @@ dM49Speed                                    [49] FANSSpeed,
 
 -- WHEN CAN WE EXPECT [speed] TO [speed]
 -- Resp(Y)
-dM50SpeedSpeed                               [50] SEQUENCE SIZE (2) OF FANSSpeed,
+dM50SpeedSpeed                               [50] FANSSpeedSpeed,
 
 -- WHEN CAN WE EXPECT BACK ON ROUTE
 -- Resp(Y)
@@ -1087,11 +1087,11 @@ dM75NULL                                                 [75] NULL,
 
 -- REACHING BLOCK [altitude] TO [altitude]
 -- Resp(N)
-dM76AltitudeAltitude                             [76] SEQUENCE SIZE (2) OF FANSAltitude,
+dM76AltitudeAltitude                             [76] FANSAltitudeAltitude,
 
 -- ASSIGNED BLOCK [altitude] TO [altitude]
 -- Resp(N)
-dM77AltitudeAltitude                             [77] SEQUENCE SIZE (2) OF FANSAltitude,
+dM77AltitudeAltitude                             [77] FANSAltitudeAltitude,
 
 -- AT [time] [distance] [tofrom] [position]
 -- Resp(N)
@@ -1309,6 +1309,8 @@ FANSAltitudePosition ::= SEQUENCE {
     position FANSPosition
 }
 
+FANSAltitudeAltitude ::= SEQUENCE SIZE (2) OF FANSAltitude
+
 FANSAltitudeSpeed ::= SEQUENCE {
     altitude FANSAltitude,
     speed FANSSpeed
@@ -1316,7 +1318,7 @@ FANSAltitudeSpeed ::= SEQUENCE {
 
 FANSAltitudeSpeedSpeed ::= SEQUENCE {
     altitude          FANSAltitude,
-    speed-seqOf       SEQUENCE SIZE (2) OF FANSSpeed
+    speed-seqOf       FANSSpeedSpeed
 }
 
 FANSAltitudeTime ::= SEQUENCE {
@@ -1474,6 +1476,8 @@ FANSLatitudeLongitude ::= SEQUENCE {
     longitude FANSLongitude
 }
 
+FANSLatitudeLongitudeSequence ::= SEQUENCE SIZE (1..128) OF FANSLatitudeLongitude
+
 FANSLatitude ::= SEQUENCE {
     latitudeDegrees FANSLatitudeDegrees,
     minutesLatLon FANSMinutesLatLon                        OPTIONAL,
@@ -1560,7 +1564,7 @@ FANSPositionAltitude ::= SEQUENCE {
 
 FANSPositionAltitudeAltitude ::= SEQUENCE {
     position             FANSPosition,
-    altitude-seqOf       SEQUENCE SIZE (2) OF FANSAltitude
+    altitude-seqOf       FANSAltitudeAltitude
 }
 
 FANSPositionAltitudeSpeed ::= SEQUENCE {
@@ -1585,6 +1589,8 @@ FANSPositionICAOUnitNameFrequency ::= SEQUENCE {
     iCAOUnitName FANSICAOUnitName,
     frequency FANSFrequency
 }
+
+FANSPositionPosition ::= SEQUENCE SIZE (2) OF FANSPosition
 
 FANSPositionProcedureName ::= SEQUENCE {
     position FANSPosition,
@@ -1705,7 +1711,7 @@ FANSPositionSpeed ::= SEQUENCE {
 
 FANSPositionSpeedSpeed ::= SEQUENCE {
     position          FANSPosition,
-    speed-seqOf       SEQUENCE SIZE (2) OF FANSSpeed
+    speed-seqOf       FANSSpeedSpeed
 }
 
 
@@ -1722,7 +1728,7 @@ FANSPositionTimeAltitude ::= SEQUENCE {
 
 FANSPositionTimeTime ::= SEQUENCE {
     position        FANSPosition,
-    time-seqOf      SEQUENCE SIZE (2) OF FANSTime
+    time-seqOf      FANSTimeTime
 }
 
 FANSPredepartureClearance ::= SEQUENCE {
@@ -1743,7 +1749,7 @@ FANSAircraftType ::= IA5String (SIZE (2..5))
 
 FANSAircraftEquipmentCode ::= SEQUENCE {
     cOMNAVApproachEquipmentAvailable           FANSCOMNAVApproachEquipmentAvailable,
-    comnavequipmentstatus-seqOf                SEQUENCE SIZE (1..16) OF FANSCOMNAVEquipmentStatus        OPTIONAL,
+    comnavequipmentstatus-seqOf                FANSCOMNAVEquipmentStatusSequence        OPTIONAL,
     sSREquipmentAvailable                      FANSSSREquipmentAvailable
 }
 
@@ -1767,6 +1773,8 @@ FANSCOMNAVEquipmentStatus ::= ENUMERATED {
     uuhfRTF                  (14),
     vvhfRTF                  (15)
 }
+
+FANSCOMNAVEquipmentStatusSequence ::= SEQUENCE SIZE (1..16) OF FANSCOMNAVEquipmentStatus
 
 FANSSSREquipmentAvailable ::= ENUMERATED {
     nnil                            (0),
@@ -1824,8 +1832,8 @@ FANSRouteClearance ::= SEQUENCE {
     procedureApproach              [5] FANSProcedureApproach            OPTIONAL,
     procedureArrival               [6] FANSProcedureArrival             OPTIONAL,
     airwayIntercept                [7] FANSAirwayIntercept              OPTIONAL,
-    routeinformation-seqOf         [8] SEQUENCE SIZE (1..128) OF FANSRouteInformation              OPTIONAL,
-    routeInformationAdditional   [9] FANSRouteInformationAdditional   OPTIONAL
+    routeinformation-seqOf         [8] FANSRouteInformationSequence     OPTIONAL,
+    routeInformationAdditional     [9] FANSRouteInformationAdditional   OPTIONAL
 }
 
 FANSAirportDeparture ::= FANSAirport
@@ -1867,6 +1875,8 @@ FANSRouteInformation ::= CHOICE {
     trackDetail                        [5]   FANSTrackDetail
 }
 
+FANSRouteInformationSequence ::= SEQUENCE SIZE (1..128) OF FANSRouteInformation
+
 FANSPublishedIdentifier ::= SEQUENCE {
     fixName FANSFixName,
     latitudeLongitude FANSLatitudeLongitude         OPTIONAL
@@ -1884,7 +1894,7 @@ FANSAirwayIdentifier ::= IA5String (SIZE (1..5))
 
 FANSTrackDetail ::= SEQUENCE {
     trackName                       FANSTrackName,
-    latitudeLongitude-seqOf         SEQUENCE SIZE (1..128) OF FANSLatitudeLongitude
+    latitudeLongitude-seqOf         FANSLatitudeLongitudeSequence
 }
 
 FANSTrackName ::= IA5String (SIZE (3..6))
@@ -2040,6 +2050,8 @@ FANSSpeedMach ::= INTEGER (61..92)
 FANSSpeedMachLarge ::= INTEGER (93..604)
 -- Units = .01 Mach; Range (.93 to 6.04)
 
+FANSSpeedSpeed ::= SEQUENCE SIZE (2) OF FANSSpeed
+
 FANSTime ::= SEQUENCE {
     hours FANSTimehours,
     minutes FANSTimeminutes
@@ -2062,6 +2074,8 @@ FANSTimeDistanceToFromPosition ::= SEQUENCE {
     toFrom         [2]    FANSToFrom,
     position       [3]    FANSPosition
 }
+
+FANSTimeTime ::= SEQUENCE SIZE (2) OF FANSTime
 
 FANSToFrom ::= ENUMERATED {
     to   (0),
@@ -2099,7 +2113,7 @@ FANSTimeSpeed ::= SEQUENCE {
 
 FANSTimeSpeedSpeed ::= SEQUENCE {
     time              FANSTime,
-    speed-seqOf       SEQUENCE SIZE (2) OF FANSSpeed
+    speed-seqOf       FANSSpeedSpeed
 }
 
 FANSToFromPosition ::= SEQUENCE {

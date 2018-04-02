@@ -14,24 +14,19 @@
 /* Including external dependencies */
 #include "FANSCOMNAVApproachEquipmentAvailable.h"
 #include "FANSSSREquipmentAvailable.h"
-#include "FANSCOMNAVEquipmentStatus.h"
-#include <asn_SEQUENCE_OF.h>
-#include <constr_SEQUENCE_OF.h>
 #include <constr_SEQUENCE.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* Forward declarations */
+struct FANSCOMNAVEquipmentStatusSequence;
+
 /* FANSAircraftEquipmentCode */
 typedef struct FANSAircraftEquipmentCode {
 	FANSCOMNAVApproachEquipmentAvailable_t	 cOMNAVApproachEquipmentAvailable;
-	struct FANSAircraftEquipmentCode__comnavequipmentstatus_seqOf {
-		A_SEQUENCE_OF(FANSCOMNAVEquipmentStatus_t) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *comnavequipmentstatus_seqOf;
+	struct FANSCOMNAVEquipmentStatusSequence	*comnavequipmentstatus_seqOf	/* OPTIONAL */;
 	FANSSSREquipmentAvailable_t	 sSREquipmentAvailable;
 	
 	/* Context for parsing across buffer boundaries */
@@ -44,6 +39,9 @@ extern asn_TYPE_descriptor_t asn_DEF_FANSAircraftEquipmentCode;
 #ifdef __cplusplus
 }
 #endif
+
+/* Referred external types */
+#include "FANSCOMNAVEquipmentStatusSequence.h"
 
 #endif	/* _FANSAircraftEquipmentCode_H_ */
 #include <asn_internal.h>

@@ -13,26 +13,17 @@
 
 /* Including external dependencies */
 #include "FANSPosition.h"
-#include <asn_SEQUENCE_OF.h>
-#include <constr_SEQUENCE_OF.h>
+#include "FANSTimeTime.h"
 #include <constr_SEQUENCE.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Forward declarations */
-struct FANSTime;
-
 /* FANSPositionTimeTime */
 typedef struct FANSPositionTimeTime {
 	FANSPosition_t	 position;
-	struct FANSPositionTimeTime__time_seqOf {
-		A_SEQUENCE_OF(struct FANSTime) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} time_seqOf;
+	FANSTimeTime_t	 time_seqOf;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
@@ -44,9 +35,6 @@ extern asn_TYPE_descriptor_t asn_DEF_FANSPositionTimeTime;
 #ifdef __cplusplus
 }
 #endif
-
-/* Referred external types */
-#include "FANSTime.h"
 
 #endif	/* _FANSPositionTimeTime_H_ */
 #include <asn_internal.h>

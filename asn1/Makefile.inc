@@ -337,6 +337,7 @@ ASN_MODULE_SOURCES=	\
 	FANSAltitudeFlightLevel.c	\
 	FANSAltitudeFlightLevelMetric.c	\
 	FANSAltitudePosition.c	\
+	FANSAltitudeAltitude.c	\
 	FANSAltitudeSpeed.c	\
 	FANSAltitudeSpeedSpeed.c	\
 	FANSAltitudeTime.c	\
@@ -371,6 +372,7 @@ ASN_MODULE_SOURCES=	\
 	FANSICAOUnitNameFrequency.c	\
 	FANSICAOFacilityDesignationTp4Table.c	\
 	FANSLatitudeLongitude.c	\
+	FANSLatitudeLongitudeSequence.c	\
 	FANSLatitude.c	\
 	FANSLatitudeDegrees.c	\
 	FANSMinutesLatLon.c	\
@@ -395,6 +397,7 @@ ASN_MODULE_SOURCES=	\
 	FANSPositionDegrees.c	\
 	FANSPositionDistanceOffsetDirection.c	\
 	FANSPositionICAOUnitNameFrequency.c	\
+	FANSPositionPosition.c	\
 	FANSPositionProcedureName.c	\
 	FANSPositionReport.c	\
 	FANSPositionCurrent.c	\
@@ -433,6 +436,7 @@ ASN_MODULE_SOURCES=	\
 	FANSAircraftEquipmentCode.c	\
 	FANSCOMNAVApproachEquipmentAvailable.c	\
 	FANSCOMNAVEquipmentStatus.c	\
+	FANSCOMNAVEquipmentStatusSequence.c	\
 	FANSSSREquipmentAvailable.c	\
 	FANSTimeDepartureEdct.c	\
 	FANSAltitudeRestriction.c	\
@@ -458,6 +462,7 @@ ASN_MODULE_SOURCES=	\
 	FANSProcedureArrival.c	\
 	FANSAirwayIntercept.c	\
 	FANSRouteInformation.c	\
+	FANSRouteInformationSequence.c	\
 	FANSPublishedIdentifier.c	\
 	FANSPlaceBearing.c	\
 	FANSPlaceBearingPlaceBearing.c	\
@@ -499,10 +504,12 @@ ASN_MODULE_SOURCES=	\
 	FANSSpeedGroundMetric.c	\
 	FANSSpeedMach.c	\
 	FANSSpeedMachLarge.c	\
+	FANSSpeedSpeed.c	\
 	FANSTime.c	\
 	FANSTimeAltitude.c	\
 	FANSTimeDistanceOffsetDirection.c	\
 	FANSTimeDistanceToFromPosition.c	\
+	FANSTimeTime.c	\
 	FANSToFrom.c	\
 	FANSTimeICAOunitnameFrequency.c	\
 	FANSTimePosition.c	\
@@ -856,6 +863,7 @@ ASN_MODULE_HEADERS=	\
 	FANSAltitudeFlightLevel.h	\
 	FANSAltitudeFlightLevelMetric.h	\
 	FANSAltitudePosition.h	\
+	FANSAltitudeAltitude.h	\
 	FANSAltitudeSpeed.h	\
 	FANSAltitudeSpeedSpeed.h	\
 	FANSAltitudeTime.h	\
@@ -890,6 +898,7 @@ ASN_MODULE_HEADERS=	\
 	FANSICAOUnitNameFrequency.h	\
 	FANSICAOFacilityDesignationTp4Table.h	\
 	FANSLatitudeLongitude.h	\
+	FANSLatitudeLongitudeSequence.h	\
 	FANSLatitude.h	\
 	FANSLatitudeDegrees.h	\
 	FANSMinutesLatLon.h	\
@@ -914,6 +923,7 @@ ASN_MODULE_HEADERS=	\
 	FANSPositionDegrees.h	\
 	FANSPositionDistanceOffsetDirection.h	\
 	FANSPositionICAOUnitNameFrequency.h	\
+	FANSPositionPosition.h	\
 	FANSPositionProcedureName.h	\
 	FANSPositionReport.h	\
 	FANSPositionCurrent.h	\
@@ -952,6 +962,7 @@ ASN_MODULE_HEADERS=	\
 	FANSAircraftEquipmentCode.h	\
 	FANSCOMNAVApproachEquipmentAvailable.h	\
 	FANSCOMNAVEquipmentStatus.h	\
+	FANSCOMNAVEquipmentStatusSequence.h	\
 	FANSSSREquipmentAvailable.h	\
 	FANSTimeDepartureEdct.h	\
 	FANSAltitudeRestriction.h	\
@@ -977,6 +988,7 @@ ASN_MODULE_HEADERS=	\
 	FANSProcedureArrival.h	\
 	FANSAirwayIntercept.h	\
 	FANSRouteInformation.h	\
+	FANSRouteInformationSequence.h	\
 	FANSPublishedIdentifier.h	\
 	FANSPlaceBearing.h	\
 	FANSPlaceBearingPlaceBearing.h	\
@@ -1018,10 +1030,12 @@ ASN_MODULE_HEADERS=	\
 	FANSSpeedGroundMetric.h	\
 	FANSSpeedMach.h	\
 	FANSSpeedMachLarge.h	\
+	FANSSpeedSpeed.h	\
 	FANSTime.h	\
 	FANSTimeAltitude.h	\
 	FANSTimeDistanceOffsetDirection.h	\
 	FANSTimeDistanceToFromPosition.h	\
+	FANSTimeTime.h	\
 	FANSToFrom.h	\
 	FANSTimeICAOunitnameFrequency.h	\
 	FANSTimePosition.h	\

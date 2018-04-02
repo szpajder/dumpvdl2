@@ -20,6 +20,7 @@
 #include "FANSPositionAltitude.h"
 #include "FANSAltitudeTime.h"
 #include "FANSAltitudePosition.h"
+#include "FANSAltitudeAltitude.h"
 #include "FANSPositionAltitudeAltitude.h"
 #include "FANSPositionTime.h"
 #include "FANSPositionTimeTime.h"
@@ -33,6 +34,7 @@
 #include "FANSTimeDistanceOffsetDirection.h"
 #include "FANSPredepartureClearance.h"
 #include "FANSTimePosition.h"
+#include "FANSPositionPosition.h"
 #include "FANSPositionRouteClearance.h"
 #include "FANSRouteClearance.h"
 #include "FANSProcedureName.h"
@@ -46,6 +48,7 @@
 #include "FANSPositionSpeedSpeed.h"
 #include "FANSAltitudeSpeedSpeed.h"
 #include "FANSSpeed.h"
+#include "FANSSpeedSpeed.h"
 #include "FANSICAOUnitNameFrequency.h"
 #include "FANSPositionICAOUnitNameFrequency.h"
 #include "FANSTimeICAOunitnameFrequency.h"
@@ -59,8 +62,6 @@
 #include "FANSFreeText.h"
 #include "FANSVerticalRate.h"
 #include "FANSToFromPosition.h"
-#include <asn_SEQUENCE_OF.h>
-#include <constr_SEQUENCE_OF.h>
 #include <constr_CHOICE.h>
 
 #ifdef __cplusplus
@@ -255,11 +256,6 @@ typedef enum FANSATCUplinkMsgElementId_PR {
 	FANSATCUplinkMsgElementId_PR_uM182NULL
 } FANSATCUplinkMsgElementId_PR;
 
-/* Forward declarations */
-struct FANSAltitude;
-struct FANSPosition;
-struct FANSSpeed;
-
 /* FANSATCUplinkMsgElementId */
 typedef struct FANSATCUplinkMsgElementId {
 	FANSATCUplinkMsgElementId_PR present;
@@ -294,24 +290,9 @@ typedef struct FANSATCUplinkMsgElementId {
 		FANSAltitudePosition_t	 uM27AltitudePosition;
 		FANSAltitudeTime_t	 uM28AltitudeTime;
 		FANSAltitudePosition_t	 uM29AltitudePosition;
-		struct FANSATCUplinkMsgElementId__uM30AltitudeAltitude {
-			A_SEQUENCE_OF(struct FANSAltitude) list;
-			
-			/* Context for parsing across buffer boundaries */
-			asn_struct_ctx_t _asn_ctx;
-		} uM30AltitudeAltitude;
-		struct FANSATCUplinkMsgElementId__uM31AltitudeAltitude {
-			A_SEQUENCE_OF(struct FANSAltitude) list;
-			
-			/* Context for parsing across buffer boundaries */
-			asn_struct_ctx_t _asn_ctx;
-		} uM31AltitudeAltitude;
-		struct FANSATCUplinkMsgElementId__uM32AltitudeAltitude {
-			A_SEQUENCE_OF(struct FANSAltitude) list;
-			
-			/* Context for parsing across buffer boundaries */
-			asn_struct_ctx_t _asn_ctx;
-		} uM32AltitudeAltitude;
+		FANSAltitudeAltitude_t	 uM30AltitudeAltitude;
+		FANSAltitudeAltitude_t	 uM31AltitudeAltitude;
+		FANSAltitudeAltitude_t	 uM32AltitudeAltitude;
 		FANSAltitude_t	 uM33Altitude;
 		FANSAltitude_t	 uM34Altitude;
 		FANSAltitude_t	 uM35Altitude;
@@ -356,12 +337,7 @@ typedef struct FANSATCUplinkMsgElementId {
 		FANSPosition_t	 uM74Position;
 		FANSPosition_t	 uM75Position;
 		FANSTimePosition_t	 uM76TimePosition;
-		struct FANSATCUplinkMsgElementId__uM77PositionPosition {
-			A_SEQUENCE_OF(struct FANSPosition) list;
-			
-			/* Context for parsing across buffer boundaries */
-			asn_struct_ctx_t _asn_ctx;
-		} uM77PositionPosition;
+		FANSPositionPosition_t	 uM77PositionPosition;
 		FANSAltitudePosition_t	 uM78AltitudePosition;
 		FANSPositionRouteClearance_t	 uM79PositionRouteClearance;
 		FANSRouteClearance_t	 uM80RouteClearance;
@@ -372,12 +348,7 @@ typedef struct FANSATCUplinkMsgElementId {
 		FANSRouteClearance_t	 uM85RouteClearance;
 		FANSPositionRouteClearance_t	 uM86PositionRouteClearance;
 		FANSPosition_t	 uM87Position;
-		struct FANSATCUplinkMsgElementId__uM88PositionPosition {
-			A_SEQUENCE_OF(struct FANSPosition) list;
-			
-			/* Context for parsing across buffer boundaries */
-			asn_struct_ctx_t _asn_ctx;
-		} uM88PositionPosition;
+		FANSPositionPosition_t	 uM88PositionPosition;
 		FANSTimePosition_t	 uM89TimePosition;
 		FANSAltitudePosition_t	 uM90AltitudePosition;
 		FANSHoldClearance_t	 uM91HoldClearance;
@@ -399,12 +370,7 @@ typedef struct FANSATCUplinkMsgElementId {
 		NULL_t	 uM107NULL;
 		FANSSpeed_t	 uM108Speed;
 		FANSSpeed_t	 uM109Speed;
-		struct FANSATCUplinkMsgElementId__uM110SpeedSpeed {
-			A_SEQUENCE_OF(struct FANSSpeed) list;
-			
-			/* Context for parsing across buffer boundaries */
-			asn_struct_ctx_t _asn_ctx;
-		} uM110SpeedSpeed;
+		FANSSpeedSpeed_t	 uM110SpeedSpeed;
 		FANSSpeed_t	 uM111Speed;
 		FANSSpeed_t	 uM112Speed;
 		FANSSpeed_t	 uM113Speed;
@@ -474,12 +440,7 @@ typedef struct FANSATCUplinkMsgElementId {
 		NULL_t	 uM177NULL;
 		NULL_t	 uM178NULL;
 		NULL_t	 uM179NULL;
-		struct FANSATCUplinkMsgElementId__uM180AltitudeAltitude {
-			A_SEQUENCE_OF(struct FANSAltitude) list;
-			
-			/* Context for parsing across buffer boundaries */
-			asn_struct_ctx_t _asn_ctx;
-		} uM180AltitudeAltitude;
+		FANSAltitudeAltitude_t	 uM180AltitudeAltitude;
 		FANSToFromPosition_t	 uM181ToFromPosition;
 		NULL_t	 uM182NULL;
 	} choice;
@@ -494,11 +455,6 @@ extern asn_TYPE_descriptor_t asn_DEF_FANSATCUplinkMsgElementId;
 #ifdef __cplusplus
 }
 #endif
-
-/* Referred external types */
-#include "FANSAltitude.h"
-#include "FANSPosition.h"
-#include "FANSSpeed.h"
 
 #endif	/* _FANSATCUplinkMsgElementId_H_ */
 #include <asn_internal.h>

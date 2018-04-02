@@ -5,36 +5,40 @@
  * 	`asn1c -fcompound-names -gen-PER`
  */
 
-#ifndef	_FANSTimeSpeedSpeed_H_
-#define	_FANSTimeSpeedSpeed_H_
+#ifndef	_FANSTimeTime_H_
+#define	_FANSTimeTime_H_
 
 
 #include <asn_application.h>
 
 /* Including external dependencies */
-#include "FANSTime.h"
-#include "FANSSpeedSpeed.h"
-#include <constr_SEQUENCE.h>
+#include <asn_SEQUENCE_OF.h>
+#include <constr_SEQUENCE_OF.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* FANSTimeSpeedSpeed */
-typedef struct FANSTimeSpeedSpeed {
-	FANSTime_t	 time;
-	FANSSpeedSpeed_t	 speed_seqOf;
+/* Forward declarations */
+struct FANSTime;
+
+/* FANSTimeTime */
+typedef struct FANSTimeTime {
+	A_SEQUENCE_OF(struct FANSTime) list;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
-} FANSTimeSpeedSpeed_t;
+} FANSTimeTime_t;
 
 /* Implementation */
-extern asn_TYPE_descriptor_t asn_DEF_FANSTimeSpeedSpeed;
+extern asn_TYPE_descriptor_t asn_DEF_FANSTimeTime;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif	/* _FANSTimeSpeedSpeed_H_ */
+/* Referred external types */
+#include "FANSTime.h"
+
+#endif	/* _FANSTimeTime_H_ */
 #include <asn_internal.h>

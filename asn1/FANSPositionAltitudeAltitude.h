@@ -13,26 +13,17 @@
 
 /* Including external dependencies */
 #include "FANSPosition.h"
-#include <asn_SEQUENCE_OF.h>
-#include <constr_SEQUENCE_OF.h>
+#include "FANSAltitudeAltitude.h"
 #include <constr_SEQUENCE.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Forward declarations */
-struct FANSAltitude;
-
 /* FANSPositionAltitudeAltitude */
 typedef struct FANSPositionAltitudeAltitude {
 	FANSPosition_t	 position;
-	struct FANSPositionAltitudeAltitude__altitude_seqOf {
-		A_SEQUENCE_OF(struct FANSAltitude) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} altitude_seqOf;
+	FANSAltitudeAltitude_t	 altitude_seqOf;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
@@ -44,9 +35,6 @@ extern asn_TYPE_descriptor_t asn_DEF_FANSPositionAltitudeAltitude;
 #ifdef __cplusplus
 }
 #endif
-
-/* Referred external types */
-#include "FANSAltitude.h"
 
 #endif	/* _FANSPositionAltitudeAltitude_H_ */
 #include <asn_internal.h>

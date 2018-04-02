@@ -13,26 +13,17 @@
 
 /* Including external dependencies */
 #include "FANSAltitude.h"
-#include <asn_SEQUENCE_OF.h>
-#include <constr_SEQUENCE_OF.h>
+#include "FANSSpeedSpeed.h"
 #include <constr_SEQUENCE.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Forward declarations */
-struct FANSSpeed;
-
 /* FANSAltitudeSpeedSpeed */
 typedef struct FANSAltitudeSpeedSpeed {
 	FANSAltitude_t	 altitude;
-	struct FANSAltitudeSpeedSpeed__speed_seqOf {
-		A_SEQUENCE_OF(struct FANSSpeed) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} speed_seqOf;
+	FANSSpeedSpeed_t	 speed_seqOf;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
@@ -44,9 +35,6 @@ extern asn_TYPE_descriptor_t asn_DEF_FANSAltitudeSpeedSpeed;
 #ifdef __cplusplus
 }
 #endif
-
-/* Referred external types */
-#include "FANSSpeed.h"
 
 #endif	/* _FANSAltitudeSpeedSpeed_H_ */
 #include <asn_internal.h>
