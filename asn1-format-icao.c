@@ -29,6 +29,7 @@
 #include "tlv.h"				// dict_search()
 #include "dumpvdl2.h"				// XCALLOC
 #include "asn1-util.h"				// asn_formatter_t, asn1_output()
+#include "asn1-format-common.h"
 
 // forward declaration
 void asn1_output_icao(FILE *stream, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
@@ -397,13 +398,6 @@ static dict const ATCDownlinkMsgElementId_labels[] = {
  * Helper functions
  *******************/
 
-static char const *value2enum(asn_TYPE_descriptor_t *td, long const value) {
-	if(td == NULL) return NULL;
-	asn_INTEGER_enum_map_t const *enum_map = INTEGER_map_value2enum(td->specifics, value);
-	if(enum_map == NULL) return NULL;
-	return enum_map->enum_name;
-}
-
 static void _format_CHOICE(FILE *stream, dict const * const choice_labels, asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
 	asn_CHOICE_specifics_t *specs = (asn_CHOICE_specifics_t *)td->specifics;
 	int present = _fetch_present_idx(sptr, specs->pres_offset, specs->pres_size);
@@ -436,30 +430,11 @@ static void _format_CHOICE(FILE *stream, dict const * const choice_labels, asn_T
 	}
 }
 
-static void _format_INTEGER_with_unit(FILE *stream, char const * const label, asn_TYPE_descriptor_t *td,
-	void const *sptr, int indent, char const * const unit, double multiplier, int decimal_places) {
-	CAST_PTR(val, long *, sptr);
-	IFPRINTF(stream, indent, "%s: %.*f%s\n", label, decimal_places, (double)(*val) * multiplier, unit);
-}
-
 /************************
  * ASN.1 type formatters
  ************************/
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_any) {
-	if(label != NULL) {
-		IFPRINTF(stream, indent, "%s: ", label);
-	} else {
-		IFPRINTF(stream, indent, "%s", "");
-	}
-	asn_fprint(stream, td, sptr, 1);
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_NULL) {
-	// NOOP
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_CHOICE) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_CHOICE) {
 // If there is a label - print it and indent the contents by one level.
 // If there is no label, then treat this as an anonymous CHOICE and do
 // not indent the contents. This makes the CHOICE invisible, and the output
@@ -471,17 +446,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_CHOICE) {
 	_format_CHOICE(stream, NULL, td, sptr, indent);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_ENUM) {
-	long const value = *(long const *)sptr;
-	char const *s = value2enum(td, value);
-	if(s != NULL) {
-		IFPRINTF(stream, indent, "%s: %s\n", label, s);
-	} else {
-		IFPRINTF(stream, indent, "%s: %ld\n", label, value);
-	}
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE) {
 	if(label != NULL) {
 		IFPRINTF(stream, indent, "%s:\n", label);
 		indent++;
@@ -502,7 +467,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE) {
 	}
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_OF) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_OF) {
 	if(label != NULL) {
 		IFPRINTF(stream, indent, "%s:\n", label);
 		indent++;
@@ -518,15 +483,15 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_OF) {
 	}
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCDownlinkMsgElementId) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCDownlinkMsgElementId) {
 	_format_CHOICE(stream, ATCDownlinkMsgElementId_labels, td, sptr, indent);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCUplinkMsgElementId) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCUplinkMsgElementId) {
 	_format_CHOICE(stream, ATCUplinkMsgElementId_labels, td, sptr, indent);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Code) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_Code) {
 	CAST_PTR(code, Code_t *, sptr);
 	long **cptr = code->list.array;
 	IFPRINTF(stream, indent, "%s: %ld%ld%ld%ld\n",
@@ -538,7 +503,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_Code) {
 	);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTime) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTime) {
 	CAST_PTR(dtg, DateTime_t *, sptr);
 	Date_t *d = &dtg->date;
 	Time_t *t = &dtg->time;
@@ -547,7 +512,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTime) {
 		t->hours, t->minutes);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTimeGroup) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTimeGroup) {
 	CAST_PTR(dtg, DateTimeGroup_t *, sptr);
 	Date_t *d = &dtg->date;
 	Timehhmmss_t *t = &dtg->timehhmmss;
@@ -556,12 +521,12 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTimeGroup) {
 		t->hoursminutes.hours, t->hoursminutes.minutes, t->seconds);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Time) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_Time) {
 	CAST_PTR(t, Time_t *, sptr);
 	IFPRINTF(stream, indent, "%s: %02ld:%02ld\n", label, t->hours, t->minutes);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Latitude) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_Latitude) {
 	CAST_PTR(lat, Latitude_t *, sptr);
 	long const ldir = lat->latitudeDirection;
 	char const *ldir_name = value2enum(&asn_DEF_LatitudeDirection, ldir);
@@ -597,7 +562,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_Latitude) {
 	}
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Longitude) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_Longitude) {
 	CAST_PTR(lon, Longitude_t *, sptr);
 	long const ldir = lon->longitudeDirection;
 	char const *ldir_name = value2enum(&asn_DEF_LongitudeDirection, ldir);
@@ -633,107 +598,103 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_Longitude) {
 	}
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_AltimeterEnglish) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_AltimeterEnglish) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " inHg", 0.01, 2);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_AltimeterMetric) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_AltimeterMetric) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " hPa", 0.1, 1);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Deg) {
-	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " deg", 1, 0);
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_DepartureMinimumInterval) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_DepartureMinimumInterval) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " min", 0.1, 1);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceKm) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceKm) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " km", 0.25, 2);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceNm) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceNm) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " nm", 0.1, 1);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Humidity) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_Humidity) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, "%%", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceEnglish) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceEnglish) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " nm", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceMetric) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceMetric) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " km", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyvhf) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyvhf) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " MHz", 0.005, 3);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyuhf) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyuhf) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " MHz", 0.025, 3);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyhf) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyhf) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " kHz", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_LegTime) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_LegTime) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " min", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_LevelFeet) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_LevelFeet) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " ft", 10, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_LevelFlightLevelMetric) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_LevelFlightLevelMetric) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " m", 10, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Meters) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_Meters) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " m", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_RTATolerance) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_RTATolerance) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " min", 0.1, 1);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Feet) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_Feet) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " ft", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedMetric) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedMetric) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " km/h", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedEnglish) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedEnglish) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " kts", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedIndicated) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedIndicated) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " kts", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedMach) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedMach) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, "", 0.001, 2);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Temperature) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_Temperature) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " C", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateEnglish) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateEnglish) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " ft/min", 10, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateMetric) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateMetric) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " m/min", 10, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_UnitName) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_UnitName) {
 	CAST_PTR(un, UnitName_t *, sptr);
 	char *fdes = XCALLOC(un->facilityDesignation.size + 1, sizeof(char));
 	snprintf(fdes, un->facilityDesignation.size + 1, "%s", un->facilityDesignation.buf);

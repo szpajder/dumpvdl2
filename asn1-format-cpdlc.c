@@ -22,6 +22,7 @@
 #include "tlv.h"				// dict_search()
 #include "dumpvdl2.h"				// XCALLOC
 #include "asn1-util.h"				// asn_formatter_t, asn1_output()
+#include "asn1-format-common.h"
 
 // forward declaration
 void asn1_output_cpdlc(FILE *stream, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
@@ -351,13 +352,6 @@ static dict const FANSATCDownlinkMsgElementId_labels[] = {
  *******************/
 // FIXME: deduplicate with asn1-format-icao.c
 
-static char const *value2enum(asn_TYPE_descriptor_t *td, long const value) {
-	if(td == NULL) return NULL;
-	asn_INTEGER_enum_map_t const *enum_map = INTEGER_map_value2enum(td->specifics, value);
-	if(enum_map == NULL) return NULL;
-	return enum_map->enum_name;
-}
-
 static void _format_CHOICE(FILE *stream, dict const * const choice_labels, asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
 	asn_CHOICE_specifics_t *specs = (asn_CHOICE_specifics_t *)td->specifics;
 	int present = _fetch_present_idx(sptr, specs->pres_offset, specs->pres_size);
@@ -390,7 +384,7 @@ static void _format_CHOICE(FILE *stream, dict const * const choice_labels, asn_T
 	}
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_OF) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_OF) {
 	if(label != NULL) {
 		IFPRINTF(stream, indent, "%s:\n", label);
 		indent++;
@@ -406,33 +400,12 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_OF) {
 	}
 }
 
-static void _format_INTEGER_with_unit(FILE *stream, char const * const label, asn_TYPE_descriptor_t *td,
-	void const *sptr, int indent, char const * const unit, double multiplier, int decimal_places) {
-	CAST_PTR(val, long *, sptr);
-	IFPRINTF(stream, indent, "%s: %.*f%s\n", label, decimal_places, (double)(*val) * multiplier, unit);
-}
-
 /************************
  * ASN.1 type formatters
  ************************/
 
 // FIXME: deduplicate with asn1-format-icao.c
-ASN1_FORMATTER_PROTOTYPE(asn1_format_any) {
-	if(label != NULL) {
-		IFPRINTF(stream, indent, "%s: ", label);
-	} else {
-		IFPRINTF(stream, indent, "%s", "");
-	}
-	asn_fprint(stream, td, sptr, 1);
-}
-
-// FIXME: deduplicate with asn1-format-icao.c
-ASN1_FORMATTER_PROTOTYPE(asn1_format_NULL) {
-	// NOOP
-}
-
-// FIXME: deduplicate with asn1-format-icao.c
-ASN1_FORMATTER_PROTOTYPE(asn1_format_CHOICE) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_CHOICE) {
 // If there is a label - print it and indent the contents by one level.
 // If there is no label, then treat this as an anonymous CHOICE and do
 // not indent the contents. This makes the CHOICE invisible, and the output
@@ -445,18 +418,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_CHOICE) {
 }
 
 // FIXME: deduplicate with asn1-format-icao.c
-ASN1_FORMATTER_PROTOTYPE(asn1_format_ENUM) {
-	long const value = *(long const *)sptr;
-	char const *s = value2enum(td, value);
-	if(s != NULL) {
-		IFPRINTF(stream, indent, "%s: %s\n", label, s);
-	} else {
-		IFPRINTF(stream, indent, "%s: %ld\n", label, value);
-	}
-}
-
-// FIXME: deduplicate with asn1-format-icao.c
-ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE) {
 	if(label != NULL) {
 		IFPRINTF(stream, indent, "%s:\n", label);
 		indent++;
@@ -477,99 +439,95 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE) {
 	}
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSAltimeterEnglish) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSAltimeterEnglish) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " inHg", 0.01, 2);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSAltimeterMetric) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSAltimeterMetric) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " hPa", 0.1, 1);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSAltitudeGNSSFeet) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSAltitudeGNSSFeet) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " ft", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSAltitudeFlightLevelMetric) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSAltitudeFlightLevelMetric) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " m", 10, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Deg) {
-	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " deg", 1, 0);
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSDistanceOffsetNm) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSDistanceOffsetNm) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " nm", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSDistanceMetric) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSDistanceMetric) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " km", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSFeetX10) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSFeetX10) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " ft", 10, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSFrequencyhf) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSFrequencyhf) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " kHz", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSFrequencykHzToMHz) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSFrequencykHzToMHz) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " MHz", 0.001, 3);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSDistanceEnglish) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSDistanceEnglish) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " nm", 0.1, 1);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSLegTime) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSLegTime) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " min", 0.1, 1);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSMeters) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSMeters) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " m", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSTemperatureC) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSTemperatureC) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " C", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSTemperatureF) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSTemperatureF) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " F", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSWindSpeedEnglish) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSWindSpeedEnglish) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " kts", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSWindSpeedMetric) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSWindSpeedMetric) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " km/h", 1, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSRTATolerance) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSRTATolerance) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " min", 0.1, 1);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSSpeedEnglishX10) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSSpeedEnglishX10) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " kts", 10, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSSpeedMetricX10) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSSpeedMetricX10) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " km/h", 10, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSSpeedMach) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSSpeedMach) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, "", 0.01, 2);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSVerticalRateEnglish) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSVerticalRateEnglish) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " ft/min", 100, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSVerticalRateMetric) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSVerticalRateMetric) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " m/min", 10, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSBeaconCode) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSBeaconCode) {
 	CAST_PTR(code, FANSBeaconCode_t *, sptr);
 	long **cptr = code->list.array;
 	IFPRINTF(stream, indent, "%s: %ld%ld%ld%ld\n",
@@ -581,17 +539,17 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSBeaconCode) {
 	);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSTime) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSTime) {
 	CAST_PTR(t, FANSTime_t *, sptr);
 	IFPRINTF(stream, indent, "%s: %02ld:%02ld\n", label, t->hours, t->minutes);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSTimestamp) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSTimestamp) {
 	CAST_PTR(t, FANSTimestamp_t *, sptr);
 	IFPRINTF(stream, indent, "%s: %02ld:%02ld:%02ld\n", label, t->hours, t->minutes, t->seconds);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSLatitude) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSLatitude) {
 	CAST_PTR(lat, FANSLatitude_t *, sptr);
 	long const ldir = lat->latitudeDirection;
 	char const *ldir_name = value2enum(&asn_DEF_FANSLatitudeDirection, ldir);
@@ -611,7 +569,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSLatitude) {
 	}
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSLongitude) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSLongitude) {
 	CAST_PTR(lat, FANSLongitude_t *, sptr);
 	long const ldir = lat->longitudeDirection;
 	char const *ldir_name = value2enum(&asn_DEF_FANSLongitudeDirection, ldir);
@@ -637,7 +595,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSLongitude) {
 // for that because the same type is used inside the SEQ-OF which would cause
 // the label to be printed for each element in the sequence). The same applies
 // to asn1_format_FANSATCDownlinkMessage.
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSATCUplinkMessage) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSATCUplinkMessage) {
 	CAST_PTR(msg, FANSATCUplinkMessage_t *, sptr);
 	if(label != NULL) {
 		IFPRINTF(stream, indent, "%s:\n", label);
@@ -652,7 +610,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSATCUplinkMessage) {
 	}
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSATCDownlinkMessage) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSATCDownlinkMessage) {
 	CAST_PTR(msg, FANSATCDownlinkMessage_t *, sptr);
 	if(label != NULL) {
 		IFPRINTF(stream, indent, "%s:\n", label);
@@ -667,11 +625,11 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSATCDownlinkMessage) {
 	}
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSATCDownlinkMsgElementId) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSATCDownlinkMsgElementId) {
 	_format_CHOICE(stream, FANSATCDownlinkMsgElementId_labels, td, sptr, indent);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSATCUplinkMsgElementId) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSATCUplinkMsgElementId) {
 	_format_CHOICE(stream, FANSATCUplinkMsgElementId_labels, td, sptr, indent);
 }
 

@@ -28,7 +28,7 @@ typedef struct {
 	char const * const label;
 } asn_formatter_t;
 
-#define ASN1_FORMATTER_PROTOTYPE(x) static void x(FILE *stream, char const * const label, asn_TYPE_descriptor_t *td, void const *sptr, int indent)
+#define ASN1_FORMATTER_PROTOTYPE(x) void x(FILE *stream, char const * const label, asn_TYPE_descriptor_t *td, void const *sptr, int indent)
 // FIXME: dedup with adsc.h
 #define CAST_PTR(x, t, y) t x = (t)(y)
 #define IFPRINTF(s, i, f, ...) fprintf(s, "%*s" f, i, "", __VA_ARGS__)
