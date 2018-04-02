@@ -6,17 +6,19 @@ CFLAGS += -std=c99 -g -Wall -O3 -fno-omit-frame-pointer -DEMIT_ASN_DEBUG=$(DEBUG
 ASN_MODULE_SOURCES=	\
 	CMAircraftMessage.c	\
 	CMGroundMessage.c	\
-	AirInitiatedApplications.c \
-	AirOnlyInitiatedApplications.c \
 	AircraftFlightIdentification.c	\
 	Airport.c	\
-	AirportDeparture.c \
-	AirportDestination.c \
+	AirportDeparture.c	\
+	AirportDestination.c	\
 	APAddress.c	\
 	AEQualifier.c	\
 	AEQualifierVersion.c	\
 	AEQualifierVersionAddress.c	\
-	ARS.c \
+	AirInitiatedApplications.c	\
+	AirOnlyInitiatedApplications.c	\
+	ARS.c	\
+	GroundInitiatedApplications.c	\
+	GroundOnlyInitiatedApplications.c	\
 	CMAbortReason.c	\
 	CMContactRequest.c	\
 	CMContactResponse.c	\
@@ -27,14 +29,14 @@ ASN_MODULE_SOURCES=	\
 	CMUpdate.c	\
 	Date.c	\
 	DateTime.c	\
-	DateTimeDepartureETD.c \
+	DateTimeDepartureETD.c	\
 	Day.c	\
 	FacilityDesignation.c	\
-	LocSysNselTsel.c \
+	LocSysNselTsel.c	\
 	LongTsap.c	\
 	Month.c	\
-	RDP.c \
 	Response.c	\
+	RDP.c	\
 	ShortTsap.c	\
 	Time.c	\
 	Timehours.c	\
@@ -77,6 +79,8 @@ ASN_MODULE_SOURCES=	\
 	Altimeter.c	\
 	AltimeterEnglish.c	\
 	AltimeterMetric.c	\
+	ATCUplinkMsgElementIdSequence.c	\
+	ATCDownlinkMsgElementIdSequence.c	\
 	ATISCode.c	\
 	ATSRouteDesignator.c	\
 	ATWAlongTrackWaypoint.c	\
@@ -122,8 +126,6 @@ ASN_MODULE_SOURCES=	\
 	Frequencyuhf.c	\
 	Frequencyvhf.c	\
 	FurtherInstructions.c	\
-	GroundInitiatedApplications.c \
-	GroundOnlyInitiatedApplications.c \
 	Holdatwaypoint.c	\
 	HoldClearance.c	\
 	Humidity.c	\
@@ -200,6 +202,7 @@ ASN_MODULE_SOURCES=	\
 	ReportingPoints.c	\
 	RevisionNumber.c	\
 	RouteAndLevels.c	\
+	RouteClearanceSequence.c	\
 	RouteClearance.c	\
 	RouteClearanceIndex.c	\
 	RouteInformation.c	\
@@ -508,8 +511,6 @@ ASN_MODULE_SOURCES=	\
 ASN_MODULE_HEADERS=	\
 	CMAircraftMessage.h	\
 	CMGroundMessage.h	\
-	AirInitiatedApplications.h \
-	AirOnlyInitiatedApplications.h \
 	AircraftFlightIdentification.h	\
 	Airport.h	\
 	AirportDeparture.h	\
@@ -518,7 +519,11 @@ ASN_MODULE_HEADERS=	\
 	AEQualifier.h	\
 	AEQualifierVersion.h	\
 	AEQualifierVersionAddress.h	\
-	ARS.h \
+	AirInitiatedApplications.h	\
+	AirOnlyInitiatedApplications.h	\
+	ARS.h	\
+	GroundInitiatedApplications.h	\
+	GroundOnlyInitiatedApplications.h	\
 	CMAbortReason.h	\
 	CMContactRequest.h	\
 	CMContactResponse.h	\
@@ -529,14 +534,14 @@ ASN_MODULE_HEADERS=	\
 	CMUpdate.h	\
 	Date.h	\
 	DateTime.h	\
-	DateTimeDepartureETD.h \
+	DateTimeDepartureETD.h	\
 	Day.h	\
 	FacilityDesignation.h	\
-	LocSysNselTsel.h \
+	LocSysNselTsel.h	\
 	LongTsap.h	\
 	Month.h	\
-	RDP.h \
 	Response.h	\
+	RDP.h	\
 	ShortTsap.h	\
 	Time.h	\
 	Timehours.h	\
@@ -579,6 +584,8 @@ ASN_MODULE_HEADERS=	\
 	Altimeter.h	\
 	AltimeterEnglish.h	\
 	AltimeterMetric.h	\
+	ATCUplinkMsgElementIdSequence.h	\
+	ATCDownlinkMsgElementIdSequence.h	\
 	ATISCode.h	\
 	ATSRouteDesignator.h	\
 	ATWAlongTrackWaypoint.h	\
@@ -624,8 +631,6 @@ ASN_MODULE_HEADERS=	\
 	Frequencyuhf.h	\
 	Frequencyvhf.h	\
 	FurtherInstructions.h	\
-	GroundInitiatedApplications.h \
-	GroundOnlyInitiatedApplications.h \
 	Holdatwaypoint.h	\
 	HoldClearance.h	\
 	Humidity.h	\
@@ -702,6 +707,7 @@ ASN_MODULE_HEADERS=	\
 	ReportingPoints.h	\
 	RevisionNumber.h	\
 	RouteAndLevels.h	\
+	RouteClearanceSequence.h	\
 	RouteClearance.h	\
 	RouteClearanceIndex.h	\
 	RouteInformation.h	\

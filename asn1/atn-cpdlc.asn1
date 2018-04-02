@@ -267,10 +267,10 @@ ATCUplinkMessage ::= SEQUENCE
 
 ATCUplinkMessageData ::= SEQUENCE
 {
-    elementIds  SEQUENCE SIZE (1..5) OF ATCUplinkMsgElementId,
+    elementIds  ATCUplinkMsgElementIdSequence,
     constrainedData SEQUENCE
     {
-        routeClearanceData  SEQUENCE SIZE (1..2) OF RouteClearance OPTIONAL,
+        routeClearanceData  RouteClearanceSequence OPTIONAL,
         ...
     } OPTIONAL
 }
@@ -283,10 +283,10 @@ ATCDownlinkMessage ::= SEQUENCE
 
 ATCDownlinkMessageData ::= SEQUENCE
 {
-    elementIds  SEQUENCE SIZE (1..5) OF ATCDownlinkMsgElementId,
+    elementIds  ATCDownlinkMsgElementIdSequence,
     constrainedData SEQUENCE
     {
-        routeClearanceData    SEQUENCE SIZE (1..2) OF RouteClearance OPTIONAL,
+        routeClearanceData    RouteClearanceSequence OPTIONAL,
       ...
     } OPTIONAL
 }
@@ -1756,6 +1756,10 @@ AltimeterEnglish ::= INTEGER (2200..3200)
 AltimeterMetric ::= INTEGER (7500..12500)
 -- unit = Hectopascal, Range (750.0..1250.0), resolution = 0.1
 
+ATCUplinkMsgElementIdSequence ::= SEQUENCE SIZE (1..5) OF ATCUplinkMsgElementId
+
+ATCDownlinkMsgElementIdSequence ::= SEQUENCE SIZE (1..5) OF ATCDownlinkMsgElementId
+
 ATISCode ::= IA5String (SIZE (1))
 
 ATSRouteDesignator ::= IA5String (SIZE (2..7))
@@ -2451,6 +2455,8 @@ RouteAndLevels ::= SEQUENCE
     routeOfFlight   RouteInformation,
     levelsOfFlight  LevelsOfFlight
 }
+
+RouteClearanceSequence ::= SEQUENCE SIZE (1..2) OF RouteClearance
 
 RouteClearance ::= SEQUENCE
 {

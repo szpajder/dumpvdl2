@@ -529,30 +529,8 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_OF) {
 	}
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCDownlinkMessageData) {
-	CAST_PTR(dmd, ATCDownlinkMessageData_t *, sptr);
-	IFPRINTF(stream, indent, "%s:\n", label);
-	indent++;
-	_format_SEQUENCE_OF(stream, &asn_DEF_ATCDownlinkMsgElementId, &dmd->elementIds, indent);
-	if(dmd->constrainedData != NULL && dmd->constrainedData->routeClearanceData != NULL) {
-		_format_SEQUENCE_OF(stream, &asn_DEF_RouteClearance,
-			dmd->constrainedData->routeClearanceData, indent);
-	}
-}
-
 ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCDownlinkMsgElementId) {
 	_format_CHOICE(stream, ATCDownlinkMsgElementId_labels, td, sptr, indent);
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCUplinkMessageData) {
-	CAST_PTR(umd, ATCUplinkMessageData_t *, sptr);
-	IFPRINTF(stream, indent, "%s:\n", label);
-	indent++;
-	_format_SEQUENCE_OF(stream, &asn_DEF_ATCUplinkMsgElementId, &umd->elementIds, indent);
-	if(umd->constrainedData != NULL && umd->constrainedData->routeClearanceData != NULL) {
-		_format_SEQUENCE_OF(stream, &asn_DEF_RouteClearance,
-			umd->constrainedData->routeClearanceData, indent);
-	}
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCUplinkMsgElementId) {
@@ -834,11 +812,13 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_AltimeterEnglish, .format = &asn1_format_AltimeterEnglish, .label = "Altimeter" },
 	{ .type = &asn_DEF_AltimeterMetric, .format = &asn1_format_AltimeterMetric, .label = "Altimeter" },
 	{ .type = &asn_DEF_ATCDownlinkMessage, .format = &asn1_format_SEQUENCE, .label = "CPDLC Downlink Message" },
-	{ .type = &asn_DEF_ATCDownlinkMessageData, .format = &asn1_format_ATCDownlinkMessageData, .label = "Message data" },
+	{ .type = &asn_DEF_ATCDownlinkMessageData, .format = &asn1_format_SEQUENCE, .label = "Message data" },
 	{ .type = &asn_DEF_ATCDownlinkMsgElementId, .format = &asn1_format_ATCDownlinkMsgElementId, .label = NULL },
+	{ .type = &asn_DEF_ATCDownlinkMsgElementIdSequence, .format = &asn1_format_SEQUENCE_OF, .label = NULL },
+	{ .type = &asn_DEF_ATCUplinkMsgElementIdSequence, .format = &asn1_format_SEQUENCE_OF, .label = NULL },
 	{ .type = &asn_DEF_ATCMessageHeader, .format = &asn1_format_SEQUENCE, .label = "Header" },
 	{ .type = &asn_DEF_ATCUplinkMessage, .format = &asn1_format_SEQUENCE, .label = "CPDLC Uplink Message" },
-	{ .type = &asn_DEF_ATCUplinkMessageData, .format = &asn1_format_ATCUplinkMessageData, .label = "Message data" },
+	{ .type = &asn_DEF_ATCUplinkMessageData, .format = &asn1_format_SEQUENCE, .label = "Message data" },
 	{ .type = &asn_DEF_ATCUplinkMsgElementId, .format = &asn1_format_ATCUplinkMsgElementId, .label = NULL },
 	{ .type = &asn_DEF_ATISCode, .format = &asn1_format_any, .label = "ATIS code" },
 	{ .type = &asn_DEF_ATSRouteDesignator, .format = &asn1_format_any, .label = "ATS route" },
@@ -964,6 +944,7 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_RouteAndLevels, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_RouteClearance, .format = &asn1_format_RouteClearance, .label = "Route clearance" },
 	{ .type = &asn_DEF_RouteClearanceIndex, .format = &asn1_format_any, .label = "Route clearance index" },
+	{ .type = &asn_DEF_RouteClearanceSequence, .format = &asn1_format_SEQUENCE_OF, .label = NULL },
 	{ .type = &asn_DEF_RouteInformation, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_RouteInformationAdditional, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_RTARequiredTimeArrival, .format = &asn1_format_SEQUENCE, .label = NULL },
