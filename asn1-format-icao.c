@@ -436,17 +436,6 @@ static void _format_CHOICE(FILE *stream, dict const * const choice_labels, asn_T
 	}
 }
 
-static void _format_SEQUENCE_OF(FILE *stream, asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
-	const asn_anonymous_set_ *list = _A_CSET_FROM_VOID(sptr);
-	for(int i = 0; i < list->count; i++) {
-		const void *element = list->array[i];
-		if(element == NULL) {
-			continue;
-		}
-		asn1_output_icao(stream, td, element, indent);
-	}
-}
-
 static void _format_INTEGER_with_unit(FILE *stream, char const * const label, asn_TYPE_descriptor_t *td,
 	void const *sptr, int indent, char const * const unit, double multiplier, int decimal_places) {
 	CAST_PTR(val, long *, sptr);
@@ -744,45 +733,6 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateMetric) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " m/min", 10, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_RouteClearance) {
-	CAST_PTR(rc, RouteClearance_t *, sptr);
-	if(label != NULL) {
-		IFPRINTF(stream, indent, "%s:\n", label);
-		indent++;
-	}
-	if(rc->airportDeparture != NULL) {
-		asn1_output_icao(stream, &asn_DEF_AirportDeparture, rc->airportDeparture, indent);
-	}
-	if(rc->airportDestination != NULL) {
-		asn1_output_icao(stream, &asn_DEF_AirportDestination, rc->airportDestination, indent);
-	}
-	if(rc->runwayDeparture != NULL) {
-		asn1_format_SEQUENCE(stream, "Departure runway", &asn_DEF_Runway, rc->runwayDeparture, indent);
-	}
-	if(rc->procedureDeparture != NULL) {
-		asn1_format_SEQUENCE(stream, "Departure procedure", &asn_DEF_ProcedureName, rc->procedureDeparture, indent);
-	}
-	if(rc->runwayArrival != NULL) {
-		asn1_format_SEQUENCE(stream, "Arrival runway", &asn_DEF_Runway, rc->runwayArrival, indent);
-	}
-	if(rc->procedureApproach != NULL) {
-		asn1_format_SEQUENCE(stream, "Approach procedure", &asn_DEF_ProcedureName, rc->procedureApproach, indent);
-	}
-	if(rc->procedureArrival != NULL) {
-		asn1_format_SEQUENCE(stream, "Arrival procedure", &asn_DEF_ProcedureName, rc->procedureArrival, indent);
-	}
-	if(rc->routeInformations != NULL) {
-		IFPRINTF(stream, indent, "%s:\n", "Route informations");
-		indent++;
-		_format_SEQUENCE_OF(stream, &asn_DEF_RouteInformation, rc->routeInformations, indent);
-		indent--;
-	}
-	if(rc->routeInformationAdditional != NULL) {
-		asn1_format_SEQUENCE(stream, "Additional route information", &asn_DEF_RouteInformationAdditional,
-			rc->routeInformationAdditional, indent);
-	}
-}
-
 ASN1_FORMATTER_PROTOTYPE(asn1_format_UnitName) {
 	CAST_PTR(un, UnitName_t *, sptr);
 	char *fdes = XCALLOC(un->facilityDesignation.size + 1, sizeof(char));
@@ -802,12 +752,12 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_UnitName) {
 
 static asn_formatter_t const asn1_icao_formatter_table[] = {
 // atn-cpdlc.asn1
+	{ .type = &asn_DEF_AircraftAddress, .format = &asn1_format_any, .label = "Aircraft address" },
 	{ .type = &asn_DEF_AirInitiatedApplications, .format = &asn1_format_SEQUENCE_OF, .label = "Air-initiated applications" },
 	{ .type = &asn_DEF_AirOnlyInitiatedApplications, .format = &asn1_format_SEQUENCE_OF, .label = "Air-only-initiated applications" },
 	{ .type = &asn_DEF_Airport, .format = &asn1_format_any, .label = "Airport" },
 	{ .type = &asn_DEF_AirportDeparture, .format = &asn1_format_any, .label = "Departure airport" },
 	{ .type = &asn_DEF_AirportDestination, .format = &asn1_format_any, .label = "Destination airport" },
-	{ .type = &asn_DEF_AircraftAddress, .format = &asn1_format_any, .label = "Aircraft address" },
 	{ .type = &asn_DEF_Altimeter, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_AltimeterEnglish, .format = &asn1_format_AltimeterEnglish, .label = "Altimeter" },
 	{ .type = &asn_DEF_AltimeterMetric, .format = &asn1_format_AltimeterMetric, .label = "Altimeter" },
@@ -815,19 +765,21 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_ATCDownlinkMessageData, .format = &asn1_format_SEQUENCE, .label = "Message data" },
 	{ .type = &asn_DEF_ATCDownlinkMsgElementId, .format = &asn1_format_ATCDownlinkMsgElementId, .label = NULL },
 	{ .type = &asn_DEF_ATCDownlinkMsgElementIdSequence, .format = &asn1_format_SEQUENCE_OF, .label = NULL },
-	{ .type = &asn_DEF_ATCUplinkMsgElementIdSequence, .format = &asn1_format_SEQUENCE_OF, .label = NULL },
 	{ .type = &asn_DEF_ATCMessageHeader, .format = &asn1_format_SEQUENCE, .label = "Header" },
 	{ .type = &asn_DEF_ATCUplinkMessage, .format = &asn1_format_SEQUENCE, .label = "CPDLC Uplink Message" },
 	{ .type = &asn_DEF_ATCUplinkMessageData, .format = &asn1_format_SEQUENCE, .label = "Message data" },
 	{ .type = &asn_DEF_ATCUplinkMsgElementId, .format = &asn1_format_ATCUplinkMsgElementId, .label = NULL },
+	{ .type = &asn_DEF_ATCUplinkMsgElementIdSequence, .format = &asn1_format_SEQUENCE_OF, .label = NULL },
 	{ .type = &asn_DEF_ATISCode, .format = &asn1_format_any, .label = "ATIS code" },
 	{ .type = &asn_DEF_ATSRouteDesignator, .format = &asn1_format_any, .label = "ATS route" },
 	{ .type = &asn_DEF_ATWAlongTrackWaypoint, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_ATWAlongTrackWaypointSequence, .format = &asn1_format_SEQUENCE_OF, .label = "Along-track waypoints" },
 	{ .type = &asn_DEF_ATWDistance, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_ATWDistanceTolerance, .format = &asn1_format_ENUM, .label = "ATW Distance Tolerance" },
 	{ .type = &asn_DEF_ATWLevel, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_ATWLevelSequence, .format = &asn1_format_SEQUENCE_OF, .label = "ATW Levels" },
 	{ .type = &asn_DEF_ATWLevelTolerance, .format = &asn1_format_ENUM, .label = "ATW Level Tolerance" },
+	{ .type = &asn_DEF_BlockLevel, .format = &asn1_format_SEQUENCE_OF, .label = "Block level" },
 	{ .type = &asn_DEF_ClearanceType, .format = &asn1_format_ENUM, .label = "Clearance type" },
 	{ .type = &asn_DEF_Code, .format = &asn1_format_Code, .label = "Code" },
 	{ .type = &asn_DEF_ControlledTime, .format = &asn1_format_SEQUENCE, .label = NULL },
@@ -869,11 +821,13 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_GroundInitiatedApplications, .format = &asn1_format_SEQUENCE_OF, .label = "Ground-initiated applications" },
 	{ .type = &asn_DEF_GroundOnlyInitiatedApplications, .format = &asn1_format_SEQUENCE_OF, .label = "Ground-only-initiated applications" },
 	{ .type = &asn_DEF_Holdatwaypoint, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_HoldatwaypointSequence, .format = &asn1_format_SEQUENCE_OF, .label = "Holding points" },
 	{ .type = &asn_DEF_HoldClearance, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_Humidity, .format = &asn1_format_Humidity, .label = "Humidity" },
 	{ .type = &asn_DEF_Icing, .format = &asn1_format_ENUM, .label = "Icing" },
 	{ .type = &asn_DEF_InterceptCourseFrom, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_InterceptCourseFromSelection, .format = &asn1_format_CHOICE, .label = NULL },
+	{ .type = &asn_DEF_InterceptCourseFromSequence, .format = &asn1_format_SEQUENCE_OF, .label = "Intercept courses" },
 	{ .type = &asn_DEF_Latitude, .format = &asn1_format_Latitude, .label = "Latitude" },
 	{ .type = &asn_DEF_LatitudeDirection, .format = &asn1_format_ENUM, .label = "Direction" },
 	{ .type = &asn_DEF_LatitudeLongitude, .format = &asn1_format_SEQUENCE, .label = NULL },
@@ -931,6 +885,9 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_PositionTimeTime, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_PositionUnitNameFrequency, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_Procedure, .format = &asn1_format_any, .label = "Procedure" },
+	{ .type = &asn_DEF_ProcedureApproach, .format = &asn1_format_SEQUENCE, .label = "Approach procedure" },
+	{ .type = &asn_DEF_ProcedureArrival, .format = &asn1_format_SEQUENCE, .label = "Arrival procedure" },
+	{ .type = &asn_DEF_ProcedureDeparture, .format = &asn1_format_SEQUENCE, .label = "Departure procedure" },
 	{ .type = &asn_DEF_ProcedureName, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_ProcedureTransition, .format = &asn1_format_any, .label = "Procedure transition" },
 	{ .type = &asn_DEF_ProcedureType, .format = &asn1_format_ENUM, .label = "Procedure type" },
@@ -942,16 +899,20 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_ReportingPoints, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_RevisionNumber, .format = &asn1_format_any, .label = "Revision number" },
 	{ .type = &asn_DEF_RouteAndLevels, .format = &asn1_format_SEQUENCE, .label = NULL },
-	{ .type = &asn_DEF_RouteClearance, .format = &asn1_format_RouteClearance, .label = "Route clearance" },
+	{ .type = &asn_DEF_RouteClearance, .format = &asn1_format_SEQUENCE, .label = "Route clearance" },
 	{ .type = &asn_DEF_RouteClearanceIndex, .format = &asn1_format_any, .label = "Route clearance index" },
 	{ .type = &asn_DEF_RouteClearanceSequence, .format = &asn1_format_SEQUENCE_OF, .label = NULL },
 	{ .type = &asn_DEF_RouteInformation, .format = &asn1_format_CHOICE, .label = NULL },
-	{ .type = &asn_DEF_RouteInformationAdditional, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_RouteInformationAdditional, .format = &asn1_format_SEQUENCE, .label = "Additional route information" },
+	{ .type = &asn_DEF_RouteInformationSequence, .format = &asn1_format_SEQUENCE_OF, .label = "Route" },
 	{ .type = &asn_DEF_RTARequiredTimeArrival, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_RTARequiredTimeArrivalSequence, .format = &asn1_format_SEQUENCE_OF, .label = "Required arrival times" },
 	{ .type = &asn_DEF_RTATime, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_RTATolerance, .format = &asn1_format_RTATolerance, .label = "RTA Tolerance" },
 	{ .type = &asn_DEF_Runway, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_RunwayArrival, .format = &asn1_format_SEQUENCE, .label = "Arrival runway" },
 	{ .type = &asn_DEF_RunwayConfiguration, .format = &asn1_format_ENUM, .label = "Runway configuration" },
+	{ .type = &asn_DEF_RunwayDeparture, .format = &asn1_format_SEQUENCE, .label = "Departure runway" },
 	{ .type = &asn_DEF_RunwayDirection, .format = &asn1_format_any, .label = "Runway direction" },
 	{ .type = &asn_DEF_RunwayRVR, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_RVR, .format = &asn1_format_CHOICE, .label = NULL },
@@ -998,6 +959,7 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_VerticalRateEnglish, .format = &asn1_format_VerticalRateEnglish, .label = "Vertical rate" },
 	{ .type = &asn_DEF_VerticalRateMetric, .format = &asn1_format_VerticalRateMetric, .label = "Vertical rate" },
 	{ .type = &asn_DEF_WaypointSpeedLevel, .format = &asn1_format_SEQUENCE, .label = NULL },
+	{ .type = &asn_DEF_WaypointSpeedLevelSequence, .format = &asn1_format_SEQUENCE_OF, .label = "Waypoints, speeds and levels" },
 	{ .type = &asn_DEF_WindDirection, .format = &asn1_format_Deg, .label = "Wind direction" },
 	{ .type = &asn_DEF_Winds, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_WindSpeed, .format = &asn1_format_CHOICE, .label = NULL },

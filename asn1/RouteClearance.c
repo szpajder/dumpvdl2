@@ -7,88 +7,6 @@
 
 #include "RouteClearance.h"
 
-static int
-memb_routeInformations_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
-			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	size_t size;
-	
-	if(!sptr) {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: value not given (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-	
-	/* Determine the number of elements */
-	size = _A_CSEQUENCE_FROM_VOID(sptr)->count;
-	
-	if((size >= 1 && size <= 128)) {
-		/* Perform validation of the inner elements */
-		return td->check_constraints(td, sptr, ctfailcb, app_key);
-	} else {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: constraint failed (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-}
-
-static asn_per_constraints_t asn_PER_type_routeInformations_constr_9 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 7,  7,  1,  128 }	/* (SIZE(1..128)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_memb_routeInformations_constr_9 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 7,  7,  1,  128 }	/* (SIZE(1..128)) */,
-	0, 0	/* No PER value map */
-};
-static asn_TYPE_member_t asn_MBR_routeInformations_9[] = {
-	{ ATF_POINTER, 0, 0,
-		-1 /* Ambiguous tag (CHOICE?) */,
-		0,
-		&asn_DEF_RouteInformation,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		""
-		},
-};
-static const ber_tlv_tag_t asn_DEF_routeInformations_tags_9[] = {
-	(ASN_TAG_CLASS_CONTEXT | (7 << 2)),
-	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
-};
-static asn_SET_OF_specifics_t asn_SPC_routeInformations_specs_9 = {
-	sizeof(struct RouteClearance__routeInformations),
-	offsetof(struct RouteClearance__routeInformations, _asn_ctx),
-	2,	/* XER encoding is XMLValueList */
-};
-static /* Use -fall-defs-global to expose */
-asn_TYPE_descriptor_t asn_DEF_routeInformations_9 = {
-	"routeInformations",
-	"routeInformations",
-	SEQUENCE_OF_free,
-	SEQUENCE_OF_print,
-	SEQUENCE_OF_constraint,
-	SEQUENCE_OF_decode_ber,
-	SEQUENCE_OF_encode_der,
-	SEQUENCE_OF_decode_xer,
-	SEQUENCE_OF_encode_xer,
-	SEQUENCE_OF_decode_uper,
-	SEQUENCE_OF_encode_uper,
-	0,	/* Use generic outmost tag fetcher */
-	asn_DEF_routeInformations_tags_9,
-	sizeof(asn_DEF_routeInformations_tags_9)
-		/sizeof(asn_DEF_routeInformations_tags_9[0]), /* 2 */
-	asn_DEF_routeInformations_tags_9,	/* Same as above */
-	sizeof(asn_DEF_routeInformations_tags_9)
-		/sizeof(asn_DEF_routeInformations_tags_9[0]), /* 2 */
-	&asn_PER_type_routeInformations_constr_9,
-	asn_MBR_routeInformations_9,
-	1,	/* Single element */
-	&asn_SPC_routeInformations_specs_9	/* Additional specs */
-};
-
 static asn_TYPE_member_t asn_MBR_RouteClearance_1[] = {
 	{ ATF_POINTER, 9, offsetof(struct RouteClearance, airportDeparture),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
@@ -111,7 +29,7 @@ static asn_TYPE_member_t asn_MBR_RouteClearance_1[] = {
 	{ ATF_POINTER, 7, offsetof(struct RouteClearance, runwayDeparture),
 		(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Runway,
+		&asn_DEF_RunwayDeparture,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -120,7 +38,7 @@ static asn_TYPE_member_t asn_MBR_RouteClearance_1[] = {
 	{ ATF_POINTER, 6, offsetof(struct RouteClearance, procedureDeparture),
 		(ASN_TAG_CLASS_CONTEXT | (3 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_ProcedureName,
+		&asn_DEF_ProcedureDeparture,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -129,7 +47,7 @@ static asn_TYPE_member_t asn_MBR_RouteClearance_1[] = {
 	{ ATF_POINTER, 5, offsetof(struct RouteClearance, runwayArrival),
 		(ASN_TAG_CLASS_CONTEXT | (4 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Runway,
+		&asn_DEF_RunwayArrival,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -138,7 +56,7 @@ static asn_TYPE_member_t asn_MBR_RouteClearance_1[] = {
 	{ ATF_POINTER, 4, offsetof(struct RouteClearance, procedureApproach),
 		(ASN_TAG_CLASS_CONTEXT | (5 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_ProcedureName,
+		&asn_DEF_ProcedureApproach,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -147,7 +65,7 @@ static asn_TYPE_member_t asn_MBR_RouteClearance_1[] = {
 	{ ATF_POINTER, 3, offsetof(struct RouteClearance, procedureArrival),
 		(ASN_TAG_CLASS_CONTEXT | (6 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_ProcedureName,
+		&asn_DEF_ProcedureArrival,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -155,10 +73,10 @@ static asn_TYPE_member_t asn_MBR_RouteClearance_1[] = {
 		},
 	{ ATF_POINTER, 2, offsetof(struct RouteClearance, routeInformations),
 		(ASN_TAG_CLASS_CONTEXT | (7 << 2)),
-		0,
-		&asn_DEF_routeInformations_9,
-		memb_routeInformations_constraint_1,
-		&asn_PER_memb_routeInformations_constr_9,
+		+1,	/* EXPLICIT tag at current level */
+		&asn_DEF_RouteInformationSequence,
+		0,	/* Defer constraints checking to the member type */
+		0,	/* No PER visible constraints */
 		0,
 		"routeInformations"
 		},

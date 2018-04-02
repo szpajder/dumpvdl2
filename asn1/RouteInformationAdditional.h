@@ -12,8 +12,6 @@
 #include <asn_application.h>
 
 /* Including external dependencies */
-#include <asn_SEQUENCE_OF.h>
-#include <constr_SEQUENCE_OF.h>
 #include <constr_SEQUENCE.h>
 
 #ifdef __cplusplus
@@ -21,46 +19,21 @@ extern "C" {
 #endif
 
 /* Forward declarations */
+struct ATWAlongTrackWaypointSequence;
 struct ReportingPoints;
-struct ATWAlongTrackWaypoint;
-struct InterceptCourseFrom;
-struct Holdatwaypoint;
-struct WaypointSpeedLevel;
-struct RTARequiredTimeArrival;
+struct InterceptCourseFromSequence;
+struct HoldatwaypointSequence;
+struct WaypointSpeedLevelSequence;
+struct RTARequiredTimeArrivalSequence;
 
 /* RouteInformationAdditional */
 typedef struct RouteInformationAdditional {
-	struct RouteInformationAdditional__aTWAlongTrackWaypoints {
-		A_SEQUENCE_OF(struct ATWAlongTrackWaypoint) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *aTWAlongTrackWaypoints;
+	struct ATWAlongTrackWaypointSequence	*aTWAlongTrackWaypoints	/* OPTIONAL */;
 	struct ReportingPoints	*reportingpoints	/* OPTIONAL */;
-	struct RouteInformationAdditional__interceptCourseFroms {
-		A_SEQUENCE_OF(struct InterceptCourseFrom) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *interceptCourseFroms;
-	struct RouteInformationAdditional__holdAtWaypoints {
-		A_SEQUENCE_OF(struct Holdatwaypoint) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *holdAtWaypoints;
-	struct RouteInformationAdditional__waypointSpeedLevels {
-		A_SEQUENCE_OF(struct WaypointSpeedLevel) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *waypointSpeedLevels;
-	struct RouteInformationAdditional__rTARequiredTimeArrivals {
-		A_SEQUENCE_OF(struct RTARequiredTimeArrival) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *rTARequiredTimeArrivals;
+	struct InterceptCourseFromSequence	*interceptCourseFroms	/* OPTIONAL */;
+	struct HoldatwaypointSequence	*holdAtWaypoints	/* OPTIONAL */;
+	struct WaypointSpeedLevelSequence	*waypointSpeedLevels	/* OPTIONAL */;
+	struct RTARequiredTimeArrivalSequence	*rTARequiredTimeArrivals	/* OPTIONAL */;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
@@ -74,12 +47,12 @@ extern asn_TYPE_descriptor_t asn_DEF_RouteInformationAdditional;
 #endif
 
 /* Referred external types */
+#include "ATWAlongTrackWaypointSequence.h"
 #include "ReportingPoints.h"
-#include "ATWAlongTrackWaypoint.h"
-#include "InterceptCourseFrom.h"
-#include "Holdatwaypoint.h"
-#include "WaypointSpeedLevel.h"
-#include "RTARequiredTimeArrival.h"
+#include "InterceptCourseFromSequence.h"
+#include "HoldatwaypointSequence.h"
+#include "WaypointSpeedLevelSequence.h"
+#include "RTARequiredTimeArrivalSequence.h"
 
 #endif	/* _RouteInformationAdditional_H_ */
 #include <asn_internal.h>

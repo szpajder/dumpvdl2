@@ -14,8 +14,6 @@
 /* Including external dependencies */
 #include "AirportDeparture.h"
 #include "AirportDestination.h"
-#include <asn_SEQUENCE_OF.h>
-#include <constr_SEQUENCE_OF.h>
 #include <constr_SEQUENCE.h>
 
 #ifdef __cplusplus
@@ -25,8 +23,8 @@ extern "C" {
 /* Forward declarations */
 struct Runway;
 struct ProcedureName;
+struct RouteInformationSequence;
 struct RouteInformationAdditional;
-struct RouteInformation;
 
 /* RouteClearance */
 typedef struct RouteClearance {
@@ -37,12 +35,7 @@ typedef struct RouteClearance {
 	struct Runway	*runwayArrival	/* OPTIONAL */;
 	struct ProcedureName	*procedureApproach	/* OPTIONAL */;
 	struct ProcedureName	*procedureArrival	/* OPTIONAL */;
-	struct RouteClearance__routeInformations {
-		A_SEQUENCE_OF(struct RouteInformation) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *routeInformations;
+	struct RouteInformationSequence	*routeInformations	/* OPTIONAL */;
 	struct RouteInformationAdditional	*routeInformationAdditional	/* OPTIONAL */;
 	
 	/* Context for parsing across buffer boundaries */
@@ -57,10 +50,13 @@ extern asn_TYPE_descriptor_t asn_DEF_RouteClearance;
 #endif
 
 /* Referred external types */
-#include "Runway.h"
-#include "ProcedureName.h"
+#include "RunwayDeparture.h"
+#include "ProcedureDeparture.h"
+#include "RunwayArrival.h"
+#include "ProcedureApproach.h"
+#include "ProcedureArrival.h"
+#include "RouteInformationSequence.h"
 #include "RouteInformationAdditional.h"
-#include "RouteInformation.h"
 
 #endif	/* _RouteClearance_H_ */
 #include <asn_internal.h>
