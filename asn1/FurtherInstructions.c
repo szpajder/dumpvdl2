@@ -38,7 +38,7 @@ static asn_TYPE_member_t asn_MBR_FurtherInstructions_1[] = {
 	{ ATF_POINTER, 6, offsetof(struct FurtherInstructions, airportDeparture),
 		(ASN_TAG_CLASS_CONTEXT | (3 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Airport,
+		&asn_DEF_AirportDeparture,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -47,7 +47,7 @@ static asn_TYPE_member_t asn_MBR_FurtherInstructions_1[] = {
 	{ ATF_POINTER, 5, offsetof(struct FurtherInstructions, airportDestination),
 		(ASN_TAG_CLASS_CONTEXT | (4 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Airport,
+		&asn_DEF_AirportDestination,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

@@ -12,7 +12,8 @@
 #include <asn_application.h>
 
 /* Including external dependencies */
-#include "Airport.h"
+#include "AirportDeparture.h"
+#include "AirportDestination.h"
 #include <asn_SEQUENCE_OF.h>
 #include <constr_SEQUENCE_OF.h>
 #include <constr_SEQUENCE.h>
@@ -29,8 +30,8 @@ struct RouteInformation;
 
 /* RouteClearance */
 typedef struct RouteClearance {
-	Airport_t	*airportDeparture	/* OPTIONAL */;
-	Airport_t	*airportDestination	/* OPTIONAL */;
+	AirportDeparture_t	*airportDeparture	/* OPTIONAL */;
+	AirportDestination_t	*airportDestination	/* OPTIONAL */;
 	struct Runway	*runwayDeparture	/* OPTIONAL */;
 	struct ProcedureName	*procedureDeparture	/* OPTIONAL */;
 	struct Runway	*runwayArrival	/* OPTIONAL */;

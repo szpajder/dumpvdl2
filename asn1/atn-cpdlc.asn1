@@ -249,6 +249,8 @@ IMPORTS
 -- clashing definitions replaced with imports
 AircraftFlightIdentification,
 Airport,
+AirportDeparture,
+AirportDestination,
 Date,
 Day,
 FacilityDesignation,
@@ -2011,8 +2013,8 @@ FurtherInstructions ::= SEQUENCE
     code                [0] Code              OPTIONAL,
     frequencyDeparture  [1] UnitNameFrequency OPTIONAL,
     clearanceExpiryTime [2] Time              OPTIONAL,
-    airportDeparture    [3] Airport           OPTIONAL,
-    airportDestination  [4] Airport           OPTIONAL,
+    airportDeparture    [3] AirportDeparture  OPTIONAL,
+    airportDestination  [4] AirportDestination OPTIONAL,
     timeDeparture       [5] TimeDeparture     OPTIONAL,
     runwayDeparture     [6] Runway            OPTIONAL,
     revisionNumber      [7] RevisionNumber    OPTIONAL,
@@ -2452,8 +2454,8 @@ RouteAndLevels ::= SEQUENCE
 
 RouteClearance ::= SEQUENCE
 {
-    airportDeparture            [0] Airport                                     OPTIONAL,
-    airportDestination          [1] Airport                                     OPTIONAL,
+    airportDeparture            [0] AirportDeparture                            OPTIONAL,
+    airportDestination          [1] AirportDestination                          OPTIONAL,
     runwayDeparture             [2] Runway                                      OPTIONAL,
     procedureDeparture          [3] ProcedureName                               OPTIONAL,
     runwayArrival               [4] Runway                                      OPTIONAL,

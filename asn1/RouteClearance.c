@@ -93,7 +93,7 @@ static asn_TYPE_member_t asn_MBR_RouteClearance_1[] = {
 	{ ATF_POINTER, 9, offsetof(struct RouteClearance, airportDeparture),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Airport,
+		&asn_DEF_AirportDeparture,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -102,7 +102,7 @@ static asn_TYPE_member_t asn_MBR_RouteClearance_1[] = {
 	{ ATF_POINTER, 8, offsetof(struct RouteClearance, airportDestination),
 		(ASN_TAG_CLASS_CONTEXT | (1 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Airport,
+		&asn_DEF_AirportDestination,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

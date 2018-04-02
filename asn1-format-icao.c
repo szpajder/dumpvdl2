@@ -813,13 +813,11 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_RouteClearance) {
 		IFPRINTF(stream, indent, "%s:\n", label);
 		indent++;
 	}
-// Can't use asn1_output_icao here - we have two different labels for the same type.
-// FIXME: replace this with unique types and switch to asn1_format_SEQUENCE.
 	if(rc->airportDeparture != NULL) {
-		asn1_format_any(stream, "Departure airport", &asn_DEF_Airport, rc->airportDeparture, indent);
+		asn1_output_icao(stream, &asn_DEF_AirportDeparture, rc->airportDeparture, indent);
 	}
 	if(rc->airportDestination != NULL) {
-		asn1_format_any(stream, "Destination airport", &asn_DEF_Airport, rc->airportDestination, indent);
+		asn1_output_icao(stream, &asn_DEF_AirportDestination, rc->airportDestination, indent);
 	}
 	if(rc->runwayDeparture != NULL) {
 		asn1_format_SEQUENCE(stream, "Departure runway", &asn_DEF_Runway, rc->runwayDeparture, indent);
