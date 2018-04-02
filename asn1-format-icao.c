@@ -766,15 +766,6 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateMetric) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " m/min", 10, 0);
 }
 
-// FIXME: get element type from td->elements.type and use generic asn1_format_SEQ_OF
-ASN1_FORMATTER_PROTOTYPE(asn1_format_ATWLevelSequence) {
-	if(label != NULL) {
-		IFPRINTF(stream, indent, "%s:\n", label);
-		indent++;
-	}
-	_format_SEQUENCE_OF(stream, &asn_DEF_ATWLevel, sptr, indent);
-}
-
 ASN1_FORMATTER_PROTOTYPE(asn1_format_LevelLevel) {
 	_format_SEQUENCE_OF(stream, &asn_DEF_Level, sptr, indent);
 }
@@ -879,7 +870,7 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_ATWDistance, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_ATWDistanceTolerance, .format = &asn1_format_ENUM, .label = "ATW Distance Tolerance" },
 	{ .type = &asn_DEF_ATWLevel, .format = &asn1_format_SEQUENCE, .label = NULL },
-	{ .type = &asn_DEF_ATWLevelSequence, .format = &asn1_format_ATWLevelSequence, .label = "ATW Levels" },
+	{ .type = &asn_DEF_ATWLevelSequence, .format = &asn1_format_SEQUENCE_OF, .label = "ATW Levels" },
 	{ .type = &asn_DEF_ATWLevelTolerance, .format = &asn1_format_ENUM, .label = "ATW Level Tolerance" },
 	{ .type = &asn_DEF_ClearanceType, .format = &asn1_format_ENUM, .label = "Clearance type" },
 	{ .type = &asn_DEF_Code, .format = &asn1_format_Code, .label = "Code" },
