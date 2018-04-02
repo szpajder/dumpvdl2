@@ -882,12 +882,11 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_CMLogonRequest) {
 	if(cmlr->facilityDesignation != NULL) {
 		asn1_output_icao(stream, &asn_DEF_FacilityDesignation, cmlr->facilityDesignation, indent+1);
 	}
-// Can't use asn1_output_icao here - we have two different labels for the same type.
 	if(cmlr->airportDeparture != NULL) {
-		asn1_format_any(stream, "Departure airport", &asn_DEF_Airport, cmlr->airportDeparture, indent);
+		asn1_output_icao(stream, &asn_DEF_AirportDeparture, cmlr->airportDeparture, indent);
 	}
 	if(cmlr->airportDestination != NULL) {
-		asn1_format_any(stream, "Destination airport", &asn_DEF_Airport, cmlr->airportDestination, indent);
+		asn1_output_icao(stream, &asn_DEF_AirportDestination, cmlr->airportDestination, indent);
 	}
 	if(cmlr->dateTimeDepartureETD != NULL) {
 		asn1_format_DateTime(stream, "Departure time", &asn_DEF_DateTime, cmlr->dateTimeDepartureETD, indent);
@@ -910,6 +909,9 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_CMLogonResponse) {
 
 static asn_formatter_t const asn1_icao_formatter_table[] = {
 // atn-cpdlc.asn1
+	{ .type = &asn_DEF_Airport, .format = &asn1_format_any, .label = "Airport" },
+	{ .type = &asn_DEF_AirportDeparture, .format = &asn1_format_any, .label = "Departure airport" },
+	{ .type = &asn_DEF_AirportDestination, .format = &asn1_format_any, .label = "Destination airport" },
 	{ .type = &asn_DEF_AircraftAddress, .format = &asn1_format_any, .label = "Aircraft address" },
 	{ .type = &asn_DEF_Altimeter, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_AltimeterEnglish, .format = &asn1_format_AltimeterEnglish, .label = "Altimeter" },

@@ -15,7 +15,8 @@
 #include "AircraftFlightIdentification.h"
 #include "LongTsap.h"
 #include "FacilityDesignation.h"
-#include "Airport.h"
+#include "AirportDeparture.h"
+#include "AirportDestination.h"
 #include <asn_SEQUENCE_OF.h>
 #include <constr_SEQUENCE_OF.h>
 #include <constr_SEQUENCE.h>
@@ -46,8 +47,8 @@ typedef struct CMLogonRequest {
 		asn_struct_ctx_t _asn_ctx;
 	} *airOnlyInitiatedApplications;
 	FacilityDesignation_t	*facilityDesignation	/* OPTIONAL */;
-	Airport_t	*airportDeparture	/* OPTIONAL */;
-	Airport_t	*airportDestination	/* OPTIONAL */;
+	AirportDeparture_t	*airportDeparture	/* OPTIONAL */;
+	AirportDestination_t	*airportDestination	/* OPTIONAL */;
 	struct DateTime	*dateTimeDepartureETD	/* OPTIONAL */;
 	
 	/* Context for parsing across buffer boundaries */

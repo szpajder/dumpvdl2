@@ -35,6 +35,10 @@ CMGroundMessage ::=  CHOICE
 AircraftFlightIdentification ::= IA5String(SIZE(2..8))
 Airport ::=IA5String (SIZE(4))
 
+AirportDeparture ::= Airport
+
+AirportDestination ::= Airport
+
 APAddress ::= CHOICE
 {
     longTsap  [0] LongTsap,
@@ -98,8 +102,8 @@ CMLogonRequest ::= SEQUENCE
     groundInitiatedApplications [2] SEQUENCE SIZE (1..256) OF  AEQualifierVersionAddress OPTIONAL,
     airOnlyInitiatedApplications  [3] SEQUENCE SIZE (1..256) OF  AEQualifierVersion OPTIONAL,
     facilityDesignation   [4] FacilityDesignation     OPTIONAL,
-    airportDeparture    [5] Airport       OPTIONAL,
-    airportDestination    [6] Airport       OPTIONAL,
+    airportDeparture    [5] AirportDeparture       OPTIONAL,
+    airportDestination    [6] AirportDestination       OPTIONAL,
     dateTimeDepartureETD    [7] DateTime        OPTIONAL
 }
 

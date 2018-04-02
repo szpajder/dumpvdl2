@@ -8,6 +8,8 @@ ASN_MODULE_SOURCES=	\
 	CMGroundMessage.c	\
 	AircraftFlightIdentification.c	\
 	Airport.c	\
+	AirportDeparture.c \
+	AirportDestination.c \
 	APAddress.c	\
 	AEQualifier.c	\
 	AEQualifierVersion.c	\
@@ -500,6 +502,8 @@ ASN_MODULE_HEADERS=	\
 	CMGroundMessage.h	\
 	AircraftFlightIdentification.h	\
 	Airport.h	\
+	AirportDeparture.h	\
+	AirportDestination.h	\
 	APAddress.h	\
 	AEQualifier.h	\
 	AEQualifierVersion.h	\
