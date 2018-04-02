@@ -14,8 +14,6 @@
 /* Including external dependencies */
 #include "FANSATCMessageHeader.h"
 #include "FANSATCUplinkMsgElementId.h"
-#include <asn_SEQUENCE_OF.h>
-#include <constr_SEQUENCE_OF.h>
 #include <constr_SEQUENCE.h>
 
 #ifdef __cplusplus
@@ -23,18 +21,13 @@ extern "C" {
 #endif
 
 /* Forward declarations */
-struct FANSATCUplinkMsgElementId;
+struct FANSATCUplinkMsgElementIdSequence;
 
 /* FANSATCUplinkMessage */
 typedef struct FANSATCUplinkMessage {
 	FANSATCMessageHeader_t	 aTCMessageheader;
 	FANSATCUplinkMsgElementId_t	 aTCuplinkmsgelementId;
-	struct FANSATCUplinkMessage__aTCuplinkmsgelementid_seqOf {
-		A_SEQUENCE_OF(struct FANSATCUplinkMsgElementId) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *aTCuplinkmsgelementid_seqOf;
+	struct FANSATCUplinkMsgElementIdSequence	*aTCuplinkmsgelementid_seqOf	/* OPTIONAL */;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
@@ -48,7 +41,7 @@ extern asn_TYPE_descriptor_t asn_DEF_FANSATCUplinkMessage;
 #endif
 
 /* Referred external types */
-#include "FANSATCUplinkMsgElementId.h"
+#include "FANSATCUplinkMsgElementIdSequence.h"
 
 #endif	/* _FANSATCUplinkMessage_H_ */
 #include <asn_internal.h>

@@ -22,7 +22,7 @@ extern "C" {
 struct FANSATWAlongTrackWaypointSequence;
 struct FANSReportingPoints;
 struct FANSInterceptCourseFromSequence;
-struct FANSHoldatwaypointsequence;
+struct FANSHoldatwaypointSequence;
 struct FANSWaypointSpeedAltitudesequence;
 struct FANSRTARequiredTimeArrivalSequence;
 
@@ -31,7 +31,7 @@ typedef struct FANSRouteInformationAdditional {
 	struct FANSATWAlongTrackWaypointSequence	*aTWalongtrackwaypointsequence	/* OPTIONAL */;
 	struct FANSReportingPoints	*reportingPoints	/* OPTIONAL */;
 	struct FANSInterceptCourseFromSequence	*interceptCourseFromSequence	/* OPTIONAL */;
-	struct FANSHoldatwaypointsequence	*holdAtWaypointSequence	/* OPTIONAL */;
+	struct FANSHoldatwaypointSequence	*holdAtWaypointSequence	/* OPTIONAL */;
 	struct FANSWaypointSpeedAltitudesequence	*waypointSpeedAltitudeSequence	/* OPTIONAL */;
 	struct FANSRTARequiredTimeArrivalSequence	*rTArequiredtimearrivalsequenc	/* OPTIONAL */;
 	
@@ -50,7 +50,7 @@ extern asn_TYPE_descriptor_t asn_DEF_FANSRouteInformationAdditional;
 #include "FANSATWAlongTrackWaypointSequence.h"
 #include "FANSReportingPoints.h"
 #include "FANSInterceptCourseFromSequence.h"
-#include "FANSHoldatwaypointsequence.h"
+#include "FANSHoldatwaypointSequence.h"
 #include "FANSWaypointSpeedAltitudesequence.h"
 #include "FANSRTARequiredTimeArrivalSequence.h"
 

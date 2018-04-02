@@ -395,13 +395,14 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_OF) {
 		IFPRINTF(stream, indent, "%s:\n", label);
 		indent++;
 	}
+	asn_TYPE_member_t *elm = td->elements;
 	const asn_anonymous_set_ *list = _A_CSET_FROM_VOID(sptr);
 	for(int i = 0; i < list->count; i++) {
-		const void *element = list->array[i];
-		if(element == NULL) {
+		const void *memb_ptr = list->array[i];
+		if(memb_ptr == NULL) {
 			continue;
 		}
-		asn1_output_cpdlc(stream, td, element, indent);
+		asn1_output_cpdlc(stream, elm->type, memb_ptr, indent);
 	}
 }
 
@@ -568,34 +569,6 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSVerticalRateMetric) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " m/min", 10, 0);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSPlaceBearingPlaceBearing) {
-	asn1_format_SEQUENCE_OF(stream, NULL, &asn_DEF_FANSPlaceBearing, sptr, indent);
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSATWAlongTrackWaypointSequence) {
-	asn1_format_SEQUENCE_OF(stream, NULL, &asn_DEF_FANSATWAlongTrackWaypoint, sptr, indent);
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSInterceptCourseFromSequence) {
-	asn1_format_SEQUENCE_OF(stream, NULL, &asn_DEF_FANSInterceptCourseFrom, sptr, indent);
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSHoldatwaypointsequence) {
-	asn1_format_SEQUENCE_OF(stream, NULL, &asn_DEF_FANSHoldatwaypoint, sptr, indent);
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSWaypointSpeedAltitudesequence) {
-	asn1_format_SEQUENCE_OF(stream, NULL, &asn_DEF_FANSWaypointSpeedAltitude, sptr, indent);
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSRTARequiredTimeArrivalSequence) {
-	asn1_format_SEQUENCE_OF(stream, NULL, &asn_DEF_FANSRTARequiredTimeArrival, sptr, indent);
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSATWAltitudeSequence) {
-	asn1_format_SEQUENCE_OF(stream, NULL, &asn_DEF_FANSATWAltitude, sptr, indent);
-}
-
 ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSBeaconCode) {
 	CAST_PTR(code, FANSBeaconCode_t *, sptr);
 	long **cptr = code->list.array;
@@ -658,6 +631,12 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSLongitude) {
 	}
 }
 
+// Can't replace this with asn1_format_SEQUENCE, because the first msg element
+// is not a part of a SEQ-OF, hence we don't have any data type which we could
+// associate "Message data:" label with (nor we can't use FANSATCUplinkMsgElementId
+// for that because the same type is used inside the SEQ-OF which would cause
+// the label to be printed for each element in the sequence). The same applies
+// to asn1_format_FANSATCDownlinkMessage.
 ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSATCUplinkMessage) {
 	CAST_PTR(msg, FANSATCUplinkMessage_t *, sptr);
 	if(label != NULL) {
@@ -669,7 +648,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSATCUplinkMessage) {
 	indent++;
 	asn1_output_cpdlc(stream, &asn_DEF_FANSATCUplinkMsgElementId, &msg->aTCuplinkmsgelementId, indent);
 	if(msg->aTCuplinkmsgelementid_seqOf != NULL) {
-		asn1_format_SEQUENCE_OF(stream, NULL, &asn_DEF_FANSATCUplinkMsgElementId, msg->aTCuplinkmsgelementid_seqOf, indent);
+		asn1_output_cpdlc(stream, &asn_DEF_FANSATCUplinkMsgElementIdSequence, msg->aTCuplinkmsgelementid_seqOf, indent);
 	}
 }
 
@@ -684,7 +663,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSATCDownlinkMessage) {
 	indent++;
 	asn1_output_cpdlc(stream, &asn_DEF_FANSATCDownlinkMsgElementId, &msg->aTCDownlinkmsgelementid, indent);
 	if(msg->aTCdownlinkmsgelementid_seqOf != NULL) {
-		asn1_format_SEQUENCE_OF(stream, NULL, &asn_DEF_FANSATCDownlinkMsgElementId, msg->aTCdownlinkmsgelementid_seqOf, indent);
+		asn1_output_cpdlc(stream, &asn_DEF_FANSATCDownlinkMsgElementIdSequence, msg->aTCdownlinkmsgelementid_seqOf, indent);
 	}
 }
 
@@ -697,6 +676,13 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_FANSATCUplinkMsgElementId) {
 }
 
 static asn_formatter_t const asn1_cpdlc_formatter_table[] = {
+	{ .type = &asn_DEF_FANSPlaceBearingPlaceBearing, .format = &asn1_format_SEQUENCE_OF, .label = NULL },
+	{ .type = &asn_DEF_FANSATWAlongTrackWaypointSequence, .format = &asn1_format_SEQUENCE_OF, .label = "Along-track waypoints" },
+	{ .type = &asn_DEF_FANSInterceptCourseFromSequence, .format = &asn1_format_SEQUENCE_OF, .label = "Intercept courses" },
+	{ .type = &asn_DEF_FANSHoldatwaypointSequence, .format = &asn1_format_SEQUENCE_OF, .label = "Holding points" },
+	{ .type = &asn_DEF_FANSWaypointSpeedAltitudesequence, .format = &asn1_format_SEQUENCE_OF, .label = "Waypoints, speeds and altitudes" },
+	{ .type = &asn_DEF_FANSRTARequiredTimeArrivalSequence, .format = &asn1_format_SEQUENCE_OF, .label = "Required arrival times" },
+	{ .type = &asn_DEF_FANSATWAltitudeSequence, .format = &asn1_format_SEQUENCE_OF, .label = NULL },
 	{ .type = &asn_DEF_FANSAltimeterEnglish, .format = &asn1_format_FANSAltimeterEnglish, .label = "Altimeter" },
 	{ .type = &asn_DEF_FANSAltimeterMetric, .format = &asn1_format_FANSAltimeterMetric, .label = "Altimeter" },
 	{ .type = &asn_DEF_FANSDegreesMagnetic, .format = &asn1_format_Deg, .label = "Degrees (magnetic)" },
@@ -885,18 +871,13 @@ static asn_formatter_t const asn1_cpdlc_formatter_table[] = {
 	{ .type = &asn_DEF_FANSTimeSpeed, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_FANSTimeSpeedSpeed, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_FANSToFromPosition, .format = &asn1_format_SEQUENCE, .label = NULL },
-	{ .type = &asn_DEF_FANSPlaceBearingPlaceBearing, .format = &asn1_format_FANSPlaceBearingPlaceBearing, .label = NULL },
-	{ .type = &asn_DEF_FANSATWAlongTrackWaypointSequence, .format = &asn1_format_FANSATWAlongTrackWaypointSequence, .label = NULL },
-	{ .type = &asn_DEF_FANSInterceptCourseFromSequence, .format = &asn1_format_FANSInterceptCourseFromSequence, .label = NULL },
-	{ .type = &asn_DEF_FANSHoldatwaypointsequence, .format = &asn1_format_FANSHoldatwaypointsequence, .label = NULL },
-	{ .type = &asn_DEF_FANSWaypointSpeedAltitudesequence, .format = &asn1_format_FANSWaypointSpeedAltitudesequence, .label = NULL },
-	{ .type = &asn_DEF_FANSRTARequiredTimeArrivalSequence, .format = &asn1_format_FANSRTARequiredTimeArrivalSequence, .label = NULL },
-	{ .type = &asn_DEF_FANSATWAltitudeSequence, .format = &asn1_format_FANSATWAltitudeSequence, .label = NULL },
 	{ .type = &asn_DEF_FANSATCMessageHeader, .format = &asn1_format_SEQUENCE, .label = "Header" },
 	{ .type = &asn_DEF_FANSATCDownlinkMessage, .format = &asn1_format_FANSATCDownlinkMessage, .label = "CPDLC Downlink Message" },
 	{ .type = &asn_DEF_FANSATCDownlinkMsgElementId, .format = &asn1_format_FANSATCDownlinkMsgElementId, .label = NULL },
+	{ .type = &asn_DEF_FANSATCDownlinkMsgElementIdSequence, .format = &asn1_format_SEQUENCE_OF, .label = NULL },
 	{ .type = &asn_DEF_FANSATCUplinkMessage, .format = &asn1_format_FANSATCUplinkMessage, .label = "CPDLC Uplink Message" },
-	{ .type = &asn_DEF_FANSATCUplinkMsgElementId, .format = &asn1_format_FANSATCUplinkMsgElementId, .label = NULL }
+	{ .type = &asn_DEF_FANSATCUplinkMsgElementId, .format = &asn1_format_FANSATCUplinkMsgElementId, .label = NULL },
+	{ .type = &asn_DEF_FANSATCUplinkMsgElementIdSequence, .format = &asn1_format_SEQUENCE_OF, .label = NULL }
 };
 
 static size_t asn1_cpdlc_formatter_table_len = sizeof(asn1_cpdlc_formatter_table) / sizeof(asn_formatter_t);

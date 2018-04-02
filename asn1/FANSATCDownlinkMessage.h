@@ -14,8 +14,6 @@
 /* Including external dependencies */
 #include "FANSATCMessageHeader.h"
 #include "FANSATCDownlinkMsgElementId.h"
-#include <asn_SEQUENCE_OF.h>
-#include <constr_SEQUENCE_OF.h>
 #include <constr_SEQUENCE.h>
 
 #ifdef __cplusplus
@@ -23,18 +21,13 @@ extern "C" {
 #endif
 
 /* Forward declarations */
-struct FANSATCDownlinkMsgElementId;
+struct FANSATCDownlinkMsgElementIdSequence;
 
 /* FANSATCDownlinkMessage */
 typedef struct FANSATCDownlinkMessage {
 	FANSATCMessageHeader_t	 aTCMessageheader;
 	FANSATCDownlinkMsgElementId_t	 aTCDownlinkmsgelementid;
-	struct FANSATCDownlinkMessage__aTCdownlinkmsgelementid_seqOf {
-		A_SEQUENCE_OF(struct FANSATCDownlinkMsgElementId) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *aTCdownlinkmsgelementid_seqOf;
+	struct FANSATCDownlinkMsgElementIdSequence	*aTCdownlinkmsgelementid_seqOf	/* OPTIONAL */;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
@@ -48,7 +41,7 @@ extern asn_TYPE_descriptor_t asn_DEF_FANSATCDownlinkMessage;
 #endif
 
 /* Referred external types */
-#include "FANSATCDownlinkMsgElementId.h"
+#include "FANSATCDownlinkMsgElementIdSequence.h"
 
 #endif	/* _FANSATCDownlinkMessage_H_ */
 #include <asn_internal.h>

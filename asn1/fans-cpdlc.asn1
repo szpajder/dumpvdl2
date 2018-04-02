@@ -4,8 +4,10 @@ BEGIN
 FANSATCUplinkMessage ::= SEQUENCE {
     aTCMessageheader	FANSATCMessageHeader,
     aTCuplinkmsgelementId	FANSATCUplinkMsgElementId,
-    aTCuplinkmsgelementid-seqOf	SEQUENCE SIZE(1..4) OF FANSATCUplinkMsgElementId OPTIONAL
+    aTCuplinkmsgelementid-seqOf	FANSATCUplinkMsgElementIdSequence OPTIONAL
 }
+
+FANSATCUplinkMsgElementIdSequence ::=	SEQUENCE SIZE(1..4) OF FANSATCUplinkMsgElementId
 
 FANSATCMessageHeader ::= SEQUENCE {
     msgIdentificationNumber FANSMsgIdentificationNumber,
@@ -771,8 +773,10 @@ uM182NULL                                       [182] NULL
 FANSATCDownlinkMessage ::= SEQUENCE {
     aTCMessageheader			FANSATCMessageHeader,
     aTCDownlinkmsgelementid		FANSATCDownlinkMsgElementId,
-    aTCdownlinkmsgelementid-seqOf	SEQUENCE SIZE (1..4) OF FANSATCDownlinkMsgElementId OPTIONAL
+    aTCdownlinkmsgelementid-seqOf	FANSATCDownlinkMsgElementIdSequence OPTIONAL
 }
+
+FANSATCDownlinkMsgElementIdSequence ::=	SEQUENCE SIZE (1..4) OF FANSATCDownlinkMsgElementId
 
 FANSATCDownlinkMsgElementId ::= CHOICE {
 -- WILCO
@@ -1889,7 +1893,7 @@ FANSATWAlongTrackWaypointSequence ::= SEQUENCE SIZE (1..8) OF FANSATWAlongTrackW
 
 FANSInterceptCourseFromSequence ::= SEQUENCE SIZE (1..4) OF FANSInterceptCourseFrom
 
-FANSHoldatwaypointsequence ::= SEQUENCE SIZE (1..8) OF FANSHoldatwaypoint
+FANSHoldatwaypointSequence ::= SEQUENCE SIZE (1..8) OF FANSHoldatwaypoint
 
 FANSWaypointSpeedAltitudesequence ::= SEQUENCE SIZE (1..32) OF FANSWaypointSpeedAltitude
 
@@ -1899,7 +1903,7 @@ FANSRouteInformationAdditional ::= SEQUENCE {
     aTWalongtrackwaypointsequence [0] FANSATWAlongTrackWaypointSequence                OPTIONAL,
     reportingPoints                  [1] FANSReportingPoints                           OPTIONAL,
     interceptCourseFromSequence      [2] FANSInterceptCourseFromSequence               OPTIONAL,
-    holdAtWaypointSequence           [3] FANSHoldatwaypointsequence                    OPTIONAL,
+    holdAtWaypointSequence           [3] FANSHoldatwaypointSequence                    OPTIONAL,
     waypointSpeedAltitudeSequence    [4] FANSWaypointSpeedAltitudesequence             OPTIONAL,
     rTArequiredtimearrivalsequenc    [5] FANSRTARequiredTimeArrivalSequence            OPTIONAL
 }

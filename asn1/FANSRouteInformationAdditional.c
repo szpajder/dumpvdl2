@@ -38,7 +38,7 @@ static asn_TYPE_member_t asn_MBR_FANSRouteInformationAdditional_1[] = {
 	{ ATF_POINTER, 3, offsetof(struct FANSRouteInformationAdditional, holdAtWaypointSequence),
 		(ASN_TAG_CLASS_CONTEXT | (3 << 2)),
 		-1,	/* IMPLICIT tag at current level */
-		&asn_DEF_FANSHoldatwaypointsequence,
+		&asn_DEF_FANSHoldatwaypointSequence,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

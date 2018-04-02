@@ -5,8 +5,8 @@
  * 	`asn1c -fcompound-names -gen-PER`
  */
 
-#ifndef	_FANSHoldatwaypointsequence_H_
-#define	_FANSHoldatwaypointsequence_H_
+#ifndef	_FANSHoldatwaypointSequence_H_
+#define	_FANSHoldatwaypointSequence_H_
 
 
 #include <asn_application.h>
@@ -22,16 +22,16 @@ extern "C" {
 /* Forward declarations */
 struct FANSHoldatwaypoint;
 
-/* FANSHoldatwaypointsequence */
-typedef struct FANSHoldatwaypointsequence {
+/* FANSHoldatwaypointSequence */
+typedef struct FANSHoldatwaypointSequence {
 	A_SEQUENCE_OF(struct FANSHoldatwaypoint) list;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
-} FANSHoldatwaypointsequence_t;
+} FANSHoldatwaypointSequence_t;
 
 /* Implementation */
-extern asn_TYPE_descriptor_t asn_DEF_FANSHoldatwaypointsequence;
+extern asn_TYPE_descriptor_t asn_DEF_FANSHoldatwaypointSequence;
 
 #ifdef __cplusplus
 }
@@ -40,5 +40,5 @@ extern asn_TYPE_descriptor_t asn_DEF_FANSHoldatwaypointsequence;
 /* Referred external types */
 #include "FANSHoldatwaypoint.h"
 
-#endif	/* _FANSHoldatwaypointsequence_H_ */
+#endif	/* _FANSHoldatwaypointSequence_H_ */
 #include <asn_internal.h>

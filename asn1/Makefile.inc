@@ -311,6 +311,7 @@ ASN_MODULE_SOURCES=	\
 	RelativeDistinguishedName.c	\
 	AttributeTypeAndValue.c	\
 	FANSATCUplinkMessage.c	\
+	FANSATCUplinkMsgElementIdSequence.c	\
 	FANSATCMessageHeader.c	\
 	FANSMsgIdentificationNumber.c	\
 	FANSMsgReferenceNumber.c	\
@@ -320,6 +321,7 @@ ASN_MODULE_SOURCES=	\
 	FANSTimeSeconds.c	\
 	FANSATCUplinkMsgElementId.c	\
 	FANSATCDownlinkMessage.c	\
+	FANSATCDownlinkMsgElementIdSequence.c	\
 	FANSATCDownlinkMsgElementId.c	\
 	FANSAirport.c	\
 	FANSAltimeter.c	\
@@ -464,7 +466,7 @@ ASN_MODULE_SOURCES=	\
 	FANSTrackName.c	\
 	FANSATWAlongTrackWaypointSequence.c	\
 	FANSInterceptCourseFromSequence.c	\
-	FANSHoldatwaypointsequence.c	\
+	FANSHoldatwaypointSequence.c	\
 	FANSWaypointSpeedAltitudesequence.c	\
 	FANSRTARequiredTimeArrivalSequence.c	\
 	FANSRouteInformationAdditional.c	\
@@ -828,6 +830,7 @@ ASN_MODULE_HEADERS=	\
 	RelativeDistinguishedName.h	\
 	AttributeTypeAndValue.h	\
 	FANSATCUplinkMessage.h	\
+	FANSATCUplinkMsgElementIdSequence.h	\
 	FANSATCMessageHeader.h	\
 	FANSMsgIdentificationNumber.h	\
 	FANSMsgReferenceNumber.h	\
@@ -837,6 +840,7 @@ ASN_MODULE_HEADERS=	\
 	FANSTimeSeconds.h	\
 	FANSATCUplinkMsgElementId.h	\
 	FANSATCDownlinkMessage.h	\
+	FANSATCDownlinkMsgElementIdSequence.h	\
 	FANSATCDownlinkMsgElementId.h	\
 	FANSAirport.h	\
 	FANSAltimeter.h	\
@@ -981,7 +985,7 @@ ASN_MODULE_HEADERS=	\
 	FANSTrackName.h	\
 	FANSATWAlongTrackWaypointSequence.h	\
 	FANSInterceptCourseFromSequence.h	\
-	FANSHoldatwaypointsequence.h	\
+	FANSHoldatwaypointSequence.h	\
 	FANSWaypointSpeedAltitudesequence.h	\
 	FANSRTARequiredTimeArrivalSequence.h	\
 	FANSRouteInformationAdditional.h	\
