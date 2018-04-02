@@ -591,7 +591,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_Latitude) {
 		);
 		break;
 	case LatitudeType_PR_latitudeDegreesMinutes:
-		IFPRINTF(stream, indent, "%s:   %02ld %02.4f' %s\n",
+		IFPRINTF(stream, indent, "%s:   %02ld %05.2f' %s\n",
 			label,
 			lat->latitudeType.choice.latitudeDegreesMinutes.latitudeWholeDegrees,
 			lat->latitudeType.choice.latitudeDegreesMinutes.minutesLatLon / 100.0,
@@ -627,7 +627,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_Longitude) {
 		);
 		break;
 	case LongitudeType_PR_longitudeDegreesMinutes:
-		IFPRINTF(stream, indent, "%s: %03ld %02.4f' %s\n",
+		IFPRINTF(stream, indent, "%s: %03ld %05.2f' %s\n",
 			label,
 			lon->longitudeType.choice.longitudeDegreesMinutes.longitudeWholeDegrees,
 			lon->longitudeType.choice.longitudeDegreesMinutes.minutesLatLon / 100.0,
@@ -933,7 +933,7 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_Code, .format = &asn1_format_Code, .label = "Code" },
 	{ .type = &asn_DEF_ControlledTime, .format = &asn1_format_SEQUENCE, .label = NULL },
 	{ .type = &asn_DEF_DateTimeGroup, .format = &asn1_format_DateTimeGroup, .label = "Timestamp" },
-	{ .type = &asn_DEF_DegreeIncrement, .format = &asn1_format_any, .label = "Degree increment" },
+	{ .type = &asn_DEF_DegreeIncrement, .format = &asn1_format_Deg, .label = "Degree increment" },
 	{ .type = &asn_DEF_Degrees, .format = &asn1_format_CHOICE, .label = NULL },
 	{ .type = &asn_DEF_DegreesMagnetic, .format = &asn1_format_Deg, .label = "Degrees (magnetic)" },
 	{ .type = &asn_DEF_DegreesTrue, .format = &asn1_format_Deg, .label = "Degrees (true)" },
@@ -1058,12 +1058,12 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_SpeedGround, .format = &asn1_format_SpeedEnglish, .label = "Ground speed" },
 	{ .type = &asn_DEF_SpeedGroundMetric, .format = &asn1_format_SpeedMetric, .label = "Ground speed" },
 	{ .type = &asn_DEF_SpeedIndicated, .format = &asn1_format_SpeedIndicated, .label = "Indicated airspeed" },
-	{ .type = &asn_DEF_SpeedIndicatedMetric, .format = &asn1_format_SpeedMetric, .label = "Indicated speed" },
+	{ .type = &asn_DEF_SpeedIndicatedMetric, .format = &asn1_format_SpeedMetric, .label = "Indicated airspeed" },
 	{ .type = &asn_DEF_SpeedMach, .format = &asn1_format_SpeedMach, .label = "Mach number" },
 	{ .type = &asn_DEF_SpeedSpeed, .format = &asn1_format_SpeedSpeed, .label = NULL },
 	{ .type = &asn_DEF_SpeedTime, .format = &asn1_format_SEQUENCE, .label = NULL },
-	{ .type = &asn_DEF_SpeedTrue, .format = &asn1_format_SpeedEnglish, .label = "True speed" },
-	{ .type = &asn_DEF_SpeedTrueMetric, .format = &asn1_format_SpeedMetric, .label = "True speed" },
+	{ .type = &asn_DEF_SpeedTrue, .format = &asn1_format_SpeedEnglish, .label = "True airspeed" },
+	{ .type = &asn_DEF_SpeedTrueMetric, .format = &asn1_format_SpeedMetric, .label = "True airspeed" },
 	{ .type = &asn_DEF_SpeedType, .format = &asn1_format_ENUM, .label = "Speed type" },
 	{ .type = &asn_DEF_SpeedTypeSpeedTypeSpeedType, .format = &asn1_format_SpeedTypeSpeedTypeSpeedType, .label = NULL },
 	{ .type = &asn_DEF_SpeedTypeSpeedTypeSpeedTypeSpeed, .format = &asn1_format_SEQUENCE, .label = NULL },
