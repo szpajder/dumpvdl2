@@ -37,7 +37,7 @@ dumpvdl2 is a lightweight, standalone VDL Mode 2 message decoder and protocol an
 
 Install necessary dependencies (unless you have them already). Example for Debian / Raspbian:
 
-        sudo apt-get install gcc make libtool libglib2.0-dev pkg-config
+        sudo apt-get install build-essential libtool libglib2.0-dev pkg-config
 
 ##### RTLSDR support (optional)
 
@@ -45,7 +45,7 @@ Install `librtlsdr` library (unless you have it already). Under Raspbian you can
 
         apt-get install librtlsdr-dev
 
-or get the source from Git and compile by yourself:
+or get the source from Git and compile by hand:
 
         apt-get install git autoconf libusb-1.0-0-dev
         cd
@@ -135,7 +135,7 @@ Compile dumpvdl2 as above, but add `USE_STATSD=1`:
 
 ##### RTL-SDR
 
-Simpliest case on RTLSDR dongle - uses RTL device with index 0, sets the tuner gain to
+Simplest case on RTLSDR dongle - uses RTL device with index 0, sets the tuner gain to
 40 dB and tuning correction to 42 ppm, listens to the default VDL2 frequency of 136.975 MHz,
 outputs to standard output:
 
@@ -232,6 +232,8 @@ use antenna A port, disable Bias-T, enable AM/FM notch filter, set frequency cor
 - Add `--utc` option if you prefer UTC timestamps rather than local timezone in output and filenames.
 
 - Add `--raw-frames` option to display payload of AVLC frames in raw hex for debugging purposes.
+
+- Add `--dump-asn1` option to display full ASN.1 structure dumps of CPDLC and CM messages.
 
 ### Integration with Planeplotter
 
@@ -537,57 +539,6 @@ From left to right:
 
 - signal to noise ratio (ie. signal power level minus noise floor power level).
 
-##### What do these cryptic codewords in CPDLC messages mean?
-
-These are object names and type names from ICAO ASN.1 module which describe the abstract
-syntax of CPDLC messages. Currently dumpvdl2 outputs the decoded ASN.1 structure with
-a generic printing routine. It's not very pretty, but it can print every possible type
-of message which complies to the standard.  For now it looks like this:
-
-```
-ATCUplinkMessage ::= {
-    header: ATCMessageHeader ::= {
-        messageIdNumber: 4
-        dateTime: DateTimeGroup ::= {
-            date: Date ::= {
-                year: 2017
-                month: 6
-                day: 5
-            }
-            timehhmmss: Timehhmmss ::= {
-                hoursminutes: Time ::= {
-                    hours: 12
-                    minutes: 28
-                }
-                seconds: 59
-            }
-        }
-        logicalAck: 0
-    }
-    messageData: ATCUplinkMessageData ::= {
-        elementIds: elementIds ::= {
-            uM74Position: fixName: FixName ::= {
-                name: MIKOV
-            }
-        }
-    }
-}
-```
-
-This is a message sent by ATC to the crew. There is a fix name (MIKOV) in the message data
-section, but what's the actual clearance? To find out, look up the parameter name
-`uM74Position` in `asn1/atn-cpdlc.asn1` file (in the dumpvdl2 source directory). The
-meaning of each parameter is given in the comment preceding it:
-
-```
-    -- PROCEED DIRECT TO [position]
-    -- Urg(N)/Alr(M)/Resp(W/U)
-    uM74Position  [74] Position,
-```
-So the clearance is: "proceed direct to MIKOV". Simple as that.
-
-Pretty-printing of these messages will be implemented in a future release of dumpvdl2.
-
 ##### Can you add support for [*my favourite SDR receiver type*]?
 
 Maybe. However do not expect me to purchase all SDRs available on the market just to make
@@ -631,7 +582,7 @@ dumpvdl2. Special thanks go to:
 
 ### License
 
-Copyright (c) 2017 Tomasz Lemiech <szpajder@gmail.com>
+Copyright (c) 2017-2018 Tomasz Lemiech <szpajder@gmail.com>
 
 Contains code from the following software projects:
 
