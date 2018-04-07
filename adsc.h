@@ -25,6 +25,12 @@
 #define ADSC_PARSER_PROTOTYPE(x) static int x(void *dest, uint8_t *buf, uint32_t len)
 #define ADSC_FORMATTER_PROTOTYPE(x) static char *x(char const * const label, void const * const data)
 
+typedef enum {
+	ADSC_MSG_UNKNOWN = 0,
+	ADSC_MSG_ADS,
+	ADSC_MSG_DIS
+} adsc_msgid_t;
+
 typedef struct {
 	char const * const label;
 	int (*parse)(void *dest, uint8_t *buf, uint32_t len);
@@ -35,6 +41,7 @@ typedef struct {
 // ADS-C message
 typedef struct {
 	uint8_t err;
+	adsc_msgid_t id;
 	GSList *tag_list;
 } adsc_msg_t;
 
@@ -167,5 +174,5 @@ typedef struct {
 } adsc_acft_intent_group_req_t;
 
 // adsc.h
-adsc_msg_t *adsc_parse_msg(uint8_t *buf, uint32_t len, uint32_t *msg_type);
+adsc_msg_t *adsc_parse_msg(adsc_msgid_t msgid, uint8_t *buf, uint32_t len, uint32_t *msg_type);
 void adsc_output_msg(adsc_msg_t *msg);

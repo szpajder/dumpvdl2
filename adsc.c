@@ -164,6 +164,7 @@ ADSC_FORMATTER_PROTOTYPE(adsc_format_alt_range);
 ADSC_FORMATTER_PROTOTYPE(adsc_format_acft_intent_group);
 ADSC_FORMATTER_PROTOTYPE(adsc_format_modulus);
 ADSC_FORMATTER_PROTOTYPE(adsc_format_nack);
+ADSC_FORMATTER_PROTOTYPE(adsc_format_dis_reason_code);
 ADSC_FORMATTER_PROTOTYPE(adsc_format_noncomp_notify);
 ADSC_FORMATTER_PROTOTYPE(adsc_format_basic_report);
 ADSC_FORMATTER_PROTOTYPE(adsc_format_flight_id);
@@ -342,6 +343,15 @@ static dict const adsc_downlink_tag_descriptor_table[] = {
 			.label = "Fixed projection",
 			.parse = &adsc_parse_fixed_projection,
 			.format = &adsc_format_fixed_projection,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 255,	// Fake tag for reason code in DIS message
+		.val = &(type_descriptor_t){
+			.label = "Reason",
+			.parse = &adsc_parse_uint8_t,
+			.format = &adsc_format_dis_reason_code,
 			.destroy = NULL
 		}
 	},
@@ -730,6 +740,26 @@ ADSC_FORMATTER_PROTOTYPE(adsc_format_nack) {
 		tmp ? tmp : ""
 	);
 	XFREE(tmp);
+	return str;
+}
+
+ADSC_FORMATTER_PROTOTYPE(adsc_format_dis_reason_code) {
+	static dict const dis_reason_code_table[] = {
+		{ 0, "reason not specified" },
+		{ 1, "congestion" },
+		{ 2, "application not available" },
+		{ 8, "normal disconnect" },
+		{ 0, NULL }
+	};
+	CAST_PTR(rc, uint8_t *, data);
+	uint8_t reason = *rc >> 4;
+	char *descr = dict_search(dis_reason_code_table, reason);
+	char *str = NULL;
+	if(descr) {
+		XASPRINTF(NULL, &str, "%s: %s\n", label, descr);
+	} else {
+		XASPRINTF(NULL, &str, "%s: unknown (%u)\n", label, reason);
+	}
 	return str;
 }
 
@@ -1442,7 +1472,7 @@ end:
 	return tag_len;
 }
 
-adsc_msg_t *adsc_parse_msg(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+adsc_msg_t *adsc_parse_msg(adsc_msgid_t msgid, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	if(buf == NULL)
 		return NULL;
 	if(len < ADSC_CRC_LEN) {
@@ -1453,8 +1483,10 @@ adsc_msg_t *adsc_parse_msg(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	len -= ADSC_CRC_LEN;
 	static adsc_msg_t msg = {
 		.err = 0,
+		.id = ADSC_MSG_UNKNOWN,
 		.tag_list = NULL
 	};
+	msg.id = msgid;
 	adsc_tag_t *tag = NULL;
 	int consumed_bytes;
 
@@ -1473,15 +1505,40 @@ adsc_msg_t *adsc_parse_msg(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		tag_table = adsc_downlink_tag_descriptor_table;
 	assert(tag_table != NULL);
 
-	while(len > 0) {
-		debug_print("Remaining length: %u\n", len);
+	switch(msgid) {
+	case ADSC_MSG_ADS:
+		while(len > 0) {
+			debug_print("Remaining length: %u\n", len);
+			tag = XCALLOC(1, sizeof(adsc_tag_t));
+			msg.tag_list = g_slist_append(msg.tag_list, tag);
+			if((consumed_bytes = adsc_parse_tag(tag, tag_table, buf, len)) < 0) {
+				msg.err = 1;
+				break;
+			}
+			buf += consumed_bytes; len -= consumed_bytes;
+		}
+		break;
+	case ADSC_MSG_DIS:
+// DIS payload consists of an error code only, without any tag.
+// Let's insert a fake tag value of 255.
+		if(len < 1) {
+			debug_print("%s", "DIS message too short");
+			return NULL;
+		}
 		tag = XCALLOC(1, sizeof(adsc_tag_t));
 		msg.tag_list = g_slist_append(msg.tag_list, tag);
-		if((consumed_bytes = adsc_parse_tag(tag, tag_table, buf, len)) < 0) {
+		len = 2;
+		uint8_t *tmpbuf = XCALLOC(len, sizeof(uint8_t));
+		tmpbuf[0] = 255;
+		tmpbuf[1] = buf[0];
+		if(adsc_parse_tag(tag, tag_table, tmpbuf, len) < 0) {
 			msg.err = 1;
-			break;
 		}
-		buf += consumed_bytes; len -= consumed_bytes;
+		XFREE(tmpbuf);
+		break;
+	case ADSC_MSG_UNKNOWN:
+	default:
+		break;
 	}
 	return &msg;
 }
@@ -1508,7 +1565,11 @@ void adsc_output_msg(adsc_msg_t *msg) {
 		fprintf(outf, "-- Empty ADS-C message\n");
 		return;
 	}
-	fprintf(outf, "ADS-C:\n");
+	if(msg->id == ADSC_MSG_ADS) {
+		fprintf(outf, "ADS-C message:\n");
+	} else if(msg->id == ADSC_MSG_DIS) {
+		fprintf(outf, "ADS-C disconnect request:\n");
+	}
 	g_slist_foreach(msg->tag_list, adsc_output_tag, NULL);
 	if(msg->err != 0) {
 		fprintf(outf, "-- Malformed ADS-C message\n");

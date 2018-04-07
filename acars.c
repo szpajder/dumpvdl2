@@ -49,17 +49,29 @@ static char *skip_fans1a_msg_prefix(acars_msg_t *msg, char const * const prefix)
 
 static int try_fans1a_adsc(acars_msg_t *msg, uint32_t *msg_type) {
 	uint8_t *buf = NULL;
+	adsc_msgid_t msgid = ADSC_MSG_UNKNOWN;
 	int ret = -1;
 
 	char *s = skip_fans1a_msg_prefix(msg, ".ADS");
-	if(s == NULL) {
+	if(s != NULL) {
+		msgid = ADSC_MSG_ADS;
+		goto adsc_type_found;
+	}
+	s = skip_fans1a_msg_prefix(msg, ".DIS");
+	if(s != NULL) {
+		msgid = ADSC_MSG_DIS;
+		goto adsc_type_found;
+	}
+adsc_type_found:
+	if(msgid == ADSC_MSG_UNKNOWN) {
+		debug_print("%s", "Not a FANS-1/A ADS message\n");
 		goto end;
 	}
 	int64_t buflen = slurp_hexstring(s, &buf);
 	if(buflen < 0) {
 		goto end;
 	}
-	msg->data = adsc_parse_msg(buf, (size_t)buflen, msg_type);
+	msg->data = adsc_parse_msg(msgid, buf, (size_t)buflen, msg_type);
 	if(msg->data != NULL) {
 		msg->application = ACARS_APP_FANS1A_ADSC;
 		ret = 0;
