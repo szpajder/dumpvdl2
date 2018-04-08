@@ -17,6 +17,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <gmodule.h>				// GByteArray
 #include "asn1/ATCDownlinkMessage.h"		// ATCDownlinkMessage_t and dependencies
 #include "asn1/ATCUplinkMessage.h"		// ATCUplinkMessage_t and dependencies
 #include "asn1/CMAircraftMessage.h"		// asn_DEF_AircraftMessage
@@ -392,6 +393,18 @@ static dict const ATCDownlinkMsgElementId_labels[] = {
 	{ 0, NULL }
 };
 
+/*************************************************
+ * Helper functions used in ASN.1 type formatters
+ *************************************************/
+
+static GByteArray *_stringify_ShortTsap(GByteArray *array, ShortTsap_t *tsap) {
+	if(tsap->aRS != NULL) {
+		array = g_byte_array_append(array, tsap->aRS->buf, tsap->aRS->size);
+	}
+	array = g_byte_array_append(array, tsap->locSysNselTsel.buf, tsap->locSysNselTsel.size);
+	return array;
+}
+
 /************************
  * ASN.1 type formatters
  ************************/
@@ -617,6 +630,27 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateEnglish) {
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateMetric) {
 	_format_INTEGER_with_unit(stream, label, td, sptr, indent, " m/min", 10, 0);
+}
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_LongTsap) {
+	CAST_PTR(tsap, LongTsap_t *, sptr);
+	GByteArray *tmparray = g_byte_array_new();
+	tmparray = g_byte_array_append(tmparray, tsap->rDP.buf, tsap->rDP.size);
+	tmparray = _stringify_ShortTsap(tmparray, &tsap->shortTsap);
+	char *str = fmt_hexstring_with_ascii(tmparray->data, tmparray->len);
+	IFPRINTF(stream, indent, "%s: %s\n", label, str);
+	XFREE(str);
+	g_byte_array_free(tmparray, TRUE);
+}
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_ShortTsap) {
+	CAST_PTR(tsap, ShortTsap_t *, sptr);
+	GByteArray *tmparray = g_byte_array_new();
+	tmparray = _stringify_ShortTsap(tmparray, tsap);
+	char *str = fmt_hexstring_with_ascii(tmparray->data, tmparray->len);
+	IFPRINTF(stream, indent, "%s: %s\n", label, str);
+	XFREE(str);
+	g_byte_array_free(tmparray, TRUE);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_UnitName) {
@@ -869,10 +903,10 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_CMLogonResponse, .format = &asn1_format_SEQUENCE_icao, .label = "ATN Context Management - Logon Response" },
 	{ .type = &asn_DEF_CMUpdate, .format = &asn1_format_SEQUENCE_icao, .label = "ATN Context Management - Update" },
 	{ .type = &asn_DEF_LocSysNselTsel, .format = &asn1_format_any, .label = "LOC/SYS/NSEL/TSEL" },
-	{ .type = &asn_DEF_LongTsap, .format = &asn1_format_SEQUENCE_icao, .label = "Long TSAP" },
+	{ .type = &asn_DEF_LongTsap, .format = &asn1_format_LongTsap, .label = "Long TSAP" },
 	{ .type = &asn_DEF_OCTET_STRING, .format = &asn1_format_any, .label = NULL },
 	{ .type = &asn_DEF_RDP, .format = &asn1_format_any, .label = "RDP" },
-	{ .type = &asn_DEF_ShortTsap, .format = &asn1_format_SEQUENCE_icao, .label = "Short TSAP" },
+	{ .type = &asn_DEF_ShortTsap, .format = &asn1_format_ShortTsap, .label = "Short TSAP" },
 	{ .type = &asn_DEF_VersionNumber, .format = &asn1_format_any, .label = "Version number" }
 };
 
