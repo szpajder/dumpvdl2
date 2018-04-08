@@ -49,7 +49,7 @@ static const tlv_dict x25_facility_names[] = {
 	{ 0x08, &fmt_hexstring, "Called line address modified" },
 	{ 0x42, &fmt_hexstring, "Packet size" },
 	{ 0x43, &fmt_hexstring, "Window size" },
-	{ 0xc9, &fmt_hexstring, "Called address extension" },
+	{ 0xc9, &fmt_hexstring_with_ascii, "Called address extension" },
 	{ 0,    NULL,		NULL }
 };
 
