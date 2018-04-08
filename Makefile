@@ -23,11 +23,18 @@ ifneq ($(DUMPVDL2_VERSION), \"\")
   CFLAGS+=-DDUMPVDL2_VERSION=$(DUMPVDL2_VERSION)
 endif
 
-CFLAGS += -Iasn1
+GLIBERROR = 0
+GLIBCFLAGS:=$(shell pkg-config --cflags glib-2.0)
+GLIBLDLIBS:=$(shell pkg-config --libs glib-2.0)
+ifeq ($(strip $(GLIBCFLAGS)),)
+  GLIBERROR = 1
+else ifeq ($(strip $(GLIBLDLIBS)),)
+  GLIBERROR = 1
+endif
+
+CFLAGS += -Iasn1 $(GLIBCFLAGS)
 CFLAGS += -DUSE_STATSD=$(USE_STATSD) -DWITH_RTLSDR=$(WITH_RTLSDR) -DWITH_SDRPLAY=$(WITH_SDRPLAY) -DWITH_MIRISDR=$(WITH_MIRISDR)
-CFLAGS += `pkg-config --cflags glib-2.0`
-LDLIBS = -lm
-LDLIBS += `pkg-config --libs glib-2.0`
+LDLIBS = -lm $(GLIBLDLIBS)
 SUBDIRS = libfec asn1
 CLEANDIRS = $(SUBDIRS:%=clean-%)
 BIN = dumpvdl2
@@ -78,15 +85,22 @@ ifeq ($(WITH_SDRPLAY), 1)
   LDLIBS += -lmirsdrapi-rsp
 endif
 
-.PHONY: all clean install $(SUBDIRS) $(CLEANDIRS)
+.PHONY: all clean install check_glib $(SUBDIRS) $(CLEANDIRS)
 
-all: $(BIN)
+all: check_glib $(BIN)
 
 $(BIN): $(DEPS)
 
 $(FEC): libfec ;
 
 $(ASN1): asn1 ;
+
+check_glib:
+	@if test $(GLIBERROR) -ne 0; then \
+		printf "ERROR: failed to find glib package configuration with pkgconfig.\n"; \
+		printf "Verify if pkgconfig and glib are installed correctly.\n"; \
+		false; \
+	fi;
 
 adsc.o: dumpvdl2.h adsc.h tlv.h
 
