@@ -89,7 +89,6 @@ int bitstream_read_word_msbfirst(bitstream_t *bs, uint32_t *ret, const uint32_t 
 }
 
 void bitstream_descramble(bitstream_t *bs, uint16_t *lfsr) {
-#ifndef NDEBUG
 	uint8_t bit;
 	int i;
 
@@ -103,7 +102,6 @@ void bitstream_descramble(bitstream_t *bs, uint16_t *lfsr) {
 	}
 	debug_print("descrambled from %u to %u\n", bs->descrambler_pos, bs->end-1);
 	bs->descrambler_pos = bs->end;
-#endif
 }
 
 int bitstream_hdlc_unstuff(bitstream_t *bs) {
