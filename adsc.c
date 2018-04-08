@@ -756,9 +756,9 @@ ADSC_FORMATTER_PROTOTYPE(adsc_format_dis_reason_code) {
 	char *descr = dict_search(dis_reason_code_table, reason);
 	char *str = NULL;
 	if(descr) {
-		XASPRINTF(NULL, &str, "%s: %s\n", label, descr);
+		XASPRINTF(NULL, &str, "%s: %s", label, descr);
 	} else {
-		XASPRINTF(NULL, &str, "%s: unknown (%u)\n", label, reason);
+		XASPRINTF(NULL, &str, "%s: unknown (%u)", label, reason);
 	}
 	return str;
 }
