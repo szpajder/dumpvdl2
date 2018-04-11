@@ -2,6 +2,8 @@
 
 dumpvdl2 is a lightweight, standalone VDL Mode 2 message decoder and protocol analyzer.
 
+Current stable version: 1.3.0 (released Apr 11, 2018)
+
 ### Features
 
 - Runs under Linux (tested on: x86, x86-64, Raspberry Pi)
@@ -338,12 +340,52 @@ located at 136.975 MHz, then use this:
 
 Putting it all together:
 
-```
-dumpvdl2 --iq-file iq.dat --sample-format S16_LE --oversample 13 --centerfreq 136955000 136975000 136725000
-```
+        dumpvdl2 --iq-file iq.dat --sample-format S16_LE --oversample 13 --centerfreq 136955000 136975000 136725000
 
 processes `iq.dat` file recorded at 1365000 samples/sec using 16-bit signed samples, with receiver
 center frequency set to 136.955 MHz. VDL2 channels located at 136.975 and 136.725 MHz will be decoded.
+
+### Launching dumpvdl2 in background on system boot
+
+There is an example systemd unit file in `etc` subdirectory (which means you need a systemd-based
+distribution, like Debian/Raspbian Jessie or newer).
+
+First, go to dumpvdl2 source directory and install the binary to `/usr/local/bin`:
+
+        sudo make install
+
+Copy the unit file to the systemd unit directory:
+
+        sudo cp etc/dumpvdl2.service /etc/systemd/system/
+
+Copy the example environment file to `/etc/default` directory:
+
+        sudo cp etc/dumpvdl2 /etc/default/
+
+Edit `/etc/default/dumpvdl2` with a text editor (eg. nano). Uncomment the `DUMPVDL2_OPTIONS=`
+line and put your preferred dumpvdl2 option set there. Example:
+
+        DUMPVDL2_OPTIONS="--rtlsdr 0 --gain 39 --correction 0 --output-file /home/pi/vdl2.log --daily 136975000 136875000 136775000"
+
+Reload systemd configuration:
+
+        sudo systemctl daemon-reload
+
+Start the service:
+
+        sudo systemctl start dumpvdl2
+
+Verify if it's running:
+
+        systemctl status dumpvdl2
+
+It should show: `Active: active (running) since <date>`. If it failed, it might be due to an
+error in the `DUMPVDL2_OPTIONS` value. Read the log messages in the status output and fix
+the problem.
+
+If everything works fine, enable the service, so that systemd starts it automatically at boot:
+
+        systemctl enable dumpvdl2
 
 ### Frequently Asked Questions
 

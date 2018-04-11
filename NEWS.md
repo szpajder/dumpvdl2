@@ -1,5 +1,15 @@
 # NEWS
 
+### Version 1.3.0 (2018-04-11):
+* Added decoder for FANS-1/A ADS-C messages
+* Added decoder for FANS-1/A CPDLC messages
+* Human-readable formatting of CPDLC and Context Management messages
+  (if you still want the old format, add `--dump-asn1` command line
+  option)
+* Added install rule to Makefile
+* Added a sample systemd service file
+* Bug fixes
+
 ### Version 1.2.0 (2018-01-01):
 * Better input signal filtering - reduced bit error rate, 10-50% more
   messages successfully decoded.
