@@ -15,7 +15,7 @@ $(LIB): $(OBJS)
 	$(RANLIB) $@
 
 clean:
-	rm -f $(LIB) $(OBJS)
+	rm -f *.o $(LIB)
 
 srcclean:
 	rm -f *.c *.h Makefile.am.sample
