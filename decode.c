@@ -144,9 +144,6 @@ static int deinterleave(uint8_t *in, uint32_t len, uint32_t rows, uint32_t cols,
 void decode_vdl_frame(vdl2_channel_t *v) {
 	switch(v->decoder_state) {
 	case DEC_PREAMBLE:
-#if USE_STATSD
-		gettimeofday(&v->tstart, NULL);
-#endif
 		if(soft_preamble_search(v->bs) == NULL) {
 			statsd_increment(v->freq, "decoder.errors.no_preamble");
 			v->decoder_state = DEC_IDLE;
@@ -201,6 +198,9 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 		v->decoder_state = DEC_DATA;
 		return;
 	case DEC_DATA:
+#if USE_STATSD
+		gettimeofday(&v->tstart, NULL);
+#endif
 		bitstream_descramble(v->bs, &v->lfsr);
 		uint8_t *data = XCALLOC(v->datalen_octets, sizeof(uint8_t));
 		uint8_t *fec = XCALLOC(v->fec_octets, sizeof(uint8_t));
@@ -300,8 +300,8 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 		parse_avlc_frames(v, data, v->datalen_octets);
 		statsd_timing_delta(v->freq, "decoder.msg.processing_time", &v->tstart);
 cleanup:
-		if(data) free(data);
-		if(fec) free(fec);
+		XFREE(data);
+		XFREE(fec);
 		v->decoder_state = DEC_IDLE;
 		debug_print("%s", "DEC_IDLE\n");
 		return;

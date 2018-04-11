@@ -7,44 +7,13 @@
 
 #include "LongTsap.h"
 
-static int
-memb_rDP_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
-			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	const OCTET_STRING_t *st = (const OCTET_STRING_t *)sptr;
-	size_t size;
-	
-	if(!sptr) {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: value not given (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-	
-	size = st->size;
-	
-	if((size == 5)) {
-		/* Constraint check succeeded */
-		return 0;
-	} else {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: constraint failed (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-}
-
-static asn_per_constraints_t asn_PER_memb_rDP_constr_2 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 0,  0,  5,  5 }	/* (SIZE(5..5)) */,
-	0, 0	/* No PER value map */
-};
 static asn_TYPE_member_t asn_MBR_LongTsap_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct LongTsap, rDP),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
 		-1,	/* IMPLICIT tag at current level */
-		&asn_DEF_OCTET_STRING,
-		memb_rDP_constraint_1,
-		&asn_PER_memb_rDP_constr_2,
+		&asn_DEF_RDP,
+		0,	/* Defer constraints checking to the member type */
+		0,	/* No PER visible constraints */
 		0,
 		"rDP"
 		},

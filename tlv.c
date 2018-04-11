@@ -22,10 +22,9 @@
 #include "dumpvdl2.h"
 
 void tlv_list_free(tlv_list_t *p) {
-	if(p == NULL) return;
-	if(p->next != NULL)
+	if(p != NULL)
 		tlv_list_free(p->next);
-	free(p);
+	XFREE(p);
 }
 
 void tlv_list_append(tlv_list_t **head, uint8_t type, uint16_t len, uint8_t *value) {
@@ -77,7 +76,7 @@ tlv_list_t *tlv_deserialize(uint8_t *buf, uint16_t len, uint8_t len_octets) {
 	return head;
 }
 
-dict *dict_search(const dict *list, uint8_t id) {
+void *dict_search(const dict *list, uint8_t id) {
 	if(list == NULL) return NULL;
 	dict *ptr;
 	for(ptr = (dict *)list; ; ptr++) {
@@ -107,7 +106,6 @@ void output_tlv(FILE *f, tlv_list_t *list, const tlv_dict *d) {
 			str = fmt_hexstring(p->val, p->len);
 			fprintf(f, " (Unknown code 0x%02x): %s\n", p->type, str);
 		}
-		if(str)
-			free(str);
+		XFREE(str);
 	}
 }

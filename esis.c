@@ -64,9 +64,9 @@ static char *fmt_subnet_caps(uint8_t *data, uint16_t len) {
 	if(tr_classes) {
 		strcat(buf, tr_classes);
 		strcat(buf, ")");
-		free(tr_classes);
+		XFREE(tr_classes);
 	}
-	free(tr_types);
+	XFREE(tr_types);
 	return buf;
 }
 
@@ -163,7 +163,7 @@ void output_esis(esis_pdu_t *pdu) {
 		fprintf(outf, " NET: %s\n", str);
 		break;
 	}
-	free(str);
+	XFREE(str);
 	if(pdu->options != NULL) {
 		fprintf(outf, " Options:\n");
 		output_tlv(outf, pdu->options, esis_option_names);

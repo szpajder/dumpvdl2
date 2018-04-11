@@ -30,15 +30,16 @@
 
 FILE *outf;
 int pp_sockfd = 0;
-uint8_t hourly = 0, daily = 0, utc = 0, output_raw_frames = 0;
+uint8_t hourly = 0, daily = 0, utc = 0, output_raw_frames = 0, dump_asn1 = 0;
 static char *filename_prefix = NULL;
 static char *extension = NULL;
 static size_t prefix_len;
 static struct tm current_tm;
 
 static int open_outfile() {
-	char *filename, *fmt;
-	size_t tlen;
+	char *filename = NULL;
+	char *fmt = NULL;
+	size_t tlen = 0;
 
 	if(hourly || daily) {
 		time_t t = time(NULL);
@@ -66,8 +67,7 @@ static int open_outfile() {
 		fprintf(stderr, "Could not open output file %s: %s\n", filename, strerror(errno));
 		return -1;
 	}
-	if(hourly || daily)
-		free(filename);
+	XFREE(filename);
 
 	return 0;
 }

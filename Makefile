@@ -3,8 +3,12 @@ export USE_STATSD ?= 0
 export WITH_RTLSDR ?= 1
 export WITH_MIRISDR ?= 0
 export WITH_SDRPLAY ?= 0
+PREFIX = /usr/local
+BINDIR = $(PREFIX)/bin
+INSTALL_USER = root
+INSTALL_GROUP = root
 CC = gcc
-CFLAGS += -std=c99 -g -Wall -O3 -fno-omit-frame-pointer -ffast-math -D_XOPEN_SOURCE=500 -DDEBUG=$(DEBUG)
+CFLAGS += -std=c99 -g -Wall -O3 -fno-omit-frame-pointer -ffast-math -D_XOPEN_SOURCE=500 -D_FILE_OFFSET_BITS=64 -DDEBUG=$(DEBUG)
 
 ifeq ($(PLATFORM), rpiv1)
   CFLAGS += -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard
@@ -19,20 +23,33 @@ ifneq ($(DUMPVDL2_VERSION), \"\")
   CFLAGS+=-DDUMPVDL2_VERSION=$(DUMPVDL2_VERSION)
 endif
 
-CFLAGS += -Iasn1
+GLIBERROR = 0
+GLIBCFLAGS:=$(shell pkg-config --cflags glib-2.0)
+GLIBLDLIBS:=$(shell pkg-config --libs glib-2.0)
+ifeq ($(strip $(GLIBCFLAGS)),)
+  GLIBERROR = 1
+else ifeq ($(strip $(GLIBLDLIBS)),)
+  GLIBERROR = 1
+endif
+
+CFLAGS += -Iasn1 $(GLIBCFLAGS)
 CFLAGS += -DUSE_STATSD=$(USE_STATSD) -DWITH_RTLSDR=$(WITH_RTLSDR) -DWITH_SDRPLAY=$(WITH_SDRPLAY) -DWITH_MIRISDR=$(WITH_MIRISDR)
-CFLAGS += `pkg-config --cflags glib-2.0`
-LDLIBS = -lm
-LDLIBS += `pkg-config --libs glib-2.0`
+LDLIBS = -lm $(GLIBLDLIBS)
 SUBDIRS = libfec asn1
 CLEANDIRS = $(SUBDIRS:%=clean-%)
 BIN = dumpvdl2
 OBJ =	acars.o \
+	adsc.o \
+	asn1-format-common.o \
+	asn1-format-cpdlc.o \
+	asn1-format-icao.o \
+	asn1-util.o \
 	avlc.o \
 	bitstream.o \
 	chebyshev.o \
 	clnp.o \
 	cotp.o \
+	cpdlc.o \
 	crc.o \
 	decode.o \
 	demod.o \
@@ -68,9 +85,9 @@ ifeq ($(WITH_SDRPLAY), 1)
   LDLIBS += -lmirsdrapi-rsp
 endif
 
-.PHONY: all clean $(SUBDIRS) $(CLEANDIRS)
+.PHONY: all clean install check_glib $(SUBDIRS) $(CLEANDIRS)
 
-all: $(BIN)
+all: check_glib $(BIN)
 
 $(BIN): $(DEPS)
 
@@ -78,9 +95,28 @@ $(FEC): libfec ;
 
 $(ASN1): asn1 ;
 
+check_glib:
+	@if test $(GLIBERROR) -ne 0; then \
+		printf "ERROR: failed to find glib package configuration with pkgconfig.\n"; \
+		printf "Verify if pkgconfig and glib are installed correctly.\n"; \
+		false; \
+	fi;
+
+adsc.o: dumpvdl2.h adsc.h tlv.h
+
+asn1-format-common.o: asn1-util.h tlv.h
+
+asn1-format-cpdlc.o: tlv.h dumpvdl2.h asn1-util.h asn1-format-common.h
+
+asn1-format-icao.o: tlv.h dumpvdl2.h asn1-util.h asn1-format-common.h
+
+asn1-util.o: dumpvdl2.h asn1-util.h
+
 clnp.o: dumpvdl2.h clnp.h idrp.h cotp.h
 
 cotp.o: dumpvdl2.h tlv.h cotp.h icao.h
+
+cpdlc.o: dumpvdl2.h asn1-util.h cpdlc.h asn1-format-cpdlc.h
 
 decode.o: dumpvdl2.h
 
@@ -92,7 +128,7 @@ chebyshev.o: dumpvdl2.h chebyshev.h
 
 esis.o: dumpvdl2.h esis.h tlv.h
 
-icao.o: dumpvdl2.h icao.h
+icao.o: dumpvdl2.h icao.h asn1-util.h asn1-format-icao.h
 
 idrp.o: dumpvdl2.h idrp.h tlv.h
 
@@ -102,7 +138,7 @@ dumpvdl2.o: dumpvdl2.h rtl.h mirisdr.h
 
 avlc.o: dumpvdl2.h avlc.h xid.h acars.h x25.h
 
-acars.o: dumpvdl2.h acars.h
+acars.o: dumpvdl2.h acars.h adsc.h cpdlc.h
 
 mirisdr.o: dumpvdl2.h mirisdr.h
 
@@ -130,3 +166,7 @@ $(CLEANDIRS):
 
 clean: $(CLEANDIRS)
 	rm -f *.o $(BIN)
+
+install: $(BIN)
+	install -d -o $(INSTALL_USER) -g $(INSTALL_GROUP) $(BINDIR)
+	install -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 755 $(BIN) $(BINDIR)

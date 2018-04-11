@@ -13,8 +13,7 @@
 
 /* Including external dependencies */
 #include "LevelType.h"
-#include <asn_SEQUENCE_OF.h>
-#include <constr_SEQUENCE_OF.h>
+#include "BlockLevel.h"
 #include <constr_CHOICE.h>
 
 #ifdef __cplusplus
@@ -28,20 +27,12 @@ typedef enum Level_PR {
 	Level_PR_blockLevel
 } Level_PR;
 
-/* Forward declarations */
-struct LevelType;
-
 /* Level */
 typedef struct Level {
 	Level_PR present;
 	union Level_u {
 		LevelType_t	 singleLevel;
-		struct Level__blockLevel {
-			A_SEQUENCE_OF(struct LevelType) list;
-			
-			/* Context for parsing across buffer boundaries */
-			asn_struct_ctx_t _asn_ctx;
-		} blockLevel;
+		BlockLevel_t	 blockLevel;
 	} choice;
 	
 	/* Context for parsing across buffer boundaries */
@@ -54,9 +45,6 @@ extern asn_TYPE_descriptor_t asn_DEF_Level;
 #ifdef __cplusplus
 }
 #endif
-
-/* Referred external types */
-#include "LevelType.h"
 
 #endif	/* _Level_H_ */
 #include <asn_internal.h>

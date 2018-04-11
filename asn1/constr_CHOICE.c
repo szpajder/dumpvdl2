@@ -63,7 +63,7 @@
 /*
  * See the definitions.
  */
-static int _fetch_present_idx(const void *struct_ptr, int off, int size);
+int _fetch_present_idx(const void *struct_ptr, int off, int size);
 static void _set_present_idx(void *sptr, int offset, int size, int pres);
 
 /*
@@ -1078,7 +1078,7 @@ CHOICE_free(asn_TYPE_descriptor_t *td, void *ptr, int contents_only) {
  * is guaranteed to be aligned properly. ASN.1 compiler itself does not
  * produce packed code.
  */
-static int
+int
 _fetch_present_idx(const void *struct_ptr, int pres_offset, int pres_size) {
 	const void *present_ptr;
 	int present;

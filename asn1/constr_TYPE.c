@@ -33,7 +33,7 @@ asn_TYPE_outmost_tag(const asn_TYPE_descriptor_t *type_descriptor,
  * Print the target language's structure in human readable form.
  */
 int
-asn_fprint(FILE *stream, asn_TYPE_descriptor_t *td, const void *struct_ptr) {
+asn_fprint(FILE *stream, asn_TYPE_descriptor_t *td, const void *struct_ptr, int indent) {
 	if(!stream) stream = stdout;
 	if(!td || !struct_ptr) {
 		errno = EINVAL;
@@ -41,7 +41,7 @@ asn_fprint(FILE *stream, asn_TYPE_descriptor_t *td, const void *struct_ptr) {
 	}
 
 	/* Invoke type-specific printer */
-	if(td->print_struct(td, struct_ptr, 1, _print2fp, stream))
+	if(td->print_struct(td, struct_ptr, indent, _print2fp, stream))
 		return -1;
 
 	/* Terminate the output */

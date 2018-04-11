@@ -7,423 +7,13 @@
 
 #include "RouteInformationAdditional.h"
 
-static int
-memb_aTWAlongTrackWaypoints_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
-			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	size_t size;
-	
-	if(!sptr) {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: value not given (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-	
-	/* Determine the number of elements */
-	size = _A_CSEQUENCE_FROM_VOID(sptr)->count;
-	
-	if((size >= 1 && size <= 8)) {
-		/* Perform validation of the inner elements */
-		return td->check_constraints(td, sptr, ctfailcb, app_key);
-	} else {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: constraint failed (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-}
-
-static int
-memb_interceptCourseFroms_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
-			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	size_t size;
-	
-	if(!sptr) {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: value not given (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-	
-	/* Determine the number of elements */
-	size = _A_CSEQUENCE_FROM_VOID(sptr)->count;
-	
-	if((size >= 1 && size <= 4)) {
-		/* Perform validation of the inner elements */
-		return td->check_constraints(td, sptr, ctfailcb, app_key);
-	} else {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: constraint failed (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-}
-
-static int
-memb_holdAtWaypoints_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
-			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	size_t size;
-	
-	if(!sptr) {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: value not given (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-	
-	/* Determine the number of elements */
-	size = _A_CSEQUENCE_FROM_VOID(sptr)->count;
-	
-	if((size >= 1 && size <= 8)) {
-		/* Perform validation of the inner elements */
-		return td->check_constraints(td, sptr, ctfailcb, app_key);
-	} else {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: constraint failed (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-}
-
-static int
-memb_waypointSpeedLevels_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
-			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	size_t size;
-	
-	if(!sptr) {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: value not given (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-	
-	/* Determine the number of elements */
-	size = _A_CSEQUENCE_FROM_VOID(sptr)->count;
-	
-	if((size >= 1 && size <= 32)) {
-		/* Perform validation of the inner elements */
-		return td->check_constraints(td, sptr, ctfailcb, app_key);
-	} else {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: constraint failed (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-}
-
-static int
-memb_rTARequiredTimeArrivals_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
-			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	size_t size;
-	
-	if(!sptr) {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: value not given (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-	
-	/* Determine the number of elements */
-	size = _A_CSEQUENCE_FROM_VOID(sptr)->count;
-	
-	if((size >= 1 && size <= 32)) {
-		/* Perform validation of the inner elements */
-		return td->check_constraints(td, sptr, ctfailcb, app_key);
-	} else {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: constraint failed (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-}
-
-static asn_per_constraints_t asn_PER_type_aTWAlongTrackWaypoints_constr_2 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 3,  3,  1,  8 }	/* (SIZE(1..8)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_type_interceptCourseFroms_constr_5 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 2,  2,  1,  4 }	/* (SIZE(1..4)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_type_holdAtWaypoints_constr_7 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 3,  3,  1,  8 }	/* (SIZE(1..8)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_type_waypointSpeedLevels_constr_9 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 5,  5,  1,  32 }	/* (SIZE(1..32)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_type_rTARequiredTimeArrivals_constr_11 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 5,  5,  1,  32 }	/* (SIZE(1..32)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_memb_aTWAlongTrackWaypoints_constr_2 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 3,  3,  1,  8 }	/* (SIZE(1..8)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_memb_interceptCourseFroms_constr_5 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 2,  2,  1,  4 }	/* (SIZE(1..4)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_memb_holdAtWaypoints_constr_7 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 3,  3,  1,  8 }	/* (SIZE(1..8)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_memb_waypointSpeedLevels_constr_9 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 5,  5,  1,  32 }	/* (SIZE(1..32)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_memb_rTARequiredTimeArrivals_constr_11 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 5,  5,  1,  32 }	/* (SIZE(1..32)) */,
-	0, 0	/* No PER value map */
-};
-static asn_TYPE_member_t asn_MBR_aTWAlongTrackWaypoints_2[] = {
-	{ ATF_POINTER, 0, 0,
-		(ASN_TAG_CLASS_UNIVERSAL | (16 << 2)),
-		0,
-		&asn_DEF_ATWAlongTrackWaypoint,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		""
-		},
-};
-static const ber_tlv_tag_t asn_DEF_aTWAlongTrackWaypoints_tags_2[] = {
-	(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
-	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
-};
-static asn_SET_OF_specifics_t asn_SPC_aTWAlongTrackWaypoints_specs_2 = {
-	sizeof(struct RouteInformationAdditional__aTWAlongTrackWaypoints),
-	offsetof(struct RouteInformationAdditional__aTWAlongTrackWaypoints, _asn_ctx),
-	0,	/* XER encoding is XMLDelimitedItemList */
-};
-static /* Use -fall-defs-global to expose */
-asn_TYPE_descriptor_t asn_DEF_aTWAlongTrackWaypoints_2 = {
-	"aTWAlongTrackWaypoints",
-	"aTWAlongTrackWaypoints",
-	SEQUENCE_OF_free,
-	SEQUENCE_OF_print,
-	SEQUENCE_OF_constraint,
-	SEQUENCE_OF_decode_ber,
-	SEQUENCE_OF_encode_der,
-	SEQUENCE_OF_decode_xer,
-	SEQUENCE_OF_encode_xer,
-	SEQUENCE_OF_decode_uper,
-	SEQUENCE_OF_encode_uper,
-	0,	/* Use generic outmost tag fetcher */
-	asn_DEF_aTWAlongTrackWaypoints_tags_2,
-	sizeof(asn_DEF_aTWAlongTrackWaypoints_tags_2)
-		/sizeof(asn_DEF_aTWAlongTrackWaypoints_tags_2[0]), /* 2 */
-	asn_DEF_aTWAlongTrackWaypoints_tags_2,	/* Same as above */
-	sizeof(asn_DEF_aTWAlongTrackWaypoints_tags_2)
-		/sizeof(asn_DEF_aTWAlongTrackWaypoints_tags_2[0]), /* 2 */
-	&asn_PER_type_aTWAlongTrackWaypoints_constr_2,
-	asn_MBR_aTWAlongTrackWaypoints_2,
-	1,	/* Single element */
-	&asn_SPC_aTWAlongTrackWaypoints_specs_2	/* Additional specs */
-};
-
-static asn_TYPE_member_t asn_MBR_interceptCourseFroms_5[] = {
-	{ ATF_POINTER, 0, 0,
-		(ASN_TAG_CLASS_UNIVERSAL | (16 << 2)),
-		0,
-		&asn_DEF_InterceptCourseFrom,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		""
-		},
-};
-static const ber_tlv_tag_t asn_DEF_interceptCourseFroms_tags_5[] = {
-	(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
-	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
-};
-static asn_SET_OF_specifics_t asn_SPC_interceptCourseFroms_specs_5 = {
-	sizeof(struct RouteInformationAdditional__interceptCourseFroms),
-	offsetof(struct RouteInformationAdditional__interceptCourseFroms, _asn_ctx),
-	0,	/* XER encoding is XMLDelimitedItemList */
-};
-static /* Use -fall-defs-global to expose */
-asn_TYPE_descriptor_t asn_DEF_interceptCourseFroms_5 = {
-	"interceptCourseFroms",
-	"interceptCourseFroms",
-	SEQUENCE_OF_free,
-	SEQUENCE_OF_print,
-	SEQUENCE_OF_constraint,
-	SEQUENCE_OF_decode_ber,
-	SEQUENCE_OF_encode_der,
-	SEQUENCE_OF_decode_xer,
-	SEQUENCE_OF_encode_xer,
-	SEQUENCE_OF_decode_uper,
-	SEQUENCE_OF_encode_uper,
-	0,	/* Use generic outmost tag fetcher */
-	asn_DEF_interceptCourseFroms_tags_5,
-	sizeof(asn_DEF_interceptCourseFroms_tags_5)
-		/sizeof(asn_DEF_interceptCourseFroms_tags_5[0]), /* 2 */
-	asn_DEF_interceptCourseFroms_tags_5,	/* Same as above */
-	sizeof(asn_DEF_interceptCourseFroms_tags_5)
-		/sizeof(asn_DEF_interceptCourseFroms_tags_5[0]), /* 2 */
-	&asn_PER_type_interceptCourseFroms_constr_5,
-	asn_MBR_interceptCourseFroms_5,
-	1,	/* Single element */
-	&asn_SPC_interceptCourseFroms_specs_5	/* Additional specs */
-};
-
-static asn_TYPE_member_t asn_MBR_holdAtWaypoints_7[] = {
-	{ ATF_POINTER, 0, 0,
-		(ASN_TAG_CLASS_UNIVERSAL | (16 << 2)),
-		0,
-		&asn_DEF_Holdatwaypoint,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		""
-		},
-};
-static const ber_tlv_tag_t asn_DEF_holdAtWaypoints_tags_7[] = {
-	(ASN_TAG_CLASS_CONTEXT | (3 << 2)),
-	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
-};
-static asn_SET_OF_specifics_t asn_SPC_holdAtWaypoints_specs_7 = {
-	sizeof(struct RouteInformationAdditional__holdAtWaypoints),
-	offsetof(struct RouteInformationAdditional__holdAtWaypoints, _asn_ctx),
-	0,	/* XER encoding is XMLDelimitedItemList */
-};
-static /* Use -fall-defs-global to expose */
-asn_TYPE_descriptor_t asn_DEF_holdAtWaypoints_7 = {
-	"holdAtWaypoints",
-	"holdAtWaypoints",
-	SEQUENCE_OF_free,
-	SEQUENCE_OF_print,
-	SEQUENCE_OF_constraint,
-	SEQUENCE_OF_decode_ber,
-	SEQUENCE_OF_encode_der,
-	SEQUENCE_OF_decode_xer,
-	SEQUENCE_OF_encode_xer,
-	SEQUENCE_OF_decode_uper,
-	SEQUENCE_OF_encode_uper,
-	0,	/* Use generic outmost tag fetcher */
-	asn_DEF_holdAtWaypoints_tags_7,
-	sizeof(asn_DEF_holdAtWaypoints_tags_7)
-		/sizeof(asn_DEF_holdAtWaypoints_tags_7[0]), /* 2 */
-	asn_DEF_holdAtWaypoints_tags_7,	/* Same as above */
-	sizeof(asn_DEF_holdAtWaypoints_tags_7)
-		/sizeof(asn_DEF_holdAtWaypoints_tags_7[0]), /* 2 */
-	&asn_PER_type_holdAtWaypoints_constr_7,
-	asn_MBR_holdAtWaypoints_7,
-	1,	/* Single element */
-	&asn_SPC_holdAtWaypoints_specs_7	/* Additional specs */
-};
-
-static asn_TYPE_member_t asn_MBR_waypointSpeedLevels_9[] = {
-	{ ATF_POINTER, 0, 0,
-		(ASN_TAG_CLASS_UNIVERSAL | (16 << 2)),
-		0,
-		&asn_DEF_WaypointSpeedLevel,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		""
-		},
-};
-static const ber_tlv_tag_t asn_DEF_waypointSpeedLevels_tags_9[] = {
-	(ASN_TAG_CLASS_CONTEXT | (4 << 2)),
-	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
-};
-static asn_SET_OF_specifics_t asn_SPC_waypointSpeedLevels_specs_9 = {
-	sizeof(struct RouteInformationAdditional__waypointSpeedLevels),
-	offsetof(struct RouteInformationAdditional__waypointSpeedLevels, _asn_ctx),
-	0,	/* XER encoding is XMLDelimitedItemList */
-};
-static /* Use -fall-defs-global to expose */
-asn_TYPE_descriptor_t asn_DEF_waypointSpeedLevels_9 = {
-	"waypointSpeedLevels",
-	"waypointSpeedLevels",
-	SEQUENCE_OF_free,
-	SEQUENCE_OF_print,
-	SEQUENCE_OF_constraint,
-	SEQUENCE_OF_decode_ber,
-	SEQUENCE_OF_encode_der,
-	SEQUENCE_OF_decode_xer,
-	SEQUENCE_OF_encode_xer,
-	SEQUENCE_OF_decode_uper,
-	SEQUENCE_OF_encode_uper,
-	0,	/* Use generic outmost tag fetcher */
-	asn_DEF_waypointSpeedLevels_tags_9,
-	sizeof(asn_DEF_waypointSpeedLevels_tags_9)
-		/sizeof(asn_DEF_waypointSpeedLevels_tags_9[0]), /* 2 */
-	asn_DEF_waypointSpeedLevels_tags_9,	/* Same as above */
-	sizeof(asn_DEF_waypointSpeedLevels_tags_9)
-		/sizeof(asn_DEF_waypointSpeedLevels_tags_9[0]), /* 2 */
-	&asn_PER_type_waypointSpeedLevels_constr_9,
-	asn_MBR_waypointSpeedLevels_9,
-	1,	/* Single element */
-	&asn_SPC_waypointSpeedLevels_specs_9	/* Additional specs */
-};
-
-static asn_TYPE_member_t asn_MBR_rTARequiredTimeArrivals_11[] = {
-	{ ATF_POINTER, 0, 0,
-		(ASN_TAG_CLASS_UNIVERSAL | (16 << 2)),
-		0,
-		&asn_DEF_RTARequiredTimeArrival,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		""
-		},
-};
-static const ber_tlv_tag_t asn_DEF_rTARequiredTimeArrivals_tags_11[] = {
-	(ASN_TAG_CLASS_CONTEXT | (5 << 2)),
-	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
-};
-static asn_SET_OF_specifics_t asn_SPC_rTARequiredTimeArrivals_specs_11 = {
-	sizeof(struct RouteInformationAdditional__rTARequiredTimeArrivals),
-	offsetof(struct RouteInformationAdditional__rTARequiredTimeArrivals, _asn_ctx),
-	0,	/* XER encoding is XMLDelimitedItemList */
-};
-static /* Use -fall-defs-global to expose */
-asn_TYPE_descriptor_t asn_DEF_rTARequiredTimeArrivals_11 = {
-	"rTARequiredTimeArrivals",
-	"rTARequiredTimeArrivals",
-	SEQUENCE_OF_free,
-	SEQUENCE_OF_print,
-	SEQUENCE_OF_constraint,
-	SEQUENCE_OF_decode_ber,
-	SEQUENCE_OF_encode_der,
-	SEQUENCE_OF_decode_xer,
-	SEQUENCE_OF_encode_xer,
-	SEQUENCE_OF_decode_uper,
-	SEQUENCE_OF_encode_uper,
-	0,	/* Use generic outmost tag fetcher */
-	asn_DEF_rTARequiredTimeArrivals_tags_11,
-	sizeof(asn_DEF_rTARequiredTimeArrivals_tags_11)
-		/sizeof(asn_DEF_rTARequiredTimeArrivals_tags_11[0]), /* 2 */
-	asn_DEF_rTARequiredTimeArrivals_tags_11,	/* Same as above */
-	sizeof(asn_DEF_rTARequiredTimeArrivals_tags_11)
-		/sizeof(asn_DEF_rTARequiredTimeArrivals_tags_11[0]), /* 2 */
-	&asn_PER_type_rTARequiredTimeArrivals_constr_11,
-	asn_MBR_rTARequiredTimeArrivals_11,
-	1,	/* Single element */
-	&asn_SPC_rTARequiredTimeArrivals_specs_11	/* Additional specs */
-};
-
 static asn_TYPE_member_t asn_MBR_RouteInformationAdditional_1[] = {
 	{ ATF_POINTER, 6, offsetof(struct RouteInformationAdditional, aTWAlongTrackWaypoints),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
-		0,
-		&asn_DEF_aTWAlongTrackWaypoints_2,
-		memb_aTWAlongTrackWaypoints_constraint_1,
-		&asn_PER_memb_aTWAlongTrackWaypoints_constr_2,
+		+1,	/* EXPLICIT tag at current level */
+		&asn_DEF_ATWAlongTrackWaypointSequence,
+		0,	/* Defer constraints checking to the member type */
+		0,	/* No PER visible constraints */
 		0,
 		"aTWAlongTrackWaypoints"
 		},
@@ -438,37 +28,37 @@ static asn_TYPE_member_t asn_MBR_RouteInformationAdditional_1[] = {
 		},
 	{ ATF_POINTER, 4, offsetof(struct RouteInformationAdditional, interceptCourseFroms),
 		(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
-		0,
-		&asn_DEF_interceptCourseFroms_5,
-		memb_interceptCourseFroms_constraint_1,
-		&asn_PER_memb_interceptCourseFroms_constr_5,
+		+1,	/* EXPLICIT tag at current level */
+		&asn_DEF_InterceptCourseFromSequence,
+		0,	/* Defer constraints checking to the member type */
+		0,	/* No PER visible constraints */
 		0,
 		"interceptCourseFroms"
 		},
 	{ ATF_POINTER, 3, offsetof(struct RouteInformationAdditional, holdAtWaypoints),
 		(ASN_TAG_CLASS_CONTEXT | (3 << 2)),
-		0,
-		&asn_DEF_holdAtWaypoints_7,
-		memb_holdAtWaypoints_constraint_1,
-		&asn_PER_memb_holdAtWaypoints_constr_7,
+		+1,	/* EXPLICIT tag at current level */
+		&asn_DEF_HoldatwaypointSequence,
+		0,	/* Defer constraints checking to the member type */
+		0,	/* No PER visible constraints */
 		0,
 		"holdAtWaypoints"
 		},
 	{ ATF_POINTER, 2, offsetof(struct RouteInformationAdditional, waypointSpeedLevels),
 		(ASN_TAG_CLASS_CONTEXT | (4 << 2)),
-		0,
-		&asn_DEF_waypointSpeedLevels_9,
-		memb_waypointSpeedLevels_constraint_1,
-		&asn_PER_memb_waypointSpeedLevels_constr_9,
+		+1,	/* EXPLICIT tag at current level */
+		&asn_DEF_WaypointSpeedLevelSequence,
+		0,	/* Defer constraints checking to the member type */
+		0,	/* No PER visible constraints */
 		0,
 		"waypointSpeedLevels"
 		},
 	{ ATF_POINTER, 1, offsetof(struct RouteInformationAdditional, rTARequiredTimeArrivals),
 		(ASN_TAG_CLASS_CONTEXT | (5 << 2)),
-		0,
-		&asn_DEF_rTARequiredTimeArrivals_11,
-		memb_rTARequiredTimeArrivals_constraint_1,
-		&asn_PER_memb_rTARequiredTimeArrivals_constr_11,
+		+1,	/* EXPLICIT tag at current level */
+		&asn_DEF_RTARequiredTimeArrivalSequence,
+		0,	/* Defer constraints checking to the member type */
+		0,	/* No PER visible constraints */
 		0,
 		"rTARequiredTimeArrivals"
 		},

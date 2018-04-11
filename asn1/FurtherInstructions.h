@@ -12,7 +12,8 @@
 #include <asn_application.h>
 
 /* Including external dependencies */
-#include "Airport.h"
+#include "AirportDeparture.h"
+#include "AirportDestination.h"
 #include "RevisionNumber.h"
 #include "ATISCode.h"
 #include <constr_SEQUENCE.h>
@@ -33,8 +34,8 @@ typedef struct FurtherInstructions {
 	struct Code	*code	/* OPTIONAL */;
 	struct UnitNameFrequency	*frequencyDeparture	/* OPTIONAL */;
 	struct Time	*clearanceExpiryTime	/* OPTIONAL */;
-	Airport_t	*airportDeparture	/* OPTIONAL */;
-	Airport_t	*airportDestination	/* OPTIONAL */;
+	AirportDeparture_t	*airportDeparture	/* OPTIONAL */;
+	AirportDestination_t	*airportDestination	/* OPTIONAL */;
 	struct TimeDeparture	*timeDeparture	/* OPTIONAL */;
 	struct Runway	*runwayDeparture	/* OPTIONAL */;
 	RevisionNumber_t	*revisionNumber	/* OPTIONAL */;

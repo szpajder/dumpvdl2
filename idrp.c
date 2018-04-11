@@ -323,7 +323,7 @@ void output_idrp(idrp_pdu_t *pdu) {
 		if(pdu->datalen > 0) {
 			char *fmt = fmt_hexstring_with_ascii(pdu->data, pdu->datalen);
 			fprintf(outf, " NLRI: %s\n", fmt);
-			free(fmt);
+			XFREE(fmt);
 		}
 		break;
 	case BISPDU_TYPE_ERROR:

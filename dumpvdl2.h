@@ -19,6 +19,7 @@
 #ifndef _DUMPVDL2_H
 #define _DUMPVDL2_H 1
 #include <stdio.h>
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/time.h>
@@ -88,6 +89,7 @@
 #define __OPT_OUTPUT_ACARS_PP		16
 #define __OPT_UTC			17
 #define __OPT_RAW_FRAMES		18
+#define __OPT_DUMP_ASN1			19
 
 #ifdef WITH_SDRPLAY
 #define __OPT_SDRPLAY			80
@@ -144,6 +146,13 @@ typedef struct {
 
 #define XCALLOC(nmemb, size) xcalloc((nmemb), (size), __FILE__, __LINE__, __func__)
 #define XREALLOC(ptr, size) xrealloc((ptr), (size), __FILE__, __LINE__, __func__)
+#define XFREE(ptr) do { free(ptr); ptr = NULL; } while(0)
+#define XASPRINTF(failcode, strp, fmt, ...) \
+	do { \
+		if(xasprintf(__FILE__, __LINE__, __func__, (strp), (fmt), __VA_ARGS__) == -1) { \
+			return (failcode); \
+		} \
+	} while(0);
 
 typedef struct {
 	uint8_t *buf;
@@ -214,6 +223,7 @@ int bitstream_read_word_msbfirst(bitstream_t *bs, uint32_t *ret, const uint32_t 
 int bitstream_hdlc_unstuff(bitstream_t *bs);
 void bitstream_descramble(bitstream_t *bs, uint16_t *lfsr);
 void bitstream_reset(bitstream_t *bs);
+void bitstream_destroy(bitstream_t *bs);
 uint32_t reverse(uint32_t v, int numbits);
 
 // decode.c
@@ -242,7 +252,7 @@ int rs_verify(uint8_t *data, int fec_octets);
 
 // output.c
 extern FILE *outf;
-extern uint8_t hourly, daily, utc, output_raw_frames;
+extern uint8_t hourly, daily, utc, output_raw_frames, dump_asn1;
 extern int pp_sockfd;
 int init_output_file(char *file);
 int init_pp(char *pp_addr);
@@ -262,9 +272,11 @@ void statsd_timing_delta_send(uint32_t freq, char *timer, struct timeval *ts);
 // util.c
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func);
 void *xrealloc(void *ptr, size_t size, const char *file, const int line, const char *func);
+int xasprintf(const char *file, const int line, const char *func, char **strp, const char *fmt, ...);
 char *fmt_hexstring(uint8_t *data, uint16_t len);
 char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len);
 char *fmt_bitfield(uint8_t val, const dict *d);
+size_t slurp_hexstring(char* string, uint8_t **buf);
 
 // dumpvdl2.c
 extern uint32_t msg_filter;

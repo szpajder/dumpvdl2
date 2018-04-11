@@ -1,0 +1,18 @@
+[Unit]
+Description=VDL Mode 2 decoder
+Documentation=https://github.com/szpajder/dumpvdl2/blob/master/README.md
+Wants=network.target
+After=network.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/default/dumpvdl2
+# If you don't want to run the program as root, then uncomment
+# the following line and put a desired user name in it.
+# Note that the user must have access to the SDR device.
+#User=someuser
+ExecStart=/usr/local/bin/dumpvdl2 $DUMPVDL2_OPTIONS
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

@@ -39,6 +39,11 @@ void bitstream_reset(bitstream_t *bs) {
 	bs->start = bs->end = bs->descrambler_pos = 0;
 }
 
+void bitstream_destroy(bitstream_t *bs) {
+	if(bs != NULL) XFREE(bs->buf);
+	XFREE(bs);
+}
+
 int bitstream_append_msbfirst(bitstream_t *bs, const uint8_t *v, const uint32_t numbytes, const uint32_t numbits) {
 	if(bs->end + numbits * numbytes > bs->len)
 		return -1;
@@ -84,7 +89,6 @@ int bitstream_read_word_msbfirst(bitstream_t *bs, uint32_t *ret, const uint32_t 
 }
 
 void bitstream_descramble(bitstream_t *bs, uint16_t *lfsr) {
-#ifndef NDEBUG
 	uint8_t bit;
 	int i;
 
@@ -98,7 +102,6 @@ void bitstream_descramble(bitstream_t *bs, uint16_t *lfsr) {
 	}
 	debug_print("descrambled from %u to %u\n", bs->descrambler_pos, bs->end-1);
 	bs->descrambler_pos = bs->end;
-#endif
 }
 
 int bitstream_hdlc_unstuff(bitstream_t *bs) {

@@ -49,7 +49,7 @@ static const tlv_dict x25_facility_names[] = {
 	{ 0x08, &fmt_hexstring, "Called line address modified" },
 	{ 0x42, &fmt_hexstring, "Packet size" },
 	{ 0x43, &fmt_hexstring, "Window size" },
-	{ 0xc9, &fmt_hexstring, "Called address extension" },
+	{ 0xc9, &fmt_hexstring_with_ascii, "Called address extension" },
 	{ 0,    NULL,		NULL }
 };
 
@@ -312,7 +312,7 @@ void output_x25(x25_pkt_t *pkt) {
 		output_tlv(outf, pkt->facilities, x25_facility_names);
 		char *comp = fmt_bitfield(pkt->compression, x25_comp_algos);
 		fprintf(outf, "Compression support: %s\n", comp);
-		free(comp);
+		XFREE(comp);
 		/* FALLTHROUGH because Fast Select is on, so there might be a data PDU in call req or accept */
 	case X25_DATA:
 		switch(pkt->proto) {
@@ -350,7 +350,7 @@ void output_x25(x25_pkt_t *pkt) {
 		}
 		break;
 	case X25_CLEAR_REQUEST:
-		fprintf(outf, "Cause: %02x\nDiagnostic code: %02x\n", pkt->clr_cause, pkt->diag_code);
+		fprintf(outf, " Cause: %02x\n Diagnostic code: %02x\n", pkt->clr_cause, pkt->diag_code);
 		break;
 	}
 }

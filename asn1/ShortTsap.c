@@ -7,84 +7,22 @@
 
 #include "ShortTsap.h"
 
-static int
-memb_aRS_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
-			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	const OCTET_STRING_t *st = (const OCTET_STRING_t *)sptr;
-	size_t size;
-	
-	if(!sptr) {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: value not given (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-	
-	size = st->size;
-	
-	if((size == 3)) {
-		/* Constraint check succeeded */
-		return 0;
-	} else {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: constraint failed (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-}
-
-static int
-memb_locSysNselTsel_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
-			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	const OCTET_STRING_t *st = (const OCTET_STRING_t *)sptr;
-	size_t size;
-	
-	if(!sptr) {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: value not given (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-	
-	size = st->size;
-	
-	if((size >= 10 && size <= 11)) {
-		/* Constraint check succeeded */
-		return 0;
-	} else {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: constraint failed (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-}
-
-static asn_per_constraints_t asn_PER_memb_aRS_constr_2 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 0,  0,  3,  3 }	/* (SIZE(3..3)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_memb_locSysNselTsel_constr_3 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 1,  1,  10,  11 }	/* (SIZE(10..11)) */,
-	0, 0	/* No PER value map */
-};
 static asn_TYPE_member_t asn_MBR_ShortTsap_1[] = {
 	{ ATF_POINTER, 1, offsetof(struct ShortTsap, aRS),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
 		-1,	/* IMPLICIT tag at current level */
-		&asn_DEF_OCTET_STRING,
-		memb_aRS_constraint_1,
-		&asn_PER_memb_aRS_constr_2,
+		&asn_DEF_ARS,
+		0,	/* Defer constraints checking to the member type */
+		0,	/* No PER visible constraints */
 		0,
 		"aRS"
 		},
 	{ ATF_NOFLAGS, 0, offsetof(struct ShortTsap, locSysNselTsel),
 		(ASN_TAG_CLASS_CONTEXT | (1 << 2)),
 		-1,	/* IMPLICIT tag at current level */
-		&asn_DEF_OCTET_STRING,
-		memb_locSysNselTsel_constraint_1,
-		&asn_PER_memb_locSysNselTsel_constr_3,
+		&asn_DEF_LocSysNselTsel,
+		0,	/* Defer constraints checking to the member type */
+		0,	/* No PER visible constraints */
 		0,
 		"locSysNselTsel"
 		},

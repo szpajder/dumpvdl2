@@ -2,6 +2,8 @@
 
 dumpvdl2 is a lightweight, standalone VDL Mode 2 message decoder and protocol analyzer.
 
+Current stable version: 1.3.0 (released Apr 11, 2018)
+
 ### Features
 
 - Runs under Linux (tested on: x86, x86-64, Raspberry Pi)
@@ -30,14 +32,14 @@ dumpvdl2 is a lightweight, standalone VDL Mode 2 message decoder and protocol an
 - [X] ATN B1 CM (Context Management) - supported
 - [X] ATN B1 CPDLC (Controller-Pilot Data Link Communications) - supported
 - [ ] ATN B1 ADS-C (Automatic Dependent Surveillance - Contract) - not supported
-- [ ] FANS 1/A CPDLC - not supported
-- [ ] FANS 1/A ADS-C - not supported
+- [X] FANS 1/A CPDLC - supported
+- [X] FANS 1/A ADS-C - supported
 
 ### Installation
 
 Install necessary dependencies (unless you have them already). Example for Debian / Raspbian:
 
-        sudo apt-get install gcc make libtool libglib2.0-dev pkg-config
+        sudo apt-get install build-essential libtool libglib2.0-dev pkg-config
 
 ##### RTLSDR support (optional)
 
@@ -45,7 +47,7 @@ Install `librtlsdr` library (unless you have it already). Under Raspbian you can
 
         apt-get install librtlsdr-dev
 
-or get the source from Git and compile by yourself:
+or get the source from Git and compile by hand:
 
         apt-get install git autoconf libusb-1.0-0-dev
         cd
@@ -70,7 +72,7 @@ in dumpvdl2 thanks to a lower sampling rate.
 
 Install `libmirisdr-4` library:
 
-	apt-get install git cmake libusb-1.0-0-dev
+        apt-get install git cmake libusb-1.0-0-dev
         cd
         git clone https://github.com/f4exb/libmirisdr-4.git
         cd libmirisdr-4
@@ -88,10 +90,7 @@ the installer will fail.
 
 ##### Compiling dumpvdl2
 
-Download a stable release package from:
-
-	https://github.com/szpajder/dumpvdl2/releases
-
+Download a stable release package from [here](https://github.com/szpajder/dumpvdl2/releases)
 or clone the repository:
 
         git clone https://github.com/szpajder/dumpvdl2.git
@@ -138,7 +137,7 @@ Compile dumpvdl2 as above, but add `USE_STATSD=1`:
 
 ##### RTL-SDR
 
-Simpliest case on RTLSDR dongle - uses RTL device with index 0, sets the tuner gain to
+Simplest case on RTLSDR dongle - uses RTL device with index 0, sets the tuner gain to
 40 dB and tuning correction to 42 ppm, listens to the default VDL2 frequency of 136.975 MHz,
 outputs to standard output:
 
@@ -184,7 +183,8 @@ and reportedly gives better results than the default mode.
 If you get error messages about lost samples on Raspberry Pi, try adding `--usb-mode 1`.
 This switches USB transfer mode from isochronous to bulk, which is usually enough to rectify
 this problem. If it does not help, it might be that your Pi is overloaded or not beefy enough
-for the task. Try reducing the number of decoded VDL2 channels as a workaround.
+for the task. Try reducing the number of decoded VDL2 channels as a workaround. See also the
+FAQ section "CPU usage on Raspberry Pi is very high" below.
 
 ##### SDRPLAY RSP native driver
 
@@ -208,7 +208,7 @@ with a default set point of -35 dBFS, which shall converge to a reasonable gain 
 value in a couple of seconds after the program starts. AGC set point can be changed
 with `--agc` option, but treat this as an "expert mode" knob, which is hardly ever needed.
 
-Example 1: use SDrplay device ID=0, with auto gain and three VDL2 channels:
+Example 1: use SDRplay device ID=0, with auto gain and three VDL2 channels:
 
         ./dumpvdl2 --sdrplay 0 136975000 136875000 136775000
 
@@ -234,6 +234,8 @@ use antenna A port, disable Bias-T, enable AM/FM notch filter, set frequency cor
 - Add `--utc` option if you prefer UTC timestamps rather than local timezone in output and filenames.
 
 - Add `--raw-frames` option to display payload of AVLC frames in raw hex for debugging purposes.
+
+- Add `--dump-asn1` option to display full ASN.1 structure dumps of CPDLC and CM messages.
 
 ### Integration with Planeplotter
 
@@ -338,12 +340,52 @@ located at 136.975 MHz, then use this:
 
 Putting it all together:
 
-```
-dumpvdl2 --iq-file iq.dat --sample-format S16_LE --oversample 13 --centerfreq 136955000 136975000 136725000
-```
+        dumpvdl2 --iq-file iq.dat --sample-format S16_LE --oversample 13 --centerfreq 136955000 136975000 136725000
 
 processes `iq.dat` file recorded at 1365000 samples/sec using 16-bit signed samples, with receiver
 center frequency set to 136.955 MHz. VDL2 channels located at 136.975 and 136.725 MHz will be decoded.
+
+### Launching dumpvdl2 in background on system boot
+
+There is an example systemd unit file in `etc` subdirectory (which means you need a systemd-based
+distribution, like Debian/Raspbian Jessie or newer).
+
+First, go to dumpvdl2 source directory and install the binary to `/usr/local/bin`:
+
+        sudo make install
+
+Copy the unit file to the systemd unit directory:
+
+        sudo cp etc/dumpvdl2.service /etc/systemd/system/
+
+Copy the example environment file to `/etc/default` directory:
+
+        sudo cp etc/dumpvdl2 /etc/default/
+
+Edit `/etc/default/dumpvdl2` with a text editor (eg. nano). Uncomment the `DUMPVDL2_OPTIONS=`
+line and put your preferred dumpvdl2 option set there. Example:
+
+        DUMPVDL2_OPTIONS="--rtlsdr 0 --gain 39 --correction 0 --output-file /home/pi/vdl2.log --daily 136975000 136875000 136775000"
+
+Reload systemd configuration:
+
+        sudo systemctl daemon-reload
+
+Start the service:
+
+        sudo systemctl start dumpvdl2
+
+Verify if it's running:
+
+        systemctl status dumpvdl2
+
+It should show: `Active: active (running) since <date>`. If it failed, it might be due to an
+error in the `DUMPVDL2_OPTIONS` value. Read the log messages in the status output and fix
+the problem.
+
+If everything works fine, enable the service, so that systemd starts it automatically at boot:
+
+        systemctl enable dumpvdl2
 
 ### Frequently Asked Questions
 
@@ -539,57 +581,6 @@ From left to right:
 
 - signal to noise ratio (ie. signal power level minus noise floor power level).
 
-##### What do these cryptic codewords in CPDLC messages mean?
-
-These are object names and type names from ICAO ASN.1 module which describe the abstract
-syntax of CPDLC messages. Currently dumpvdl2 outputs the decoded ASN.1 structure with
-a generic printing routine. It's not very pretty, but it can print every possible type
-of message which complies to the standard.  For now it looks like this:
-
-```
-ATCUplinkMessage ::= {
-    header: ATCMessageHeader ::= {
-        messageIdNumber: 4
-        dateTime: DateTimeGroup ::= {
-            date: Date ::= {
-                year: 2017
-                month: 6
-                day: 5
-            }
-            timehhmmss: Timehhmmss ::= {
-                hoursminutes: Time ::= {
-                    hours: 12
-                    minutes: 28
-                }
-                seconds: 59
-            }
-        }
-        logicalAck: 0
-    }
-    messageData: ATCUplinkMessageData ::= {
-        elementIds: elementIds ::= {
-            uM74Position: fixName: FixName ::= {
-                name: MIKOV
-            }
-        }
-    }
-}
-```
-
-This is a message sent by ATC to the crew. There is a fix name (MIKOV) in the message data
-section, but what's the actual clearance? To find out, look up the parameter name
-`uM74Position` in `asn1/atn-cpdlc.asn1` file (in the dumpvdl2 source directory). The
-meaning of each parameter is given in the comment preceding it:
-
-```
-    -- PROCEED DIRECT TO [position]
-    -- Urg(N)/Alr(M)/Resp(W/U)
-    uM74Position  [74] Position,
-```
-So the clearance is: "proceed direct to MIKOV". Simple as that.
-
-Pretty-printing of these messages will be implemented in a future release of dumpvdl2.
-
 ##### Can you add support for [*my favourite SDR receiver type*]?
 
 Maybe. However do not expect me to purchase all SDRs available on the market just to make
@@ -629,10 +620,11 @@ dumpvdl2. Special thanks go to:
 - Dick van Noort
 - acarslogger
 - Piotr Herko, SP5XSB
+- LamaBleu
 
 ### License
 
-Copyright (c) 2017 Tomasz Lemiech <szpajder@gmail.com>
+Copyright (c) 2017-2018 Tomasz Lemiech <szpajder@gmail.com>
 
 Contains code from the following software projects:
 

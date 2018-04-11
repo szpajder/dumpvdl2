@@ -49,7 +49,7 @@ static int nearest_gain(rtlsdr_dev_t *dev, int target_gain) {
 			nearest = gains[i];
 		}
 	}
-	free(gains);
+	XFREE(gains);
 	return nearest;
 }
 

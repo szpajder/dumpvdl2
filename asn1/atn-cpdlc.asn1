@@ -249,6 +249,8 @@ IMPORTS
 -- clashing definitions replaced with imports
 AircraftFlightIdentification,
 Airport,
+AirportDeparture,
+AirportDestination,
 Date,
 Day,
 FacilityDesignation,
@@ -265,10 +267,10 @@ ATCUplinkMessage ::= SEQUENCE
 
 ATCUplinkMessageData ::= SEQUENCE
 {
-    elementIds  SEQUENCE SIZE (1..5) OF ATCUplinkMsgElementId,
+    elementIds  ATCUplinkMsgElementIdSequence,
     constrainedData SEQUENCE
     {
-        routeClearanceData  SEQUENCE SIZE (1..2) OF RouteClearance OPTIONAL,
+        routeClearanceData  RouteClearanceSequence OPTIONAL,
         ...
     } OPTIONAL
 }
@@ -281,10 +283,10 @@ ATCDownlinkMessage ::= SEQUENCE
 
 ATCDownlinkMessageData ::= SEQUENCE
 {
-    elementIds  SEQUENCE SIZE (1..5) OF ATCDownlinkMsgElementId,
+    elementIds  ATCDownlinkMsgElementIdSequence,
     constrainedData SEQUENCE
     {
-        routeClearanceData    SEQUENCE SIZE (1..2) OF RouteClearance OPTIONAL,
+        routeClearanceData    RouteClearanceSequence OPTIONAL,
       ...
     } OPTIONAL
 }
@@ -315,7 +317,7 @@ LogicalAck ::= ENUMERATED
 -- ----------------------------------------------------------------------------------
 ATCUplinkMsgElementId ::= CHOICE
 {
-    --  UNABLE
+    -- UNABLE
     -- Urg(N)/Alr(M)/Resp(N)
     uM0NULL [0] NULL,
 
@@ -335,10 +337,12 @@ ATCUplinkMsgElementId ::= CHOICE
     -- Urg(N)/Alr(L)/Resp(N)
     uM4NULL [4] NULL,
 
-    -- NEGATIVE Urg(N)/Alr(L)/Resp(N)
+    -- NEGATIVE
+    -- Urg(N)/Alr(L)/Resp(N)
     uM5NULL [5] NULL,
 
-    -- EXPECT [level] Urg(L)/Alr(L)/Resp(R)
+    -- EXPECT [level]
+    -- Urg(L)/Alr(L)/Resp(R)
     uM6Level [6] Level,
 
     -- EXPECT CLIMB AT [time]
@@ -369,16 +373,16 @@ ATCUplinkMsgElementId ::= CHOICE
     -- Urg(L)/Alr(L)/Resp(R)
     uM13TimeLevel [13] TimeLevel,
 
-  -- AT [position] EXPECT CLIMB TO [level]
-  -- Urg(L)/Alr(L)/Resp(R)
+    -- AT [position] EXPECT CLIMB TO [level]
+    -- Urg(L)/Alr(L)/Resp(R)
     uM14PositionLevel [14] PositionLevel,
 
     -- AT [time] EXPECT DESCENT TO [level]
     -- Urg(L)/Alr(L)/Resp(R)
     uM15TimeLevel [15] TimeLevel,
 
-  -- AT [position] EXPECT DESCENT TO [level]
-  -- Urg(L)/Alr(L)/Resp(R)
+    -- AT [position] EXPECT DESCENT TO [level]
+    -- Urg(L)/Alr(L)/Resp(R)
     uM16PositionLevel [16] PositionLevel,
 
     -- AT [time] EXPECT CRUISE CLIMB TO [level]
@@ -477,7 +481,8 @@ ATCUplinkMsgElementId ::= CHOICE
     -- Urg(L)/Alr(L)/Resp(Y)
     uM40NULL [40] NULL,
 
-    -- Reserved Urg(L)/Alr(L)/Resp(Y)
+    -- Reserved
+    -- Urg(L)/Alr(L)/Resp(Y)
     uM41NULL [41] NULL,
 
     -- EXPECT TO CROSS [position] AT [level]
@@ -815,7 +820,7 @@ ATCUplinkMsgElementId ::= CHOICE
 
     -- SQUAWK MODE CHARLIE
     -- Urg(N)/Alr(M)/Resp(W/U)
-   uM125NULL [125] NULL,
+    uM125NULL [125] NULL,
 
     -- STOP SQUAWK MODE CHARLIE
     -- Urg(N)/Alr(M)/Resp(W/U)
@@ -865,8 +870,8 @@ ATCUplinkMsgElementId ::= CHOICE
     -- Urg(N)/Alr(L)/Resp(Y)
     uM137NULL [137] NULL,
 
-  -- CONFIRM TIME OVER REPORTED WAYPOINT
-  -- Urg(N)/Alr(L)/Resp(Y)
+    -- CONFIRM TIME OVER REPORTED WAYPOINT
+    -- Urg(N)/Alr(L)/Resp(Y)
     uM138NULL [138] NULL,
 
     -- CONFIRM REPORTED WAYPOINT
@@ -1209,8 +1214,8 @@ ATCUplinkMsgElementId ::= CHOICE
     -- Urg(N)/Alr(M)/Resp(W/U)
     uM223NULL [223] NULL,
 
-  -- NO DELAY EXPECTED
-  -- Urg(N)/Alr(L)/Resp(R)
+    -- NO DELAY EXPECTED
+    -- Urg(N)/Alr(L)/Resp(R)
     uM224NULL [224] NULL,
 
     -- DELAY NOT DETERMINED
@@ -1485,7 +1490,8 @@ ATCDownlinkMsgElementId ::= CHOICE
     -- Urg(L)/Alr(L)/Resp(Y)
     dM52NULL [52] NULL,
 
-    -- WHEN CAN WE EXPECT HIGHER LEVEL Urg(L)/Alr(L)/Resp(Y)
+    -- WHEN CAN WE EXPECT HIGHER LEVEL
+    -- Urg(L)/Alr(L)/Resp(Y)
     dM53NULL [53] NULL,
 
     -- WHEN CAN WE EXPECT CRUISE CLIMB TO [level]
@@ -1750,6 +1756,10 @@ AltimeterEnglish ::= INTEGER (2200..3200)
 AltimeterMetric ::= INTEGER (7500..12500)
 -- unit = Hectopascal, Range (750.0..1250.0), resolution = 0.1
 
+ATCUplinkMsgElementIdSequence ::= SEQUENCE SIZE (1..5) OF ATCUplinkMsgElementId
+
+ATCDownlinkMsgElementIdSequence ::= SEQUENCE SIZE (1..5) OF ATCDownlinkMsgElementId
+
 ATISCode ::= IA5String (SIZE (1))
 
 ATSRouteDesignator ::= IA5String (SIZE (2..7))
@@ -1761,6 +1771,8 @@ ATWAlongTrackWaypoint ::= SEQUENCE
     speed       [2] Speed             OPTIONAL,
     aTWLevels   [3] ATWLevelSequence  OPTIONAL
 }
+
+ATWAlongTrackWaypointSequence ::= SEQUENCE SIZE (1..8) OF ATWAlongTrackWaypoint
 
 ATWLevel ::= SEQUENCE
 {
@@ -1788,6 +1800,8 @@ ATWDistanceTolerance ::= ENUMERATED
     plus  (0),
     minus (1)
 }
+
+BlockLevel ::= SEQUENCE SIZE (2) OF LevelType
 
 ClearanceType ::= ENUMERATED
 {
@@ -2007,8 +2021,8 @@ FurtherInstructions ::= SEQUENCE
     code                [0] Code              OPTIONAL,
     frequencyDeparture  [1] UnitNameFrequency OPTIONAL,
     clearanceExpiryTime [2] Time              OPTIONAL,
-    airportDeparture    [3] Airport           OPTIONAL,
-    airportDestination  [4] Airport           OPTIONAL,
+    airportDeparture    [3] AirportDeparture  OPTIONAL,
+    airportDestination  [4] AirportDestination OPTIONAL,
     timeDeparture       [5] TimeDeparture     OPTIONAL,
     runwayDeparture     [6] Runway            OPTIONAL,
     revisionNumber      [7] RevisionNumber    OPTIONAL,
@@ -2028,6 +2042,8 @@ Holdatwaypoint ::= SEQUENCE
     legtype                 [7] LegType     OPTIONAL
 }
 
+HoldatwaypointSequence ::= SEQUENCE SIZE (1..8) OF Holdatwaypoint
+
 HoldClearance ::= SEQUENCE
 {
     position  [0] Position,
@@ -2046,6 +2062,8 @@ InterceptCourseFrom ::= SEQUENCE
     fromSelection InterceptCourseFromSelection,
     degrees       Degrees
 }
+
+InterceptCourseFromSequence ::= SEQUENCE SIZE (1..4) OF InterceptCourseFrom
 
 InterceptCourseFromSelection ::= CHOICE
 {
@@ -2147,7 +2165,7 @@ LegType ::= CHOICE
 Level ::= CHOICE
 {
     singleLevel [0] LevelType,
-    blockLevel  [1] SEQUENCE SIZE (2) OF LevelType
+    blockLevel  [1] BlockLevel
 }
 
 LevelFeet ::= INTEGER (-60..7000)
@@ -2158,7 +2176,9 @@ LevelFlightLevel ::= INTEGER (30..700)
 
 LevelFlightLevelMetric ::= INTEGER (100..2500)
 --unit = Level (10 Meters), Range (100..2500), resolution = 1
+
 LevelLevel ::= SEQUENCE SIZE (2) OF Level
+
 LevelMeters ::= INTEGER (-30..25000)
 --unit = Meter, Range (-30..25000), resolution = 1
 
@@ -2402,6 +2422,12 @@ PositionUnitNameFrequency ::= SEQUENCE
 
 Procedure ::= IA5String (SIZE (1..20))
 
+ProcedureApproach ::= ProcedureName
+
+ProcedureArrival ::= ProcedureName
+
+ProcedureDeparture ::= ProcedureName
+
 ProcedureName ::= SEQUENCE
 {
     type        [0] ProcedureType,
@@ -2446,16 +2472,18 @@ RouteAndLevels ::= SEQUENCE
     levelsOfFlight  LevelsOfFlight
 }
 
+RouteClearanceSequence ::= SEQUENCE SIZE (1..2) OF RouteClearance
+
 RouteClearance ::= SEQUENCE
 {
-    airportDeparture            [0] Airport                                     OPTIONAL,
-    airportDestination          [1] Airport                                     OPTIONAL,
-    runwayDeparture             [2] Runway                                      OPTIONAL,
-    procedureDeparture          [3] ProcedureName                               OPTIONAL,
-    runwayArrival               [4] Runway                                      OPTIONAL,
-    procedureApproach           [5] ProcedureName                               OPTIONAL,
-    procedureArrival            [6] ProcedureName                               OPTIONAL,
-    routeInformations           [7] SEQUENCE SIZE (1..128)  OF RouteInformation OPTIONAL,
+    airportDeparture            [0] AirportDeparture                            OPTIONAL,
+    airportDestination          [1] AirportDestination                          OPTIONAL,
+    runwayDeparture             [2] RunwayDeparture                             OPTIONAL,
+    procedureDeparture          [3] ProcedureDeparture                          OPTIONAL,
+    runwayArrival               [4] RunwayArrival                               OPTIONAL,
+    procedureApproach           [5] ProcedureApproach                           OPTIONAL,
+    procedureArrival            [6] ProcedureArrival                            OPTIONAL,
+    routeInformations           [7] RouteInformationSequence                    OPTIONAL,
     routeInformationAdditional  [8] RouteInformationAdditional                  OPTIONAL
 }
 
@@ -2474,15 +2502,16 @@ RouteInformation ::= CHOICE
     aTSRouteDesignator        [4] ATSRouteDesignator
 }
 
+RouteInformationSequence ::= SEQUENCE SIZE (1..128)  OF RouteInformation
 
 RouteInformationAdditional ::= SEQUENCE
 {
-    aTWAlongTrackWaypoints  [0] SEQUENCE SIZE (1..8) OF ATWAlongTrackWaypoint   OPTIONAL,
+    aTWAlongTrackWaypoints  [0] ATWAlongTrackWaypointSequence                   OPTIONAL,
     reportingpoints         [1] ReportingPoints                                 OPTIONAL,
-    interceptCourseFroms    [2] SEQUENCE SIZE (1..4) OF InterceptCourseFrom     OPTIONAL,
-    holdAtWaypoints         [3] SEQUENCE SIZE (1..8) OF Holdatwaypoint          OPTIONAL,
-    waypointSpeedLevels     [4] SEQUENCE SIZE (1..32) OF WaypointSpeedLevel     OPTIONAL,
-    rTARequiredTimeArrivals [5] SEQUENCE SIZE (1..32) OF RTARequiredTimeArrival OPTIONAL
+    interceptCourseFroms    [2] InterceptCourseFromSequence                     OPTIONAL,
+    holdAtWaypoints         [3] HoldatwaypointSequence                          OPTIONAL,
+    waypointSpeedLevels     [4] WaypointSpeedLevelSequence                      OPTIONAL,
+    rTARequiredTimeArrivals [5] RTARequiredTimeArrivalSequence                  OPTIONAL
 }
 
 RTARequiredTimeArrival ::= SEQUENCE
@@ -2491,6 +2520,8 @@ RTARequiredTimeArrival ::= SEQUENCE
     rTATime       [1] RTATime,
     rTATolerance  [2] RTATolerance  OPTIONAL
 }
+
+RTARequiredTimeArrivalSequence ::= SEQUENCE SIZE (1..32) OF RTARequiredTimeArrival
 
 RTATime ::= SEQUENCE
 {
@@ -2506,6 +2537,10 @@ Runway ::= SEQUENCE
     direction     RunwayDirection,
     configuration RunwayConfiguration
 }
+
+RunwayArrival ::= Runway
+
+RunwayDeparture ::= Runway
 
 RunwayDirection ::= INTEGER (1..36)
 
@@ -2565,6 +2600,7 @@ SpeedMach ::= INTEGER (500..4000)
 -- unit = Mach Range (0.5 to 4.0), resolution = 0.001
 
 SpeedSpeed ::= SEQUENCE SIZE (2) OF Speed
+
 SpeedTime ::= SEQUENCE
 {
   speed Speed,
@@ -2781,6 +2817,8 @@ WaypointSpeedLevel ::= SEQUENCE
     speed     [1] Speed             OPTIONAL,
     aTWLevels [2] ATWLevelSequence  OPTIONAL
 }
+
+WaypointSpeedLevelSequence ::= SEQUENCE SIZE (1..32) OF WaypointSpeedLevel
 
 WindDirection ::= INTEGER (1..360)
 -- unit = Degree, Range (1..360), resolution = 1

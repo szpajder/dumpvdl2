@@ -12,8 +12,7 @@
 #include <asn_application.h>
 
 /* Including external dependencies */
-#include <asn_SEQUENCE_OF.h>
-#include <constr_SEQUENCE_OF.h>
+#include "ATCDownlinkMsgElementIdSequence.h"
 #include <constr_SEQUENCE.h>
 
 #ifdef __cplusplus
@@ -21,24 +20,13 @@ extern "C" {
 #endif
 
 /* Forward declarations */
-struct ATCDownlinkMsgElementId;
-struct RouteClearance;
+struct RouteClearanceSequence;
 
 /* ATCDownlinkMessageData */
 typedef struct ATCDownlinkMessageData {
-	struct ATCDownlinkMessageData__elementIds {
-		A_SEQUENCE_OF(struct ATCDownlinkMsgElementId) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} elementIds;
+	ATCDownlinkMsgElementIdSequence_t	 elementIds;
 	struct ATCDownlinkMessageData__constrainedData {
-		struct ATCDownlinkMessageData__constrainedData__routeClearanceData {
-			A_SEQUENCE_OF(struct RouteClearance) list;
-			
-			/* Context for parsing across buffer boundaries */
-			asn_struct_ctx_t _asn_ctx;
-		} *routeClearanceData;
+		struct RouteClearanceSequence	*routeClearanceData	/* OPTIONAL */;
 		/*
 		 * This type is extensible,
 		 * possible extensions are below.
@@ -60,8 +48,7 @@ extern asn_TYPE_descriptor_t asn_DEF_ATCDownlinkMessageData;
 #endif
 
 /* Referred external types */
-#include "ATCDownlinkMsgElementId.h"
-#include "RouteClearance.h"
+#include "RouteClearanceSequence.h"
 
 #endif	/* _ATCDownlinkMessageData_H_ */
 #include <asn_internal.h>

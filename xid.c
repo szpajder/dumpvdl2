@@ -102,7 +102,7 @@ static char *fmt_vdl_frequency(uint8_t *data, uint16_t len) {
 	if(freq_khz % 25)
 		freq_khz = freq_khz + 25 - freq_khz % 25;
 	sprintf(buf, "%.3f MHz (%s)", (float)freq_khz / 1000.f, modulation_descr);
-	free(modulation_descr);
+	XFREE(modulation_descr);
 	return buf;
 }
 
@@ -136,8 +136,8 @@ static char *fmt_freq_support_list(uint8_t *data, uint16_t len) {
 		ptr += 4; len -= 4;
 		sprintf(tmp, "%s(%s); ", gs_addr, freq);
 		strcat(buf, tmp);
-		free(freq);
-		free(gs_addr);
+		XFREE(freq);
+		XFREE(gs_addr);
 	}
 	int slen = strlen(buf);
 	if(slen == 0)
@@ -164,7 +164,7 @@ static char *fmt_lcr_cause(uint8_t *data, uint16_t len) {
 		char *delaybuf = XCALLOC(32, sizeof(char));
 		sprintf(delaybuf, ", delay: %d", ntohs(*((uint16_t *)data)));
 		strcat(buf, delaybuf);
-		free(delaybuf);
+		XFREE(delaybuf);
 		data+=2; len-=2;
 	}
 	if(len > 0) {
@@ -174,7 +174,7 @@ static char *fmt_lcr_cause(uint8_t *data, uint16_t len) {
 		if(total_len > 127)
 			buf = XREALLOC(buf, total_len + 1);
 		strcat(buf, additional);
-		free(additional);
+		XFREE(additional);
 	}
 	return buf;
 }
@@ -201,7 +201,7 @@ static char *fmt_loc_alt(uint8_t *data, uint16_t len) {
 	char *altbuf = XCALLOC(32, sizeof(char));
 	sprintf(altbuf, " %d ft", (int)data[3] * 1000);
 	strcat(buf, altbuf);
-	free(altbuf);
+	XFREE(altbuf);
 	return buf;
 }
 

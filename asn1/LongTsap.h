@@ -12,7 +12,7 @@
 #include <asn_application.h>
 
 /* Including external dependencies */
-#include <OCTET_STRING.h>
+#include "RDP.h"
 #include "ShortTsap.h"
 #include <constr_SEQUENCE.h>
 
@@ -22,7 +22,7 @@ extern "C" {
 
 /* LongTsap */
 typedef struct LongTsap {
-	OCTET_STRING_t	 rDP;
+	RDP_t	 rDP;
 	ShortTsap_t	 shortTsap;
 	
 	/* Context for parsing across buffer boundaries */
