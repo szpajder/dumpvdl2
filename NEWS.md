@@ -1,5 +1,11 @@
 # NEWS
 
+### Version 1.3.1 (2018-05-27):
+* Added `decpdlc` utility which decodes FANS-1/A CPDLC messages
+  supplied from command line or from a file. Can be used to decode
+  CPDLC traffic received via other media than VDL-2 (eg. ACARS,
+  HFDL, SATCOM). Refer to "decpdlc" section in README.md for details.
+
 ### Version 1.3.0 (2018-04-11):
 * Added decoder for FANS-1/A ADS-C messages
 * Added decoder for FANS-1/A CPDLC messages
