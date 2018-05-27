@@ -165,8 +165,22 @@ $(CLEANDIRS):
 	$(MAKE) -C $(@:clean-%=%) clean
 
 clean: $(CLEANDIRS)
-	rm -f *.o $(BIN)
+	rm -f *.o $(BIN) decpdlc
 
 install: $(BIN)
 	install -d -o $(INSTALL_USER) -g $(INSTALL_GROUP) $(BINDIR)
 	install -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 755 $(BIN) $(BINDIR)
+
+DECPDLC_DEPS = decpdlc.o \
+	util.o \
+	tlv.o \
+	cpdlc.o \
+	asn1-util.o \
+	asn1-format-cpdlc.o \
+	asn1-format-common.o \
+	$(ASN1)
+
+decpdlc.o: cpdlc.h dumpvdl2.h
+
+decpdlc: $(DECPDLC_DEPS)
+	$(CC) $(DECPDLC_DEPS) -o decpdlc
