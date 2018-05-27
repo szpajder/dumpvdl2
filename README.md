@@ -435,7 +435,7 @@ and unpack it.
 - Go to the source directory and build the program:
 
         cd dumpvdl2
-	make decpdlc
+        make decpdlc
 
 - After a while you should have `decpdlc` binary in the current directory. Run:
 
