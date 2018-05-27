@@ -387,6 +387,62 @@ If everything works fine, enable the service, so that systemd starts it automati
 
         systemctl enable dumpvdl2
 
+### decpdlc
+
+dumpvdl2 can decode FANS-1/A CPDLC messages. They are embedded in ACARS as hex strings:
+
+        [2017-03-04 20:47:12] [136.975] [-18.8/-47.0 dBFS] [28.1 dB]
+        10A41A (Ground station, On ground) -> 78100B (Aircraft): Command
+        AVLC type: I sseq: 6 rseq: 6 poll: 0
+        ACARS:
+        Reg: .B-7898 Flight:
+        Mode: 2 Label: AA Blk id: G Ack: ! Msg no.:
+        Message:
+        /AKLCDYA.AT1.B-7898A11EF285326CC0E4DAA48E1D2AB269C5410E6499B0904E9F5104199327D78B110499C8275AB53D04693480958A
+
+The second field in the message (`.AT1`) indicates that this is a CPDLC message (other
+message types which also contain CPDLC are: `.CR1`, `.CC1`, and `.DR1`). The above message
+is decoded as follows:
+
+        FANS-1/A CPDLC Message:
+        CPDLC Uplink Message:
+         Header:
+          Msg ID: 2
+          Timestamp: 07:47:10
+         Message data:
+          CLIMB TO AND MAINTAIN [altitude]
+           Flight level: 340
+          REPORT LEVEL [altitude]
+           Flight level: 340
+          [freetext]
+           CRUISE CLIMB NOT ALLOWED IN NZZO FIR
+
+ACARS messages can be conveyed over various radio links - POA (Plain Old ACARS over VHF),
+AoA (ACARS over AVLC over VDL-2), HFDL (High Frequency Data Link) or SATCOM (Inmarsat,
+Iridium). `dumpvdl2` only deals with VDL-2 radio link, however the FANS-1/A message format
+is common, regardless of physical link used for transmission. So if you monitor ACARS,
+HFDL or Inmarsat, you may wonder how to decode messages received on these links.
+
+`decpdlc` is a small utility included in `dumpvdl2` source tree which uses dumpvdl2's
+FANS-1/A decoder to decode CPDLC messages supplied manually from command line or from a file.
+
+Steps:
+
+- Clone the `dumpvdl2` repository (https://github.com/szpajder/dumpvdl2.git) or download
+a stable release package from [here](https://github.com/szpajder/dumpvdl2/releases)
+and unpack it.
+
+- Go to the source directory and build the program:
+
+        cd dumpvdl2
+	make decpdlc
+
+- After a while you should have `decpdlc` binary in the current directory. Run:
+
+        ./decpdlc -h
+
+for further instructions.
+
 ### Frequently Asked Questions
 
 ##### What is VDL Mode 2?
