@@ -22,6 +22,7 @@
 #include <string.h>			// strcmp
 #include <unistd.h>			// _exit, usleep
 #include <mirsdrapi-rsp.h>
+#include "dumpvdl2.h"			// sbuf
 #include "sdrplay.h"
 
 static int initialized = 0;
@@ -97,7 +98,7 @@ int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, void 
 		end = SDRPlay->data_index - ASYNC_BUF_SIZE;
 		if(end < 0) end += ASYNC_BUF_SIZE * ASYNC_BUF_NUMBER;
 		end -= end % ASYNC_BUF_SIZE;
-		process_buf_short(&SDRPlay->sdrplay_data[end * sizeof(short)], ASYNC_BUF_SIZE * sizeof(short), SDRPlay->context);
+		process_buf_short(&SDRPlay->sdrplay_data[end * sizeof(short)], ASYNC_BUF_SIZE * sizeof(short), NULL);
 	}
 }
 
@@ -188,7 +189,6 @@ int const enable_notch_filter, int enable_agc) {
 	float ver;
 	sdrplay_ctx_t SDRPlay;
 	sdrplay_hw_type hw_type = HW_UNKNOWN;
-	SDRPlay.context = ctx;
 
 	err = mir_sdr_ApiVersion(&ver);
 	if((err != mir_sdr_Success) || (ver != MIR_SDR_API_VERSION)) {
@@ -257,7 +257,7 @@ int const enable_notch_filter, int enable_agc) {
 	fprintf(stderr, "Frequency correction set to %d ppm\n", ppm_error);
 
 	SDRPlay.sdrplay_data = XCALLOC(ASYNC_BUF_SIZE * ASYNC_BUF_NUMBER, sizeof(short));
-	ctx->sbuf = XCALLOC(ASYNC_BUF_SIZE, sizeof(float));
+	sbuf = XCALLOC(ASYNC_BUF_SIZE, sizeof(float));
 
 	int gRdBsystem = gr;
 	if(gr == SDR_AUTO_GAIN) {

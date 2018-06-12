@@ -37,6 +37,7 @@
 
 int do_exit = 0;
 uint32_t msg_filter = MSGFLT_ALL;
+pthread_barrier_t demods_ready, samples_ready;
 
 void sighandler(int sig) {
 	fprintf(stderr, "Got signal %d, exiting\n", sig);
@@ -52,7 +53,7 @@ void sighandler(int sig) {
 #endif
 }
 
-void setup_signals() {
+static void setup_signals() {
 	struct sigaction sigact, pipeact;
 
 	memset(&sigact, 0, sizeof(sigact));
@@ -64,6 +65,24 @@ void setup_signals() {
 	sigaction(SIGINT, &sigact, NULL);
 	sigaction(SIGQUIT, &sigact, NULL);
 	sigaction(SIGTERM, &sigact, NULL);
+}
+
+static void setup_threads(vdl2_state_t *ctx) {
+	int ret;
+	if(	(ret = pthread_barrier_init(&demods_ready, NULL, ctx->num_channels+1)) != 0 ||
+		(ret = pthread_barrier_init(&samples_ready, NULL, ctx->num_channels+1)) != 0) {
+			errno = ret;
+			perror("pthread_barrier_init failed");
+			_exit(2);
+	}
+
+	for(int i = 0; i < ctx->num_channels; i++) {
+		if((ret = pthread_create(&ctx->channels[i]->demod_thread, NULL, &process_samples, ctx->channels[i])) != 0) {
+			errno = ret;
+			perror("pthread_create failed");
+			_exit(2);
+		}
+	}
 }
 
 static uint32_t calc_centerfreq(uint32_t *freq, int cnt, uint32_t source_rate) {
@@ -93,11 +112,11 @@ void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
 	switch(sfmt) {
 	case SFMT_U8:
 		process_buf_uchar_init();
-		ctx->sbuf = XCALLOC(FILE_BUFSIZE / sizeof(uint8_t), sizeof(float));
+		sbuf = XCALLOC(FILE_BUFSIZE / sizeof(uint8_t), sizeof(float));
 		process_buf = &process_buf_uchar;
 		break;
 	case SFMT_S16_LE:
-		ctx->sbuf = XCALLOC(FILE_BUFSIZE / sizeof(int16_t), sizeof(float));
+		sbuf = XCALLOC(FILE_BUFSIZE / sizeof(int16_t), sizeof(float));
 		process_buf = &process_buf_short;
 		break;
 	default:
@@ -106,7 +125,7 @@ void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
 	}
 	do {
 		len = fread(buf, 1, FILE_BUFSIZE, f);
-		(*process_buf)(buf, len, ctx);
+		(*process_buf)(buf, len, NULL);
 	} while(len == FILE_BUFSIZE && !do_exit);
 	fclose(f);
 }
@@ -535,6 +554,7 @@ int main(int argc, char **argv) {
 	setup_signals();
 	sincosf_lut_init();
 	input_lpf_init(sample_rate);
+	setup_threads(&ctx);
 	switch(input) {
 	case INPUT_FILE:
 		process_file(&ctx, infile, sample_fmt);

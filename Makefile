@@ -8,7 +8,9 @@ BINDIR = $(PREFIX)/bin
 INSTALL_USER = root
 INSTALL_GROUP = root
 CC = gcc
-CFLAGS += -std=c99 -g -Wall -O3 -fno-omit-frame-pointer -ffast-math -D_XOPEN_SOURCE=500 -D_FILE_OFFSET_BITS=64 -DDEBUG=$(DEBUG)
+#CFLAGS += -std=c99 -g -Wall -O3 -fno-omit-frame-pointer -ffast-math -pthread -D_XOPEN_SOURCE=500 -D_FILE_OFFSET_BITS=64 -DDEBUG=$(DEBUG)
+#CFLAGS += -g -Wall -O3 -fno-omit-frame-pointer -ffast-math -pthread -D_XOPEN_SOURCE=500 -D_FILE_OFFSET_BITS=64 -DDEBUG=$(DEBUG)
+CFLAGS += -g -Wall -O3 -fno-omit-frame-pointer -ffast-math -pthread -D_FILE_OFFSET_BITS=64 -DDEBUG=$(DEBUG)
 
 ifeq ($(PLATFORM), rpiv1)
   CFLAGS += -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard
@@ -34,7 +36,7 @@ endif
 
 CFLAGS += -Iasn1 $(GLIBCFLAGS)
 CFLAGS += -DUSE_STATSD=$(USE_STATSD) -DWITH_RTLSDR=$(WITH_RTLSDR) -DWITH_SDRPLAY=$(WITH_SDRPLAY) -DWITH_MIRISDR=$(WITH_MIRISDR)
-LDLIBS = -lm $(GLIBLDLIBS)
+LDLIBS = -lm -lpthread $(GLIBLDLIBS)
 SUBDIRS = libfec asn1
 CLEANDIRS = $(SUBDIRS:%=clean-%)
 BIN = dumpvdl2

@@ -22,11 +22,14 @@
 #include <stdint.h>
 #include <stdlib.h>		// calloc
 #include <math.h>		// sincosf, hypotf, atan2
+#include <pthread.h>		// pthread_barrier_wait
 #include "chebyshev.h"		// chebyshev_lpf_init
 #include "dumpvdl2.h"
 
+float *sbuf;
 static float *levels;
 static float sin_lut[257], cos_lut[257];
+static uint32_t sbuf_len;
 
 // input lowpass filter design constants
 #define INP_LPF_CUTOFF_FREQ 10000
@@ -223,90 +226,94 @@ static void demod(vdl2_channel_t *v) {
 	}
 }
 
-static void process_samples(vdl2_channel_t *v, float *sbuf, uint32_t len) {
+void *process_samples(void *arg) {
 	int i, available;
 	float mag;
 	float cwf, swf;
+	vdl2_channel_t *v = (vdl2_channel_t *)arg;
 	v->samplenum = -1;
-	for(i = 0; i < len;) {
+	while(1) {
+		pthread_barrier_wait(&demods_ready);
+		pthread_barrier_wait(&samples_ready);
+		for(i = 0; i < sbuf_len;) {
 #if DEBUG
-		v->samplenum++;
+			v->samplenum++;
 #endif
-		for(int k = INP_LPF_NPOLES; k > 0; k--) {
-			   v->re[k] =    v->re[k-1];
-			   v->im[k] =    v->im[k-1];
-			v->lp_re[k] = v->lp_re[k-1];
-			v->lp_im[k] = v->lp_im[k-1];
-		}
-		v->re[0] = sbuf[i++];
-		v->im[0] = sbuf[i++];
+			for(int k = INP_LPF_NPOLES; k > 0; k--) {
+				   v->re[k] =    v->re[k-1];
+				   v->im[k] =    v->im[k-1];
+				v->lp_re[k] = v->lp_re[k-1];
+				v->lp_im[k] = v->lp_im[k-1];
+			}
+			v->re[0] = sbuf[i++];
+			v->im[0] = sbuf[i++];
 // downmix
-		if(v->offset_tuning) {
-			sincosf_lut(v->dm_phi, &swf, &cwf);
-			multiply(v->re[0], v->im[0], cwf, swf, &v->re[0], &v->im[0]);
-			v->dm_phi += v->dm_dphi;
-			v->dm_phi &= 0xffffff;
-		}
+			if(v->offset_tuning) {
+				sincosf_lut(v->dm_phi, &swf, &cwf);
+				multiply(v->re[0], v->im[0], cwf, swf, &v->re[0], &v->im[0]);
+				v->dm_phi += v->dm_dphi;
+				v->dm_phi &= 0xffffff;
+			}
 
 // lowpass IIR
-		v->lp_re[0] = chebyshev_lpf_2pole(v->re, v->lp_re);
-		v->lp_im[0] = chebyshev_lpf_2pole(v->im, v->lp_im);
+			v->lp_re[0] = chebyshev_lpf_2pole(v->re, v->lp_re);
+			v->lp_im[0] = chebyshev_lpf_2pole(v->im, v->lp_im);
 // decimation
-		v->cnt %= v->oversample;
-		if(v->cnt++ != 0)
-			continue;
-
-		mag = hypotf(v->lp_re[0], v->lp_im[0]);
-		v->mag_lp = v->mag_lp * MAG_LP + mag * (1.0f - MAG_LP);
-		v->nfcnt %= 1000;
-// update noise floor estimate
-		if(v->nfcnt++ == 0)
-			v->mag_nf = NF_LP * v->mag_nf + (1.0f - NF_LP) * fminf(v->mag_lp, v->mag_nf) + 0.0001f;
-		if(v->mag_lp > 3.0f * v->mag_nf) {
-			if(v->demod_state == DM_IDLE)
+			v->cnt %= v->oversample;
+			if(v->cnt++ != 0)
 				continue;
-			if(v->sq == 0) {
-				debug_print("*** on at (%d:%d) ***\n", v->bufnum, v->samplenum);
-				v->sq = 1;
+
+			mag = hypotf(v->lp_re[0], v->lp_im[0]);
+			v->mag_lp = v->mag_lp * MAG_LP + mag * (1.0f - MAG_LP);
+			v->nfcnt %= 1000;
+// update noise floor estimate
+			if(v->nfcnt++ == 0)
+				v->mag_nf = NF_LP * v->mag_nf + (1.0f - NF_LP) * fminf(v->mag_lp, v->mag_nf) + 0.0001f;
+			if(v->mag_lp > 3.0f * v->mag_nf) {
+				if(v->demod_state == DM_IDLE)
+					continue;
+				if(v->sq == 0) {
+					debug_print("*** on at (%d:%d) ***\n", v->bufnum, v->samplenum);
+					v->sq = 1;
+				}
+			} else {
+				if(v->sq == 1 && v->demod_state == DM_IDLE) {	// close squelch only when decoder finished work or errored
+					// FIXME: time-limit this, because reading obvious trash does not make sense
+					debug_print("*** off at (%d:%d) ***\n", v->bufnum, v->samplenum);
+					v->sq = 0;
+					demod_reset(v);
+				}
 			}
-		} else {
-			if(v->sq == 1 && v->demod_state == DM_IDLE) {	// close squelch only when decoder finished work or errored
-				// FIXME: time-limit this, because reading obvious trash does not make sense
-				debug_print("*** off at (%d:%d) ***\n", v->bufnum, v->samplenum);
-				v->sq = 0;
-				demod_reset(v);
-			}
-		}
-		if(v->sq == 1) {
-			v->I[v->bufe] = v->lp_re[0];
-			v->Q[v->bufe] = v->lp_im[0];
-			v->mag_buf[v->bufe] = mag;
-			v->mag_lpbuf[v->bufe] = v->mag_lp;
-			v->bufe++; v->bufe %= BUFSIZE;
+			if(v->sq == 1) {
+				v->I[v->bufe] = v->lp_re[0];
+				v->Q[v->bufe] = v->lp_im[0];
+				v->mag_buf[v->bufe] = mag;
+				v->mag_lpbuf[v->bufe] = v->mag_lp;
+				v->bufe++; v->bufe %= BUFSIZE;
 //			debug_print("plot: %f %f\n", mag, v->mag_lp);
 
-			available = v->bufe - v->bufs;
-			if(available < 0 ) available += BUFSIZE;
-			if(available < v->requested_samples)
-				continue;
+				available = v->bufe - v->bufs;
+				if(available < 0 ) available += BUFSIZE;
+				if(available < v->requested_samples)
+					continue;
 
-			debug_print("%d samples collected, doing demod\n", available);
-			demod(v);
+				debug_print("%d samples collected, doing demod\n", available);
+				demod(v);
+			}
 		}
+		v->bufnum++;
+		if(DEBUG && v->bufnum % 10 == 0)
+			debug_print("%u: noise_floor: %.1f dBFS\n", v->freq, 20.0f * log10f(v->mag_nf + 0.001f));
 	}
-	v->bufnum++;
-	if(DEBUG && v->bufnum % 10 == 0)
-		debug_print("%u: noise_floor: %.1f dBFS\n", v->freq, 20.0f * log10f(v->mag_nf + 0.001f));
 }
 
 void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx) {
 	if(len == 0) return;
-	vdl2_state_t *v = (vdl2_state_t *)ctx;
-	float *sbuf = v->sbuf;
-	for(uint32_t i = 0; i < len; i++)
+	pthread_barrier_wait(&demods_ready);
+	sbuf_len = len;
+	for(uint32_t i = 0; i < sbuf_len; i++)
 		sbuf[i] = levels[buf[i]];
-	for(int i = 0; i < v->num_channels; i++)
-		process_samples(v->channels[i], sbuf, len);
+	pthread_barrier_wait(&samples_ready);
 }
 
 void process_buf_uchar_init() {
@@ -318,14 +325,12 @@ void process_buf_uchar_init() {
 
 void process_buf_short(unsigned char *buf, uint32_t len, void *ctx) {
 	if(len == 0) return;
-	vdl2_state_t *v = (vdl2_state_t *)ctx;
-	float *sbuf = v->sbuf;
 	int16_t *bbuf = (int16_t *)buf;
-	len /= 2;
-	for(uint32_t i = 0; i < len; i++)
+	pthread_barrier_wait(&demods_ready);
+	sbuf_len = len / 2;
+	for(uint32_t i = 0; i < sbuf_len; i++)
 		sbuf[i] = (float)bbuf[i] / 32768.0f;
-	for(int i = 0; i < v->num_channels; i++)
-		process_samples(v->channels[i], sbuf, len);
+	pthread_barrier_wait(&samples_ready);
 }
 
 void input_lpf_init(uint32_t sample_rate) {

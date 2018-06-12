@@ -23,6 +23,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/time.h>
+#include <pthread.h>
 #include "avlc.h"
 #include "tlv.h"
 
@@ -206,10 +207,10 @@ typedef struct {
 	uint16_t lfsr;
 	uint16_t oversample;
 	struct timeval tstart;
+	pthread_t demod_thread;
 } vdl2_channel_t;
 
 typedef struct {
-	float *sbuf;
 	int num_channels;
 	vdl2_channel_t **channels;
 } vdl2_state_t;
@@ -230,6 +231,7 @@ uint32_t reverse(uint32_t v, int numbits);
 void decode_vdl_frame(vdl2_channel_t *v);
 
 // demod.c
+extern float *sbuf;
 vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample);
 void sincosf_lut_init();
 void input_lpf_init(uint32_t sample_rate);
@@ -237,6 +239,7 @@ void process_buf_uchar_init();
 void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx);
 void process_buf_short_init();
 void process_buf_short(unsigned char *buf, uint32_t len, void *ctx);
+void *process_samples(void *arg);
 
 // crc.c
 uint16_t crc16_ccitt(uint8_t *data, uint32_t len);
@@ -280,4 +283,5 @@ size_t slurp_hexstring(char* string, uint8_t **buf);
 
 // dumpvdl2.c
 extern uint32_t msg_filter;
+extern pthread_barrier_t demods_ready, samples_ready;
 #endif // !_DUMPVDL2_H
