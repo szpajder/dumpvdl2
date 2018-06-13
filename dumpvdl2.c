@@ -1,7 +1,7 @@
 /*
  *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
  *
- *  Copyright (c) 2017 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2018 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@
 #include "sdrplay.h"
 #endif
 #include "dumpvdl2.h"
+#include "avlc.h"		// parse_avlc_frames
 
 int do_exit = 0;
 uint32_t msg_filter = MSGFLT_ALL;

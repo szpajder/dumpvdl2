@@ -120,7 +120,7 @@ cotp.o: dumpvdl2.h tlv.h cotp.h icao.h
 
 cpdlc.o: dumpvdl2.h asn1-util.h cpdlc.h asn1-format-cpdlc.h
 
-decode.o: dumpvdl2.h
+decode.o: dumpvdl2.h avlc.h
 
 demod.o: dumpvdl2.h chebyshev.h
 
@@ -136,7 +136,7 @@ idrp.o: dumpvdl2.h idrp.h tlv.h
 
 rs.o: dumpvdl2.h fec.h
 
-dumpvdl2.o: dumpvdl2.h rtl.h mirisdr.h
+dumpvdl2.o: dumpvdl2.h avlc.h rtl.h mirisdr.h sdrplay.h
 
 avlc.o: dumpvdl2.h avlc.h xid.h acars.h x25.h
 
@@ -156,7 +156,7 @@ tlv.o: tlv.h dumpvdl2.h
 
 util.o: dumpvdl2.h tlv.h
 
-xid.o: dumpvdl2.h tlv.h xid.h
+xid.o: dumpvdl2.h tlv.h xid.h avlc.h
 
 x25.o: dumpvdl2.h clnp.h esis.h tlv.h x25.h
 
