@@ -23,6 +23,7 @@
 #include <string.h>
 #include <limits.h>
 #include <unistd.h>
+#include <glib.h>
 #if USE_STATSD
 #include <sys/time.h>
 #endif
@@ -139,6 +140,16 @@ static int deinterleave(uint8_t *in, uint32_t len, uint32_t rows, uint32_t cols,
 		}
 	}
 	return 0;
+}
+
+static void enqueue_frame(const vdl2_channel_t *v, uint8_t *buf) {
+	avlc_frame_qentry_t *qentry = XCALLOC(1, sizeof(avlc_frame_qentry_t));
+	qentry->buf = buf;
+	qentry->len = v->datalen_octets;
+	qentry->freq = v->freq;
+	qentry->mag_frame = v->mag_frame;
+	qentry->mag_nf = v->mag_nf;
+	g_async_queue_push(frame_queue, qentry);
 }
 
 void decode_vdl_frame(vdl2_channel_t *v) {
@@ -297,10 +308,12 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 			goto cleanup;
 		}
 		statsd_increment(v->freq, "decoder.msg.good");
-		parse_avlc_frames(v, data, v->datalen_octets);
+		enqueue_frame(v, data);
 		statsd_timing_delta(v->freq, "decoder.msg.processing_time", &v->tstart);
+		goto success;
 cleanup:
 		XFREE(data);
+success:
 		XFREE(fec);
 		v->decoder_state = DEC_IDLE;
 		debug_print("%s", "DEC_IDLE\n");

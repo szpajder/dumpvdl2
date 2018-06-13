@@ -18,10 +18,12 @@
  */
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <math.h>
 #include <unistd.h>
+#include <glib.h>
 #include "dumpvdl2.h"
 #include "avlc.h"
 #include "xid.h"
@@ -67,12 +69,15 @@ static const char *U_cmd[] = {
 	"TEST"
 };
 
+// forward declaration
+static void output_avlc(const avlc_frame_qentry_t *v, const avlc_frame_t *f, uint8_t *raw_buf, uint32_t len);
+
 uint32_t parse_dlc_addr(uint8_t *buf) {
 	debug_print("%02x %02x %02x %02x\n", buf[0], buf[1], buf[2], buf[3]);
 	return reverse((buf[0] >> 1) | (buf[1] << 6) | (buf[2] << 13) | ((buf[3] & 0xfe) << 20), 28) & ONES(28);
 }
 
-static void parse_avlc(vdl2_channel_t *v, uint8_t *buf, uint32_t len) {
+static void parse_avlc(avlc_frame_qentry_t *v, uint8_t *buf, uint32_t len) {
 	debug_print_buf_hex(buf, len, "%s", "Frame data:\n");
 // FCS check
 	len -= 2;
@@ -170,38 +175,49 @@ static void parse_avlc(vdl2_channel_t *v, uint8_t *buf, uint32_t len) {
 	}
 }
 
-void parse_avlc_frames(vdl2_channel_t *v, uint8_t *buf, uint32_t len) {
-	if(buf[0] != AVLC_FLAG) {
-		debug_print("%s", "No AVLC frame delimiter at the start\n");
-		statsd_increment(v->freq, "avlc.errors.no_flag_start");
-		return;
-	}
+GAsyncQueue *frame_queue = NULL;
+
+void *parse_avlc_frames(void *arg) {
 	uint32_t fcnt = 0, goodfcnt = 0;
-	uint8_t *frame_start = buf + 1;
-	uint8_t *frame_end;
-	uint8_t *buf_end = buf + len;
-	uint32_t flen;
-	while(frame_start < buf_end - 1) {
-		statsd_increment(v->freq, "avlc.frames.processed");
-		if((frame_end = memchr(frame_start, AVLC_FLAG, buf_end - frame_start)) == NULL) {
-			debug_print("Frame %u: truncated\n", fcnt);
-			statsd_increment(v->freq, "avlc.errors.no_flag_end");
-			return;
+	uint8_t *frame_start = NULL, *frame_end = NULL, *buf_end = NULL;
+	uint32_t flen = 0;
+	avlc_frame_qentry_t *v = NULL;
+	frame_queue = g_async_queue_new();
+	while(1) {
+		v = (avlc_frame_qentry_t *)g_async_queue_pop(frame_queue);
+		fcnt = goodfcnt = 0;
+		frame_start = v->buf + 1;
+		buf_end = v->buf + v->len;
+		if(v->buf[0] != AVLC_FLAG) {
+			debug_print("%s", "No AVLC frame delimiter at the start\n");
+			statsd_increment(v->freq, "avlc.errors.no_flag_start");
+			goto end;
 		}
-		flen = frame_end - frame_start;
-		if(flen < MIN_AVLC_LEN) {
-			debug_print("Frame %u: too short (len=%u required=%d)\n", fcnt, flen, MIN_AVLC_LEN);
-			statsd_increment(v->freq, "avlc.errors.too_short");
-			goto next;
-		}
-		debug_print("Frame %u: len=%u\n", fcnt, flen);
-		goodfcnt++;
-		parse_avlc(v, frame_start, flen);
+		while(frame_start < buf_end - 1) {
+			statsd_increment(v->freq, "avlc.frames.processed");
+			if((frame_end = memchr(frame_start, AVLC_FLAG, buf_end - frame_start)) == NULL) {
+				debug_print("Frame %u: truncated\n", fcnt);
+				statsd_increment(v->freq, "avlc.errors.no_flag_end");
+				goto end;
+			}
+			flen = frame_end - frame_start;
+			if(flen < MIN_AVLC_LEN) {
+				debug_print("Frame %u: too short (len=%u required=%d)\n", fcnt, flen, MIN_AVLC_LEN);
+				statsd_increment(v->freq, "avlc.errors.too_short");
+				goto next;
+			}
+			debug_print("Frame %u: len=%u\n", fcnt, flen);
+			goodfcnt++;
+			parse_avlc(v, frame_start, flen);
 next:
-		frame_start = frame_end + 1;
-		fcnt++;
+			frame_start = frame_end + 1;
+			fcnt++;
+		}
+end:
+		debug_print("%u/%u frames processed\n", goodfcnt, fcnt);
+		XFREE(v->buf);
+		XFREE(v);
 	}
-	debug_print("%u/%u frames processed\n", goodfcnt, fcnt);
 }
 
 static void output_avlc_U(const avlc_frame_t *f) {
@@ -219,7 +235,7 @@ static void output_avlc_U(const avlc_frame_t *f) {
 	}
 }
 
-void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f, uint8_t *raw_buf, uint32_t len) {
+static void output_avlc(const avlc_frame_qentry_t *v, const avlc_frame_t *f, uint8_t *raw_buf, uint32_t len) {
 	if(f == NULL) return;
 	if((daily || hourly) && rotate_outfile() < 0)
 		_exit(1);

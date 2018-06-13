@@ -38,6 +38,7 @@
 int do_exit = 0;
 uint32_t msg_filter = MSGFLT_ALL;
 pthread_barrier_t demods_ready, samples_ready;
+pthread_t decoder_thread;
 
 void sighandler(int sig) {
 	fprintf(stderr, "Got signal %d, exiting\n", sig);
@@ -75,7 +76,11 @@ static void setup_threads(vdl2_state_t *ctx) {
 			perror("pthread_barrier_init failed");
 			_exit(2);
 	}
-
+	if((ret = pthread_create(&decoder_thread, NULL, &parse_avlc_frames, NULL) != 0)) {
+		errno = ret;
+		perror("pthread_create failed");
+		_exit(2);
+	}
 	for(int i = 0; i < ctx->num_channels; i++) {
 		if((ret = pthread_create(&ctx->channels[i]->demod_thread, NULL, &process_samples, ctx->channels[i])) != 0) {
 			errno = ret;

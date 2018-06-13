@@ -117,4 +117,10 @@ typedef struct {
 	void *data;
 } avlc_frame_t;
 
+typedef struct {
+	uint8_t *buf;
+	uint32_t len;
+	uint32_t freq;
+	float mag_frame, mag_nf;
+} avlc_frame_qentry_t;
 #endif // !_AVLC_H
