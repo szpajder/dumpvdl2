@@ -40,7 +40,7 @@
 #define ONES(x) ~(~0 << x)
 #define ARITY 8
 #define SPS 10
-#define SYNC_SYMS 11				// number of symbols searched by correlate_and_sync()
+#define SYNC_SYMS 12				// number of symbols searched by correlate_and_sync()
 #define PREAMBLE_SYMS 16
 #define PREAMBLE_LEN (PREAMBLE_SYMS * BPS)	// preamble length in bits
 #define MAX_PREAMBLE_ERRORS 3

@@ -77,7 +77,7 @@ static void correlate_and_sync(vdl2_channel_t *v) {
  * (it's actually a second notch in the preamble, because it's always
  * deeper than the first one). Reject it if it's not deep enough. */
 	minv1 = avgmax;
-	for(i = 2 * SPS; i < 7 * SPS; i++) {
+	for(i = 2 * SPS; i < 8 * SPS; i++) {
 		if(buf[i] < minv1) {
 			minv1 = buf[i];
 			min1 = i;
@@ -89,7 +89,7 @@ static void correlate_and_sync(vdl2_channel_t *v) {
 	}
 /* Search for a notch over 8-11 symbol periods */
 	minv2 = avgmax;
-	for(i = 7 * SPS; i < SYNC_SYMS * SPS; i++) {
+	for(i = 8 * SPS; i < SYNC_SYMS * SPS; i++) {
 		if(buf[i] < minv2) {
 			minv2 = buf[i];
 			min2 = i;
