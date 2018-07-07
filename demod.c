@@ -26,9 +26,6 @@
 #include "chebyshev.h"		// chebyshev_lpf_init
 #include "dumpvdl2.h"
 
-// FIXME: temp
-#include <unistd.h>
-
 float *sbuf;
 static float *levels;
 static float sin_lut[257], cos_lut[257];

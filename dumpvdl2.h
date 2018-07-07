@@ -48,6 +48,7 @@
 #define SYNC_SYMS PREAMBLE_SYMS			// number of symbols searched by correlate_and_sync()
 #define PREAMBLE_LEN (PREAMBLE_SYMS * BPS)	// preamble length in bits
 #define MAX_PREAMBLE_ERRORS 3
+#define MAX_FRAME_LENGTH 0x7FFF
 #define SYMBOL_RATE 10500
 #define CSC_FREQ 136975000U
 #define MAX_CHANNELS 8

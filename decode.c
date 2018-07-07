@@ -187,6 +187,16 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 		}
 		statsd_increment(v->freq, "decoder.crc.good");
 		v->datalen = reverse(header & ONES(TRLEN), TRLEN);
+// Reject payloads with length greater than 32K (in theory they are allowed but in practice
+// it does not happen - usually it means a bit flip has occured. It's safer to reject them
+// rather than to block the decoder in DEC_DATA state and reading garbage for a long time,
+// possibly overlooking valid frames.
+		if(v->datalen > MAX_FRAME_LENGTH) {
+			debug_print("Rejecting frame with length %zu > %zu bits\n", v->datalen, MAX_FRAME_LENGTH);
+			statsd_increment(v->freq, "decoder.errors.too_long");
+			v->decoder_state = DEC_IDLE;
+			return;
+		}
 		v->datalen_octets = v->datalen / 8;
 		if(v->datalen % 8 != 0)
 			v->datalen_octets++;
