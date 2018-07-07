@@ -117,7 +117,6 @@ static int got_sync(vdl2_channel_t *v) {
 	float errvec[PREAMBLE_SYMS];
 	float errvec_mean = 0.f, unwrap = 0.f;
 	float prev_err = errvec_mean = errvec[0] = v->syncbuf[(v->syncbufidx + SPS) % SYNC_BUFLEN] - pr_phase[0];
-	debug_print("v->syncbufidx=%d, sync start is at %d\n", v->syncbufidx, (v->syncbufidx + SPS) % SYNC_BUFLEN);
 	for(int i = 1; i < PREAMBLE_SYMS; i++) {
 		float cur_err = v->syncbuf[(v->syncbufidx + (i + 1) * SPS) % SYNC_BUFLEN] - pr_phase[i];
 		float errdiff = cur_err - prev_err;
@@ -132,14 +131,12 @@ static int got_sync(vdl2_channel_t *v) {
 		errvec_mean += errvec[i];
 	}
 	errvec_mean /= PREAMBLE_SYMS;
-	debug_print("errvec_mean: %f\n", errvec_mean);
 // Starting phase of pr_phase is 0. If we have a sync with a preamble starting with phase of 0, then
 // errvec is a string of close-to-zero values. If the starting phase is different, then phase
 // increments between symbols are still preserved, so errvec is a string of a constant value, which
 // we subtract to get a string of zeros.
 	for (int i = 0; i < PREAMBLE_SYMS; i++) {
 		errvec[i] -= errvec_mean;
-//		debug_print("errvec[%d]=%f\n", i, errvec[i]);
 	}
 // If there is a non-zero frequency offset between transmitter and receiver, then errvec values
 // are not constant, but increasing or decreasing monotonically.
@@ -174,14 +171,13 @@ static int got_sync(vdl2_channel_t *v) {
 //		v->dphi = freq_err;	// FIXME: v->prev_dphi
 		v->dphi = v->prev_dphi;
 		v->ppm_error = SYMBOL_RATE * v->dphi / (2.0f * M_PI * v->freq) * 1e+6;
-		debug_print("Preamble found at %lu (prev2_pherr=%f prev_pherr=%f cur_pherr=%f vertex_x=%f syncbufidx=%d, "
-			"syncpoint=%d syncpoint_phase=%f sclk=%d freq_err=%f prev_freq_err=%f ppm=%f)\n",
+		debug_print("Preamble found at %lu (pherr[2]=%f pherr[1]=%f pherr[0]=%f vertex_x=%f syncbufidx=%d, "
+			"syncpoint=%d syncpoint_phase=%f sclk=%d v->dphi=%f ppm=%f)\n",
 			v->samplenum - SYNC_SKIP, v->pherr[2], v->pherr[1], v->pherr[0], vertex_x, v->syncbufidx,
-			sp, v->prev_phi, v->sclk, freq_err, v->prev_dphi, v->ppm_error);
+			sp, v->prev_phi, v->sclk, v->dphi, v->ppm_error);
 		v->pherr[1] = v->pherr[2] = PHERR_MAX;
 		return 1;
 	}
-	debug_print("%lu: v->pherr[1]=%f v->pherr[0]=%f\n", v->samplenum, v->pherr[1], v->pherr[0]);
 	v->pherr[2] = v->pherr[1];
 	v->pherr[1] = v->pherr[0];
 	v->prev_dphi = freq_err;
@@ -224,7 +220,6 @@ static void demod(vdl2_channel_t *v, float re, float im) {
 	case DM_INIT:
 		v->syncbufidx++; v->syncbufidx %= SYNC_BUFLEN;
 		v->syncbuf[v->syncbufidx] = atan2(im, re);
-//		debug_print("re=%f im=%f v->syncbuf[%d] = %f\n", re, im, v->syncbufidx, v->syncbuf[v->syncbufidx]);
 		if(++v->sclk < SYNC_SKIP) {
 			return;
 		}
