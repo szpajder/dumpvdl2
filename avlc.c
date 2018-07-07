@@ -324,8 +324,8 @@ static void output_avlc(const avlc_frame_qentry_t *v, const avlc_frame_t *f, uin
 	strftime(ftime, sizeof(ftime), "%F %T %Z", (utc ? gmtime(&f->t) : localtime(&f->t)));
 	float sig_pwr_dbfs = 20.0f * log10f(v->mag_frame);
 	float nf_pwr_dbfs = 20.0f * log10f(v->mag_nf + 0.001f);
-	fprintf(outf, "\n[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB]\n",
-		ftime, (float)v->freq / 1e+6, sig_pwr_dbfs, nf_pwr_dbfs, sig_pwr_dbfs-nf_pwr_dbfs);
+	fprintf(outf, "\n[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB] [%.1f ppm]\n",
+		ftime, (float)v->freq / 1e+6, sig_pwr_dbfs, nf_pwr_dbfs, sig_pwr_dbfs-nf_pwr_dbfs, v->ppm_error);
 	fprintf(outf, "%06X (%s, %s) -> %06X (%s): %s\n",
 		f->src.a_addr.addr,
 		addrtype_descr[f->src.a_addr.type],

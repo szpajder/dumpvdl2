@@ -40,8 +40,12 @@
 #define ONES(x) ~(~0 << x)
 #define ARITY 8
 #define SPS 10
-#define SYNC_SYMS 12				// number of symbols searched by correlate_and_sync()
+#define PHERR_MAX 1000.f			// initial value for frame sync error (read: high)
+#define SYNC_SKIP 3				// attempt frame sync every SYNC_SKIP samples (to reduce CPU usage)
+#define SYNC_THRESHOLD 5			// assume we got frame sync if phase error is less than this threshold
 #define PREAMBLE_SYMS 16
+#define SYNC_BUFLEN (PREAMBLE_SYMS * SPS)	// length of look-behind buffer used for frame syncing
+#define SYNC_SYMS PREAMBLE_SYMS			// number of symbols searched by correlate_and_sync()
 #define PREAMBLE_LEN (PREAMBLE_SYMS * BPS)	// preamble length in bits
 #define MAX_PREAMBLE_ERRORS 3
 #define SYMBOL_RATE 10500
@@ -180,22 +184,26 @@ typedef struct {
 	float *re, *im;
 	float *lp_re, *lp_im;
 	float mag_buf[BUFSIZE];
-	float mag_lpbuf[BUFSIZE];		// temporary for testing
+	float syncbuf[SYNC_BUFLEN];
 	float I[BUFSIZE];
 	float Q[BUFSIZE];
-	float pI, pQ;
+	float prev_phi;
+	float prev_dphi, dphi;
+	float pherr[3];
+	float ppm_error;
 	float mag_lp;
 	float mag_nf;
 	float mag_frame;
-	float dphi;
-	int bufnum, samplenum;
+	int bufnum;
 	int cnt, nfcnt;
 	int sq;
 	int bufs, bufe;
+	int syncbufidx;
 	int sclk;
 	int offset_tuning;
 	enum demod_states demod_state;
 	enum decoder_states decoder_state;
+	uint64_t samplenum;
 	uint32_t freq;
 	uint32_t dm_phi, dm_dphi;
 	uint32_t requested_samples;
@@ -234,6 +242,7 @@ extern float *sbuf;
 vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample);
 void sincosf_lut_init();
 void input_lpf_init(uint32_t sample_rate);
+void demod_sync_init();
 void process_buf_uchar_init();
 void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx);
 void process_buf_short_init();
