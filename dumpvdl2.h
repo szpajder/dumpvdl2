@@ -200,6 +200,7 @@ typedef struct {
 	int sq;
 	int bufs, bufe;
 	int syncbufidx;
+	int mag_frame_cnt;
 	int sclk;
 	int offset_tuning;
 	enum demod_states demod_state;

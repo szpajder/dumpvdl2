@@ -205,6 +205,8 @@ static void demod_reset(vdl2_channel_t *v) {
 // FIXME: ?
 //	v->dm_phi = 0.f;
 	v->pherr[1] = v->pherr[2] = PHERR_MAX;
+	v->mag_frame = 0.f;
+	v->mag_frame_cnt = 0;
 }
 
 static void demod(vdl2_channel_t *v, float re, float im) {
@@ -224,6 +226,13 @@ static void demod(vdl2_channel_t *v, float re, float im) {
 			return;
 		}
 		v->sclk = 0;
+// update noise floor estimate
+		float mag = hypotf(re, im);
+		v->mag_lp = v->mag_lp * MAG_LP + mag * (1.0f - MAG_LP);
+		if(++v->nfcnt == 1000) {
+			v->nfcnt = 0;
+			v->mag_nf = NF_LP * v->mag_nf + (1.0f - NF_LP) * fminf(v->mag_lp, v->mag_nf) + 0.0001f;
+		}
 		if(!got_sync(v)) {
 			return;
 		}
@@ -245,8 +254,14 @@ static void demod(vdl2_channel_t *v, float re, float im) {
 		}
 		dphi /= M_PI_4;
 		int idx = (int)roundf(dphi) % ARITY;
-		debug_print("%lu: I: %f Q: %f dphi: %f * pi/4 idx: %d bits: %d\n",
-			v->samplenum, re, im, dphi, idx, graycode[idx]);
+// update signal power average
+		float symbol_mag = hypotf(re, im);
+		v->mag_frame = (v->mag_frame * v->mag_frame_cnt + symbol_mag) / (v->mag_frame_cnt + 1);
+		v->mag_frame_cnt++;
+
+		debug_print("%lu: I: %f Q: %f mag: %f mag_frame: %f dphi: %f * pi/4 idx: %d bits: %d\n",
+			v->samplenum, re, im, symbol_mag, v->mag_frame, dphi, idx, graycode[idx]);
+
 		v->prev_phi = phi;
 		if(bitstream_append_msbfirst(v->bs, &(graycode[idx]), 1, BPS) < 0) {
 			debug_print("%s", "bitstream_append_msbfirst failed\n");
@@ -268,7 +283,6 @@ static void demod(vdl2_channel_t *v, float re, float im) {
 
 void *process_samples(void *arg) {
 	int i;
-	float mag;
 	float cwf, swf;
 	vdl2_channel_t *v = (vdl2_channel_t *)arg;
 	v->samplenum = -1;
@@ -304,13 +318,6 @@ void *process_samples(void *arg) {
 			v->samplenum++;
 #endif
 
-			mag = hypotf(v->lp_re[0], v->lp_im[0]);
-			v->mag_lp = v->mag_lp * MAG_LP + mag * (1.0f - MAG_LP);
-			v->nfcnt %= 1000;
-// update noise floor estimate
-// TODO: update NF only when demod_state is DM_INIT (ie. outside of a frame)
-			if(v->nfcnt++ == 0)
-				v->mag_nf = NF_LP * v->mag_nf + (1.0f - NF_LP) * fminf(v->mag_lp, v->mag_nf) + 0.0001f;
 			demod(v, v->lp_re[0], v->lp_im[0]);
 		}
 		v->bufnum++;
