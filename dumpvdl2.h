@@ -45,9 +45,6 @@
 #define SYNC_THRESHOLD 5			// assume we got frame sync if phase error is less than this threshold
 #define PREAMBLE_SYMS 16
 #define SYNC_BUFLEN (PREAMBLE_SYMS * SPS)	// length of look-behind buffer used for frame syncing
-#define SYNC_SYMS PREAMBLE_SYMS			// number of symbols searched by correlate_and_sync()
-#define PREAMBLE_LEN (PREAMBLE_SYMS * BPS)	// preamble length in bits
-#define MAX_PREAMBLE_ERRORS 3
 #define MAX_FRAME_LENGTH 0x7FFF
 #define SYMBOL_RATE 10500
 #define CSC_FREQ 136975000U
@@ -55,9 +52,7 @@
 #define FILE_BUFSIZE 320000U
 #define FILE_OVERSAMPLE 10
 #define SDR_AUTO_GAIN -100.0f
-#define BUFSIZE (1000 * SPS)
 #define MAG_LP 0.9f
-#define DPHI_LP 0.95f
 #define NF_LP 0.85f
 
 // long command line options
@@ -164,8 +159,8 @@ typedef struct {
 	uint32_t start, end, len, descrambler_pos;
 } bitstream_t;
 
-enum demod_states { DM_INIT, DM_SYNC, DM_IDLE };
-enum decoder_states { DEC_PREAMBLE, DEC_HEADER, DEC_DATA, DEC_IDLE };
+enum demod_states { DM_INIT, DM_SYNC };
+enum decoder_states { DEC_HEADER, DEC_DATA, DEC_IDLE };
 enum input_types {
 #if WITH_RTLSDR
 	INPUT_RTLSDR,
@@ -182,12 +177,9 @@ enum input_types {
 enum sample_formats { SFMT_U8, SFMT_S16_LE, SFMT_UNDEF };
 
 typedef struct {
-	float *re, *im;
-	float *lp_re, *lp_im;
-	float mag_buf[BUFSIZE];
+	long long unsigned samplenum;
+	bitstream_t *bs;
 	float syncbuf[SYNC_BUFLEN];
-	float I[BUFSIZE];
-	float Q[BUFSIZE];
 	float prev_phi;
 	float prev_dphi, dphi;
 	float pherr[3];
@@ -196,21 +188,16 @@ typedef struct {
 	float mag_nf;
 	float frame_pwr;
 	int bufnum;
-	int cnt, nfcnt;
-	int sq;
-	int bufs, bufe;
+	int nfcnt;
 	int syncbufidx;
 	int frame_pwr_cnt;
 	int sclk;
 	int offset_tuning;
 	enum demod_states demod_state;
 	enum decoder_states decoder_state;
-	long long unsigned samplenum;
 	uint32_t freq;
-	uint32_t dm_phi, dm_dphi;
-	uint32_t requested_samples;
+	uint32_t downmix_phi, downmix_dphi;
 	uint32_t requested_bits;
-	bitstream_t *bs;
 	uint32_t datalen, datalen_octets, last_block_len_octets, fec_octets;
 	uint32_t num_blocks;
 	uint16_t lfsr;

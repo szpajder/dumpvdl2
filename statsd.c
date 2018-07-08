@@ -53,7 +53,6 @@ static const char *counters[] = {
 	"decoder.errors.fec_truncated",
 	"decoder.errors.no_fec",
 	"decoder.errors.no_header",
-	"decoder.errors.no_preamble",
 	"decoder.errors.too_long",
 	"decoder.errors.truncated_octets",
 	"decoder.errors.unstuff",

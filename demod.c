@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <stdlib.h>		// calloc
 #include <math.h>		// sincosf, hypotf, atan2
+#include <string.h>		// memset
 #include <pthread.h>		// pthread_barrier_wait
 #include "chebyshev.h"		// chebyshev_lpf_init
 #include "dumpvdl2.h"
@@ -156,8 +157,9 @@ static int got_sync(vdl2_channel_t *v) {
 	}
 
 	if (v->pherr[1] < SYNC_THRESHOLD && v->pherr[0] > v->pherr[1]) {
-// We have passed the minimum value of the error metric.
-// Approximate the last three points with a parabola and locate its vertex,
+// We have passed the minimum value of the error metric and we are below
+// the threshold, so we have a successful sync.
+// Approximate the last three error-squared values with a parabola and locate its vertex,
 // which is the sync point, from where we start the symbol clock.
 		float vertex_x = calc_para_vertex(v->sclk, SYNC_SKIP, v->pherr[2], v->pherr[1], v->pherr[0]);
 		v->sclk = -roundf(vertex_x);
@@ -179,7 +181,6 @@ static int got_sync(vdl2_channel_t *v) {
 	v->prev_dphi = freq_err;
 	return 0;
 }
-
 
 static void multiply(float ar, float aj, float br, float bj, float *cr, float *cj) {
 	*cr = ar*br - aj*bj;
@@ -223,12 +224,11 @@ static void demod(vdl2_channel_t *v, float re, float im) {
 			v->nfcnt = 0;
 			v->mag_nf = NF_LP * v->mag_nf + (1.0f - NF_LP) * fminf(v->mag_lp, v->mag_nf) + 0.0001f;
 		}
-		if(!got_sync(v)) {
-			return;
+		if(got_sync(v)) {
+			statsd_increment(v->freq, "demod.sync.good");
+			v->demod_state = DM_SYNC;
+			debug_print("DM_SYNC, v->sclk=%d\n", v->sclk);
 		}
-		statsd_increment(v->freq, "demod.sync.good");
-		v->demod_state = DM_SYNC;
-		debug_print("DM_SYNC, v->sclk=%d\n", v->sclk);
 		return;
 	case DM_SYNC:
 		if(++v->sclk < SPS) {
@@ -262,54 +262,52 @@ static void demod(vdl2_channel_t *v, float re, float im) {
 			debug_print("bitstream len=%u requested_bits=%u, launching frame decoder\n",
 				v->bs->end - v->bs->start, v->requested_bits);
 			decode_vdl_frame(v);
-			if(v->decoder_state == DEC_IDLE) {	// decoding finished or failed
-				v->demod_state = DM_IDLE;	// FIXME: remove this state
-			}
 		}
-		return;
-	case DM_IDLE:
 		return;
 	}
 }
 
 void *process_samples(void *arg) {
-	int i;
+	int cnt = 0;
 	float cwf, swf;
+	float re[INP_LPF_NPOLES+1], im[INP_LPF_NPOLES+1];
+	float lp_re[INP_LPF_NPOLES+1], lp_im[INP_LPF_NPOLES+1];
 	vdl2_channel_t *v = (vdl2_channel_t *)arg;
 	v->samplenum = -1;
+	memset(lp_re, 0, sizeof(lp_re));
+	memset(lp_im, 0, sizeof(lp_im));
+	memset(re, 0, sizeof(re));
+	memset(im, 0, sizeof(im));
 	while(1) {
 		pthread_barrier_wait(&demods_ready);
 		pthread_barrier_wait(&samples_ready);
-		for(i = 0; i < sbuf_len;) {
+		for(int i = 0; i < sbuf_len;) {
 			for(int k = INP_LPF_NPOLES; k > 0; k--) {
-// FIXME: no need to have this in v
-				   v->re[k] =    v->re[k-1];
-				   v->im[k] =    v->im[k-1];
-				v->lp_re[k] = v->lp_re[k-1];
-				v->lp_im[k] = v->lp_im[k-1];
+				   re[k] =    re[k-1];
+				   im[k] =    im[k-1];
+				lp_re[k] = lp_re[k-1];
+				lp_im[k] = lp_im[k-1];
 			}
-			v->re[0] = sbuf[i++];
-			v->im[0] = sbuf[i++];
+			re[0] = sbuf[i++];
+			im[0] = sbuf[i++];
 // downmix
 			if(v->offset_tuning) {
-				sincosf_lut(v->dm_phi, &swf, &cwf);
-				multiply(v->re[0], v->im[0], cwf, swf, &v->re[0], &v->im[0]);
-				v->dm_phi += v->dm_dphi;
-				v->dm_phi &= 0xffffff;
+				sincosf_lut(v->downmix_phi, &swf, &cwf);
+				multiply(re[0], im[0], cwf, swf, &re[0], &im[0]);
+				v->downmix_phi += v->downmix_dphi;
+				v->downmix_phi &= 0xffffff;
 			}
-
 // lowpass IIR
-			v->lp_re[0] = chebyshev_lpf_2pole(v->re, v->lp_re);
-			v->lp_im[0] = chebyshev_lpf_2pole(v->im, v->lp_im);
+			lp_re[0] = chebyshev_lpf_2pole(re, lp_re);
+			lp_im[0] = chebyshev_lpf_2pole(im, lp_im);
 // decimation
-			v->cnt %= v->oversample;
-			if(v->cnt++ != 0)
-				continue;
+			if(++cnt == v->oversample) {
+				cnt = 0;
 #if DEBUG
-			v->samplenum++;
+				v->samplenum++;
 #endif
-
-			demod(v, v->lp_re[0], v->lp_im[0]);
+				demod(v, lp_re[0], lp_im[0]);
+			}
 		}
 #if DEBUG
 		if(++v->bufnum == 10) {
@@ -360,16 +358,12 @@ void sincosf_lut_init() {
 
 vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample) {
 	vdl2_channel_t *v;
-	v        = XCALLOC(1, sizeof(vdl2_channel_t));
-	v->re    = XCALLOC(INP_LPF_NPOLES+1, sizeof(float));
-	v->im    = XCALLOC(INP_LPF_NPOLES+1, sizeof(float));
-	v->lp_re = XCALLOC(INP_LPF_NPOLES+1, sizeof(float));
-	v->lp_im = XCALLOC(INP_LPF_NPOLES+1, sizeof(float));
+	v = XCALLOC(1, sizeof(vdl2_channel_t));
 	v->bs = bitstream_init(BSLEN);
 	v->mag_nf = 2.0f;
 // Cast to signed first, because casting negative float to uint is not portable
-	v->dm_dphi = (uint32_t)(int)(((float)centerfreq - (float)freq) / (float)source_rate * 256.0f * 65536.0f);
-	debug_print("dm_dphi: 0x%x\n", v->dm_dphi);
+	v->downmix_dphi = (uint32_t)(int)(((float)centerfreq - (float)freq) / (float)source_rate * 256.0f * 65536.0f);
+	debug_print("downmix_dphi: 0x%x\n", v->downmix_dphi);
 	v->offset_tuning = (centerfreq != freq);
 	v->oversample = oversample;
 	v->freq = freq;
