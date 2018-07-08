@@ -194,13 +194,13 @@ typedef struct {
 	float ppm_error;
 	float mag_lp;
 	float mag_nf;
-	float mag_frame;
+	float frame_pwr;
 	int bufnum;
 	int cnt, nfcnt;
 	int sq;
 	int bufs, bufe;
 	int syncbufidx;
-	int mag_frame_cnt;
+	int frame_pwr_cnt;
 	int sclk;
 	int offset_tuning;
 	enum demod_states demod_state;

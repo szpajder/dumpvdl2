@@ -148,7 +148,7 @@ static void enqueue_frame(const vdl2_channel_t *v, uint8_t *buf) {
 	qentry->buf = buf;
 	qentry->len = v->datalen_octets;
 	qentry->freq = v->freq;
-	qentry->mag_frame = v->mag_frame;
+	qentry->frame_pwr = v->frame_pwr;
 	qentry->mag_nf = v->mag_nf;
 	qentry->ppm_error = v->ppm_error;
 	g_async_queue_push(frame_queue, qentry);

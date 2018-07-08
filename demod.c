@@ -205,8 +205,8 @@ static void demod_reset(vdl2_channel_t *v) {
 // FIXME: ?
 //	v->dm_phi = 0.f;
 	v->pherr[1] = v->pherr[2] = PHERR_MAX;
-	v->mag_frame = 0.f;
-	v->mag_frame_cnt = 0;
+	v->frame_pwr = 0.f;
+	v->frame_pwr_cnt = 0;
 }
 
 static void demod(vdl2_channel_t *v, float re, float im) {
@@ -255,12 +255,12 @@ static void demod(vdl2_channel_t *v, float re, float im) {
 		dphi /= M_PI_4;
 		int idx = (int)roundf(dphi) % ARITY;
 // update signal power average
-		float symbol_mag = hypotf(re, im);
-		v->mag_frame = (v->mag_frame * v->mag_frame_cnt + symbol_mag) / (v->mag_frame_cnt + 1);
-		v->mag_frame_cnt++;
+		float symbol_pwr = re * re + im * im;
+		v->frame_pwr = (v->frame_pwr * v->frame_pwr_cnt + symbol_pwr) / (v->frame_pwr_cnt + 1);
+		v->frame_pwr_cnt++;
 
-		debug_print("%lu: I: %f Q: %f mag: %f mag_frame: %f dphi: %f * pi/4 idx: %d bits: %d\n",
-			v->samplenum, re, im, symbol_mag, v->mag_frame, dphi, idx, graycode[idx]);
+		debug_print("%lu: I: %f Q: %f symb_pwr: %f frame_pwr: %f dphi: %f * pi/4 idx: %d bits: %d\n",
+			v->samplenum, re, im, symbol_pwr, v->frame_pwr, dphi, idx, graycode[idx]);
 
 		v->prev_phi = phi;
 		if(bitstream_append_msbfirst(v->bs, &(graycode[idx]), 1, BPS) < 0) {
