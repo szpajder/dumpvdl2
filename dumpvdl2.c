@@ -565,8 +565,7 @@ int main(int argc, char **argv) {
 	switch(input) {
 	case INPUT_FILE:
 		process_file(&ctx, infile, sample_fmt);
-// FIXME
-		sleep(10);
+		pthread_barrier_wait(&demods_ready);
 		break;
 #if WITH_RTLSDR
 	case INPUT_RTLSDR:
