@@ -76,18 +76,15 @@ void demod_sync_init() {
 	mean_X /= PREAMBLE_SYMS;
 	for(int i = 0; i < PREAMBLE_SYMS; i++) {
 		lr_X[i] = i - mean_X;
-		debug_print("lr_X[%d]=%f\n", i, lr_X[i]);
 		lr_denom += (i - mean_X) * (i - mean_X);
 	}
-	debug_print("lr_denom=%f\n", lr_denom);
 }
 
 static float calc_para_vertex(float x, int d, float y1, float y2, float y3) {
-// FIXME: static const?
 	float denom = (float)(d * 2*d * (-d));
-	float A = (x * (y2 - y1) + (x-d) * (y1 - y3) + (x-2*d) * (y3 - y2)) / denom;
-	float B = (x * x * (y1 - y2) + (x-d)*(x-d) * (y3 - y1) + (x-2*d)*(x-2*d) * (y2 - y3)) / denom;
-	return(-B / (2*A));
+	float A = (x * (y2 - y1) + (x - d) * (y1 - y3) + (x - 2*d) * (y3 - y2)) / denom;
+	float B = (x * x * (y1 - y2) + (x - d) * (x - d) * (y3 - y1) + (x - 2*d) * (x - 2*d) * (y2 - y3)) / denom;
+	return(-B / (2 * A));
 }
 
 static int got_sync(vdl2_channel_t *v) {
@@ -168,10 +165,9 @@ static int got_sync(vdl2_channel_t *v) {
 		int sp = v->syncbufidx - v->sclk;
 		if(sp < 0) sp += SYNC_BUFLEN;
 		v->prev_phi = v->syncbuf[sp];
-//		v->dphi = freq_err;	// FIXME: v->prev_dphi
 		v->dphi = v->prev_dphi;
 		v->ppm_error = SYMBOL_RATE * v->dphi / (2.0f * M_PI * v->freq) * 1e+6;
-		debug_print("Preamble found at %lu (pherr[2]=%f pherr[1]=%f pherr[0]=%f vertex_x=%f syncbufidx=%d, "
+		debug_print("Preamble found at %llu (pherr[2]=%f pherr[1]=%f pherr[0]=%f vertex_x=%f syncbufidx=%d, "
 			"syncpoint=%d syncpoint_phase=%f sclk=%d v->dphi=%f ppm=%f)\n",
 			v->samplenum - SYNC_SKIP, v->pherr[2], v->pherr[1], v->pherr[0], vertex_x, v->syncbufidx,
 			sp, v->prev_phi, v->sclk, v->dphi, v->ppm_error);
@@ -191,19 +187,15 @@ static void multiply(float ar, float aj, float br, float bj, float *cr, float *c
 }
 
 static void decoder_reset(vdl2_channel_t *v) {
-//	v->decoder_state = DEC_PREAMBLE;
 	v->decoder_state = DEC_HEADER;
-	bitstream_reset(v->bs);
-//	v->requested_bits = 4 * BPS + PREAMBLE_LEN;		// allow some extra room for leading zeros in xmtr ramp-up stage
 	v->requested_bits = HEADER_LEN;
+	bitstream_reset(v->bs);
 }
 
 static void demod_reset(vdl2_channel_t *v) {
 	decoder_reset(v);
 	v->sclk = 0;
 	v->demod_state = DM_INIT;
-// FIXME: ?
-//	v->dm_phi = 0.f;
 	v->pherr[1] = v->pherr[2] = PHERR_MAX;
 	v->frame_pwr = 0.f;
 	v->frame_pwr_cnt = 0;
@@ -213,9 +205,7 @@ static void demod(vdl2_channel_t *v, float re, float im) {
 	static const uint8_t graycode[ARITY] = { 0, 1, 3, 2, 6, 7, 5, 4 };
 
 	if(v->decoder_state == DEC_IDLE) {
-		debug_print("%s", "demod: decoder_state is DEC_IDLE, resetting demodulator\n");
 		demod_reset(v);
-//		return;
 	}
 
 	switch(v->demod_state) {
@@ -259,7 +249,7 @@ static void demod(vdl2_channel_t *v, float re, float im) {
 		v->frame_pwr = (v->frame_pwr * v->frame_pwr_cnt + symbol_pwr) / (v->frame_pwr_cnt + 1);
 		v->frame_pwr_cnt++;
 
-		debug_print("%lu: I: %f Q: %f symb_pwr: %f frame_pwr: %f dphi: %f * pi/4 idx: %d bits: %d\n",
+		debug_print("%llu: I: %f Q: %f symb_pwr: %f frame_pwr: %f dphi: %f * pi/4 idx: %d bits: %d\n",
 			v->samplenum, re, im, symbol_pwr, v->frame_pwr, dphi, idx, graycode[idx]);
 
 		v->prev_phi = phi;
@@ -269,7 +259,8 @@ static void demod(vdl2_channel_t *v, float re, float im) {
 			return;
 		}
 		if(v->bs->end - v->bs->start >= v->requested_bits) {
-			debug_print("bitstream len=%u requested_bits=%u, launching frame decoder\n", v->bs->end - v->bs->start, v->requested_bits);
+			debug_print("bitstream len=%u requested_bits=%u, launching frame decoder\n",
+				v->bs->end - v->bs->start, v->requested_bits);
 			decode_vdl_frame(v);
 			if(v->decoder_state == DEC_IDLE) {	// decoding finished or failed
 				v->demod_state = DM_IDLE;	// FIXME: remove this state
@@ -320,9 +311,12 @@ void *process_samples(void *arg) {
 
 			demod(v, v->lp_re[0], v->lp_im[0]);
 		}
-		v->bufnum++;
-		if(DEBUG && v->bufnum % 10 == 0)
+#if DEBUG
+		if(++v->bufnum == 10) {
+			v->bufnum = 0;
 			debug_print("%u: noise_floor: %.1f dBFS\n", v->freq, 20.0f * log10f(v->mag_nf + 0.001f));
+		}
+#endif
 	}
 }
 

@@ -205,7 +205,7 @@ typedef struct {
 	int offset_tuning;
 	enum demod_states demod_state;
 	enum decoder_states decoder_state;
-	uint64_t samplenum;
+	long long unsigned samplenum;
 	uint32_t freq;
 	uint32_t dm_phi, dm_dphi;
 	uint32_t requested_samples;

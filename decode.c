@@ -192,7 +192,7 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 // rather than to block the decoder in DEC_DATA state and reading garbage for a long time,
 // possibly overlooking valid frames.
 		if(v->datalen > MAX_FRAME_LENGTH) {
-			debug_print("Rejecting frame with length %zu > %zu bits\n", v->datalen, MAX_FRAME_LENGTH);
+			debug_print("Rejecting frame with length %u > %u bits\n", v->datalen, MAX_FRAME_LENGTH);
 			statsd_increment(v->freq, "decoder.errors.too_long");
 			v->decoder_state = DEC_IDLE;
 			return;
