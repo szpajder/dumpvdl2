@@ -8,9 +8,7 @@ BINDIR = $(PREFIX)/bin
 INSTALL_USER = root
 INSTALL_GROUP = root
 CC = gcc
-#CFLAGS += -std=c99 -g -Wall -O3 -fno-omit-frame-pointer -ffast-math -pthread -D_XOPEN_SOURCE=500 -D_FILE_OFFSET_BITS=64 -DDEBUG=$(DEBUG)
-#CFLAGS += -g -Wall -O3 -fno-omit-frame-pointer -ffast-math -pthread -D_XOPEN_SOURCE=500 -D_FILE_OFFSET_BITS=64 -DDEBUG=$(DEBUG)
-CFLAGS += -g -Wall -O3 -fno-omit-frame-pointer -ffast-math -pthread -D_FILE_OFFSET_BITS=64 -DDEBUG=$(DEBUG)
+CFLAGS += -std=c11 -g -Wall -O3 -fno-omit-frame-pointer -ffast-math -pthread -D_XOPEN_SOURCE=600 -D_FILE_OFFSET_BITS=64 -DDEBUG=$(DEBUG)
 
 ifeq ($(PLATFORM), rpiv1)
   CFLAGS += -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard
