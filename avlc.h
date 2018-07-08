@@ -41,7 +41,8 @@ typedef struct {
 	uint8_t *buf;
 	uint32_t len;
 	uint32_t freq;
-	float mag_frame, mag_nf;
+	float frame_pwr, mag_nf;
+	float ppm_error;
 } avlc_frame_qentry_t;
 
 extern GAsyncQueue *frame_queue;

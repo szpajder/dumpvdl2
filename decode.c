@@ -31,24 +31,6 @@
 #include "avlc.h"		// avlc_frame_qentry_t, frame_queue
 
 static const uint32_t H[CRCLEN] = { 0x00FFF, 0x3F0FF, 0xC730F, 0xDB533, 0x69E55 };
-static const uint8_t preamble_bits[PREAMBLE_SYMS*BPS] = {
-	0,0,0,
-	0,1,0,
-	0,1,1,
-	1,1,0,
-	0,0,0,
-	0,0,1,
-	1,0,1,
-	1,1,0,
-	0,0,1,
-	1,0,0,
-	0,1,1,
-	1,1,1,
-	1,0,1,
-	1,1,1,
-	1,0,0,
-	0,1,0
-};
 
 // FIXME: precompute?
 uint32_t parity(uint32_t v) {
@@ -69,37 +51,6 @@ uint32_t check_crc(uint32_t v, uint32_t check) {
 	}
 	debug_print("crc: read 0x%x calculated 0x%x\n", check, r);
 	return (r == check ? 1 : 0);
-}
-
-static uint8_t *soft_preamble_search(bitstream_t *bs) {
-	if(bs == NULL) return NULL;
-	uint32_t pr_len = PREAMBLE_LEN;
-	uint32_t bs_len = bs->end - bs->start;
-	if(bs_len < pr_len) {
-		debug_print("%s", "haystack too short\n");
-		return NULL;
-	}
-	uint32_t min_distance, distance, best_match = 0;
-	int i,j,k;
-	min_distance = pr_len;
-	for(i = 0; i <= bs_len - pr_len; i++) {
-		distance = 0;
-		for(j = bs->start + i, k = 0; k < pr_len; j++, k++)
-			distance += bs->buf[j] ^ preamble_bits[k];
-		if(distance < min_distance) {
-			best_match = i;
-			min_distance = distance;
-			if(distance == 0) break;	// exact match
-		}
-	}
-	if(min_distance > MAX_PREAMBLE_ERRORS) {
-		debug_print("Preamble not found (min_distance %u > %u)\n", min_distance, MAX_PREAMBLE_ERRORS);
-		return NULL;
-	}
-	debug_print("Preamble found at %u (distance %u)\n", best_match, min_distance);
-	bs->start = best_match + pr_len;
-	debug_print("Now at %u\n", bs->start);
-	return bs->buf + best_match;
 }
 
 int get_fec_octetcount(uint32_t len) {
@@ -148,24 +99,14 @@ static void enqueue_frame(const vdl2_channel_t *v, uint8_t *buf) {
 	qentry->buf = buf;
 	qentry->len = v->datalen_octets;
 	qentry->freq = v->freq;
-	qentry->mag_frame = v->mag_frame;
+	qentry->frame_pwr = v->frame_pwr;
 	qentry->mag_nf = v->mag_nf;
+	qentry->ppm_error = v->ppm_error;
 	g_async_queue_push(frame_queue, qentry);
 }
 
 void decode_vdl_frame(vdl2_channel_t *v) {
 	switch(v->decoder_state) {
-	case DEC_PREAMBLE:
-		if(soft_preamble_search(v->bs) == NULL) {
-			statsd_increment(v->freq, "decoder.errors.no_preamble");
-			v->decoder_state = DEC_IDLE;
-			return;
-		}
-		statsd_increment(v->freq, "decoder.preambles.good");
-		v->decoder_state = DEC_HEADER;
-		v->requested_bits = HEADER_LEN;
-		debug_print("DEC_HEADER, requesting %u bits\n", v->requested_bits);
-		return;
 	case DEC_HEADER:
 		v->lfsr = LFSR_IV;
 		bitstream_descramble(v->bs, &v->lfsr);
@@ -186,6 +127,16 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 		}
 		statsd_increment(v->freq, "decoder.crc.good");
 		v->datalen = reverse(header & ONES(TRLEN), TRLEN);
+// Reject payloads with length greater than 32K (in theory they are allowed but in practice
+// it does not happen - usually it means a bit flip has occured. It's safer to reject them
+// rather than to block the decoder in DEC_DATA state and reading garbage for a long time,
+// possibly overlooking valid frames.
+		if(v->datalen > MAX_FRAME_LENGTH) {
+			debug_print("Rejecting frame with length %u > %u bits\n", v->datalen, MAX_FRAME_LENGTH);
+			statsd_increment(v->freq, "decoder.errors.too_long");
+			v->decoder_state = DEC_IDLE;
+			return;
+		}
 		v->datalen_octets = v->datalen / 8;
 		if(v->datalen % 8 != 0)
 			v->datalen_octets++;
