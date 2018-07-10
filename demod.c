@@ -27,16 +27,23 @@
 #include "chebyshev.h"		// chebyshev_lpf_init
 #include "dumpvdl2.h"
 
-float *sbuf;
-static float *levels;
-static float sin_lut[257], cos_lut[257];
-static uint32_t sbuf_len;
-
+#define BSLEN 32768UL
+#define PHERR_MAX 1000.f			// initial value for frame sync error (read: high)
+#define SYNC_SKIP 3				// attempt frame sync every SYNC_SKIP samples (to reduce CPU usage)
+#define SYNC_THRESHOLD 5			// assume we got frame sync if phase error is less than this threshold
+#define ARITY 8
+#define MAG_LP 0.9f
+#define NF_LP 0.85f
 // input lowpass filter design constants
 #define INP_LPF_CUTOFF_FREQ 10000
 #define INP_LPF_RIPPLE_PERCENT 0.5f
 // do not change this; filtering routine is currently hardcoded to 2 poles to minimize CPU usage
 #define INP_LPF_NPOLES 2
+
+float *sbuf;
+static float *levels;
+static float sin_lut[257], cos_lut[257];
+static uint32_t sbuf_len;
 // filter coefficients
 static float *A = NULL, *B = NULL;
 

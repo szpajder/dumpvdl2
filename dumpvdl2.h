@@ -29,31 +29,21 @@
 #ifndef DUMPVDL2_VERSION
 #define DUMPVDL2_VERSION "1.3.1"
 #endif
-#define RS_K 249	// Reed-Solomon vector length (bytes)
-#define RS_N 255	// Reed-Solomon codeword length (bytes)
-#define BSLEN 32768UL
-#define TRLEN 17
-#define CRCLEN 5
+#define RS_K 249				// Reed-Solomon vector length (bytes)
+#define RS_N 255				// Reed-Solomon codeword length (bytes)
+#define TRLEN 17				// transmission length field length (bits)
+#define CRCLEN 5				// CRC field length (bits)
 #define HEADER_LEN (3 + TRLEN + CRCLEN)
-#define BPS 3
-#define LFSR_IV 0x6959u
-#define ONES(x) ~(~0 << x)
-#define ARITY 8
-#define SPS 10
-#define PHERR_MAX 1000.f			// initial value for frame sync error (read: high)
-#define SYNC_SKIP 3				// attempt frame sync every SYNC_SKIP samples (to reduce CPU usage)
-#define SYNC_THRESHOLD 5			// assume we got frame sync if phase error is less than this threshold
 #define PREAMBLE_SYMS 16
 #define SYNC_BUFLEN (PREAMBLE_SYMS * SPS)	// length of look-behind buffer used for frame syncing
-#define MAX_FRAME_LENGTH 0x7FFF
+#define SPS 10
+#define BPS 3
 #define SYMBOL_RATE 10500
 #define CSC_FREQ 136975000U
 #define MAX_CHANNELS 8
 #define FILE_BUFSIZE 320000U
 #define FILE_OVERSAMPLE 10
 #define SDR_AUTO_GAIN -100.0f
-#define MAG_LP 0.9f
-#define NF_LP 0.85f
 
 // long command line options
 #define __OPT_CENTERFREQ		 1
@@ -144,6 +134,7 @@ typedef struct {
 		} \
 	} while(0)
 
+#define ONES(x) ~(~0 << x)
 #define XCALLOC(nmemb, size) xcalloc((nmemb), (size), __FILE__, __LINE__, __func__)
 #define XREALLOC(ptr, size) xrealloc((ptr), (size), __FILE__, __LINE__, __func__)
 #define XFREE(ptr) do { free(ptr); ptr = NULL; } while(0)

@@ -30,6 +30,9 @@
 #include "dumpvdl2.h"
 #include "avlc.h"		// avlc_frame_qentry_t, frame_queue
 
+#define MAX_FRAME_LENGTH 0x7FFF
+#define LFSR_IV 0x6959u
+
 static const uint32_t H[CRCLEN] = { 0x00FFF, 0x3F0FF, 0xC730F, 0xDB533, 0x69E55 };
 
 // FIXME: precompute?
