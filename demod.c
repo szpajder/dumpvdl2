@@ -197,6 +197,7 @@ static void multiply(float ar, float aj, float br, float bj, float *cr, float *c
 static void decoder_reset(vdl2_channel_t *v) {
 	v->decoder_state = DEC_HEADER;
 	v->requested_bits = HEADER_LEN;
+	v->num_fec_corrections = 0;
 	bitstream_reset(v->bs);
 }
 

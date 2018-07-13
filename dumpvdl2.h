@@ -184,6 +184,7 @@ typedef struct {
 	int frame_pwr_cnt;
 	int sclk;
 	int offset_tuning;
+	int num_fec_corrections;
 	enum demod_states demod_state;
 	enum decoder_states decoder_state;
 	uint32_t freq;

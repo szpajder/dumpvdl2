@@ -43,6 +43,7 @@ typedef struct {
 	uint32_t freq;
 	float frame_pwr, mag_nf;
 	float ppm_error;
+	int num_fec_corrections;
 } avlc_frame_qentry_t;
 
 extern GAsyncQueue *frame_queue;

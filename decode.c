@@ -105,6 +105,7 @@ static void enqueue_frame(const vdl2_channel_t *v, uint8_t *buf) {
 	qentry->frame_pwr = v->frame_pwr;
 	qentry->mag_nf = v->mag_nf;
 	qentry->ppm_error = v->ppm_error;
+	qentry->num_fec_corrections = v->num_fec_corrections;
 	g_async_queue_push(frame_queue, qentry);
 }
 
@@ -211,10 +212,11 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 			bitstream_reset(v->bs);
 			for(int r = 0; r < v->num_blocks; r++) {
 				statsd_increment(v->freq, "decoder.blocks.processed");
-				if(r != v->num_blocks - 1)	// full block
-					ret = rs_verify((uint8_t *)&rs_tab[r], RS_N - RS_K);
-				else				// last, partial block
-					ret = rs_verify((uint8_t *)&rs_tab[r], get_fec_octetcount(v->last_block_len_octets));
+				int num_fec_octets = RS_N - RS_K;	// full block
+				if(r == v->num_blocks - 1) {		// final, partial block
+					num_fec_octets = get_fec_octetcount(v->last_block_len_octets);
+				}
+				ret = rs_verify((uint8_t *)&rs_tab[r], num_fec_octets);
 				debug_print("Block %d FEC: %d\n", r, ret);
 				if(ret < 0) {
 					debug_print("%s", "FEC check failed\n");
@@ -222,8 +224,11 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 					goto cleanup;
 				} else {
 					statsd_increment(v->freq, "decoder.blocks.fec_ok");
-					if(ret > 0)
+					if(ret > 0) {
 						debug_print_buf_hex(rs_tab[r], RS_N, "Corrected block %d:\n", r);
+// count corrected octets, excluding intended erasures
+						v->num_fec_corrections += ret - (RS_N - RS_K - num_fec_octets);
+					}
 				}
 				if(r != v->num_blocks - 1)
 					ret = bitstream_append_lsbfirst(v->bs, (uint8_t *)&rs_tab[r], RS_K, 8);
