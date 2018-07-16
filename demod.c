@@ -199,6 +199,7 @@ static void decoder_reset(vdl2_channel_t *v) {
 	v->requested_bits = HEADER_LEN;
 	v->num_fec_corrections = 0;
 	bitstream_reset(v->bs);
+	bitstream_reset(v->frame_bs);
 }
 
 static void demod_reset(vdl2_channel_t *v) {
@@ -368,6 +369,7 @@ vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t s
 	vdl2_channel_t *v;
 	v = XCALLOC(1, sizeof(vdl2_channel_t));
 	v->bs = bitstream_init(BSLEN);
+	v->frame_bs = bitstream_init(BSLEN);
 	v->mag_nf = 2.0f;
 // Cast to signed first, because casting negative float to uint is not portable
 	v->downmix_dphi = (uint32_t)(int)(((float)centerfreq - (float)freq) / (float)source_rate * 256.0f * 65536.0f);

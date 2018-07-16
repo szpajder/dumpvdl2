@@ -169,7 +169,7 @@ enum sample_formats { SFMT_U8, SFMT_S16_LE, SFMT_UNDEF };
 
 typedef struct {
 	long long unsigned samplenum;
-	bitstream_t *bs;
+	bitstream_t *bs, *frame_bs;
 	float syncbuf[SYNC_BUFLEN];
 	float prev_phi;
 	float prev_dphi, dphi;
@@ -209,7 +209,7 @@ int bitstream_append_msbfirst(bitstream_t *bs, const uint8_t *v, const uint32_t 
 int bitstream_append_lsbfirst(bitstream_t *bs, const uint8_t *bytes, const uint32_t numbytes, const uint32_t numbits);
 int bitstream_read_lsbfirst(bitstream_t *bs, uint8_t *bytes, const uint32_t numbytes, const uint32_t numbits);
 int bitstream_read_word_msbfirst(bitstream_t *bs, uint32_t *ret, const uint32_t numbits);
-int bitstream_hdlc_unstuff(bitstream_t *bs);
+int bitstream_copy_next_frame(bitstream_t *src, bitstream_t *dst);
 void bitstream_descramble(bitstream_t *bs, uint16_t *lfsr);
 void bitstream_reset(bitstream_t *bs);
 void bitstream_destroy(bitstream_t *bs);

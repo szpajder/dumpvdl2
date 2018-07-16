@@ -97,15 +97,17 @@ static int deinterleave(uint8_t *in, uint32_t len, uint32_t rows, uint32_t cols,
 	return 0;
 }
 
-static void enqueue_frame(const vdl2_channel_t *v, uint8_t *buf) {
+static void enqueue_frame(vdl2_channel_t const * const v, int const frame_num, uint8_t *buf, size_t const len) {
 	avlc_frame_qentry_t *qentry = XCALLOC(1, sizeof(avlc_frame_qentry_t));
-	qentry->buf = buf;
-	qentry->len = v->datalen_octets;
+	qentry->buf = XCALLOC(len, sizeof(uint8_t));
+	memcpy(qentry->buf, buf, len);
+	qentry->len = len;
 	qentry->freq = v->freq;
 	qentry->frame_pwr = v->frame_pwr;
 	qentry->mag_nf = v->mag_nf;
 	qentry->ppm_error = v->ppm_error;
 	qentry->num_fec_corrections = v->num_fec_corrections;
+	qentry->idx = frame_num;
 	g_async_queue_push(frame_queue, qentry);
 }
 
@@ -248,32 +250,35 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 				v->bs->end - v->bs->start - v->datalen, v->bs->end, v->datalen);
 			v->bs->end = v->datalen;
 		}
-		if(bitstream_hdlc_unstuff(v->bs) < 0) {
-			debug_print("%s", "Invalid bit sequence in the stream\n");
+		int ret;
+		int frame_cnt = 0;
+		while((ret = bitstream_copy_next_frame(v->bs, v->frame_bs)) >= 0) {
+			if((v->frame_bs->end - v->frame_bs->start) % 8 != 0) {
+				debug_print("Frame %d: Bit stream error: does not end on a byte boundary\n", frame_cnt);
+				statsd_increment(v->freq, "decoder.errors.truncated_octets");
+				goto cleanup;
+			}
+			debug_print("Frame %d: Stream OK after unstuffing, length is %u octets\n",
+				frame_cnt, (v->frame_bs->end - v->frame_bs->start) / 8);
+			uint32_t frame_len_octets = (v->frame_bs->end - v->frame_bs->start) / 8;
+			memset(data, 0, frame_len_octets * sizeof(uint8_t));
+			if(bitstream_read_lsbfirst(v->frame_bs, data, frame_len_octets, 8) < 0) {
+				debug_print("Frame %d: bitstream_read_lsbfirst failed\n", frame_cnt);
+				statsd_increment(v->freq, "decoder.errors.bitstream");
+				goto cleanup;
+			}
+			statsd_increment(v->freq, "decoder.msg.good");
+			enqueue_frame(v, frame_cnt, data, frame_len_octets);
+			frame_cnt++;
+			if(ret == 0) break;	// this was the last frame in this burst
+		}
+		if(ret < 0) {
 			statsd_increment(v->freq, "decoder.errors.unstuff");
 			goto cleanup;
 		}
-		if((v->bs->end - v->bs->start) % 8 != 0) {
-			debug_print("%s", "Bit stream error: does not end on a byte boundary\n");
-			statsd_increment(v->freq, "decoder.errors.truncated_octets");
-			goto cleanup;
-		}
-		debug_print("stream OK after unstuffing, datalen_octets was %u now is %u\n", v->datalen_octets, ((v->bs->end - v->bs->start) / 8));
-		v->datalen_octets = (v->bs->end - v->bs->start) / 8;
-
-		memset(data, 0, v->datalen_octets * sizeof(uint8_t));
-		if(bitstream_read_lsbfirst(v->bs, data, v->datalen_octets, 8) < 0) {
-			debug_print("%s", "bitstream_read_lsbfirst failed\n");
-			statsd_increment(v->freq, "decoder.errors.bitstream");
-			goto cleanup;
-		}
-		statsd_increment(v->freq, "decoder.msg.good");
-		enqueue_frame(v, data);
 		statsd_timing_delta(v->freq, "decoder.msg.processing_time", &v->tstart);
-		goto success;
 cleanup:
 		XFREE(data);
-success:
 		XFREE(fec);
 		v->decoder_state = DEC_IDLE;
 		debug_print("%s", "DEC_IDLE\n");

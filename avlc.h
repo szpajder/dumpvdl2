@@ -44,6 +44,7 @@ typedef struct {
 	float frame_pwr, mag_nf;
 	float ppm_error;
 	int num_fec_corrections;
+	int idx;
 } avlc_frame_qentry_t;
 
 extern GAsyncQueue *frame_queue;

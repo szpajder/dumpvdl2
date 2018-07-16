@@ -30,8 +30,6 @@ static statsd_link *statsd = NULL;
 
 static const char *counters[] = {
 	"avlc.errors.bad_fcs",
-	"avlc.errors.no_flag_end",
-	"avlc.errors.no_flag_start",
 	"avlc.errors.too_short",
 	"avlc.frames.good",
 	"avlc.frames.processed",
