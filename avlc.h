@@ -20,6 +20,7 @@
 #define _AVLC_H 1
 #include <stdint.h>
 #include <endian.h>		// __BYTE_ORDER
+#include <sys/time.h>		// struct timeval
 #include <glib.h>		// GAsyncQueue
 
 typedef union {
@@ -45,6 +46,7 @@ typedef struct {
 	float ppm_error;
 	int num_fec_corrections;
 	int idx;
+	struct timeval burst_timestamp;
 } avlc_frame_qentry_t;
 
 extern GAsyncQueue *frame_queue;

@@ -108,6 +108,8 @@ static void enqueue_frame(vdl2_channel_t const * const v, int const frame_num, u
 	qentry->ppm_error = v->ppm_error;
 	qentry->num_fec_corrections = v->num_fec_corrections;
 	qentry->idx = frame_num;
+	qentry->burst_timestamp.tv_sec =  v->burst_timestamp.tv_sec;
+	qentry->burst_timestamp.tv_usec =  v->burst_timestamp.tv_usec;
 	g_async_queue_push(frame_queue, qentry);
 }
 

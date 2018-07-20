@@ -23,6 +23,7 @@
 #include <stdlib.h>		// calloc
 #include <math.h>		// sincosf, hypotf, atan2
 #include <string.h>		// memset
+#include <sys/time.h>		// gettimeofday
 #include <pthread.h>		// pthread_barrier_wait
 #include "chebyshev.h"		// chebyshev_lpf_init
 #include "dumpvdl2.h"
@@ -235,6 +236,7 @@ static void demod(vdl2_channel_t *v, float re, float im) {
 		}
 		if(got_sync(v)) {
 			statsd_increment(v->freq, "demod.sync.good");
+			gettimeofday(&v->burst_timestamp, NULL);
 			v->demod_state = DM_SYNC;
 			debug_print("DM_SYNC, v->sclk=%d\n", v->sclk);
 		}

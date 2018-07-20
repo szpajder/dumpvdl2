@@ -195,6 +195,7 @@ typedef struct {
 	uint16_t lfsr;
 	uint16_t oversample;
 	struct timeval tstart;
+	struct timeval burst_timestamp;
 	pthread_t demod_thread;
 } vdl2_channel_t;
 

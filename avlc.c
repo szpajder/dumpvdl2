@@ -20,7 +20,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
+#include <time.h>		// strftime, gmtime, localtime
 #include <math.h>
 #include <unistd.h>
 #include <glib.h>
@@ -31,7 +31,6 @@
 #include "x25.h"
 
 #define MIN_AVLC_LEN	11
-#define AVLC_FLAG	0x7e
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #define BSHIFT 24
@@ -101,7 +100,6 @@ typedef union {
 
 enum avlc_protocols { PROTO_X25, PROTO_ACARS, PROTO_UNKNOWN };
 typedef struct {
-	time_t t;
 	uint32_t num;
 	avlc_addr_t src;
 	avlc_addr_t dst;
@@ -180,7 +178,6 @@ static void parse_avlc(avlc_frame_qentry_t *v) {
 	uint8_t *ptr = buf;
 	avlc_frame_t frame;
 	uint32_t msg_type = 0;
-	frame.t = time(NULL);
 	frame.num = v->idx;
 	frame.dst.val = parse_dlc_addr(ptr);
 	ptr += 4; len -= 4;
@@ -301,7 +298,8 @@ static void output_avlc(const avlc_frame_qentry_t *v, const avlc_frame_t *f, uin
 	if((daily || hourly) && rotate_outfile() < 0)
 		_exit(1);
 	char ftime[30];
-	strftime(ftime, sizeof(ftime), "%F %T %Z", (utc ? gmtime(&f->t) : localtime(&f->t)));
+	strftime(ftime, sizeof(ftime), "%F %T %Z",
+		(utc ? gmtime(&v->burst_timestamp.tv_sec) : localtime(&v->burst_timestamp.tv_sec)));
 	float sig_pwr_dbfs = 10.0f * log10f(v->frame_pwr);
 	float nf_pwr_dbfs = 20.0f * log10f(v->mag_nf + 0.001f);
 	fprintf(outf, "\n[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB] [%.1f ppm] [F:%d] [#%u]\n",
