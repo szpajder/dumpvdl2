@@ -30,11 +30,15 @@
 #include "dumpvdl2.h"
 #include "avlc.h"		// avlc_frame_qentry_t, frame_queue
 
-// FIXME: this should probably be larger but if the header decoding
-// gives a wrong result with an unreasonably large transmission length,
-// then we may end up locking the decoder in a reading state for a
-// long time, possibly missing good frames.
-#define MAX_FRAME_LENGTH 0x1FFF
+// Reasonable limits for transmission lengths in bits
+// This is to avoid blocking the decoder in DEC_DATA for a long time
+// in case when the transmission length field in the header gets
+// decoded wrongly.
+// This applies when header decoded OK without error corrections
+#define MAX_FRAME_LENGTH 0x7FFF
+// This applies when there were some bits corrected
+#define MAX_FRAME_LENGTH_CORRECTED 0x1FFF
+
 #define LFSR_IV 0x6959u
 
 static uint32_t const H[HDRFECLEN] = {
@@ -193,7 +197,7 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 // it does not happen - usually it means we've locked on something which is not a preamble. It's safer
 // to reject it rather than to block the decoder in DEC_DATA state and reading garbage for a long time,
 // possibly overlooking valid frames.
-		if(v->datalen > MAX_FRAME_LENGTH) {
+		if((v->syndrome == 0 && v->datalen > MAX_FRAME_LENGTH) || v->datalen > MAX_FRAME_LENGTH_CORRECTED) {
 			debug_print("Rejecting frame with length %u > %u bits\n", v->datalen, MAX_FRAME_LENGTH);
 			statsd_increment(v->freq, "decoder.errors.too_long");
 			v->decoder_state = DEC_IDLE;
