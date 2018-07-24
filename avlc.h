@@ -43,6 +43,7 @@ typedef struct {
 	uint32_t len;
 	uint32_t freq;
 	uint32_t syndrome;
+	uint32_t datalen_octets;
 	float frame_pwr, mag_nf;
 	float ppm_error;
 	int num_fec_corrections;

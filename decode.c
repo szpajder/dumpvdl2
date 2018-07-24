@@ -152,6 +152,7 @@ static void enqueue_frame(vdl2_channel_t const * const v, int const frame_num, u
 	qentry->freq = v->freq;
 	qentry->frame_pwr = v->frame_pwr;
 	qentry->mag_nf = v->mag_nf;
+	qentry->datalen_octets = v->datalen_octets;
 	qentry->syndrome = v->syndrome;
 	qentry->ppm_error = v->ppm_error;
 	qentry->num_fec_corrections = v->num_fec_corrections;
