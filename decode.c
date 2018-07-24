@@ -30,12 +30,57 @@
 #include "dumpvdl2.h"
 #include "avlc.h"		// avlc_frame_qentry_t, frame_queue
 
-#define MAX_FRAME_LENGTH 0x7FFF
+// FIXME: this should probably be larger but if the header decoding
+// gives a wrong result with an unreasonably large transmission length,
+// then we may end up locking the decoder in a reading state for a
+// long time, possibly missing good frames.
+#define MAX_FRAME_LENGTH 0x1FFF
 #define LFSR_IV 0x6959u
 
-static const uint32_t H[CRCLEN] = { 0x00FFF, 0x3F0FF, 0xC730F, 0xDB533, 0x69E55 };
+static uint32_t const H[HDRFECLEN] = {
+	0b0000000011111111111110000,
+	0b0011111100001111111101000,
+	0b1100011100110000111100100,
+	0b1101101101010011001100010,
+	0b0110100111100101010100001
+};
 
-// FIXME: precompute?
+static uint32_t const syndtable[1<<HDRFECLEN] = {
+	0b0000000000000000000000000,
+	0b0000000000000000000000001,
+	0b0000000000000000000000010,
+	0b0100000000000000000000100,
+	0b0000000000000000000000100,
+	0b0100000000000000000000010,
+	0b1000000000000000000000000,
+	0b0100000000000000000000000,
+	0b0000000000000000000001000,
+	0b0010000000000000000000000,
+	0b0001000000000000000000000,
+	0b0000100000000000000000000,
+	0b0000010000000000000000000,
+	0b1000100000000000000000000,
+	0b0000001000000000000000000,
+	0b0000000100000000000000000,
+	0b0000000000000000000010000,
+	0b0000000010000000000000000,
+	0b0100000000100000000000000,
+	0b0000000001000000000000000,
+	0b0100000001000000000000000,
+	0b0000000000100000000000000,
+	0b0000000000010000000000000,
+	0b1000000010000000000000000,
+	0b0000000000001000000000000,
+	0b0000000000000100000000000,
+	0b0000000000000010000000000,
+	0b0000000000000001000000000,
+	0b0000000000000000100000000,
+	0b0000000000000000010000000,
+	0b0000000000000000001000000,
+	0b0000000000000000000100000,
+};
+
+
 uint32_t parity(uint32_t v) {
 	uint32_t parity = 0;
 	while (v) {
@@ -45,15 +90,17 @@ uint32_t parity(uint32_t v) {
 	return parity;
 }
 
-uint32_t check_crc(uint32_t v, uint32_t check) {
-	uint32_t r = 0, row = 0;
+uint32_t decode_header(uint32_t * const r) {
+	uint32_t syndrome = 0u, row = 0u;
 	int i;
-	for(i = 0; i < CRCLEN; i++) {
-		row = v & H[i];
-		r |= (parity(row)) << (CRCLEN - 1 - i);
+	for(i = 0; i < HDRFECLEN; i++) {
+		row = *r & H[i];
+		syndrome |= (parity(row)) << (HDRFECLEN - 1 - i);
 	}
-	debug_print("crc: read 0x%x calculated 0x%x\n", check, r);
-	return (r == check ? 1 : 0);
+	debug_print("received: 0x%x syndrome: 0x%x error: 0x%x, decoded: 0x%x\n",
+		*r, syndrome, syndtable[syndrome], *r ^ syndtable[syndrome]);
+	*r ^= syndtable[syndrome];
+	return syndrome;
 }
 
 int get_fec_octetcount(uint32_t len) {
@@ -105,6 +152,7 @@ static void enqueue_frame(vdl2_channel_t const * const v, int const frame_num, u
 	qentry->freq = v->freq;
 	qentry->frame_pwr = v->frame_pwr;
 	qentry->mag_nf = v->mag_nf;
+	qentry->syndrome = v->syndrome;
 	qentry->ppm_error = v->ppm_error;
 	qentry->num_fec_corrections = v->num_fec_corrections;
 	qentry->idx = frame_num;
@@ -125,19 +173,24 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 			v->decoder_state = DEC_IDLE;
 			return;
 		}
-		uint32_t crc = header & ONES(CRCLEN);
-		header >>= CRCLEN;
-		if(!check_crc(header, crc)) {
-			debug_print("%s", "CRC check failed\n");
-			statsd_increment(v->freq, "decoder.errors.crc_bad");
+// force bits of reserved symbol to 0 to improve chances of successful decode
+		header &= ONES(TRLEN+HDRFECLEN);
+		v->syndrome = decode_header(&header);
+		if(v->syndrome == 0) {
+			statsd_increment(v->freq, "decoder.crc.good");
+		}
+// sanity check - reserved symbol bits shall still be set to 0
+		if((header & ONES(TRLEN+HDRFECLEN)) != header) {
+			debug_print("%s", "Rejecting decoded header with non-zero reserved bits\n");
+			statsd_increment(v->freq, "decoder.crc.bad");
 			v->decoder_state = DEC_IDLE;
 			return;
 		}
-		statsd_increment(v->freq, "decoder.crc.good");
+		header >>= HDRFECLEN;
 		v->datalen = reverse(header & ONES(TRLEN), TRLEN);
-// Reject payloads with length greater than 32K (in theory they are allowed but in practice
-// it does not happen - usually it means a bit flip has occured. It's safer to reject them
-// rather than to block the decoder in DEC_DATA state and reading garbage for a long time,
+// Reject payloads with unreasonably large length (in theory longer frames are allowed but in practice
+// it does not happen - usually it means we've locked on something which is not a preamble. It's safer
+// to reject it rather than to block the decoder in DEC_DATA state and reading garbage for a long time,
 // possibly overlooking valid frames.
 		if(v->datalen > MAX_FRAME_LENGTH) {
 			debug_print("Rejecting frame with length %u > %u bits\n", v->datalen, MAX_FRAME_LENGTH);

@@ -32,8 +32,8 @@
 #define RS_K 249				// Reed-Solomon vector length (bytes)
 #define RS_N 255				// Reed-Solomon codeword length (bytes)
 #define TRLEN 17				// transmission length field length (bits)
-#define CRCLEN 5				// CRC field length (bits)
-#define HEADER_LEN (3 + TRLEN + CRCLEN)
+#define HDRFECLEN 5				// CRC field length (bits)
+#define HEADER_LEN (3 + TRLEN + HDRFECLEN)
 #define PREAMBLE_SYMS 16
 #define SYNC_BUFLEN (PREAMBLE_SYMS * SPS)	// length of look-behind buffer used for frame syncing
 #define SPS 10
@@ -134,7 +134,7 @@ typedef struct {
 		} \
 	} while(0)
 
-#define ONES(x) ~(~0 << x)
+#define ONES(x) ~(~0 << (x))
 #define XCALLOC(nmemb, size) xcalloc((nmemb), (size), __FILE__, __LINE__, __func__)
 #define XREALLOC(ptr, size) xrealloc((ptr), (size), __FILE__, __LINE__, __func__)
 #define XFREE(ptr) do { free(ptr); ptr = NULL; } while(0)
@@ -192,6 +192,7 @@ typedef struct {
 	uint32_t requested_bits;
 	uint32_t datalen, datalen_octets, last_block_len_octets, fec_octets;
 	uint32_t num_blocks;
+	uint32_t syndrome;
 	uint16_t lfsr;
 	uint16_t oversample;
 	struct timeval tstart;

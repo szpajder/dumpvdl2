@@ -42,6 +42,7 @@ typedef struct {
 	uint8_t *buf;
 	uint32_t len;
 	uint32_t freq;
+	uint32_t syndrome;
 	float frame_pwr, mag_nf;
 	float ppm_error;
 	int num_fec_corrections;
