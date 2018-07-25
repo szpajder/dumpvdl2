@@ -84,6 +84,9 @@ static uint32_t const syndtable[1<<HDRFECLEN] = {
 	0b0000000000000000000100000,
 };
 
+static uint32_t const synd_weight[1<<HDRFECLEN] = {
+	0, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1
+};
 
 uint32_t parity(uint32_t v) {
 	uint32_t parity = 0;
@@ -157,7 +160,7 @@ static void enqueue_frame(vdl2_channel_t const * const v, int const frame_num, u
 	qentry->frame_pwr = v->frame_pwr;
 	qentry->mag_nf = v->mag_nf;
 	qentry->datalen_octets = v->datalen_octets;
-	qentry->syndrome = v->syndrome;
+	qentry->synd_weight = synd_weight[v->syndrome];
 	qentry->ppm_error = v->ppm_error;
 	qentry->num_fec_corrections = v->num_fec_corrections;
 	qentry->idx = frame_num;
