@@ -197,8 +197,8 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 // it does not happen - usually it means we've locked on something which is not a preamble. It's safer
 // to reject it rather than to block the decoder in DEC_DATA state and reading garbage for a long time,
 // possibly overlooking valid frames.
-		if((v->syndrome == 0 && v->datalen > MAX_FRAME_LENGTH) || v->datalen > MAX_FRAME_LENGTH_CORRECTED) {
-			debug_print("Rejecting frame with length %u > %u bits\n", v->datalen, MAX_FRAME_LENGTH);
+		if((v->syndrome != 0 && v->datalen > MAX_FRAME_LENGTH_CORRECTED) || v->datalen > MAX_FRAME_LENGTH) {
+			debug_print("v->datalen=%u v->syndrome=%u - frame rejected\n", v->datalen, v->syndrome);
 			statsd_increment(v->freq, "decoder.errors.too_long");
 			v->decoder_state = DEC_IDLE;
 			return;
