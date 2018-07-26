@@ -33,6 +33,7 @@ static const char *counters[] = {
 	"avlc.errors.too_short",
 	"avlc.frames.good",
 	"avlc.frames.processed",
+	"avlc.msg.air2air",
 	"avlc.msg.air2all",
 	"avlc.msg.air2gnd",
 	"avlc.msg.gnd2air",

@@ -193,6 +193,9 @@ static void parse_avlc(avlc_frame_qentry_t *v) {
 		case ADDRTYPE_GS_DEL:
 			statsd_increment(v->freq, "avlc.msg.air2gnd");
 			break;
+		case ADDRTYPE_AIRCRAFT:
+			statsd_increment(v->freq, "avlc.msg.air2air");
+			break;
 		case ADDRTYPE_ALL:
 			statsd_increment(v->freq, "avlc.msg.air2all");
 			break;
