@@ -31,7 +31,7 @@
 #define BSLEN 32768UL
 #define PHERR_MAX 1000.f			// initial value for frame sync error (read: high)
 #define SYNC_SKIP 3				// attempt frame sync every SYNC_SKIP samples (to reduce CPU usage)
-#define SYNC_THRESHOLD 5			// assume we got frame sync if phase error is less than this threshold
+#define SYNC_THRESHOLD 4.f			// assume we got frame sync if phase error is less than this threshold
 #define ARITY 8
 #define MAG_LP 0.9f
 #define NF_LP 0.85f
