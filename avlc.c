@@ -193,6 +193,9 @@ static void parse_avlc(avlc_frame_qentry_t *v) {
 		case ADDRTYPE_GS_DEL:
 			statsd_increment(v->freq, "avlc.msg.air2gnd");
 			break;
+		case ADDRTYPE_AIRCRAFT:
+			statsd_increment(v->freq, "avlc.msg.air2air");
+			break;
 		case ADDRTYPE_ALL:
 			statsd_increment(v->freq, "avlc.msg.air2all");
 			break;
@@ -302,9 +305,9 @@ static void output_avlc(const avlc_frame_qentry_t *v, const avlc_frame_t *f, uin
 		(utc ? gmtime(&v->burst_timestamp.tv_sec) : localtime(&v->burst_timestamp.tv_sec)));
 	float sig_pwr_dbfs = 10.0f * log10f(v->frame_pwr);
 	float nf_pwr_dbfs = 20.0f * log10f(v->mag_nf + 0.001f);
-	fprintf(outf, "\n[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB] [%.1f ppm] [F:%d] [#%u]\n",
+	fprintf(outf, "\n[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB] [%.1f ppm] [S:%d] [L:%u] [F:%d] [#%u]\n",
 		ftime, (float)v->freq / 1e+6, sig_pwr_dbfs, nf_pwr_dbfs, sig_pwr_dbfs-nf_pwr_dbfs,
-		v->ppm_error, v->num_fec_corrections, f->num);
+		v->ppm_error, v->synd_weight, v->datalen_octets, v->num_fec_corrections, f->num);
 	fprintf(outf, "%06X (%s, %s) -> %06X (%s): %s\n",
 		f->src.a_addr.addr,
 		addrtype_descr[f->src.a_addr.type],
