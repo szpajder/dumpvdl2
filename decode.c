@@ -35,7 +35,7 @@
 // in case when the transmission length field in the header gets
 // decoded wrongly.
 // This applies when header decoded OK without error corrections
-#define MAX_FRAME_LENGTH 0x7FFF
+#define MAX_FRAME_LENGTH 0x3FFF
 // This applies when there were some bits corrected
 #define MAX_FRAME_LENGTH_CORRECTED 0x1FFF
 
