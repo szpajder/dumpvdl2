@@ -193,6 +193,8 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	for(i = 0; i < len; i++)
 		buf[i] &= 0x7f;
 
+	debug_print_buf_hex(buf, len, "%s", "Msg data after parity bits removal:\n");
+
 	uint32_t k = 0;
 	msg->mode = buf[k++];
 
@@ -258,6 +260,11 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		msg->txt[len] = '\0';
 		if(len > 0) {
 			try_acars_apps(msg, msg_type);
+// Replace NULLs in text
+			for(uint32_t p = 0; p < len; p++) {
+				if(msg->txt[p] == 0)
+					msg->txt[p] = '.';
+			}
 		}
 	}
 	/* txt end */
