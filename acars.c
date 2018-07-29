@@ -27,6 +27,9 @@
 #include "adsc.h"
 #include "cpdlc.h"
 
+#define DEL 0x7f
+#define ETX 0x03
+
 static char *skip_fans1a_msg_prefix(acars_msg_t *msg, char const * const prefix) {
 	char *s = strstr(msg->txt, prefix);
 	if(s == NULL) {
@@ -171,7 +174,7 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		return NULL;
 	}
 
-	if(buf[len-1] != 0x7f) {
+	if(buf[len-1] != DEL) {
 		debug_print("%02x: no DEL byte at end\n", buf[len-1]);
 		return NULL;
 	}
@@ -226,48 +229,44 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	msg->txt[0] = '\0';
 	msg->application = ACARS_APP_NONE;
 
-	if(k >= len) {		// empty txt
+	if(k >= len || msg->bs == ETX) {	// empty message text
 		msg->txt[0] = '\0';
 		return msg;
 	}
 
-	if (msg->bs != 0x03) {
-		if (msg->mode <= 'Z' && msg->bid <= '9') {
-			/* message no */
-			for (i = 0; i < 4 && k < len; i++, k++) {
-				msg->no[i] = buf[k];
-			}
-			msg->no[i] = '\0';
+	if (msg->mode <= 'Z' && msg->bid <= '9') {
+		/* message no */
+		for (i = 0; i < 4 && k < len; i++, k++) {
+			msg->no[i] = buf[k];
+		}
+		msg->no[i] = '\0';
 
-			/* Flight id */
-			for (i = 0; i < 6 && k < len; i++, k++) {
-				msg->fid[i] = buf[k];
-			}
-			msg->fid[i] = '\0';
+		/* Flight id */
+		for (i = 0; i < 6 && k < len; i++, k++) {
+			msg->fid[i] = buf[k];
 		}
+		msg->fid[i] = '\0';
+	}
 
-		/* Message txt */
-		len -= k;
-		if(len > ACARSMSG_BUFSIZE) {
-			debug_print("message truncated to buffer size (%u > %u)", len, ACARSMSG_BUFSIZE);
-			len = ACARSMSG_BUFSIZE - 1;		// leave space for terminating '\0'
-		}
-		if(len > 0) {
-			memcpy(msg->txt, buf + k, len);
-			*msg_type |= MSGFLT_ACARS_DATA;
-			*msg_type &= ~MSGFLT_ACARS_NODATA;
-		}
-		msg->txt[len] = '\0';
-		if(len > 0) {
-			try_acars_apps(msg, msg_type);
+	len -= k;
+	if(len > ACARSMSG_BUFSIZE) {
+		debug_print("message truncated to buffer size (%u > %u)", len, ACARSMSG_BUFSIZE);
+		len = ACARSMSG_BUFSIZE - 1;	// leave space for terminating '\0'
+	}
+	if(len > 0) {
+		memcpy(msg->txt, buf + k, len);
+		*msg_type |= MSGFLT_ACARS_DATA;
+		*msg_type &= ~MSGFLT_ACARS_NODATA;
+	}
+	msg->txt[len] = '\0';
+	if(len > 0) {
+		try_acars_apps(msg, msg_type);
 // Replace NULLs in text
-			for(uint32_t p = 0; p < len; p++) {
-				if(msg->txt[p] == 0)
-					msg->txt[p] = '.';
-			}
+		for(uint32_t p = 0; p < len; p++) {
+			if(msg->txt[p] == 0)
+				msg->txt[p] = '.';
 		}
 	}
-	/* txt end */
 	return msg;
 }
 
