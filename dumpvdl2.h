@@ -233,7 +233,7 @@ void process_buf_short(unsigned char *buf, uint32_t len, void *ctx);
 void *process_samples(void *arg);
 
 // crc.c
-uint16_t crc16_ccitt(uint8_t *data, uint32_t len);
+uint16_t crc16_ccitt(uint8_t *data, uint32_t len, uint16_t crc_init);
 
 // rs.c
 int rs_init();

@@ -27,10 +27,6 @@
 #include "adsc.h"
 #include "cpdlc.h"
 
-#define ETX 0x83
-#define ETB 0x97
-#define DEL 0x7f
-
 static char *skip_fans1a_msg_prefix(acars_msg_t *msg, char const * const prefix) {
 	char *s = strstr(msg->txt, prefix);
 	if(s == NULL) {
@@ -175,19 +171,22 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		return NULL;
 	}
 
-	if(buf[len-1] != DEL) {
+	if(buf[len-1] != 0x7f) {
 		debug_print("%02x: no DEL byte at end\n", buf[len-1]);
 		return NULL;
 	}
-	if(buf[len-4] != ETX && buf[len-4] != ETB) {
-		debug_print("%02x: no ETX/ETB byte at end\n", buf[len-4]);
-		return NULL;
-	}
-	len -= 4;
+	len--;
+
+	uint16_t crc = crc16_ccitt(buf, len, 0);
+	debug_print("CRC check result: %04x\n", crc);
+
+	len -= 3;
 	if(msg == NULL)
 		msg = XCALLOC(1, sizeof(acars_msg_t));
 	else
 		memset(msg, 0, sizeof(acars_msg_t));
+
+	msg->crc_ok = (crc == 0);
 
 	// safe default
 	*msg_type |= MSGFLT_ACARS_NODATA;
@@ -282,7 +281,7 @@ void output_acars_pp(const acars_msg_t *msg) {
 }
 
 void output_acars(const acars_msg_t *msg) {
-	fprintf(outf, "ACARS:\n");
+	fprintf(outf, "ACARS%s:\n", msg->crc_ok ? "" : " (warning: CRC error)");
 	if(msg->mode < 0x5d)
 		fprintf(outf, "Reg: %s Flight: %s\n", msg->reg, msg->fid);
 	fprintf(outf, "Mode: %1c Label: %s Blk id: %c Ack: %c Msg no.: %s\n",

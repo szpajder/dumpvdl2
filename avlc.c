@@ -31,6 +31,7 @@
 #include "x25.h"
 
 #define MIN_AVLC_LEN	11
+#define GOOD_FCS	0xF0B8u
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #define BSHIFT 24
@@ -161,20 +162,19 @@ static void parse_avlc(avlc_frame_qentry_t *v) {
 	uint8_t *buf = v->buf;
 	uint32_t len = v->len;
 	debug_print_buf_hex(buf, len, "%s", "Frame data:\n");
+
 // FCS check
-	len -= 2;
-	uint16_t read_fcs = ((uint16_t)buf[len+1] << 8) | buf[len];
-	uint16_t fcs = crc16_ccitt(buf, len);
-	debug_print("Read FCS : %04x\n", read_fcs);
+	uint16_t fcs = crc16_ccitt(buf, len, 0xFFFFu);
 	debug_print("Check FCS: %04x\n", fcs);
-	if(read_fcs == fcs) {
-		debug_print("%s", "FCS check OK\n");
-	} else {
+	if(fcs != GOOD_FCS) {
 		debug_print("%s", "FCS check failed\n");
 		statsd_increment(v->freq, "avlc.errors.bad_fcs");
 		return;
 	}
+	debug_print("%s", "FCS check OK\n");
 	statsd_increment(v->freq, "avlc.frames.good");
+	len -= 2;
+
 	uint8_t *ptr = buf;
 	avlc_frame_t frame;
 	uint32_t msg_type = 0;
