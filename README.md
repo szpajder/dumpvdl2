@@ -488,7 +488,7 @@ It basically comes down to three things:
   dongles. Do not be tempted to crank the gain up to the max. Keep your noise floor low
   because higher noise yields higher bit error rate and may cause signal clipping when the
   transmission is strong (eg. the transmitting aircraft is just overflying your antenna).
-  On SDRPlay it shoudl be good enough to use auto gain control.
+  On SDRPlay it should be good enough to use auto gain control.
 
 - check SDR Console with the same gain setting - do you see data bursts clearly? (they are
   very short, like pops).
@@ -499,12 +499,12 @@ It basically comes down to three things:
 - RTL dongles are cheap - some of them have higher noise figure than others. If you have several
   dongles at hand, just try another one.
 
-###### Tuned frequency has to be correct
+###### Channel frequency must be correct
 
 - initially, just don't set it manually, use the default of 136.975 MHz. It is used everywhere
   where VDL2 is deployed.
 
-###### PPM correction setting has to be accurate
+###### PPM correction setting must be (more or less) accurate
 
 - oscillators in cheap receivers are not 100% accurate. It is usually necessary to introduce
   manual correction to get precise tuning. There is no one-size-fits-all correction value - it is
@@ -552,29 +552,14 @@ observe the output:
         real sample rate: 2048181 current PPM: 89 cumulative PPM: 80
 
 After a couple of minutes the cumulative PPM value converges to a stable reading. This is
-the value for your dongle. However, some people reported that this method is not always 100%
-accurate, so it's good to double-check with method 2 or 3.
+an approximate correction value for your dongle. Run dumpvdl2 with `--correction <value>`
+option. dumpvdl2 can compensate correction errors up to a certain amount. Once you have
+received some messages, look for the frequency offset field which is printed in the header
+of each message (it's the value expressed in ppm). Your tuning is good, when this value
+is close to 0.  If you see a systematic offset from 0, tweak your correction value to
+compensate it.
 
-**Method 2:** use your favorite SDR console (like SDRSharp, HDSDR, GQRX, etc). Tune it to a
-frequency of some local narrowband transmitter which transmits constantly (or very often) and
-is driven by a good frequency reference. A good example is an ATIS or AWOS channel from a local
-airport. Zoom in on the channel peak and adjust the correction value in the receiver settings
-to bring the peak exactly to the tuned frequency. If it's a voice channel, judge it by your ear -
-aim for the lowest possible background noise. See this video tutorial for reference:
-[Frequency calibration in SDRSharp](https://www.youtube.com/watch?v=gFXMbr1dgng).
-
-**Method 3:** use [kalibrate-rtl](https://github.com/steve-m/kalibrate-rtl) utility. It estimates
-the correction value using GSM signal from nearby base stations. The estimate is quite accurate
-provided that you supply the program with approximate PPM offset value using `-e` option. This
-is even more important if your dongle has a large offset value (say, 50 or more).
-
-Once you have a rough estimate of required correction, run dumpvdl2 with `--correction <value>`
-option. dumpvdl2 can compensate correction errors up to a certain amount. Once you start
-receiving messages, look for the frequency offset field which is printed in the header of each
-message (it's the value expressed in ppm). Your tuning is good, when this value is close to 0.
-If you see a systematic offset from 0, tweak your correction value to compensate it.
-
-##### CPU usage on Raspberry Pi is very high
+##### High CPU usage on Raspberry Pi
 
 Default compiler flags should work fine on most platforms. However you may get a performance
 boost (read: lower CPU usage) by adjusting the flags to the CPU which you intend to run
