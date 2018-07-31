@@ -80,6 +80,7 @@
 #define __OPT_UTC			17
 #define __OPT_RAW_FRAMES		18
 #define __OPT_DUMP_ASN1			19
+#define __OPT_EXTENDED_HEADER		20
 
 #ifdef WITH_SDRPLAY
 #define __OPT_SDRPLAY			80
@@ -241,7 +242,7 @@ int rs_verify(uint8_t *data, int fec_octets);
 
 // output.c
 extern FILE *outf;
-extern uint8_t hourly, daily, utc, output_raw_frames, dump_asn1;
+extern uint8_t hourly, daily, utc, output_raw_frames, dump_asn1, extended_header;
 extern int pp_sockfd;
 int init_output_file(char *file);
 int init_pp(char *pp_addr);

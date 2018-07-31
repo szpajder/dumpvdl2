@@ -159,13 +159,15 @@ static void enqueue_frame(vdl2_channel_t const * const v, int const frame_num, u
 	qentry->freq = v->freq;
 	qentry->frame_pwr = v->frame_pwr;
 	qentry->mag_nf = v->mag_nf;
-	qentry->datalen_octets = v->datalen_octets;
-	qentry->synd_weight = synd_weight[v->syndrome];
 	qentry->ppm_error = v->ppm_error;
-	qentry->num_fec_corrections = v->num_fec_corrections;
-	qentry->idx = frame_num;
 	qentry->burst_timestamp.tv_sec =  v->burst_timestamp.tv_sec;
 	qentry->burst_timestamp.tv_usec =  v->burst_timestamp.tv_usec;
+	if(extended_header) {
+		qentry->datalen_octets = v->datalen_octets;
+		qentry->synd_weight = synd_weight[v->syndrome];
+		qentry->num_fec_corrections = v->num_fec_corrections;
+		qentry->idx = frame_num;
+	}
 	g_async_queue_push(frame_queue, qentry);
 }
 

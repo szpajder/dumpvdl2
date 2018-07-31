@@ -590,7 +590,7 @@ Raspbian Stretch) or 7.1 (available in Arch Linux) both perform significantly be
 
 ##### What do these numbers in the message header mean?
 
-        [2017-02-26 19:18:00 GMT] [136.975] [-18.9/-43.9 dBFS] [25.0 dB] [0.4 ppm] [F:0] [#0]
+        [2017-02-26 19:18:00 GMT] [136.975] [-18.9/-43.9 dBFS] [25.0 dB] [0.4 ppm]
 
 From left to right:
 
@@ -606,7 +606,17 @@ From left to right:
 
 - frequency offset of the received burst from the channel center frequency, in parts per million.
 
-- number of frame in this particular transmission. In VDL2 multiple frames (messages) may be
+There is an `--extended-header` command line option which enables additional fields:
+
+        [2017-02-26 19:18:00 GMT] [136.975] [-18.9/-43.9 dBFS] [25.0 dB] [0.4 ppm] [S:0] [L:34] [F:0] [#0]
+
+- number of bit errors corrected in the VDL2 burst header (up to 2).
+
+- burst length in octets.
+
+- number of octets corrected by Reed-Solomon FEC.
+
+- number of frame in this particular transmission. Multiple AVLC frames (messages) may be
   concatenated and sent as a single transmission burst. When a multiframe burst is received, frames
   will be numbered incrementally.
 
