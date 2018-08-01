@@ -1,7 +1,7 @@
 /*
  *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
  *
- *  Copyright (c) 2017 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2018 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,32 +23,71 @@
 #include <string.h>
 #include <limits.h>
 #include <unistd.h>
+#include <glib.h>
 #if USE_STATSD
 #include <sys/time.h>
 #endif
 #include "dumpvdl2.h"
+#include "avlc.h"		// avlc_frame_qentry_t, frame_queue
 
-static const uint32_t H[CRCLEN] = { 0x00FFF, 0x3F0FF, 0xC730F, 0xDB533, 0x69E55 };
-static const uint8_t preamble_bits[PREAMBLE_SYMS*BPS] = {
-	0,0,0,
-	0,1,0,
-	0,1,1,
-	1,1,0,
-	0,0,0,
-	0,0,1,
-	1,0,1,
-	1,1,0,
-	0,0,1,
-	1,0,0,
-	0,1,1,
-	1,1,1,
-	1,0,1,
-	1,1,1,
-	1,0,0,
-	0,1,0
+// Reasonable limits for transmission lengths in bits
+// This is to avoid blocking the decoder in DEC_DATA for a long time
+// in case when the transmission length field in the header gets
+// decoded wrongly.
+// This applies when header decoded OK without error corrections
+#define MAX_FRAME_LENGTH 0x3FFF
+// This applies when there were some bits corrected
+#define MAX_FRAME_LENGTH_CORRECTED 0x1FFF
+
+#define LFSR_IV 0x6959u
+
+static uint32_t const H[HDRFECLEN] = {
+	0b0000000011111111111110000,
+	0b0011111100001111111101000,
+	0b1100011100110000111100100,
+	0b1101101101010011001100010,
+	0b0110100111100101010100001
 };
 
-// FIXME: precompute?
+static uint32_t const syndtable[1<<HDRFECLEN] = {
+	0b0000000000000000000000000,
+	0b0000000000000000000000001,
+	0b0000000000000000000000010,
+	0b0100000000000000000000100,
+	0b0000000000000000000000100,
+	0b0100000000000000000000010,
+	0b1000000000000000000000000,
+	0b0100000000000000000000000,
+	0b0000000000000000000001000,
+	0b0010000000000000000000000,
+	0b0001000000000000000000000,
+	0b0000100000000000000000000,
+	0b0000010000000000000000000,
+	0b1000100000000000000000000,
+	0b0000001000000000000000000,
+	0b0000000100000000000000000,
+	0b0000000000000000000010000,
+	0b0000000010000000000000000,
+	0b0100000000100000000000000,
+	0b0000000001000000000000000,
+	0b0100000001000000000000000,
+	0b0000000000100000000000000,
+	0b0000000000010000000000000,
+	0b1000000010000000000000000,
+	0b0000000000001000000000000,
+	0b0000000000000100000000000,
+	0b0000000000000010000000000,
+	0b0000000000000001000000000,
+	0b0000000000000000100000000,
+	0b0000000000000000010000000,
+	0b0000000000000000001000000,
+	0b0000000000000000000100000,
+};
+
+static uint32_t const synd_weight[1<<HDRFECLEN] = {
+	0, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1
+};
+
 uint32_t parity(uint32_t v) {
 	uint32_t parity = 0;
 	while (v) {
@@ -58,46 +97,17 @@ uint32_t parity(uint32_t v) {
 	return parity;
 }
 
-uint32_t check_crc(uint32_t v, uint32_t check) {
-	uint32_t r = 0, row = 0;
+uint32_t decode_header(uint32_t * const r) {
+	uint32_t syndrome = 0u, row = 0u;
 	int i;
-	for(i = 0; i < CRCLEN; i++) {
-		row = v & H[i];
-		r |= (parity(row)) << (CRCLEN - 1 - i);
+	for(i = 0; i < HDRFECLEN; i++) {
+		row = *r & H[i];
+		syndrome |= (parity(row)) << (HDRFECLEN - 1 - i);
 	}
-	debug_print("crc: read 0x%x calculated 0x%x\n", check, r);
-	return (r == check ? 1 : 0);
-}
-
-static uint8_t *soft_preamble_search(bitstream_t *bs) {
-	if(bs == NULL) return NULL;
-	uint32_t pr_len = PREAMBLE_LEN;
-	uint32_t bs_len = bs->end - bs->start;
-	if(bs_len < pr_len) {
-		debug_print("%s", "haystack too short\n");
-		return NULL;
-	}
-	uint32_t min_distance, distance, best_match = 0;
-	int i,j,k;
-	min_distance = pr_len;
-	for(i = 0; i <= bs_len - pr_len; i++) {
-		distance = 0;
-		for(j = bs->start + i, k = 0; k < pr_len; j++, k++)
-			distance += bs->buf[j] ^ preamble_bits[k];
-		if(distance < min_distance) {
-			best_match = i;
-			min_distance = distance;
-			if(distance == 0) break;	// exact match
-		}
-	}
-	if(min_distance > MAX_PREAMBLE_ERRORS) {
-		debug_print("Preamble not found (min_distance %u > %u)\n", min_distance, MAX_PREAMBLE_ERRORS);
-		return NULL;
-	}
-	debug_print("Preamble found at %u (distance %u)\n", best_match, min_distance);
-	bs->start = best_match + pr_len;
-	debug_print("Now at %u\n", bs->start);
-	return bs->buf + best_match;
+	debug_print("received: 0x%x syndrome: 0x%x error: 0x%x, decoded: 0x%x\n",
+		*r, syndrome, syndtable[syndrome], *r ^ syndtable[syndrome]);
+	*r ^= syndtable[syndrome];
+	return syndrome;
 }
 
 int get_fec_octetcount(uint32_t len) {
@@ -141,19 +151,28 @@ static int deinterleave(uint8_t *in, uint32_t len, uint32_t rows, uint32_t cols,
 	return 0;
 }
 
+static void enqueue_frame(vdl2_channel_t const * const v, int const frame_num, uint8_t *buf, size_t const len) {
+	avlc_frame_qentry_t *qentry = XCALLOC(1, sizeof(avlc_frame_qentry_t));
+	qentry->buf = XCALLOC(len, sizeof(uint8_t));
+	memcpy(qentry->buf, buf, len);
+	qentry->len = len;
+	qentry->freq = v->freq;
+	qentry->frame_pwr = v->frame_pwr;
+	qentry->mag_nf = v->mag_nf;
+	qentry->ppm_error = v->ppm_error;
+	qentry->burst_timestamp.tv_sec =  v->burst_timestamp.tv_sec;
+	qentry->burst_timestamp.tv_usec =  v->burst_timestamp.tv_usec;
+	if(extended_header) {
+		qentry->datalen_octets = v->datalen_octets;
+		qentry->synd_weight = synd_weight[v->syndrome];
+		qentry->num_fec_corrections = v->num_fec_corrections;
+		qentry->idx = frame_num;
+	}
+	g_async_queue_push(frame_queue, qentry);
+}
+
 void decode_vdl_frame(vdl2_channel_t *v) {
 	switch(v->decoder_state) {
-	case DEC_PREAMBLE:
-		if(soft_preamble_search(v->bs) == NULL) {
-			statsd_increment(v->freq, "decoder.errors.no_preamble");
-			v->decoder_state = DEC_IDLE;
-			return;
-		}
-		statsd_increment(v->freq, "decoder.preambles.good");
-		v->decoder_state = DEC_HEADER;
-		v->requested_bits = HEADER_LEN;
-		debug_print("DEC_HEADER, requesting %u bits\n", v->requested_bits);
-		return;
 	case DEC_HEADER:
 		v->lfsr = LFSR_IV;
 		bitstream_descramble(v->bs, &v->lfsr);
@@ -164,16 +183,31 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 			v->decoder_state = DEC_IDLE;
 			return;
 		}
-		uint32_t crc = header & ONES(CRCLEN);
-		header >>= CRCLEN;
-		if(!check_crc(header, crc)) {
-			debug_print("%s", "CRC check failed\n");
-			statsd_increment(v->freq, "decoder.errors.crc_bad");
+// force bits of reserved symbol to 0 to improve chances of successful decode
+		header &= ONES(TRLEN+HDRFECLEN);
+		v->syndrome = decode_header(&header);
+		if(v->syndrome == 0) {
+			statsd_increment(v->freq, "decoder.crc.good");
+		}
+// sanity check - reserved symbol bits shall still be set to 0
+		if((header & ONES(TRLEN+HDRFECLEN)) != header) {
+			debug_print("%s", "Rejecting decoded header with non-zero reserved bits\n");
+			statsd_increment(v->freq, "decoder.crc.bad");
 			v->decoder_state = DEC_IDLE;
 			return;
 		}
-		statsd_increment(v->freq, "decoder.crc.good");
+		header >>= HDRFECLEN;
 		v->datalen = reverse(header & ONES(TRLEN), TRLEN);
+// Reject payloads with unreasonably large length (in theory longer frames are allowed but in practice
+// it does not happen - usually it means we've locked on something which is not a preamble. It's safer
+// to reject it rather than to block the decoder in DEC_DATA state and reading garbage for a long time,
+// possibly overlooking valid frames.
+		if((v->syndrome != 0 && v->datalen > MAX_FRAME_LENGTH_CORRECTED) || v->datalen > MAX_FRAME_LENGTH) {
+			debug_print("v->datalen=%u v->syndrome=%u - frame rejected\n", v->datalen, v->syndrome);
+			statsd_increment(v->freq, "decoder.errors.too_long");
+			v->decoder_state = DEC_IDLE;
+			return;
+		}
 		v->datalen_octets = v->datalen / 8;
 		if(v->datalen % 8 != 0)
 			v->datalen_octets++;
@@ -245,10 +279,11 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 			bitstream_reset(v->bs);
 			for(int r = 0; r < v->num_blocks; r++) {
 				statsd_increment(v->freq, "decoder.blocks.processed");
-				if(r != v->num_blocks - 1)	// full block
-					ret = rs_verify((uint8_t *)&rs_tab[r], RS_N - RS_K);
-				else				// last, partial block
-					ret = rs_verify((uint8_t *)&rs_tab[r], get_fec_octetcount(v->last_block_len_octets));
+				int num_fec_octets = RS_N - RS_K;	// full block
+				if(r == v->num_blocks - 1) {		// final, partial block
+					num_fec_octets = get_fec_octetcount(v->last_block_len_octets);
+				}
+				ret = rs_verify((uint8_t *)&rs_tab[r], num_fec_octets);
 				debug_print("Block %d FEC: %d\n", r, ret);
 				if(ret < 0) {
 					debug_print("%s", "FEC check failed\n");
@@ -256,8 +291,11 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 					goto cleanup;
 				} else {
 					statsd_increment(v->freq, "decoder.blocks.fec_ok");
-					if(ret > 0)
+					if(ret > 0) {
 						debug_print_buf_hex(rs_tab[r], RS_N, "Corrected block %d:\n", r);
+// count corrected octets, excluding intended erasures
+						v->num_fec_corrections += ret - (RS_N - RS_K - num_fec_octets);
+					}
 				}
 				if(r != v->num_blocks - 1)
 					ret = bitstream_append_lsbfirst(v->bs, (uint8_t *)&rs_tab[r], RS_K, 8);
@@ -277,27 +315,32 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 				v->bs->end - v->bs->start - v->datalen, v->bs->end, v->datalen);
 			v->bs->end = v->datalen;
 		}
-		if(bitstream_hdlc_unstuff(v->bs) < 0) {
-			debug_print("%s", "Invalid bit sequence in the stream\n");
+		int ret;
+		int frame_cnt = 0;
+		while((ret = bitstream_copy_next_frame(v->bs, v->frame_bs)) >= 0) {
+			if((v->frame_bs->end - v->frame_bs->start) % 8 != 0) {
+				debug_print("Frame %d: Bit stream error: does not end on a byte boundary\n", frame_cnt);
+				statsd_increment(v->freq, "decoder.errors.truncated_octets");
+				goto cleanup;
+			}
+			debug_print("Frame %d: Stream OK after unstuffing, length is %u octets\n",
+				frame_cnt, (v->frame_bs->end - v->frame_bs->start) / 8);
+			uint32_t frame_len_octets = (v->frame_bs->end - v->frame_bs->start) / 8;
+			memset(data, 0, frame_len_octets * sizeof(uint8_t));
+			if(bitstream_read_lsbfirst(v->frame_bs, data, frame_len_octets, 8) < 0) {
+				debug_print("Frame %d: bitstream_read_lsbfirst failed\n", frame_cnt);
+				statsd_increment(v->freq, "decoder.errors.bitstream");
+				goto cleanup;
+			}
+			statsd_increment(v->freq, "decoder.msg.good");
+			enqueue_frame(v, frame_cnt, data, frame_len_octets);
+			frame_cnt++;
+			if(ret == 0) break;	// this was the last frame in this burst
+		}
+		if(ret < 0) {
 			statsd_increment(v->freq, "decoder.errors.unstuff");
 			goto cleanup;
 		}
-		if((v->bs->end - v->bs->start) % 8 != 0) {
-			debug_print("%s", "Bit stream error: does not end on a byte boundary\n");
-			statsd_increment(v->freq, "decoder.errors.truncated_octets");
-			goto cleanup;
-		}
-		debug_print("stream OK after unstuffing, datalen_octets was %u now is %u\n", v->datalen_octets, ((v->bs->end - v->bs->start) / 8));
-		v->datalen_octets = (v->bs->end - v->bs->start) / 8;
-
-		memset(data, 0, v->datalen_octets * sizeof(uint8_t));
-		if(bitstream_read_lsbfirst(v->bs, data, v->datalen_octets, 8) < 0) {
-			debug_print("%s", "bitstream_read_lsbfirst failed\n");
-			statsd_increment(v->freq, "decoder.errors.bitstream");
-			goto cleanup;
-		}
-		statsd_increment(v->freq, "decoder.msg.good");
-		parse_avlc_frames(v, data, v->datalen_octets);
 		statsd_timing_delta(v->freq, "decoder.msg.processing_time", &v->tstart);
 cleanup:
 		XFREE(data);

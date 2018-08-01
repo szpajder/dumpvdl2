@@ -104,26 +104,47 @@ void bitstream_descramble(bitstream_t *bs, uint16_t *lfsr) {
 	bs->descrambler_pos = bs->end;
 }
 
-int bitstream_hdlc_unstuff(bitstream_t *bs) {
-	int ones = 0;
+int bitstream_copy_next_frame(bitstream_t *src, bitstream_t *dst) {
+	int ones;
 	int i, j;
-	for(i = j = bs->start; i < bs->end; i++) {
-		if(bs->buf[i] == 0x1) {
+restart:
+	ones = 0;
+	bitstream_reset(dst);
+	for(i = src->start, j = 0; i < src->end; i++, src->start++) {
+		if(src->buf[i] == 0x0 && ones == 5) {		// stuffed 0 bit - skip it
+			ones = 0;
+			continue;
+		} else if(src->buf[i] == 0x1) {
 			ones++;
-			if(ones > 6)		// 7 ones - invalid bit sequence
+			if(ones > 6) {				// 7 ones - invalid bit sequence
+				debug_print("%s", "Invalid bit stuffing sequence\n");
 				return -1;
-		} else {			// bs->buf[i] == 0
-			if(ones == 5) {		// stuffed 0 bit - skip it
-				ones = 0;
-				continue;
+			}
+		}
+		dst->buf[j] = src->buf[i];
+		if(src->buf[i] == 0x0) {
+			if(ones == 6) {				// frame boundary flag (0x7e)
+				if(j == 7) {			// move past the initial flag
+					src->start++;
+					debug_print("%s", "Initial flag found, restarting\n");
+					goto restart;
+				} else {
+					if(j < 7) {
+						debug_print("%s", "Invalid bit sequence - 6 ones at the start of the stream\n");
+						return -1;
+					}
+					dst->end = j - 7;	// remove trailing flag from the result
+					src->start++;
+					break;
+				}
 			}
 			ones = 0;
 		}
-		bs->buf[j++] = bs->buf[i];
+		j++; dst->end++;
 	}
-	debug_print("Unstuffed %u bits\n", bs->end - j);
-	bs->end = j;
-	return 0;
+	debug_print("dst len: %u, next src read at %u, remaining src length: %u\n",
+		dst->end - dst->start, src->start, src->end - src->start);
+	return (src->start < src->end ? 1 : 0);
 }
 
 uint32_t reverse(uint32_t v, int numbits) {

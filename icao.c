@@ -215,7 +215,7 @@ void decode_ulcs_acse(icao_apdu_t *icao_apdu, uint8_t *buf, uint32_t len, uint32
 	asn_dec_rval_t rval;
 	rval = uper_decode_complete(0, &asn_DEF_ACSE_apdu, (void **)&acse_apdu, buf, len);
 	if(rval.code != RC_OK) {
-		fprintf(stderr, "Decoding failed at position %ld\n", (long)rval.consumed);
+		debug_print("Decoding failed at position %ld\n", (long)rval.consumed);
 		goto ulcs_acse_cleanup;
 	}
 	if(DEBUG)
@@ -350,9 +350,6 @@ icao_decoding_failed:
 		icao_apdu->data = buf;
 		icao_apdu->datalen = datalen;
 	}
-// temporary, for debugging
-	icao_apdu->raw_data = buf;
-	icao_apdu->datalen = datalen;
 	return icao_apdu;
 }
 
@@ -361,8 +358,6 @@ void output_icao_apdu(icao_apdu_t *icao_apdu) {
 		fprintf(outf, "-- NULL ICAO APDU\n");
 		return;
 	}
-// temporary, for debugging
-	output_raw(icao_apdu->raw_data, icao_apdu->datalen);
 	if(icao_apdu->type != NULL) {
 		if(icao_apdu->data != NULL) {
 			if(dump_asn1)

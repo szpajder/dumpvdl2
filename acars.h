@@ -27,6 +27,7 @@ typedef enum {
 } acars_app_t;
 
 typedef struct {
+	uint8_t crc_ok;
 	uint8_t mode;
 	uint8_t reg[8];
 	uint8_t ack;

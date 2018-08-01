@@ -27,9 +27,8 @@
 #include "adsc.h"
 #include "cpdlc.h"
 
-#define ETX 0x83
-#define ETB 0x97
 #define DEL 0x7f
+#define ETX 0x03
 
 static char *skip_fans1a_msg_prefix(acars_msg_t *msg, char const * const prefix) {
 	char *s = strstr(msg->txt, prefix);
@@ -179,20 +178,25 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		debug_print("%02x: no DEL byte at end\n", buf[len-1]);
 		return NULL;
 	}
-	if(buf[len-4] != ETX && buf[len-4] != ETB) {
-		debug_print("%02x: no ETX/ETB byte at end\n", buf[len-4]);
-		return NULL;
-	}
-	len -= 4;
+	len--;
+
+	uint16_t crc = crc16_ccitt(buf, len, 0);
+	debug_print("CRC check result: %04x\n", crc);
+
+	len -= 3;
 	if(msg == NULL)
 		msg = XCALLOC(1, sizeof(acars_msg_t));
 	else
 		memset(msg, 0, sizeof(acars_msg_t));
 
+	msg->crc_ok = (crc == 0);
+
 	// safe default
 	*msg_type |= MSGFLT_ACARS_NODATA;
 	for(i = 0; i < len; i++)
 		buf[i] &= 0x7f;
+
+	debug_print_buf_hex(buf, len, "%s", "Msg data after parity bits removal:\n");
 
 	uint32_t k = 0;
 	msg->mode = buf[k++];
@@ -225,43 +229,44 @@ acars_msg_t *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	msg->txt[0] = '\0';
 	msg->application = ACARS_APP_NONE;
 
-	if(k >= len) {		// empty txt
+	if(k >= len || msg->bs == ETX) {	// empty message text
 		msg->txt[0] = '\0';
 		return msg;
 	}
 
-	if (msg->bs != 0x03) {
-		if (msg->mode <= 'Z' && msg->bid <= '9') {
-			/* message no */
-			for (i = 0; i < 4 && k < len; i++, k++) {
-				msg->no[i] = buf[k];
-			}
-			msg->no[i] = '\0';
+	if (msg->mode <= 'Z' && msg->bid <= '9') {
+		/* message no */
+		for (i = 0; i < 4 && k < len; i++, k++) {
+			msg->no[i] = buf[k];
+		}
+		msg->no[i] = '\0';
 
-			/* Flight id */
-			for (i = 0; i < 6 && k < len; i++, k++) {
-				msg->fid[i] = buf[k];
-			}
-			msg->fid[i] = '\0';
+		/* Flight id */
+		for (i = 0; i < 6 && k < len; i++, k++) {
+			msg->fid[i] = buf[k];
 		}
+		msg->fid[i] = '\0';
+	}
 
-		/* Message txt */
-		len -= k;
-		if(len > ACARSMSG_BUFSIZE) {
-			debug_print("message truncated to buffer size (%u > %u)", len, ACARSMSG_BUFSIZE);
-			len = ACARSMSG_BUFSIZE - 1;		// leave space for terminating '\0'
-		}
-		if(len > 0) {
-			memcpy(msg->txt, buf + k, len);
-			*msg_type |= MSGFLT_ACARS_DATA;
-			*msg_type &= ~MSGFLT_ACARS_NODATA;
-		}
-		msg->txt[len] = '\0';
-		if(len > 0) {
-			try_acars_apps(msg, msg_type);
+	len -= k;
+	if(len > ACARSMSG_BUFSIZE) {
+		debug_print("message truncated to buffer size (%u > %u)", len, ACARSMSG_BUFSIZE);
+		len = ACARSMSG_BUFSIZE - 1;	// leave space for terminating '\0'
+	}
+	if(len > 0) {
+		memcpy(msg->txt, buf + k, len);
+		*msg_type |= MSGFLT_ACARS_DATA;
+		*msg_type &= ~MSGFLT_ACARS_NODATA;
+	}
+	msg->txt[len] = '\0';
+	if(len > 0) {
+		try_acars_apps(msg, msg_type);
+// Replace NULLs in text
+		for(uint32_t p = 0; p < len; p++) {
+			if(msg->txt[p] == 0)
+				msg->txt[p] = '.';
 		}
 	}
-	/* txt end */
 	return msg;
 }
 
@@ -282,7 +287,7 @@ void output_acars_pp(const acars_msg_t *msg) {
 }
 
 void output_acars(const acars_msg_t *msg) {
-	fprintf(outf, "ACARS:\n");
+	fprintf(outf, "ACARS%s:\n", msg->crc_ok ? "" : " (warning: CRC error)");
 	if(msg->mode < 0x5d)
 		fprintf(outf, "Reg: %s Flight: %s\n", msg->reg, msg->fid);
 	fprintf(outf, "Mode: %1c Label: %s Blk id: %c Ack: %c Msg no.: %s\n",

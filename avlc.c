@@ -18,15 +18,98 @@
  */
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
-#include <time.h>
+#include <time.h>		// strftime, gmtime, localtime
 #include <math.h>
 #include <unistd.h>
+#include <glib.h>
 #include "dumpvdl2.h"
 #include "avlc.h"
 #include "xid.h"
 #include "acars.h"
 #include "x25.h"
+
+#define MIN_AVLC_LEN	11
+#define GOOD_FCS	0xF0B8u
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define BSHIFT 24
+#elif __BYTE_ORDER == __BIG_ENDIAN
+#define BSHIFT 0
+#else
+#error Unsupported endianness
+#endif
+
+// X.25 control field
+typedef union {
+	uint8_t val;
+	struct {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+		uint8_t type:1;
+		uint8_t send_seq:3;
+		uint8_t poll:1;
+		uint8_t recv_seq:3;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+		uint8_t recv_seq:3;
+		uint8_t poll:1;
+		uint8_t send_seq:3;
+		uint8_t type:1;
+#endif
+	} I;
+	struct {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+		uint8_t type:2;
+		uint8_t sfunc:2;
+		uint8_t pf:1;
+		uint8_t recv_seq:3;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+		uint8_t recv_seq:3;
+		uint8_t pf:1;
+		uint8_t sfunc:2;
+		uint8_t type:2;
+#endif
+	} S;
+	struct {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+		uint8_t type:2;
+		uint8_t mfunc:6;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+		uint8_t mfunc:6;
+		uint8_t type:2;
+#endif
+	} U;
+} lcf_t;
+
+#define IS_I(lcf) ((lcf).val & 0x1) == 0x0
+#define IS_S(lcf) ((lcf).val & 0x3) == 0x1
+#define IS_U(lcf) ((lcf).val & 0x3) == 0x3
+#define U_MFUNC(lcf) (lcf).U.mfunc & 0x3b
+#define U_PF(lcf) ((lcf).U.mfunc >> 2) & 0x1
+
+#define UI	0x00
+#define DM	0x03
+#define DISC	0x10
+#define FRMR	0x21
+#define XID	0x2b
+#define TEST	0x38
+
+#define ADDRTYPE_AIRCRAFT	1
+#define ADDRTYPE_GS_ADM		4
+#define ADDRTYPE_GS_DEL		5
+#define ADDRTYPE_ALL		7
+
+enum avlc_protocols { PROTO_X25, PROTO_ACARS, PROTO_UNKNOWN };
+typedef struct {
+	uint32_t num;
+	avlc_addr_t src;
+	avlc_addr_t dst;
+	lcf_t lcf;
+	enum avlc_protocols proto;
+	uint32_t datalen;
+	uint8_t data_valid;
+	void *data;
+} avlc_frame_t;
 
 static const char *status_ag_descr[] = {
 	"Airborne",
@@ -67,31 +150,35 @@ static const char *U_cmd[] = {
 	"TEST"
 };
 
+// forward declaration
+static void output_avlc(const avlc_frame_qentry_t *v, const avlc_frame_t *f, uint8_t *raw_buf, uint32_t len);
+
 uint32_t parse_dlc_addr(uint8_t *buf) {
 	debug_print("%02x %02x %02x %02x\n", buf[0], buf[1], buf[2], buf[3]);
 	return reverse((buf[0] >> 1) | (buf[1] << 6) | (buf[2] << 13) | ((buf[3] & 0xfe) << 20), 28) & ONES(28);
 }
 
-static void parse_avlc(vdl2_channel_t *v, uint8_t *buf, uint32_t len) {
+static void parse_avlc(avlc_frame_qentry_t *v) {
+	uint8_t *buf = v->buf;
+	uint32_t len = v->len;
 	debug_print_buf_hex(buf, len, "%s", "Frame data:\n");
+
 // FCS check
-	len -= 2;
-	uint16_t read_fcs = ((uint16_t)buf[len+1] << 8) | buf[len];
-	uint16_t fcs = crc16_ccitt(buf, len);
-	debug_print("Read FCS : %04x\n", read_fcs);
+	uint16_t fcs = crc16_ccitt(buf, len, 0xFFFFu);
 	debug_print("Check FCS: %04x\n", fcs);
-	if(read_fcs == fcs) {
-		debug_print("%s", "FCS check OK\n");
-	} else {
+	if(fcs != GOOD_FCS) {
 		debug_print("%s", "FCS check failed\n");
 		statsd_increment(v->freq, "avlc.errors.bad_fcs");
 		return;
 	}
+	debug_print("%s", "FCS check OK\n");
 	statsd_increment(v->freq, "avlc.frames.good");
+	len -= 2;
+
 	uint8_t *ptr = buf;
 	avlc_frame_t frame;
 	uint32_t msg_type = 0;
-	frame.t = time(NULL);
+	frame.num = v->idx;
 	frame.dst.val = parse_dlc_addr(ptr);
 	ptr += 4; len -= 4;
 	frame.src.val = parse_dlc_addr(ptr);
@@ -105,6 +192,9 @@ static void parse_avlc(vdl2_channel_t *v, uint8_t *buf, uint32_t len) {
 		case ADDRTYPE_GS_ADM:
 		case ADDRTYPE_GS_DEL:
 			statsd_increment(v->freq, "avlc.msg.air2gnd");
+			break;
+		case ADDRTYPE_AIRCRAFT:
+			statsd_increment(v->freq, "avlc.msg.air2air");
 			break;
 		case ADDRTYPE_ALL:
 			statsd_increment(v->freq, "avlc.msg.air2all");
@@ -170,38 +260,25 @@ static void parse_avlc(vdl2_channel_t *v, uint8_t *buf, uint32_t len) {
 	}
 }
 
-void parse_avlc_frames(vdl2_channel_t *v, uint8_t *buf, uint32_t len) {
-	if(buf[0] != AVLC_FLAG) {
-		debug_print("%s", "No AVLC frame delimiter at the start\n");
-		statsd_increment(v->freq, "avlc.errors.no_flag_start");
-		return;
-	}
-	uint32_t fcnt = 0, goodfcnt = 0;
-	uint8_t *frame_start = buf + 1;
-	uint8_t *frame_end;
-	uint8_t *buf_end = buf + len;
-	uint32_t flen;
-	while(frame_start < buf_end - 1) {
-		statsd_increment(v->freq, "avlc.frames.processed");
-		if((frame_end = memchr(frame_start, AVLC_FLAG, buf_end - frame_start)) == NULL) {
-			debug_print("Frame %u: truncated\n", fcnt);
-			statsd_increment(v->freq, "avlc.errors.no_flag_end");
-			return;
+GAsyncQueue *frame_queue = NULL;
+
+void *parse_avlc_frames(void *arg) {
+	avlc_frame_qentry_t *q = NULL;
+	frame_queue = g_async_queue_new();
+	while(1) {
+		q = (avlc_frame_qentry_t *)g_async_queue_pop(frame_queue);
+		statsd_increment(q->freq, "avlc.frames.processed");
+		if(q->len < MIN_AVLC_LEN) {
+			debug_print("Frame %d: too short (len=%u required=%d)\n", q->idx, q->len, MIN_AVLC_LEN);
+			statsd_increment(q->freq, "avlc.errors.too_short");
+			goto cleanup;
 		}
-		flen = frame_end - frame_start;
-		if(flen < MIN_AVLC_LEN) {
-			debug_print("Frame %u: too short (len=%u required=%d)\n", fcnt, flen, MIN_AVLC_LEN);
-			statsd_increment(v->freq, "avlc.errors.too_short");
-			goto next;
-		}
-		debug_print("Frame %u: len=%u\n", fcnt, flen);
-		goodfcnt++;
-		parse_avlc(v, frame_start, flen);
-next:
-		frame_start = frame_end + 1;
-		fcnt++;
+		debug_print("Frame %d: len=%u\n", q->idx, q->len);
+		parse_avlc(q);
+cleanup:
+		XFREE(q->buf);
+		XFREE(q);
 	}
-	debug_print("%u/%u frames processed\n", goodfcnt, fcnt);
 }
 
 static void output_avlc_U(const avlc_frame_t *f) {
@@ -219,17 +296,23 @@ static void output_avlc_U(const avlc_frame_t *f) {
 	}
 }
 
-void output_avlc(vdl2_channel_t *v, const avlc_frame_t *f, uint8_t *raw_buf, uint32_t len) {
+static void output_avlc(const avlc_frame_qentry_t *v, const avlc_frame_t *f, uint8_t *raw_buf, uint32_t len) {
 	if(f == NULL) return;
 	if((daily || hourly) && rotate_outfile() < 0)
 		_exit(1);
 	char ftime[30];
-	strftime(ftime, sizeof(ftime), "%F %T %Z", (utc ? gmtime(&f->t) : localtime(&f->t)));
-	float sig_pwr_dbfs = 20.0f * log10f(v->mag_frame);
+	strftime(ftime, sizeof(ftime), "%F %T %Z",
+		(utc ? gmtime(&v->burst_timestamp.tv_sec) : localtime(&v->burst_timestamp.tv_sec)));
+	float sig_pwr_dbfs = 10.0f * log10f(v->frame_pwr);
 	float nf_pwr_dbfs = 20.0f * log10f(v->mag_nf + 0.001f);
-	fprintf(outf, "\n[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB]\n",
-		ftime, (float)v->freq / 1e+6, sig_pwr_dbfs, nf_pwr_dbfs, sig_pwr_dbfs-nf_pwr_dbfs);
-	fprintf(outf, "%06X (%s, %s) -> %06X (%s): %s\n",
+	fprintf(outf, "\n[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB] [%.1f ppm]",
+		ftime, (float)v->freq / 1e+6, sig_pwr_dbfs, nf_pwr_dbfs, sig_pwr_dbfs-nf_pwr_dbfs,
+		v->ppm_error);
+	if(extended_header) {
+		fprintf(outf, " [S:%d] [L:%u] [F:%d] [#%u]",
+			 v->synd_weight, v->datalen_octets, v->num_fec_corrections, f->num);
+	}
+	fprintf(outf, "\n%06X (%s, %s) -> %06X (%s): %s\n",
 		f->src.a_addr.addr,
 		addrtype_descr[f->src.a_addr.type],
 		status_ag_descr[f->dst.a_addr.status],	// A/G

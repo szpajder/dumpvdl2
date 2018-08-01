@@ -30,11 +30,10 @@ static statsd_link *statsd = NULL;
 
 static const char *counters[] = {
 	"avlc.errors.bad_fcs",
-	"avlc.errors.no_flag_end",
-	"avlc.errors.no_flag_start",
 	"avlc.errors.too_short",
 	"avlc.frames.good",
 	"avlc.frames.processed",
+	"avlc.msg.air2air",
 	"avlc.msg.air2all",
 	"avlc.msg.air2gnd",
 	"avlc.msg.gnd2air",
@@ -53,7 +52,7 @@ static const char *counters[] = {
 	"decoder.errors.fec_truncated",
 	"decoder.errors.no_fec",
 	"decoder.errors.no_header",
-	"decoder.errors.no_preamble",
+	"decoder.errors.too_long",
 	"decoder.errors.truncated_octets",
 	"decoder.errors.unstuff",
 	"decoder.msg.good",

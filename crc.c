@@ -17,10 +17,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdint.h>
-#define CRC_INIT 0xFFFFU
-#define CRC_XOROUT 0xFFFFU
 
-uint16_t crc16_ccitt(uint8_t *data, uint32_t len) {
+uint16_t crc16_ccitt(uint8_t *data, uint32_t len, uint16_t crc_init) {
 /* CRC-16-CCITT, poly: 0x1021 */
 	static const uint16_t crctable[256] =
 	{
@@ -58,9 +56,9 @@ uint16_t crc16_ccitt(uint8_t *data, uint32_t len) {
 	 0x7BC7, 0x6A4E, 0x58D5, 0x495C, 0x3DE3, 0x2C6A, 0x1EF1, 0x0F78
 	};
 
-	uint16_t crc = CRC_INIT;
+	uint16_t crc = crc_init;
 	while (len-- > 0) {
 		crc = (crc >> 8) ^ crctable[(crc ^ *data++) & 0xff];
 	}
-	return crc ^ CRC_XOROUT;
+	return crc;
 }

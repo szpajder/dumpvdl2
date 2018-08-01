@@ -1,7 +1,7 @@
 /*
  *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
  *
- *  Copyright (c) 2017 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2018 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,9 +34,12 @@
 #include "sdrplay.h"
 #endif
 #include "dumpvdl2.h"
+#include "avlc.h"		// parse_avlc_frames
 
 int do_exit = 0;
 uint32_t msg_filter = MSGFLT_ALL;
+pthread_barrier_t demods_ready, samples_ready;
+pthread_t decoder_thread;
 
 void sighandler(int sig) {
 	fprintf(stderr, "Got signal %d, exiting\n", sig);
@@ -52,7 +55,7 @@ void sighandler(int sig) {
 #endif
 }
 
-void setup_signals() {
+static void setup_signals() {
 	struct sigaction sigact, pipeact;
 
 	memset(&sigact, 0, sizeof(sigact));
@@ -64,6 +67,28 @@ void setup_signals() {
 	sigaction(SIGINT, &sigact, NULL);
 	sigaction(SIGQUIT, &sigact, NULL);
 	sigaction(SIGTERM, &sigact, NULL);
+}
+
+static void setup_threads(vdl2_state_t *ctx) {
+	int ret;
+	if(	(ret = pthread_barrier_init(&demods_ready, NULL, ctx->num_channels+1)) != 0 ||
+		(ret = pthread_barrier_init(&samples_ready, NULL, ctx->num_channels+1)) != 0) {
+			errno = ret;
+			perror("pthread_barrier_init failed");
+			_exit(2);
+	}
+	if((ret = pthread_create(&decoder_thread, NULL, &parse_avlc_frames, NULL) != 0)) {
+		errno = ret;
+		perror("pthread_create failed");
+		_exit(2);
+	}
+	for(int i = 0; i < ctx->num_channels; i++) {
+		if((ret = pthread_create(&ctx->channels[i]->demod_thread, NULL, &process_samples, ctx->channels[i])) != 0) {
+			errno = ret;
+			perror("pthread_create failed");
+			_exit(2);
+		}
+	}
 }
 
 static uint32_t calc_centerfreq(uint32_t *freq, int cnt, uint32_t source_rate) {
@@ -93,11 +118,11 @@ void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
 	switch(sfmt) {
 	case SFMT_U8:
 		process_buf_uchar_init();
-		ctx->sbuf = XCALLOC(FILE_BUFSIZE / sizeof(uint8_t), sizeof(float));
+		sbuf = XCALLOC(FILE_BUFSIZE / sizeof(uint8_t), sizeof(float));
 		process_buf = &process_buf_uchar;
 		break;
 	case SFMT_S16_LE:
-		ctx->sbuf = XCALLOC(FILE_BUFSIZE / sizeof(int16_t), sizeof(float));
+		sbuf = XCALLOC(FILE_BUFSIZE / sizeof(int16_t), sizeof(float));
 		process_buf = &process_buf_short;
 		break;
 	default:
@@ -106,7 +131,7 @@ void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
 	}
 	do {
 		len = fread(buf, 1, FILE_BUFSIZE, f);
-		(*process_buf)(buf, len, ctx);
+		(*process_buf)(buf, len, NULL);
 	} while(len == FILE_BUFSIZE && !do_exit);
 	fclose(f);
 }
@@ -137,6 +162,7 @@ void usage() {
 	fprintf(stderr, "\t--utc\t\t\t\tUse UTC timestamps in output and file names\n");
 	fprintf(stderr, "\t--raw-frames\t\t\tOutput AVLC payload as raw bytes\n");
 	fprintf(stderr, "\t--dump-asn1\t\t\tOutput full ASN.1 structure of CM and CPDLC messages\n");
+	fprintf(stderr, "\t--extended-header\t\tOutput additional fields in message header\n");
 	fprintf(stderr, "\t--msg-filter <filter_spec>\tMessage types to display (default: all) (\"--msg-filter help\" for details)\n");
 	fprintf(stderr, "\t--output-acars-pp <host:port>\tSend ACARS messages to Planeplotter over UDP/IP\n");
 #if USE_STATSD
@@ -304,6 +330,7 @@ int main(int argc, char **argv) {
 		{ "utc",		no_argument,		NULL,	__OPT_UTC },
 		{ "raw-frames",		no_argument,		NULL,	__OPT_RAW_FRAMES },
 		{ "dump-asn1",		no_argument,		NULL,	__OPT_DUMP_ASN1 },
+		{ "extended-header",	no_argument,		NULL,	__OPT_EXTENDED_HEADER },
 		{ "output-file",	required_argument,	NULL,	__OPT_OUTPUT_FILE },
 		{ "iq-file",		required_argument,	NULL,	__OPT_IQ_FILE },
 		{ "oversample",		required_argument,	NULL,	__OPT_OVERSAMPLE },
@@ -378,6 +405,9 @@ int main(int argc, char **argv) {
 			break;
 		case __OPT_DUMP_ASN1:
 			dump_asn1 = 1;
+			break;
+		case __OPT_EXTENDED_HEADER:
+			extended_header = 1;
 			break;
 		case __OPT_CENTERFREQ:
 			centerfreq = strtoul(optarg, NULL, 10);
@@ -535,9 +565,12 @@ int main(int argc, char **argv) {
 	setup_signals();
 	sincosf_lut_init();
 	input_lpf_init(sample_rate);
+	demod_sync_init();
+	setup_threads(&ctx);
 	switch(input) {
 	case INPUT_FILE:
 		process_file(&ctx, infile, sample_fmt);
+		pthread_barrier_wait(&demods_ready);
 		break;
 #if WITH_RTLSDR
 	case INPUT_RTLSDR:

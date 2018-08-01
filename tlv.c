@@ -65,14 +65,14 @@ tlv_list_t *tlv_deserialize(uint8_t *buf, uint16_t len, uint8_t len_octets) {
 
 		ptr += len_octets; len -= len_octets;
 		if(paramlen > len) {
-			fprintf(stderr, "TLV param %02x truncated: paramlen=%u buflen=%u\n", pid, paramlen, len);
+			debug_print("TLV param %02x truncated: paramlen=%u buflen=%u\n", pid, paramlen, len);
 			return NULL;
 		}
 		tlv_list_append(&head, pid, paramlen, ptr);
 		ptr += paramlen; len -= paramlen;
 	}
 	if(len > 0)
-		fprintf(stderr, "Warning: %u unparsed octets left at end of TLV list\n", len);
+		debug_print("Warning: %u unparsed octets left at end of TLV list\n", len);
 	return head;
 }
 

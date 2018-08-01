@@ -29,9 +29,9 @@ Current stable version: 1.3.0 (released Apr 11, 2018)
 - [X] ISO 9542 (ES-IS) - supported
 - [X] ISO 10747 (IDRP) - partially supported (decoding of some less important attributes is TODO)
 - [X] ISO 8073 (COTP) - supported
-- [X] ATN B1 CM (Context Management) - supported
-- [X] ATN B1 CPDLC (Controller-Pilot Data Link Communications) - supported
-- [ ] ATN B1 ADS-C (Automatic Dependent Surveillance - Contract) - not supported
+- [X] ICAO ATN-B1 CM (Context Management) - supported
+- [X] ICAO ATN-B1 CPDLC (Controller-Pilot Data Link Communications) - supported
+- [ ] ICAO ATN-B1 ADS-C (Automatic Dependent Surveillance - Contract) - not supported
 - [X] FANS 1/A CPDLC - supported
 - [X] FANS 1/A ADS-C - supported
 
@@ -156,7 +156,8 @@ If you want to decode another VDL2 channel, just add its frequency as a last par
 
         ./dumpvdl2 --rtlsdr 0 --gain 40 --correction 42 136725000
 
-dumpvdl2 can decode up to 8 VDL2 channels simultaneously. Just list all of them at the end:
+dumpvdl2 can decode up to 8 VDL2 channels simultaneously. Just list their frequencies at the end
+of the command line:
 
         ./dumpvdl2 --rtlsdr 0 --gain 40 --correction 42 136725000 136975000 136875000
 
@@ -203,9 +204,9 @@ with this driver - use `--gr` option to specify requested end-to-end gain reduct
 The smallest possible value is 20. The highest value depends on receiver type, but it's
 not that important, because in dumpvdl2 you will hardly be using a GR larger than 59 dB.
 
-Another option is to skip the `--gr` option. This will enable Automatic Gain Control
-with a default set point of -35 dBFS, which shall converge to a reasonable gain reduction
-value in a couple of seconds after the program starts. AGC set point can be changed
+Another way to go is to skip the `--gr` option altogether. This will enable Automatic Gain
+Control with a default set point of -35 dBFS, which shall converge to a reasonable gain
+reduction value in a couple of seconds after the program starts. AGC set point can be changed
 with `--agc` option, but treat this as an "expert mode" knob, which is hardly ever needed.
 
 Example 1: use SDRplay device ID=0, with auto gain and three VDL2 channels:
@@ -484,9 +485,10 @@ It basically comes down to three things:
 ###### The signal has to be strong enough (preferably 15 dB over noise floor, or better)
 
 - set your tuner gain quite high. I get good results with 40 dB for RTLSDR and 75 dB for Mirics
-  dongles. Gain reduction of 30-40 reportedly works well on SDRPlay. However, it depends on the
-  used antenna. Do not be tempted to crank the gain up to the max. Keep your noise floor low
-  because higher noise yields higher bit error rate.
+  dongles. Do not be tempted to crank the gain up to the max. Keep your noise floor low
+  because higher noise yields higher bit error rate and may cause signal clipping when the
+  transmission is strong (eg. the transmitting aircraft is just overflying your antenna).
+  On SDRPlay it should be good enough to use auto gain control.
 
 - check SDR Console with the same gain setting - do you see data bursts clearly? (they are
   very short, like pops).
@@ -497,38 +499,12 @@ It basically comes down to three things:
 - RTL dongles are cheap - some of them have higher noise figure than others. If you have several
   dongles at hand, just try another one.
 
-To verify that the signal strength is enough for the squelch to open, do the following:
-
-- Go to dumpvdl2 source directory
-
-- Recompile with debug output enabled:
-
-        make clean
-        make <your_make_options> DEBUG=1
-
-- Run the program as usual. It will display debugging info to standard error. Every second or so
-  the current noise floor estimate for each configured channel will be printed:
-```
-process_samples(): 136975000: noise_floor: -43.8 dBFS
-process_samples(): 136975000: noise_floor: -42.1 dBFS
-process_samples(): 136975000: noise_floor: -42.3 dBFS
-```
-- If you only see these lines and nothing else, it means there is no transmission on the configured
-  channel - or there is, but it's not strong enough for the squelch to open. If you see a lot of
-  other debug messages, that's good, they describe various stages of frame decoding and you
-  can figure out, how it's doing and where it fails. However if the squelch opens all the time,
-  several times a second and there are still no messages, it means your gain is probably set too
-  high and the receiver front end is saturated. Reduce the gain a bit (like 1-2 dB) and see if
-  it helps. When using RTLSDR, the noise floor shall preferably stay between -47 and -50 dBFS.
-  On SDRPlay, which has a better sampling resolution, this is less critical. Auto gain should
-  do a good job on it.
-
-###### Tuned frequency has to be correct
+###### Channel frequency must be correct
 
 - initially, just don't set it manually, use the default of 136.975 MHz. It is used everywhere
   where VDL2 is deployed.
 
-###### PPM correction setting has to be accurate
+###### PPM correction setting must be (more or less) accurate
 
 - oscillators in cheap receivers are not 100% accurate. It is usually necessary to introduce
   manual correction to get precise tuning. There is no one-size-fits-all correction value - it is
@@ -576,23 +552,14 @@ observe the output:
         real sample rate: 2048181 current PPM: 89 cumulative PPM: 80
 
 After a couple of minutes the cumulative PPM value converges to a stable reading. This is
-the value for your dongle. However, some people reported that this method is not always 100%
-accurate, so it's good to double-check with method 2 or 3.
+an approximate correction value for your dongle. Run dumpvdl2 with `--correction <value>`
+option. dumpvdl2 can compensate correction errors up to a certain amount. Once you have
+received some messages, look for the frequency offset field which is printed in the header
+of each message (it's the value expressed in ppm). Your tuning is good, when this value
+is close to 0.  If you see a systematic offset from 0, tweak your correction value to
+compensate it.
 
-**Method 2:** use your favorite SDR console (like SDRSharp, HDSDR, GQRX, etc). Tune it to a
-frequency of some local narrowband transmitter which transmits constantly (or very often) and
-is driven by a good frequency reference. A good example is an ATIS or AWOS channel from a local
-airport. Zoom in on the channel peak and adjust the correction value in the receiver settings
-to bring the peak exactly to the tuned frequency. If it's a voice channel, judge it by your ear -
-aim for the lowest possible background noise. See this video tutorial for reference:
-[Frequency calibration in SDRSharp](https://www.youtube.com/watch?v=gFXMbr1dgng).
-
-**Method 3:** use [kalibrate-rtl](https://github.com/steve-m/kalibrate-rtl) utility. It estimates
-the correction value using GSM signal from nearby base stations. The estimate is quite accurate
-provided that you supply the program with approximate PPM offset value using `-e` option. This
-is even more important if your dongle has a large offset value (say, 50 or more).
-
-##### CPU usage on Raspberry Pi is very high
+##### High CPU usage on Raspberry Pi
 
 Default compiler flags should work fine on most platforms. However you may get a performance
 boost (read: lower CPU usage) by adjusting the flags to the CPU which you intend to run
@@ -606,23 +573,9 @@ Using a recent version of GCC is important as well. Version 4.9 (supplied with R
 Jessie) is ancient and generates suboptimal code for ARM platforms. 6.3 (available in
 Raspbian Stretch) or 7.1 (available in Arch Linux) both perform significantly better.
 
-dumpvdl2 CPU usage depends mostly on two factors:
-
-- the sampling rate of the SDR device - dumpvdl2 sets it as low as possible, but it can't go
-  down beyond the lower limit of the device. On RTLSDR it's possible to use a sampling rate
-  of 1.05 Msps, while on SDRplay it has to be twice as large, which implies twice the amount
-  of work in the initial sample processing stage. In fact, the difference is even larger than
-  twice, because RTLSDR samples are 8-bit, while SDRPlay uses 16-bit.
-
-- the number of configured VDL2 channels. If the CPU usage is near 100%, it's better to reduce
-  the number of channels rather than get USB sample drops which are detrimental to the
-  decoding performance (read: you will get less frames decoded). dumpvdl2 currently decodes
-  all configured channels in a single program thread. A multithreaded decoder is TODO - once
-  it's ready, this problem will become less important.
-
 ##### What do these numbers in the message header mean?
 
-        [2017-02-26 19:18:00 GMT] [136.975] [-18.9/-43.9 dBFS] [25.0 dB]
+        [2017-02-26 19:18:00 GMT] [136.975] [-18.9/-43.9 dBFS] [25.0 dB] [0.4 ppm]
 
 From left to right:
 
@@ -630,12 +583,27 @@ From left to right:
 
 - channel frequency on which the message has been received.
 
-- signal power level (averaged over transmitter ramp-up stage, ie. 3 symbol periods after
-  squelch opening). Full scale is 0 dB.
+- signal power level (averaged over all symbol sampling points in the burst). Full scale is 0 dB.
 
 - noise floor power level. Full scale is 0 dB.
 
 - signal to noise ratio (ie. signal power level minus noise floor power level).
+
+- frequency offset of the received burst from the channel center frequency, in parts per million.
+
+There is an `--extended-header` command line option which enables additional fields:
+
+        [2017-02-26 19:18:00 GMT] [136.975] [-18.9/-43.9 dBFS] [25.0 dB] [0.4 ppm] [S:0] [L:34] [F:0] [#0]
+
+- number of bit errors corrected in the VDL2 burst header (up to 2).
+
+- burst length in octets.
+
+- number of octets corrected by Reed-Solomon FEC.
+
+- number of frame in this particular transmission. Multiple AVLC frames (messages) may be
+  concatenated and sent as a single transmission burst. When a multiframe burst is received, frames
+  will be numbered incrementally.
 
 ##### Can you add support for [*my favourite SDR receiver type*]?
 

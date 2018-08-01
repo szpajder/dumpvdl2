@@ -8,7 +8,7 @@ BINDIR = $(PREFIX)/bin
 INSTALL_USER = root
 INSTALL_GROUP = root
 CC = gcc
-CFLAGS += -std=c99 -g -Wall -O3 -fno-omit-frame-pointer -ffast-math -D_XOPEN_SOURCE=500 -D_FILE_OFFSET_BITS=64 -DDEBUG=$(DEBUG)
+CFLAGS += -std=c11 -g -Wall -O3 -fno-omit-frame-pointer -ffast-math -pthread -D_XOPEN_SOURCE=600 -D_FILE_OFFSET_BITS=64 -DDEBUG=$(DEBUG)
 
 ifeq ($(PLATFORM), rpiv1)
   CFLAGS += -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard
@@ -34,7 +34,7 @@ endif
 
 CFLAGS += -Iasn1 $(GLIBCFLAGS)
 CFLAGS += -DUSE_STATSD=$(USE_STATSD) -DWITH_RTLSDR=$(WITH_RTLSDR) -DWITH_SDRPLAY=$(WITH_SDRPLAY) -DWITH_MIRISDR=$(WITH_MIRISDR)
-LDLIBS = -lm $(GLIBLDLIBS)
+LDLIBS = -lm -lpthread $(GLIBLDLIBS)
 SUBDIRS = libfec asn1
 CLEANDIRS = $(SUBDIRS:%=clean-%)
 BIN = dumpvdl2
@@ -118,7 +118,7 @@ cotp.o: dumpvdl2.h tlv.h cotp.h icao.h
 
 cpdlc.o: dumpvdl2.h asn1-util.h cpdlc.h asn1-format-cpdlc.h
 
-decode.o: dumpvdl2.h
+decode.o: dumpvdl2.h avlc.h
 
 demod.o: dumpvdl2.h chebyshev.h
 
@@ -134,7 +134,7 @@ idrp.o: dumpvdl2.h idrp.h tlv.h
 
 rs.o: dumpvdl2.h fec.h
 
-dumpvdl2.o: dumpvdl2.h rtl.h mirisdr.h
+dumpvdl2.o: dumpvdl2.h avlc.h rtl.h mirisdr.h sdrplay.h
 
 avlc.o: dumpvdl2.h avlc.h xid.h acars.h x25.h
 
@@ -154,7 +154,7 @@ tlv.o: tlv.h dumpvdl2.h
 
 util.o: dumpvdl2.h tlv.h
 
-xid.o: dumpvdl2.h tlv.h xid.h
+xid.o: dumpvdl2.h tlv.h xid.h avlc.h
 
 x25.o: dumpvdl2.h clnp.h esis.h tlv.h x25.h
 
