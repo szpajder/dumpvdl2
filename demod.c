@@ -36,7 +36,7 @@
 #define MAG_LP 0.9f
 #define NF_LP 0.85f
 // input lowpass filter design constants
-#define INP_LPF_CUTOFF_FREQ 10000
+#define INP_LPF_CUTOFF_FREQ 8000
 #define INP_LPF_RIPPLE_PERCENT 0.5f
 // do not change this; filtering routine is currently hardcoded to 2 poles to minimize CPU usage
 #define INP_LPF_NPOLES 2
