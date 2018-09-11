@@ -45,7 +45,7 @@ static char *hw_descr[NUM_HW_TYPES] = {
 };
 
 static void sdrplay_streamCallback(short *xi, short *xq, unsigned int firstSampleNum, int grChanged,
-int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, void *cbContext) {
+int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, unsigned int hwRemoved, void *cbContext) {
 	int i, j, count1, count2, new_buf_flag;
 	int end, input_index;
 	sdrplay_ctx_t *SDRPlay = (sdrplay_ctx_t*)cbContext;
@@ -103,7 +103,7 @@ int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, void 
 }
 
 static void sdrplay_gainCallback(unsigned int gRdB, unsigned int lnaGRdB, void *cbContext) {
-	debug_print("Gain change: gRdb=%d lnaGRdB=%d \n", gRdB, lnaGRdB);
+	debug_print("Gain change: gRdb=%u lnaGRdB=%u \n", gRdB, lnaGRdB);
 }
 
 static int sdrplay_verbose_device_search(char * const dev, sdrplay_hw_type *hw_type) {
