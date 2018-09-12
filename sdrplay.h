@@ -2,6 +2,7 @@
  *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
  *
  *  Copyright (c) 2017 Fabrice Crohas <fcrohas@gmail.com>
+ *  Copyright (c) 2018 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,9 +40,10 @@ typedef enum {
 	HW_UNKNOWN	= 0,
 	HW_RSP1		= 1,
 	HW_RSP2		= 2,
-	HW_RSP1A	= 3
+	HW_RSP1A	= 3,
+	HW_RSPDUO	= 4
 } sdrplay_hw_type;
-#define NUM_HW_TYPES 4
+#define NUM_HW_TYPES 5
 
 void sdrplay_init(vdl2_state_t * const ctx, char * const dev, char * const antenna,
 	uint32_t const freq, int const gr, int const ppm_error,	int const enable_biast,

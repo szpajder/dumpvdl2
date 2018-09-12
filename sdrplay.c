@@ -2,7 +2,7 @@
  *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
  *
  *  Copyright (c) 2017 Fabrice Crohas <fcrohas@gmail.com>
- *  Copyright (c) 2017 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2018 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,17 +31,20 @@ static int initialized = 0;
 static int lnaGRtables[NUM_HW_TYPES][NUM_LNA_STATES] = {
 	[HW_RSP1]  = { 0, 24, 19, 43, 0, 0, 0, 0, 0, 0 },
 	[HW_RSP2]  = { 0, 10, 15, 21, 24, 34, 39, 45, 64, 0 },
-	[HW_RSP1A] = { 0, 6, 12, 18, 20, 26, 32, 38, 57, 62 }
+	[HW_RSP1A] = { 0, 6, 12, 18, 20, 26, 32, 38, 57, 62 },
+	[HW_RSPDUO] = { 0, 6, 12, 18, 20, 26, 32, 38, 57, 62 }
 };
 static int num_lnaGRs[NUM_HW_TYPES] = {
 	[HW_RSP1] = 4,
 	[HW_RSP2] = 9,
-	[HW_RSP1A] = 10
+	[HW_RSP1A] = 10,
+	[HW_RSPDUO] = 10
 };
 static char *hw_descr[NUM_HW_TYPES] = {
 	[HW_RSP1] = "RSP1",
 	[HW_RSP2] = "RSP2",
-	[HW_RSP1A] = "RSP1A"
+	[HW_RSP1A] = "RSP1A",
+	[HW_RSPDUO] = "RSPduo"
 };
 
 static void sdrplay_streamCallback(short *xi, short *xq, unsigned int firstSampleNum, int grChanged,
@@ -166,6 +169,8 @@ dev_found:
 		*hw_type = HW_RSP1;
 	} else if(devices[devIdx].hwVer == 2) {
 		*hw_type = HW_RSP2;
+	} else if(devices[devIdx].hwVer == 3) {
+		*hw_type = HW_RSPDUO;
 	} else if(devices[devIdx].hwVer > 253) {
 		*hw_type = HW_RSP1A;
 	} else {
@@ -236,6 +241,23 @@ int const enable_notch_filter, int enable_agc) {
 		if(enable_notch_filter) {
 			fprintf(stderr, "AM/FM notch filter enabled\n");
 			err = mir_sdr_RSPII_RfNotchEnable(1);
+			if(err != mir_sdr_Success) {
+				fprintf(stderr, "Unable to activate notch filter, error %d\n", err);
+				_exit(1);
+			}
+		}
+	} else if(hw_type == HW_RSPDUO) {
+		if(enable_biast) {
+			fprintf(stderr, "Bias-T activated\n");
+			err = mir_sdr_rspDuo_BiasT(1);
+			if(err != mir_sdr_Success) {
+				fprintf(stderr, "Unable to activate Bias-T, error %d\n", err);
+				_exit(1);
+			}
+		}
+		if(enable_notch_filter) {
+			fprintf(stderr, "Broadcast notch filter enabled\n");
+			err = mir_sdr_rspDuo_BroadcastNotch(1);
 			if(err != mir_sdr_Success) {
 				fprintf(stderr, "Unable to activate notch filter, error %d\n", err);
 				_exit(1);
