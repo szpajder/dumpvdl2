@@ -216,12 +216,12 @@ int const enable_notch_filter, int enable_agc) {
 
 	if(hw_type == HW_RSP2) {
 		if(enable_biast) {
-			fprintf(stderr, "Bias-T activated\n");
 			err = mir_sdr_RSPII_BiasTControl(1);
 			if(err != mir_sdr_Success) {
 				fprintf(stderr, "Unable to activate Bias-T, error %d\n", err);
 				_exit(1);
 			}
+			fprintf(stderr, "Bias-T activated\n");
 		}
 
 		if(strcmp(antenna, "A") == 0) {
@@ -239,29 +239,46 @@ int const enable_notch_filter, int enable_agc) {
 		fprintf(stderr, "Using antenna port %s\n", antenna);
 
 		if(enable_notch_filter) {
-			fprintf(stderr, "AM/FM notch filter enabled\n");
 			err = mir_sdr_RSPII_RfNotchEnable(1);
 			if(err != mir_sdr_Success) {
-				fprintf(stderr, "Unable to activate notch filter, error %d\n", err);
+				fprintf(stderr, "Unable to activate RF notch filter, error %d\n", err);
 				_exit(1);
 			}
+			fprintf(stderr, "RF notch filter enabled\n");
+		}
+	} else if(hw_type == HW_RSP1A) {
+		if(enable_biast) {
+			err = mir_sdr_rsp1a_BiasT(1);
+			if(err != mir_sdr_Success) {
+				fprintf(stderr, "Unable to activate Bias-T, error %d\n", err);
+				_exit(1);
+			}
+			fprintf(stderr, "Bias-T activated\n");
+		}
+		if(enable_notch_filter) {
+			err = mir_sdr_rsp1a_BroadcastNotch(1);
+			if(err != mir_sdr_Success) {
+				fprintf(stderr, "Unable to activate broadcast notch filter, error %d\n", err);
+				_exit(1);
+			}
+			fprintf(stderr, "Broadcast notch filter enabled\n");
 		}
 	} else if(hw_type == HW_RSPDUO) {
 		if(enable_biast) {
-			fprintf(stderr, "Bias-T activated\n");
 			err = mir_sdr_rspDuo_BiasT(1);
 			if(err != mir_sdr_Success) {
 				fprintf(stderr, "Unable to activate Bias-T, error %d\n", err);
 				_exit(1);
 			}
+			fprintf(stderr, "Bias-T activated\n");
 		}
 		if(enable_notch_filter) {
-			fprintf(stderr, "Broadcast notch filter enabled\n");
 			err = mir_sdr_rspDuo_BroadcastNotch(1);
 			if(err != mir_sdr_Success) {
-				fprintf(stderr, "Unable to activate notch filter, error %d\n", err);
+				fprintf(stderr, "Unable to activate broadcast notch filter, error %d\n", err);
 				_exit(1);
 			}
+			fprintf(stderr, "Broadcast notch filter enabled\n");
 		}
 	}
 
