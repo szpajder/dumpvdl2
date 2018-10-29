@@ -194,6 +194,7 @@ void usage() {
 	fprintf(stderr, "\t--antenna <A/B>\t\t\tRSP2 antenna port selection (default: A)\n");
 	fprintf(stderr, "\t--biast <0/1>\t\t\tRSP2 Bias-T control: 0 - off (default), 1 - on\n");
 	fprintf(stderr, "\t--notch-filter <0/1>\t\tRSP2/1a/duo AM/FM/bcast notch filter control: 0 - off (default), 1 - on\n");
+	fprintf(stderr, "\t--tuner <1/2>\t\t\tRSPduo tuner selection: (default: 1)\n");
 #endif
 	fprintf(stderr, "\nfile_options:\n");
 	fprintf(stderr, "\t--iq-file <input_file>\t\tRead I/Q samples from file\n");
@@ -319,6 +320,7 @@ int main(int argc, char **argv) {
 	char* sdrplay_antenna = "A";
 	int sdrplay_biast = 0;
 	int sdrplay_notch_filter = 0;
+	int sdrplay_tuner = 1;
 	int sdrplay_agc = 0;
 	int sdrplay_gr = SDR_AUTO_GAIN;
 #endif
@@ -349,6 +351,7 @@ int main(int argc, char **argv) {
 		{ "notch-filter",	required_argument,	NULL,	__OPT_NOTCH_FILTER },
 		{ "agc",		required_argument,	NULL,	__OPT_AGC },
 		{ "gr",			required_argument,	NULL,	__OPT_GR },
+		{ "tuner",		required_argument,	NULL,	__OPT_TUNER },
 #endif
 #if WITH_RTLSDR
 		{ "rtlsdr",		required_argument,	NULL,	__OPT_RTLSDR },
@@ -445,6 +448,9 @@ int main(int argc, char **argv) {
 			break;
 		case __OPT_GR:
 			sdrplay_gr = atoi(optarg);
+			break;
+		case __OPT_TUNER:
+			sdrplay_tuner = atoi(optarg);
 			break;
 #endif
 #if WITH_RTLSDR
@@ -584,7 +590,8 @@ int main(int argc, char **argv) {
 #endif
 #if WITH_SDRPLAY
 	case INPUT_SDRPLAY:
-		sdrplay_init(&ctx, device, sdrplay_antenna, centerfreq, sdrplay_gr, correction, sdrplay_biast, sdrplay_notch_filter, sdrplay_agc);
+		sdrplay_init(&ctx, device, sdrplay_antenna, centerfreq, sdrplay_gr, correction,
+		sdrplay_biast, sdrplay_notch_filter, sdrplay_agc, sdrplay_tuner);
 		break;
 #endif
 	default:

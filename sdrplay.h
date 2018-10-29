@@ -47,5 +47,5 @@ typedef enum {
 
 void sdrplay_init(vdl2_state_t * const ctx, char * const dev, char * const antenna,
 	uint32_t const freq, int const gr, int const ppm_error,	int const enable_biast,
-	int const enable_notch_filter, int enable_agc);
+	int const enable_notch_filter, int enable_agc, int tuner);
 void sdrplay_cancel();
