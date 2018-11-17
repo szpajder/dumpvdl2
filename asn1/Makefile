@@ -21,7 +21,7 @@ srcclean:
 	rm -f *.c *.h Makefile.am.sample
 
 regen:
-	asn1c -fcompound-names -gen-PER atn-cm.asn1 atn-cpdlc.asn1 atn-ulcs.asn1 fans-cpdlc.asn1
+	asn1c -fcompound-names -gen-PER atn-cm.asn1 atn-cpdlc.asn1 atn-ulcs.asn1
 # disable missing SET_OF_encode_uper function
 	patch -p0 < patches/disable_missing_set_of_encode_uper.diff
 # enable printing of CHOICE names by asn_print()
