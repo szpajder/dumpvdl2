@@ -2,7 +2,7 @@
  *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
  *
  *  Copyright (c) 2017 Fabrice Crohas <fcrohas@gmail.com>
- *  Copyright (c) 2017 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2018 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,21 +31,24 @@ static int initialized = 0;
 static int lnaGRtables[NUM_HW_TYPES][NUM_LNA_STATES] = {
 	[HW_RSP1]  = { 0, 24, 19, 43, 0, 0, 0, 0, 0, 0 },
 	[HW_RSP2]  = { 0, 10, 15, 21, 24, 34, 39, 45, 64, 0 },
-	[HW_RSP1A] = { 0, 6, 12, 18, 20, 26, 32, 38, 57, 62 }
+	[HW_RSP1A] = { 0, 6, 12, 18, 20, 26, 32, 38, 57, 62 },
+	[HW_RSPDUO] = { 0, 6, 12, 18, 20, 26, 32, 38, 57, 62 }
 };
 static int num_lnaGRs[NUM_HW_TYPES] = {
 	[HW_RSP1] = 4,
 	[HW_RSP2] = 9,
-	[HW_RSP1A] = 10
+	[HW_RSP1A] = 10,
+	[HW_RSPDUO] = 10
 };
 static char *hw_descr[NUM_HW_TYPES] = {
 	[HW_RSP1] = "RSP1",
 	[HW_RSP2] = "RSP2",
-	[HW_RSP1A] = "RSP1A"
+	[HW_RSP1A] = "RSP1A",
+	[HW_RSPDUO] = "RSPduo"
 };
 
 static void sdrplay_streamCallback(short *xi, short *xq, unsigned int firstSampleNum, int grChanged,
-int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, void *cbContext) {
+int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, unsigned int hwRemoved, void *cbContext) {
 	int i, j, count1, count2, new_buf_flag;
 	int end, input_index;
 	sdrplay_ctx_t *SDRPlay = (sdrplay_ctx_t*)cbContext;
@@ -103,7 +106,7 @@ int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, void 
 }
 
 static void sdrplay_gainCallback(unsigned int gRdB, unsigned int lnaGRdB, void *cbContext) {
-	debug_print("Gain change: gRdb=%d lnaGRdB=%d \n", gRdB, lnaGRdB);
+	debug_print("Gain change: gRdb=%u lnaGRdB=%u \n", gRdB, lnaGRdB);
 }
 
 static int sdrplay_verbose_device_search(char * const dev, sdrplay_hw_type *hw_type) {
@@ -166,6 +169,8 @@ dev_found:
 		*hw_type = HW_RSP1;
 	} else if(devices[devIdx].hwVer == 2) {
 		*hw_type = HW_RSP2;
+	} else if(devices[devIdx].hwVer == 3) {
+		*hw_type = HW_RSPDUO;
 	} else if(devices[devIdx].hwVer > 253) {
 		*hw_type = HW_RSP1A;
 	} else {
@@ -184,7 +189,7 @@ dev_found:
 
 void sdrplay_init(vdl2_state_t * const ctx, char * const dev, char * const antenna,
 uint32_t const freq, int const gr, int const ppm_error, int const enable_biast,
-int const enable_notch_filter, int enable_agc) {
+int const enable_notch_filter, int enable_agc, int tuner) {
 	mir_sdr_ErrT err;
 	float ver;
 	sdrplay_ctx_t SDRPlay;
@@ -211,12 +216,12 @@ int const enable_notch_filter, int enable_agc) {
 
 	if(hw_type == HW_RSP2) {
 		if(enable_biast) {
-			fprintf(stderr, "Bias-T activated\n");
 			err = mir_sdr_RSPII_BiasTControl(1);
 			if(err != mir_sdr_Success) {
 				fprintf(stderr, "Unable to activate Bias-T, error %d\n", err);
 				_exit(1);
 			}
+			fprintf(stderr, "Bias-T activated\n");
 		}
 
 		if(strcmp(antenna, "A") == 0) {
@@ -234,12 +239,52 @@ int const enable_notch_filter, int enable_agc) {
 		fprintf(stderr, "Using antenna port %s\n", antenna);
 
 		if(enable_notch_filter) {
-			fprintf(stderr, "AM/FM notch filter enabled\n");
 			err = mir_sdr_RSPII_RfNotchEnable(1);
 			if(err != mir_sdr_Success) {
-				fprintf(stderr, "Unable to activate notch filter, error %d\n", err);
+				fprintf(stderr, "Unable to activate RF notch filter, error %d\n", err);
 				_exit(1);
 			}
+			fprintf(stderr, "RF notch filter enabled\n");
+		}
+	} else if(hw_type == HW_RSP1A) {
+		if(enable_biast) {
+			err = mir_sdr_rsp1a_BiasT(1);
+			if(err != mir_sdr_Success) {
+				fprintf(stderr, "Unable to activate Bias-T, error %d\n", err);
+				_exit(1);
+			}
+			fprintf(stderr, "Bias-T activated\n");
+		}
+		if(enable_notch_filter) {
+			err = mir_sdr_rsp1a_BroadcastNotch(1);
+			if(err != mir_sdr_Success) {
+				fprintf(stderr, "Unable to activate broadcast notch filter, error %d\n", err);
+				_exit(1);
+			}
+			fprintf(stderr, "Broadcast notch filter enabled\n");
+		}
+	} else if(hw_type == HW_RSPDUO) {
+		err = mir_sdr_rspDuo_TunerSel(tuner);
+		if(err != mir_sdr_Success) {
+			fprintf(stderr, "Unable to select tuner %d, error %d\n", tuner, err);
+			_exit(1);
+		}
+		fprintf(stderr, "RSPduo: selected tuner %d\n", tuner);
+		if(enable_biast) {
+			err = mir_sdr_rspDuo_BiasT(1);
+			if(err != mir_sdr_Success) {
+				fprintf(stderr, "Unable to activate Bias-T, error %d\n", err);
+				_exit(1);
+			}
+			fprintf(stderr, "Bias-T activated\n");
+		}
+		if(enable_notch_filter) {
+			err = mir_sdr_rspDuo_BroadcastNotch(1);
+			if(err != mir_sdr_Success) {
+				fprintf(stderr, "Unable to activate broadcast notch filter, error %d\n", err);
+				_exit(1);
+			}
+			fprintf(stderr, "Broadcast notch filter enabled\n");
 		}
 	}
 

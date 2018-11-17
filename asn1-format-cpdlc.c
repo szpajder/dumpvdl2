@@ -693,7 +693,7 @@ static asn_formatter_t const asn1_cpdlc_formatter_table[] = {
 	{ .type = &asn_DEF_FANSProcedureTransition, .format = &asn1_format_any, .label = "Procedure transition" },
 	{ .type = &asn_DEF_FANSProcedureType, .format = &asn1_format_ENUM, .label = "Procedure type" },
 	{ .type = &asn_DEF_FANSPublishedIdentifier, .format = &asn1_format_SEQUENCE_cpdlc, .label = "Published identifier" },
-	{ .type = &asn_DEF_FANSRemainingFuel, .format = &asn1_format_SEQUENCE_cpdlc, .label = NULL },
+	{ .type = &asn_DEF_FANSRemainingFuel, .format = &asn1_format_FANSTime, .label = "Remaining fuel" },
 	{ .type = &asn_DEF_FANSRemainingFuelRemainingSouls, .format = &asn1_format_SEQUENCE_cpdlc, .label = NULL },
 	{ .type = &asn_DEF_FANSRemainingSouls, .format = &asn1_format_any, .label = "Persons on board" },
 	{ .type = &asn_DEF_FANSReportedWaypointAltitude, .format = asn1_format_CHOICE_cpdlc, .label = "Reported waypoint altitude" },

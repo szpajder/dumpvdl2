@@ -89,6 +89,7 @@
 #define __OPT_NOTCH_FILTER		83
 #define __OPT_AGC			84
 #define __OPT_GR			85
+#define __OPT_TUNER			86
 #endif
 
 #define __OPT_HELP			99
