@@ -1,5 +1,13 @@
 # NEWS
 
+### Version 1.5.0 (2018-11-17):
+* Sync with the latest SDRPlay API v. 2.13 which is now required to
+  compile the program
+* Added support for SDRPlay RSPduo (with tuner selection, bias-T and
+  notch filters)
+* Added support for RSP1A features: Bias-T and broadcast notch filter
+* Minor bugfixes
+
 ### Version 1.4.0 (2018-08-01):
 * Major improvements to the DSP and decoding engine - gives much
   better decoding success rate, especially for weak transmissions
