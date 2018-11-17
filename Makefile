@@ -48,7 +48,6 @@ SUBDIRS = libfec asn1
 CLEANDIRS = $(SUBDIRS:%=clean-%)
 BIN = dumpvdl2
 OBJ =	acars.o \
-	adsc.o \
 	asn1-format-common.o \
 	asn1-format-icao.o \
 	asn1-util.o \
@@ -118,8 +117,6 @@ check_libacars:
 
 asn1-format-common.o: asn1-util.h tlv.h
 
-asn1-format-cpdlc.o: tlv.h dumpvdl2.h asn1-util.h asn1-format-common.h
-
 asn1-format-icao.o: tlv.h dumpvdl2.h asn1-util.h asn1-format-common.h
 
 asn1-util.o: dumpvdl2.h asn1-util.h
@@ -127,8 +124,6 @@ asn1-util.o: dumpvdl2.h asn1-util.h
 clnp.o: dumpvdl2.h clnp.h idrp.h cotp.h
 
 cotp.o: dumpvdl2.h tlv.h cotp.h icao.h
-
-cpdlc.o: dumpvdl2.h asn1-util.h cpdlc.h asn1-format-cpdlc.h
 
 decode.o: dumpvdl2.h avlc.h
 
@@ -177,22 +172,8 @@ $(CLEANDIRS):
 	$(MAKE) -C $(@:clean-%=%) clean
 
 clean: $(CLEANDIRS)
-	rm -f *.o $(BIN) decpdlc
+	rm -f *.o $(BIN)
 
 install: $(BIN)
 	install -d -o $(INSTALL_USER) -g $(INSTALL_GROUP) $(BINDIR)
 	install -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 755 $(BIN) $(BINDIR)
-
-DECPDLC_DEPS = decpdlc.o \
-	util.o \
-	tlv.o \
-	cpdlc.o \
-	asn1-util.o \
-	asn1-format-cpdlc.o \
-	asn1-format-common.o \
-	$(ASN1)
-
-decpdlc.o: cpdlc.h dumpvdl2.h
-
-decpdlc: $(DECPDLC_DEPS)
-	$(CC) $(DECPDLC_DEPS) -o decpdlc
