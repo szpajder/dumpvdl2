@@ -49,7 +49,7 @@ static void output_acars_pp(la_proto_node const * const node) {
 	}
 	la_acars_msg *msg = node->data;
 	char *txt = strdup(msg->txt);
-	for(char *ptr = txt; *ptr != NULL; ptr++) {
+	for(char *ptr = txt; *ptr != 0; ptr++) {
 		if (*ptr == '\n' || *ptr == '\r') {
 			*ptr = ' ';
 		}
