@@ -24,10 +24,33 @@
 #include <string.h>
 #include <errno.h>
 #include <libacars/libacars.h>		// la_proto_node, la_proto_tree_destroy, la_proto_tree_format_text
-#include <libacars/acars.h>		// la_acars_parse
+#include <libacars/acars.h>		// la_acars_parse, la_proto_tree_find_acars
+#include <libacars/cpdlc.h>		// la_proto_tree_find_cpdlc
 #include <libacars/vstring.h>		// la_vstring, la_vstring_append_sprintf
 #include "dumpvdl2.h"
 #include "acars.h"
+
+static void update_msg_type(uint32_t *msg_type, la_proto_node *root) {
+	la_proto_node *node = la_proto_tree_find_acars(root);
+	if(node == NULL) {
+		debug_print("%s", "proto tree contains no ACARS message");
+		return;
+	}
+	la_acars_msg *amsg = (la_acars_msg *)node->data;
+	if(strlen(amsg->txt) > 0) {
+		debug_print("%s\n", "MSGFLT_ACARS_DATA");
+		*msg_type |= MSGFLT_ACARS_DATA;
+	} else {
+		debug_print("%s\n", "MSGFLT_ACARS_NODATA");
+		*msg_type |= MSGFLT_ACARS_NODATA;
+	}
+
+	node = la_proto_tree_find_cpdlc(node);
+	if(node != NULL) {
+		debug_print("%s\n", "MSGFLT_CPDLC");
+		*msg_type |= MSGFLT_CPDLC;
+	}
+}
 
 la_proto_node *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	la_msg_dir msg_dir = LA_MSG_DIR_UNKNOWN;
@@ -40,7 +63,9 @@ la_proto_node *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		debug_print("%s", "Message direction is unknown!\n");
 		return NULL;
 	}
-	return la_acars_parse(buf, len, msg_dir);
+	la_proto_node *node = la_acars_parse(buf, len, msg_dir);
+	update_msg_type(msg_type, node);
+	return node;
 }
 
 static void output_acars_pp(la_proto_node const * const node) {
