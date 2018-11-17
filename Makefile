@@ -32,16 +32,24 @@ else ifeq ($(strip $(GLIBLDLIBS)),)
   GLIBERROR = 1
 endif
 
-CFLAGS += -Iasn1 $(GLIBCFLAGS)
+LIBACARSERROR = 0
+LIBACARSCFLAGS:=$(shell pkg-config --cflags libacars)
+LIBACARSLDLIBS:=$(shell pkg-config --libs libacars)
+ifeq ($(strip $(LIBACARSCFLAGS)),)
+  LIBACARSERROR = 1
+else ifeq ($(strip $(LIBACARSLDLIBS)),)
+  LIBACARSERROR = 1
+endif
+
+CFLAGS += -Iasn1 $(GLIBCFLAGS) $(LIBACARSCFLAGS)
 CFLAGS += -DUSE_STATSD=$(USE_STATSD) -DWITH_RTLSDR=$(WITH_RTLSDR) -DWITH_SDRPLAY=$(WITH_SDRPLAY) -DWITH_MIRISDR=$(WITH_MIRISDR)
-LDLIBS = -lm -lpthread $(GLIBLDLIBS)
+LDLIBS = -lm -lpthread $(GLIBLDLIBS) $(LIBACARSLDLIBS)
 SUBDIRS = libfec asn1
 CLEANDIRS = $(SUBDIRS:%=clean-%)
 BIN = dumpvdl2
 OBJ =	acars.o \
 	adsc.o \
 	asn1-format-common.o \
-	asn1-format-cpdlc.o \
 	asn1-format-icao.o \
 	asn1-util.o \
 	avlc.o \
@@ -49,7 +57,6 @@ OBJ =	acars.o \
 	chebyshev.o \
 	clnp.o \
 	cotp.o \
-	cpdlc.o \
 	crc.o \
 	decode.o \
 	demod.o \
@@ -85,9 +92,9 @@ ifeq ($(WITH_SDRPLAY), 1)
   LDLIBS += -lmirsdrapi-rsp
 endif
 
-.PHONY: all clean install check_glib $(SUBDIRS) $(CLEANDIRS)
+.PHONY: all clean install check_glib check_libacars $(SUBDIRS) $(CLEANDIRS)
 
-all: check_glib $(BIN)
+all: check_glib check_libacars $(BIN)
 
 $(BIN): $(DEPS)
 
@@ -102,7 +109,12 @@ check_glib:
 		false; \
 	fi;
 
-adsc.o: dumpvdl2.h adsc.h tlv.h
+check_libacars:
+	@if test $(LIBACARSERROR) -ne 0; then \
+		printf "ERROR: failed to find libacars library configuration with pkgconfig.\n"; \
+		printf "Verify if pkgconfig and libacars are installed correctly.\n"; \
+		false; \
+	fi;
 
 asn1-format-common.o: asn1-util.h tlv.h
 
@@ -138,7 +150,7 @@ dumpvdl2.o: dumpvdl2.h avlc.h rtl.h mirisdr.h sdrplay.h
 
 avlc.o: dumpvdl2.h avlc.h xid.h acars.h x25.h
 
-acars.o: dumpvdl2.h acars.h adsc.h cpdlc.h
+acars.o: dumpvdl2.h acars.h
 
 mirisdr.o: dumpvdl2.h mirisdr.h
 

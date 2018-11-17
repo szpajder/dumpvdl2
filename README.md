@@ -655,8 +655,6 @@ Contains code from the following software projects:
 
 - libfec, (c) 2006 by Phil Karn, KA9Q
 
-- acarsdec, (c) 2015 Thierry Leconte
-
 - librtlsdr-keenerd, (c) 2013-2014 by Kyle Keen
 
 - asn1c, (c) 2003-2017 by Lev Walkin and contributors

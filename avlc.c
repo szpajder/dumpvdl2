@@ -177,6 +177,7 @@ static void parse_avlc(avlc_frame_qentry_t *v) {
 
 	uint8_t *ptr = buf;
 	avlc_frame_t frame;
+	memset(&frame, 0, sizeof(frame));
 	uint32_t msg_type = 0;
 	frame.num = v->idx;
 	frame.dst.val = parse_dlc_addr(ptr);
@@ -258,6 +259,9 @@ static void parse_avlc(avlc_frame_qentry_t *v) {
 	} else {
 		debug_print("msg_type: %x msg_filter: %x (filtered out)\n", msg_type, msg_filter);
 	}
+	if(frame.proto == PROTO_ACARS && frame.data_valid == 1) {
+		destroy_acars(frame.data);
+	}
 }
 
 GAsyncQueue *frame_queue = NULL;
@@ -333,7 +337,7 @@ static void output_avlc(const avlc_frame_qentry_t *v, const avlc_frame_t *f, uin
 		switch(f->proto) {
 		case PROTO_ACARS:
 			if(f->data_valid)
-				output_acars((acars_msg_t *)f->data);
+				output_acars(f->data);
 			else {
 				fprintf(outf, "-- Unparseable ACARS payload\n");
 				output_raw((uint8_t *)f->data, f->datalen);
