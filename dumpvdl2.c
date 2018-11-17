@@ -230,6 +230,7 @@ const msg_filterspec_t filters[] = {
 	{ "esis",		MSGFLT_ESIS,			"ES-IS PDUs" },
 	{ "cm",			MSGFLT_CM,			"ICAO Context Management Protocol PDUs" },
 	{ "cpdlc",		MSGFLT_CPDLC,			"Controller-Pilot Data Link Communication PDUs" },
+	{ "adsc",		MSGFLT_ADSC,			"Automatic Dependent Surveillance - Contract messages" },
 	{ 0,			0,				0 }
 };
 

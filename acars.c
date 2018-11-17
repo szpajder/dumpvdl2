@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <libacars/libacars.h>		// la_proto_node, la_proto_tree_destroy, la_proto_tree_format_text
 #include <libacars/acars.h>		// la_acars_parse, la_proto_tree_find_acars
+#include <libacars/adsc.h>		// la_proto_tree_find_adsc
 #include <libacars/cpdlc.h>		// la_proto_tree_find_cpdlc
 #include <libacars/vstring.h>		// la_vstring, la_vstring_append_sprintf
 #include "dumpvdl2.h"
@@ -45,10 +46,16 @@ static void update_msg_type(uint32_t *msg_type, la_proto_node *root) {
 		*msg_type |= MSGFLT_ACARS_NODATA;
 	}
 
-	node = la_proto_tree_find_cpdlc(node);
-	if(node != NULL) {
+	la_proto_node *node2 = la_proto_tree_find_cpdlc(node);
+	if(node2 != NULL) {
 		debug_print("%s\n", "MSGFLT_CPDLC");
 		*msg_type |= MSGFLT_CPDLC;
+	}
+
+	node2 = la_proto_tree_find_adsc(node);
+	if(node2 != NULL) {
+		debug_print("%s\n", "MSGFLT_ADSC");
+		*msg_type |= MSGFLT_ADSC;
 	}
 }
 
