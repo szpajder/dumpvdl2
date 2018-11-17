@@ -82,7 +82,7 @@ Install `libmirisdr-4` library:
         sudo ldconfig
         sudo cp $HOME/libmirisdr-4/mirisdr.rules /etc/udev/rules.d/mirisdr.rules
 
-##### SDRPLAY RSP1/2 support (optional)
+##### SDRPLAY RSP support (optional)
 
 Download and install API/hardware driver package from http://www.sdrplay.com/downloads/.
 Make sure you have selected the right hardware platform before downloading, otherwise
@@ -191,9 +191,10 @@ FAQ section "CPU usage on Raspberry Pi is very high" below.
 
 SDRPlay RSP native driver supports several advanced configuration options:
 
-- switching antenna ports (RSP2 only)
-- bias-T (RSP2 only)
-- notch filter on AM/FM (RSP2 only)
+- switching antenna ports (RSP2)
+- bias-T (RSP2, RSP1A)
+- notch filter for AM/FM broadcast bands (RSP2, RSP1A, RSPduo)
+- tuner selection (RSPduo)
 - Automatic Gain Control
 
 Type `./dumpvdl2 --help` to find out all the options and their default values.
