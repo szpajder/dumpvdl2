@@ -113,6 +113,7 @@
 #define MSGFLT_ESIS			(1 << 13)
 #define MSGFLT_CM			(1 << 14)
 #define MSGFLT_CPDLC			(1 << 15)
+#define MSGFLT_ADSC			(1 << 16)
 
 typedef struct {
 	char *token;

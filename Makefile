@@ -32,16 +32,23 @@ else ifeq ($(strip $(GLIBLDLIBS)),)
   GLIBERROR = 1
 endif
 
-CFLAGS += -Iasn1 $(GLIBCFLAGS)
+LIBACARSERROR = 0
+LIBACARSCFLAGS:=$(shell pkg-config --cflags libacars)
+LIBACARSLDLIBS:=$(shell pkg-config --libs libacars)
+ifeq ($(strip $(LIBACARSCFLAGS)),)
+  LIBACARSERROR = 1
+else ifeq ($(strip $(LIBACARSLDLIBS)),)
+  LIBACARSERROR = 1
+endif
+
+CFLAGS += -Iasn1 $(GLIBCFLAGS) $(LIBACARSCFLAGS)
 CFLAGS += -DUSE_STATSD=$(USE_STATSD) -DWITH_RTLSDR=$(WITH_RTLSDR) -DWITH_SDRPLAY=$(WITH_SDRPLAY) -DWITH_MIRISDR=$(WITH_MIRISDR)
-LDLIBS = -lm -lpthread $(GLIBLDLIBS)
+LDLIBS = -lm -lpthread $(GLIBLDLIBS) $(LIBACARSLDLIBS)
 SUBDIRS = libfec asn1
 CLEANDIRS = $(SUBDIRS:%=clean-%)
 BIN = dumpvdl2
 OBJ =	acars.o \
-	adsc.o \
 	asn1-format-common.o \
-	asn1-format-cpdlc.o \
 	asn1-format-icao.o \
 	asn1-util.o \
 	avlc.o \
@@ -49,7 +56,6 @@ OBJ =	acars.o \
 	chebyshev.o \
 	clnp.o \
 	cotp.o \
-	cpdlc.o \
 	crc.o \
 	decode.o \
 	demod.o \
@@ -85,9 +91,9 @@ ifeq ($(WITH_SDRPLAY), 1)
   LDLIBS += -lmirsdrapi-rsp
 endif
 
-.PHONY: all clean install check_glib $(SUBDIRS) $(CLEANDIRS)
+.PHONY: all clean install check_glib check_libacars $(SUBDIRS) $(CLEANDIRS)
 
-all: check_glib $(BIN)
+all: check_glib check_libacars $(BIN)
 
 $(BIN): $(DEPS)
 
@@ -102,11 +108,14 @@ check_glib:
 		false; \
 	fi;
 
-adsc.o: dumpvdl2.h adsc.h tlv.h
+check_libacars:
+	@if test $(LIBACARSERROR) -ne 0; then \
+		printf "ERROR: failed to find libacars library configuration with pkgconfig.\n"; \
+		printf "Verify if pkgconfig and libacars are installed correctly.\n"; \
+		false; \
+	fi;
 
 asn1-format-common.o: asn1-util.h tlv.h
-
-asn1-format-cpdlc.o: tlv.h dumpvdl2.h asn1-util.h asn1-format-common.h
 
 asn1-format-icao.o: tlv.h dumpvdl2.h asn1-util.h asn1-format-common.h
 
@@ -115,8 +124,6 @@ asn1-util.o: dumpvdl2.h asn1-util.h
 clnp.o: dumpvdl2.h clnp.h idrp.h cotp.h
 
 cotp.o: dumpvdl2.h tlv.h cotp.h icao.h
-
-cpdlc.o: dumpvdl2.h asn1-util.h cpdlc.h asn1-format-cpdlc.h
 
 decode.o: dumpvdl2.h avlc.h
 
@@ -138,7 +145,7 @@ dumpvdl2.o: dumpvdl2.h avlc.h rtl.h mirisdr.h sdrplay.h
 
 avlc.o: dumpvdl2.h avlc.h xid.h acars.h x25.h
 
-acars.o: dumpvdl2.h acars.h adsc.h cpdlc.h
+acars.o: dumpvdl2.h acars.h
 
 mirisdr.o: dumpvdl2.h mirisdr.h
 
@@ -165,22 +172,8 @@ $(CLEANDIRS):
 	$(MAKE) -C $(@:clean-%=%) clean
 
 clean: $(CLEANDIRS)
-	rm -f *.o $(BIN) decpdlc
+	rm -f *.o $(BIN)
 
 install: $(BIN)
 	install -d -o $(INSTALL_USER) -g $(INSTALL_GROUP) $(BINDIR)
 	install -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 755 $(BIN) $(BINDIR)
-
-DECPDLC_DEPS = decpdlc.o \
-	util.o \
-	tlv.o \
-	cpdlc.o \
-	asn1-util.o \
-	asn1-format-cpdlc.o \
-	asn1-format-common.o \
-	$(ASN1)
-
-decpdlc.o: cpdlc.h dumpvdl2.h
-
-decpdlc: $(DECPDLC_DEPS)
-	$(CC) $(DECPDLC_DEPS) -o decpdlc

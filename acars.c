@@ -18,294 +18,98 @@
  */
 #include <stdio.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <libacars/libacars.h>		// la_proto_node, la_proto_tree_destroy, la_proto_tree_format_text
+#include <libacars/acars.h>		// la_acars_parse, la_proto_tree_find_acars
+#include <libacars/adsc.h>		// la_proto_tree_find_adsc
+#include <libacars/cpdlc.h>		// la_proto_tree_find_cpdlc
+#include <libacars/vstring.h>		// la_vstring, la_vstring_append_sprintf
 #include "dumpvdl2.h"
 #include "acars.h"
-#include "adsc.h"
-#include "cpdlc.h"
 
-#define DEL 0x7f
-#define ETX 0x03
-
-static char *skip_fans1a_msg_prefix(acars_msg_t *msg, char const * const prefix) {
-	char *s = strstr(msg->txt, prefix);
-	if(s == NULL) {
-		debug_print("FANS-1/A prefix %s not found\n", prefix);
-		return NULL;
+static void update_msg_type(uint32_t *msg_type, la_proto_node *root) {
+	la_proto_node *node = la_proto_tree_find_acars(root);
+	if(node == NULL) {
+		debug_print("%s", "proto tree contains no ACARS message");
+		return;
 	}
-	s += 4;
-	if(strlen(s) < 7 || memcmp(s, msg->reg, 7)) {
-		debug_print("%s", "regnr not found\n");
-		return NULL;
-	}
-	debug_print("Found FANS-1/A prefix %s\n", prefix);
-	s += 7;
-	return s;
-}
-
-static int try_fans1a_adsc(acars_msg_t *msg, uint32_t *msg_type) {
-	uint8_t *buf = NULL;
-	adsc_msgid_t msgid = ADSC_MSG_UNKNOWN;
-	int ret = -1;
-
-	char *s = skip_fans1a_msg_prefix(msg, ".ADS");
-	if(s != NULL) {
-		msgid = ADSC_MSG_ADS;
-		goto adsc_type_found;
-	}
-	s = skip_fans1a_msg_prefix(msg, ".DIS");
-	if(s != NULL) {
-		msgid = ADSC_MSG_DIS;
-		goto adsc_type_found;
-	}
-adsc_type_found:
-	if(msgid == ADSC_MSG_UNKNOWN) {
-		debug_print("%s", "Not a FANS-1/A ADS message\n");
-		goto end;
-	}
-	int64_t buflen = slurp_hexstring(s, &buf);
-	if(buflen < 0) {
-		goto end;
-	}
-	msg->data = adsc_parse_msg(msgid, buf, (size_t)buflen, msg_type);
-	if(msg->data != NULL) {
-		msg->application = ACARS_APP_FANS1A_ADSC;
-		ret = 0;
-	}
-end:
-	XFREE(buf);
-	return ret;
-}
-
-static int try_fans1a_cpdlc(acars_msg_t *msg, uint32_t *msg_type) {
-	uint8_t *buf = NULL;
-	int ret = -1;
-	cpdlc_msgid_t cpdlc_type = CPDLC_MSG_UNKNOWN;
-
-	char *s = skip_fans1a_msg_prefix(msg, ".AT1");
-	if(s != NULL) {
-		cpdlc_type = CPDLC_MSG_AT1;
-		goto cpdlc_type_found;
-	}
-	s = skip_fans1a_msg_prefix(msg, ".CR1");
-	if(s != NULL) {
-		cpdlc_type = CPDLC_MSG_CR1;
-		goto cpdlc_type_found;
-	}
-	s = skip_fans1a_msg_prefix(msg, ".CC1");
-	if(s != NULL) {
-		cpdlc_type = CPDLC_MSG_CC1;
-		goto cpdlc_type_found;
-	}
-	s = skip_fans1a_msg_prefix(msg, ".DR1");
-	if(s != NULL) {
-		cpdlc_type = CPDLC_MSG_DR1;
-		goto cpdlc_type_found;
-	}
-cpdlc_type_found:
-	if(cpdlc_type == CPDLC_MSG_UNKNOWN) {
-		debug_print("%s", "Not a FANS-1/A CPDLC message\n");
-		goto end;
-	}
-	int64_t buflen = slurp_hexstring(s, &buf);
-	if(buflen < 0) {
-		goto end;
-	}
-	msg->data = cpdlc_parse_msg(cpdlc_type, buf, (size_t)buflen, msg_type);
-	if(msg->data != NULL) {
-		msg->application = ACARS_APP_FANS1A_CPDLC;
-		ret = 0;
-	}
-end:
-	XFREE(buf);
-	return ret;
-}
-
-static void try_acars_apps(acars_msg_t *msg, uint32_t *msg_type) {
-	switch(msg->label[0]) {
-	case 'A':
-		if(msg->label[1] == '6') {
-			if(try_fans1a_adsc(msg, msg_type) == 0) {
-				return;
-			}
-		} else if(msg->label[1] == 'A') {
-			if(try_fans1a_cpdlc(msg, msg_type) == 0) {
-				return;
-			}
-		}
-		break;
-	case 'B':
-		if(msg->label[1] == '6') {
-			if(try_fans1a_adsc(msg, msg_type) == 0) {
-				return;
-			}
-		} else if(msg->label[1] == 'A') {
-			if(try_fans1a_cpdlc(msg, msg_type) == 0) {
-				return;
-			}
-		}
-		break;
-	case 'H':
-		if(msg->label[1] == '1') {
-			if(try_fans1a_adsc(msg, msg_type) == 0) {
-				return;
-			}
-			if(try_fans1a_cpdlc(msg, msg_type) == 0) {
-				return;
-			}
-		}
-		break;
-	}
-}
-
-/*
- * ACARS message decoder
- * Based on acarsdec by Thierry Leconte
- */
-acars_msg_t *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	static acars_msg_t *msg = NULL;
-	int i;
-
-	if(len < MIN_ACARS_LEN) {
-		debug_print("too short: %u < %u\n", len, MIN_ACARS_LEN);
-		return NULL;
-	}
-
-	if(buf[len-1] != DEL) {
-		debug_print("%02x: no DEL byte at end\n", buf[len-1]);
-		return NULL;
-	}
-	len--;
-
-	uint8_t *buf2 = XCALLOC(len, sizeof(uint8_t));
-	uint16_t crc = crc16_ccitt(buf, len, 0);
-	debug_print("CRC check result: %04x\n", crc);
-
-	len -= 3;
-	if(msg == NULL)
-		msg = XCALLOC(1, sizeof(acars_msg_t));
-	else
-		memset(msg, 0, sizeof(acars_msg_t));
-
-	msg->crc_ok = (crc == 0);
-
-	// safe default
-	*msg_type |= MSGFLT_ACARS_NODATA;
-	for(i = 0; i < len; i++) {
-		buf2[i] = buf[i] & 0x7f;
-	}
-
-	uint32_t k = 0;
-	msg->mode = buf2[k++];
-
-	for (i = 0; i < 7; i++, k++) {
-		msg->reg[i] = buf2[k];
-	}
-	msg->reg[7] = '\0';
-
-	/* ACK/NAK */
-	msg->ack = buf2[k++];
-	if (msg->ack == 0x15)
-		msg->ack = '!';
-
-	msg->label[0] = buf2[k++];
-	msg->label[1] = buf2[k++];
-	if (msg->label[1] == 0x7f)
-		msg->label[1] = 'd';
-	msg->label[2] = '\0';
-
-	msg->bid = buf2[k++];
-	if (msg->bid == 0)
-		msg->bid = ' ';
-
-	/* txt start  */
-	msg->bs = buf2[k++];
-
-	msg->no[0] = '\0';
-	msg->fid[0] = '\0';
-	msg->txt[0] = '\0';
-	msg->application = ACARS_APP_NONE;
-
-	if(k >= len || msg->bs == ETX) {	// empty message text
-		msg->txt[0] = '\0';
-		goto end;
-	}
-
-	if (msg->mode <= 'Z' && msg->bid <= '9') {
-		/* message no */
-		for (i = 0; i < 4 && k < len; i++, k++) {
-			msg->no[i] = buf2[k];
-		}
-		msg->no[i] = '\0';
-
-		/* Flight id */
-		for (i = 0; i < 6 && k < len; i++, k++) {
-			msg->fid[i] = buf2[k];
-		}
-		msg->fid[i] = '\0';
-	}
-
-	len -= k;
-	if(len > ACARSMSG_BUFSIZE) {
-		debug_print("message truncated to buffer size (%u > %u)", len, ACARSMSG_BUFSIZE);
-		len = ACARSMSG_BUFSIZE - 1;	// leave space for terminating '\0'
-	}
-	if(len > 0) {
-		memcpy(msg->txt, buf2 + k, len);
+	la_acars_msg *amsg = (la_acars_msg *)node->data;
+	if(strlen(amsg->txt) > 0) {
+		debug_print("%s\n", "MSGFLT_ACARS_DATA");
 		*msg_type |= MSGFLT_ACARS_DATA;
-		*msg_type &= ~MSGFLT_ACARS_NODATA;
+	} else {
+		debug_print("%s\n", "MSGFLT_ACARS_NODATA");
+		*msg_type |= MSGFLT_ACARS_NODATA;
 	}
-	msg->txt[len] = '\0';
-	if(len > 0) {
-		try_acars_apps(msg, msg_type);
-// Replace NULLs in text
-		for(uint32_t p = 0; p < len; p++) {
-			if(msg->txt[p] == 0)
-				msg->txt[p] = '.';
+
+	la_proto_node *node2 = la_proto_tree_find_cpdlc(node);
+	if(node2 != NULL) {
+		debug_print("%s\n", "MSGFLT_CPDLC");
+		*msg_type |= MSGFLT_CPDLC;
+	}
+
+	node2 = la_proto_tree_find_adsc(node);
+	if(node2 != NULL) {
+		debug_print("%s\n", "MSGFLT_ADSC");
+		*msg_type |= MSGFLT_ADSC;
+	}
+}
+
+la_proto_node *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+	la_msg_dir msg_dir = LA_MSG_DIR_UNKNOWN;
+	if(*msg_type & MSGFLT_SRC_AIR) {
+		msg_dir = LA_MSG_DIR_AIR2GND;
+	} else if(*msg_type & MSGFLT_SRC_GND) {
+		msg_dir = LA_MSG_DIR_GND2AIR;
+	}
+	if(msg_dir == LA_MSG_DIR_UNKNOWN) {
+		debug_print("%s", "Message direction is unknown!\n");
+		return NULL;
+	}
+	la_proto_node *node = la_acars_parse(buf, len, msg_dir);
+	update_msg_type(msg_type, node);
+	return node;
+}
+
+static void output_acars_pp(la_proto_node const * const node) {
+	if(node == NULL || node->td != &la_DEF_acars_message) {
+		return;
+	}
+	la_acars_msg *msg = node->data;
+	char *txt = strdup(msg->txt);
+	for(char *ptr = txt; *ptr != 0; ptr++) {
+		if (*ptr == '\n' || *ptr == '\r') {
+			*ptr = ' ';
 		}
 	}
-end:
-	XFREE(buf2);
-	return msg;
-}
+	la_vstring *vstr = la_vstring_new();
+	la_vstring_append_sprintf(vstr, "AC%1c %7s %1c %2s %1c %4s %6s %s",
+		msg->mode, msg->reg, msg->ack, msg->label, msg->block_id, msg->no, msg->flight_id, txt);
 
-void output_acars_pp(const acars_msg_t *msg) {
-	char pkt[ACARSMSG_BUFSIZE+32];
-	char txt[ACARSMSG_BUFSIZE];
-
-	strcpy(txt, msg->txt);
-	for(char *ptr = txt; *ptr != 0; ptr++)
-		if (*ptr == '\n' || *ptr == '\r')
-			*ptr = ' ';
-
-	sprintf(pkt, "AC%1c %7s %1c %2s %1c %4s %6s %s",
-		msg->mode, msg->reg, msg->ack, msg->label, msg->bid, msg->no, msg->fid, txt);
-
-	if(write(pp_sockfd, pkt, strlen(pkt)) < 0)
+	if(write(pp_sockfd, vstr->str, vstr->len) < 0) {
 		debug_print("write(pp_sockfd) error: %s", strerror(errno));
+	}
+	XFREE(txt);
+	la_vstring_destroy(vstr, true);
 }
 
-void output_acars(const acars_msg_t *msg) {
-	fprintf(outf, "ACARS%s:\n", msg->crc_ok ? "" : " (warning: CRC error)");
-	if(msg->mode < 0x5d)
-		fprintf(outf, "Reg: %s Flight: %s\n", msg->reg, msg->fid);
-	fprintf(outf, "Mode: %1c Label: %s Blk id: %c Ack: %c Msg no.: %s\n",
-		msg->mode, msg->label, msg->bid, msg->ack, msg->no);
-	fprintf(outf, "Message:\n%s\n", msg->txt);
-	switch(msg->application) {
-	case ACARS_APP_FANS1A_ADSC:
-		adsc_output_msg(msg->data);
-		break;
-	case ACARS_APP_FANS1A_CPDLC:
-		cpdlc_output_msg(msg->data);
-		break;
-	case ACARS_APP_NONE:
-	default:
-		break;
+void output_acars(void const *msg) {
+	if(msg == NULL) {
+		return;
 	}
-	if(pp_sockfd > 0)
-		output_acars_pp(msg);
+	la_proto_node *node = (la_proto_node *)msg;
+	la_vstring *vstr = la_proto_tree_format_text(NULL, node);
+	fprintf(outf, "%s", vstr->str);
+	la_vstring_destroy(vstr, true);
+	if(pp_sockfd > 0) {
+		output_acars_pp(node);
+	}
+}
+
+void destroy_acars(void *msg) {
+	la_proto_tree_destroy((la_proto_node *)msg);
 }
