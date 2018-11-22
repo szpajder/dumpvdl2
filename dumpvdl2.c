@@ -24,6 +24,7 @@
 #include <getopt.h>
 #include <signal.h>
 #include <errno.h>
+#include <libacars/libacars.h>	// LA_VERSION
 #if WITH_RTLSDR
 #include "rtl.h"
 #endif
@@ -376,7 +377,7 @@ int main(int argc, char **argv) {
 #endif
 	char *infile = NULL, *outfile = NULL, *pp_addr = NULL;
 
-	fprintf(stderr, "dumpVDL2 %s\n", DUMPVDL2_VERSION);
+	fprintf(stderr, "dumpvdl2 %s (libacars %s)\n", DUMPVDL2_VERSION, LA_VERSION);
 	while((opt = getopt_long(argc, argv, "", long_opts, NULL)) != -1) {
 		switch(opt) {
 		case __OPT_IQ_FILE:
