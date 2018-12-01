@@ -64,11 +64,11 @@
 #define __OPT_RTLSDR			11
 #endif
 
-#if WITH_MIRISDR || WITH_RTLSDR
+#if WITH_MIRISDR || WITH_RTLSDR || WITH_SOAPYSDR
 #define __OPT_GAIN			12
 #endif
 
-#if WITH_MIRISDR || WITH_RTLSDR || WITH_SDRPLAY
+#if WITH_MIRISDR || WITH_RTLSDR || WITH_SDRPLAY || WITH_SOAPYSDR
 #define __OPT_CORRECTION		13
 #endif
 
@@ -90,6 +90,13 @@
 #define __OPT_AGC			84
 #define __OPT_GR			85
 #define __OPT_TUNER			86
+#endif
+
+#ifdef WITH_SOAPYSDR
+#define __OPT_SOAPYSDR			87
+#define __OPT_DEVICE_SETTINGS		88
+#define __OPT_SOAPY_ANTENNA			89
+#define __OPT_SOAPY_GAIN			90
 #endif
 
 #define __OPT_HELP			99
@@ -164,6 +171,9 @@ enum input_types {
 #endif
 #if WITH_SDRPLAY
 	INPUT_SDRPLAY,
+#endif
+#if WITH_SOAPYSDR
+	INPUT_SOAPYSDR,
 #endif
 	INPUT_FILE,
 	INPUT_UNDEF
