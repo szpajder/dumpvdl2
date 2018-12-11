@@ -105,6 +105,8 @@ the installer will fail.
 Download and install driver package from https://github.com/pothosware/SoapySDR.
 Make sure you installed the specific driver for your device.
 
+**Note:** The device must support a sampling rate of 2100000 samples per second.
+
 ##### Compiling dumpvdl2
 
 Download a stable release package from [here](https://github.com/szpajder/dumpvdl2/releases)
@@ -242,22 +244,24 @@ use antenna A port, disable Bias-T, enable AM/FM notch filter, set frequency cor
 
 ##### SOAPY compatible device support
 
-SOAPY compatible device tested are :
+**Note:** The device must support a sampling rate of 2100000 samples per second.
+
+Tested with the following devices:
  - SDRPLAY RSP2
  - RTLSDR
 
-It also allow you to remote control device from somewhere else.
+Using SoapySDRServer it is possible to access a SDR device connected to another machine.
+
+Features supported by dumpvdl2:
 
 - switching antenna ports
-- Various settings
-- All configurable gain
-- Automatic Gain Control
+- setting device-specific configuration parameters
+- setting the gain globally or using individual gain components
+- automatic gain control
 
 Type `./dumpvdl2 --help` to find out all the options and their default values.
 
-Type `SoapySDRUtil --find` to find which devices are allowed with your soapy installation.
-
-With SOAPY driver you can also set different gain if your device support it.
+Type `SoapySDRUtil --find` to find available devices.
 
 Example 1: use SDRPLAY device with Antenna B, AGC and biasT activated:
 
@@ -277,7 +281,8 @@ Example 4: Use a remote SDRPLAY with antenna B, Soapy server started with comman
 
   then run dumpvdl2 on any remote machine with :
 
-        ./dumpvdl2 --soapysdr driver=remote,remote=tcp://<ip address>:55132,remote:driver=sdrplay,remote:format=CS16 --gain -100 --soapy-antenna "Antenna B" 136975000 136875000 136775000
+        ./dumpvdl2 --soapysdr driver=remote,remote=tcp://<ip address>:55132,remote:driver=sdrplay,remote:format=CS16 \
+	--gain -100 --soapy-antenna "Antenna B" 136975000 136875000 136775000
 
 ### Output options
 

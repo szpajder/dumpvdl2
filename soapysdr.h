@@ -1,7 +1,7 @@
 /*
  *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
  *
- *  Copyright (c) 2017 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2018 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,13 +16,15 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <stdint.h>
-#include "dumpvdl2.h"
+#include "dumpvdl2.h"			// vdl2_state_t
+
 #define SOAPYSDR_BUFSIZE (32*16384)
 #define SOAPYSDR_BUFCNT 15
 #define SOAPYSDR_OVERSAMPLE 20
 #define SOAPYSDR_SAMPLE_PER_BUFFER 65536
 #define SOAPYSDR_RATE (SYMBOL_RATE * SPS * SOAPYSDR_OVERSAMPLE)
+
 // soapysdr.c
-void soapysdr_init(vdl2_state_t *ctx, char *dev, char *antenna, int freq, float gain, int correction, char* settings, char* gains);
+void soapysdr_init(vdl2_state_t *ctx, char *dev, char *antenna, int freq,
+	float gain, int correction, char *settings, char *gains);
 void soapysdr_cancel();

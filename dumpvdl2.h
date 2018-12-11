@@ -93,10 +93,10 @@
 #endif
 
 #ifdef WITH_SOAPYSDR
-#define __OPT_SOAPYSDR			87
-#define __OPT_DEVICE_SETTINGS		88
-#define __OPT_SOAPY_ANTENNA			89
-#define __OPT_SOAPY_GAIN			90
+#define __OPT_SOAPYSDR			90
+#define __OPT_DEVICE_SETTINGS		91
+#define __OPT_SOAPY_ANTENNA		92
+#define __OPT_SOAPY_GAIN		93
 #endif
 
 #define __OPT_HELP			99
@@ -282,5 +282,6 @@ size_t slurp_hexstring(char* string, uint8_t **buf);
 
 // dumpvdl2.c
 extern uint32_t msg_filter;
+extern int do_exit;
 extern pthread_barrier_t demods_ready, samples_ready;
 #endif // !_DUMPVDL2_H

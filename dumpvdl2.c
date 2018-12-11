@@ -59,7 +59,7 @@ void sighandler(int sig) {
 #endif
 #if WITH_SOAPYSDR
 	soapysdr_cancel();
-#endif	
+#endif
 }
 
 static void setup_signals() {
@@ -160,7 +160,7 @@ void usage() {
 #if WITH_SOAPYSDR
 	fprintf(stderr, "SOAPYSDR compatible receiver:\n");
 	fprintf(stderr, "\tdumpvdl2 [output_options] --soapysdr <device_id> [soapysdr_options] [<freq_1> [freq_2 [...]]]\n");
-#endif	
+#endif
 	fprintf(stderr, "I/Q input from file:\n");
 	fprintf(stderr, "\tdumpvdl2 [output_options] --iq-file <input_file> [file_options] [<freq_1> [freq_2 [...]]]\n");
 	fprintf(stderr, "\ncommon options:\n");
@@ -210,11 +210,12 @@ void usage() {
 #if WITH_SOAPYSDR
 	fprintf(stderr, "\nsoapysdr_options:\n");
 	fprintf(stderr, "\t--soapysdr <device_id>\t\tUse SoapySDR compatible device with specified ID (default: ID=0)\n");
-	fprintf(stderr, "\t--device-settings <settings>\tUse provided settings separated with coma (default: '')\n");
+	fprintf(stderr, "\t--device-settings <key1=val1,key2=val2,...>\tSet device-specific parameters (default: none)\n");
 	fprintf(stderr, "\t--gain <gain>\t\t\tSet gain (decibels)\n");
+	fprintf(stderr, "\t--correction <correction>\tSet freq correction (ppm)\n");
 	fprintf(stderr, "\t--soapy-antenna <antenna>\tSet antenna port selection (default: RX)\n");
-	fprintf(stderr, "\t--soapy-gain <gains>\t\tSet various gain supported as string (default: '')\n");
-#endif	
+	fprintf(stderr, "\t--soapy-gain <gain1=val1,gain2=val2,...>\tSet gain components (default: none)\n");
+#endif
 	fprintf(stderr, "\nfile_options:\n");
 	fprintf(stderr, "\t--iq-file <input_file>\t\tRead I/Q samples from file\n");
 	fprintf(stderr, "\t--centerfreq <center_frequency>\tCenter frequency of the input data, in Hz (default: 0)\n");
@@ -345,10 +346,10 @@ int main(int argc, char **argv) {
 	int sdrplay_gr = SDR_AUTO_GAIN;
 #endif
 #if WITH_SOAPYSDR
-	char* soapysdr_settings = "";
-	char* soapysdr_antenna = "RX";
-	char* soapysdr_gain = "";
-#endif	
+	char *soapysdr_settings = "";
+	char *soapysdr_antenna = "RX";
+	char *soapysdr_gain = "";
+#endif
 	int opt;
 	struct option long_opts[] = {
 		{ "centerfreq",		required_argument,	NULL,	__OPT_CENTERFREQ },
@@ -380,8 +381,8 @@ int main(int argc, char **argv) {
 #endif
 #if WITH_SOAPYSDR
 		{ "soapysdr",		required_argument,	NULL,	__OPT_SOAPYSDR },
-		{ "device-settings",		required_argument,	NULL,	__OPT_DEVICE_SETTINGS },
-		{ "soapy-antenna",		required_argument,	NULL,	__OPT_SOAPY_ANTENNA },
+		{ "device-settings",	required_argument,	NULL,	__OPT_DEVICE_SETTINGS },
+		{ "soapy-antenna",	required_argument,	NULL,	__OPT_SOAPY_ANTENNA },
 		{ "soapy-gain",		required_argument,	NULL,	__OPT_SOAPY_GAIN },
 #endif
 #if WITH_RTLSDR
@@ -499,7 +500,7 @@ int main(int argc, char **argv) {
 		case __OPT_SOAPY_GAIN:
 			soapysdr_gain = strdup(optarg);
 			break;
-#endif			
+#endif
 #if WITH_RTLSDR
 		case __OPT_RTLSDR:
 			device = optarg;
@@ -643,7 +644,8 @@ int main(int argc, char **argv) {
 #endif
 #if WITH_SOAPYSDR
 	case INPUT_SOAPYSDR:
-		soapysdr_init(&ctx, device, soapysdr_antenna, centerfreq, gain, correction, soapysdr_settings, soapysdr_gain);
+		soapysdr_init(&ctx, device, soapysdr_antenna, centerfreq, gain, correction,
+		soapysdr_settings, soapysdr_gain);
 		break;
 #endif
 	default:

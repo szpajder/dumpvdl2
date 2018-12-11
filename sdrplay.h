@@ -28,8 +28,6 @@
 #define SDRPLAY_OVERSAMPLE	20
 #define SDRPLAY_RATE (SYMBOL_RATE * SPS * SDRPLAY_OVERSAMPLE)
 
-extern int do_exit;
-
 typedef struct {
 	void *context;
 	unsigned char *sdrplay_data;
