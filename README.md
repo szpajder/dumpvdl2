@@ -11,6 +11,7 @@ Current stable version: 1.5.0 (released Nov 17, 2018)
   - RTLSDR (via [rtl-sdr library](http://osmocom.org/projects/sdr/wiki/rtl-sdr))
   - Mirics SDR (via [libmirisdr-4](https://github.com/f4exb/libmirisdr-4))
   - SDRPlay RSP, (native support through [official API](http://www.sdrplay.com/docs/SDRplay_SDR_API_Specification.pdf))
+  - SOAPY (via [soapy-sdr project](https://github.com/pothosware/SoapySDR/wiki))
   - reads prerecorded IQ data from file
 - Decodes up to 8 VDL2 channels simultaneously
 - Outputs messages to standard output or to a file (with optional daily or hourly file rotation)
@@ -99,6 +100,13 @@ Download and install API/hardware driver package from http://www.sdrplay.com/dow
 Make sure you have selected the right hardware platform before downloading, otherwise
 the installer will fail.
 
+##### SOAPY support (optional)
+
+Download and install driver package from https://github.com/pothosware/SoapySDR.
+Make sure you installed the specific driver for your device.
+
+**Note:** The device must support a sampling rate of 2100000 samples per second.
+
 ##### Compiling dumpvdl2
 
 Download a stable release package from [here](https://github.com/szpajder/dumpvdl2/releases)
@@ -114,6 +122,10 @@ If you only need RTLSDR support, it is enabled by default, so just type:
 Mirics support has to be explicitly enabled, like this:
 
         make WITH_MIRISDR=1
+
+Soapy support has to be explicitly enabled, like this:
+
+        make WITH_SOAPYSDR=1
 
 If you only need Mirics or SDRPlay, you may disable RTLSDR support:
 
@@ -229,6 +241,48 @@ Example 2: use SDRplay device with serial number 35830222, set gain reduction to
 use antenna A port, disable Bias-T, enable AM/FM notch filter, set frequency correction to -1ppm:
 
         ./dumpvdl2 --sdrplay 35830222 --gr 40 --correction -1 --antenna A --biast 0 --notch-filter 1 136975000
+
+##### SOAPY compatible device support
+
+**Note:** The device must support a sampling rate of 2100000 samples per second.
+
+Tested with the following devices:
+ - SDRPLAY RSP2
+ - RTLSDR
+
+Using SoapySDRServer it is possible to access a SDR device connected to another machine.
+
+Features supported by dumpvdl2:
+
+- switching antenna ports
+- setting device-specific configuration parameters
+- setting the gain globally or using individual gain components
+- automatic gain control
+
+Type `./dumpvdl2 --help` to find out all the options and their default values.
+
+Type `SoapySDRUtil --find` to find available devices.
+
+Example 1: use SDRPLAY device with Antenna B, AGC and biasT activated:
+
+        ./dumpvdl2 --soapysdr soapy=0,driver=sdrplay --soapy-antenna "Antenna B" --device-settings biasT_ctrl=true 136975000 136875000 136775000
+
+Example 2: use RTLSDR device with AGC
+
+        ./dumpvdl2 --soapysdr soapy=0,driver=rtlsdr 136975000 136875000 136775000
+
+Example 3: use SDRPLAY device with separate gain reduction for RFGR for LNA and normal gain reduction IFGR
+
+        ./dumpvdl2 --soapysdr soapy=0,driver=sdrplay --gain -1 --soapy-gain RFGR=0,IFGR=56 136975000 136875000 136775000
+
+Example 4: Use a remote SDRPLAY with antenna B, Soapy server started with command line
+
+        SoapySDRServer --bind
+
+  then run dumpvdl2 on any remote machine with :
+
+        ./dumpvdl2 --soapysdr driver=remote,remote=tcp://<ip address>:55132,remote:driver=sdrplay,remote:format=CS16 \
+	--gain -100 --soapy-antenna "Antenna B" 136975000 136875000 136775000
 
 ### Output options
 

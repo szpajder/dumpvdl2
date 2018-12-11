@@ -3,6 +3,7 @@ export USE_STATSD ?= 0
 export WITH_RTLSDR ?= 1
 export WITH_MIRISDR ?= 0
 export WITH_SDRPLAY ?= 0
+export WITH_SOAPYSDR ?= 0
 PREFIX = /usr/local
 BINDIR = $(PREFIX)/bin
 INSTALL_USER = root
@@ -42,7 +43,7 @@ else ifeq ($(strip $(LIBACARSLDLIBS)),)
 endif
 
 CFLAGS += -Iasn1 $(GLIBCFLAGS) $(LIBACARSCFLAGS)
-CFLAGS += -DUSE_STATSD=$(USE_STATSD) -DWITH_RTLSDR=$(WITH_RTLSDR) -DWITH_SDRPLAY=$(WITH_SDRPLAY) -DWITH_MIRISDR=$(WITH_MIRISDR)
+CFLAGS += -DUSE_STATSD=$(USE_STATSD) -DWITH_RTLSDR=$(WITH_RTLSDR) -DWITH_SDRPLAY=$(WITH_SDRPLAY) -DWITH_MIRISDR=$(WITH_MIRISDR) -DWITH_SOAPYSDR=$(WITH_SOAPYSDR)
 LDLIBS = -lm -lpthread $(GLIBLDLIBS) $(LIBACARSLDLIBS)
 SUBDIRS = libfec asn1
 CLEANDIRS = $(SUBDIRS:%=clean-%)
@@ -89,6 +90,11 @@ endif
 ifeq ($(WITH_SDRPLAY), 1)
   DEPS += sdrplay.o
   LDLIBS += -lmirsdrapi-rsp
+endif
+
+ifeq ($(WITH_SOAPYSDR), 1)
+  DEPS += soapysdr.o
+  LDLIBS += -lSoapySDR
 endif
 
 .PHONY: all clean install check_glib check_libacars $(SUBDIRS) $(CLEANDIRS)
@@ -141,7 +147,7 @@ idrp.o: dumpvdl2.h idrp.h tlv.h
 
 rs.o: dumpvdl2.h fec.h
 
-dumpvdl2.o: dumpvdl2.h avlc.h rtl.h mirisdr.h sdrplay.h
+dumpvdl2.o: dumpvdl2.h avlc.h rtl.h mirisdr.h sdrplay.h soapysdr.h
 
 avlc.o: dumpvdl2.h avlc.h xid.h acars.h x25.h
 
@@ -150,6 +156,8 @@ acars.o: dumpvdl2.h acars.h
 mirisdr.o: dumpvdl2.h mirisdr.h
 
 sdrplay.o: dumpvdl2.h sdrplay.h
+
+soapysdr.o: dumpvdl2.h soapysdr.h
 
 output.o: dumpvdl2.h
 

@@ -34,6 +34,9 @@
 #if WITH_SDRPLAY
 #include "sdrplay.h"
 #endif
+#if WITH_SOAPYSDR
+#include "soapysdr.h"
+#endif
 #include "dumpvdl2.h"
 #include "avlc.h"		// parse_avlc_frames
 
@@ -53,6 +56,9 @@ void sighandler(int sig) {
 #endif
 #if WITH_SDRPLAY
 	sdrplay_cancel();
+#endif
+#if WITH_SOAPYSDR
+	soapysdr_cancel();
 #endif
 }
 
@@ -151,6 +157,10 @@ void usage() {
 	fprintf(stderr, "SDRPLAY RSP receiver:\n");
 	fprintf(stderr, "\tdumpvdl2 [output_options] --sdrplay <device_id> [sdrplay_options] [<freq_1> [freq_2 [...]]]\n");
 #endif
+#if WITH_SOAPYSDR
+	fprintf(stderr, "SOAPYSDR compatible receiver:\n");
+	fprintf(stderr, "\tdumpvdl2 [output_options] --soapysdr <device_id> [soapysdr_options] [<freq_1> [freq_2 [...]]]\n");
+#endif
 	fprintf(stderr, "I/Q input from file:\n");
 	fprintf(stderr, "\tdumpvdl2 [output_options] --iq-file <input_file> [file_options] [<freq_1> [freq_2 [...]]]\n");
 	fprintf(stderr, "\ncommon options:\n");
@@ -196,6 +206,15 @@ void usage() {
 	fprintf(stderr, "\t--biast <0/1>\t\t\tRSP2 Bias-T control: 0 - off (default), 1 - on\n");
 	fprintf(stderr, "\t--notch-filter <0/1>\t\tRSP2/1a/duo AM/FM/bcast notch filter control: 0 - off (default), 1 - on\n");
 	fprintf(stderr, "\t--tuner <1/2>\t\t\tRSPduo tuner selection: (default: 1)\n");
+#endif
+#if WITH_SOAPYSDR
+	fprintf(stderr, "\nsoapysdr_options:\n");
+	fprintf(stderr, "\t--soapysdr <device_id>\t\tUse SoapySDR compatible device with specified ID (default: ID=0)\n");
+	fprintf(stderr, "\t--device-settings <key1=val1,key2=val2,...>\tSet device-specific parameters (default: none)\n");
+	fprintf(stderr, "\t--gain <gain>\t\t\tSet gain (decibels)\n");
+	fprintf(stderr, "\t--correction <correction>\tSet freq correction (ppm)\n");
+	fprintf(stderr, "\t--soapy-antenna <antenna>\tSet antenna port selection (default: RX)\n");
+	fprintf(stderr, "\t--soapy-gain <gain1=val1,gain2=val2,...>\tSet gain components (default: none)\n");
 #endif
 	fprintf(stderr, "\nfile_options:\n");
 	fprintf(stderr, "\t--iq-file <input_file>\t\tRead I/Q samples from file\n");
@@ -309,7 +328,7 @@ int main(int argc, char **argv) {
 	int num_channels = 0;
 	enum input_types input = INPUT_UNDEF;
 	enum sample_formats sample_fmt = SFMT_UNDEF;
-#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY
+#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY || WITH_SOAPYSDR
 	char *device = NULL;
 	float gain = SDR_AUTO_GAIN;
 	int correction = 0;
@@ -325,6 +344,11 @@ int main(int argc, char **argv) {
 	int sdrplay_tuner = 1;
 	int sdrplay_agc = 0;
 	int sdrplay_gr = SDR_AUTO_GAIN;
+#endif
+#if WITH_SOAPYSDR
+	char *soapysdr_settings = "";
+	char *soapysdr_antenna = "RX";
+	char *soapysdr_gain = "";
 #endif
 	int opt;
 	struct option long_opts[] = {
@@ -355,13 +379,19 @@ int main(int argc, char **argv) {
 		{ "gr",			required_argument,	NULL,	__OPT_GR },
 		{ "tuner",		required_argument,	NULL,	__OPT_TUNER },
 #endif
+#if WITH_SOAPYSDR
+		{ "soapysdr",		required_argument,	NULL,	__OPT_SOAPYSDR },
+		{ "device-settings",	required_argument,	NULL,	__OPT_DEVICE_SETTINGS },
+		{ "soapy-antenna",	required_argument,	NULL,	__OPT_SOAPY_ANTENNA },
+		{ "soapy-gain",		required_argument,	NULL,	__OPT_SOAPY_GAIN },
+#endif
 #if WITH_RTLSDR
 		{ "rtlsdr",		required_argument,	NULL,	__OPT_RTLSDR },
 #endif
-#if WITH_RTLSDR || WITH_MIRISDR
+#if WITH_RTLSDR || WITH_MIRISDR || WITH_SOAPYSDR
 		{ "gain",		required_argument,	NULL,	__OPT_GAIN },
 #endif
-#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY
+#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY || WITH_SOAPYSDR
 		{ "correction",		required_argument,	NULL,	__OPT_CORRECTION },
 #endif
 #if USE_STATSD
@@ -455,6 +485,22 @@ int main(int argc, char **argv) {
 			sdrplay_tuner = atoi(optarg);
 			break;
 #endif
+#if WITH_SOAPYSDR
+		case __OPT_SOAPYSDR:
+			device = optarg;
+			input = INPUT_SOAPYSDR;
+			oversample = SOAPYSDR_OVERSAMPLE;
+			break;
+		case __OPT_DEVICE_SETTINGS:
+			soapysdr_settings = strdup(optarg);
+			break;
+		case __OPT_SOAPY_ANTENNA:
+			soapysdr_antenna = strdup(optarg);
+			break;
+		case __OPT_SOAPY_GAIN:
+			soapysdr_gain = strdup(optarg);
+			break;
+#endif
 #if WITH_RTLSDR
 		case __OPT_RTLSDR:
 			device = optarg;
@@ -462,12 +508,12 @@ int main(int argc, char **argv) {
 			oversample = RTL_OVERSAMPLE;
 			break;
 #endif
-#if WITH_RTLSDR || WITH_MIRISDR
+#if WITH_RTLSDR || WITH_MIRISDR || WITH_SOAPYSDR
 		case __OPT_GAIN:
 			gain = atof(optarg);
 			break;
 #endif
-#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY
+#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY || WITH_SOAPYSDR
 		case __OPT_CORRECTION:
 			correction = atoi(optarg);
 			break;
@@ -594,6 +640,12 @@ int main(int argc, char **argv) {
 	case INPUT_SDRPLAY:
 		sdrplay_init(&ctx, device, sdrplay_antenna, centerfreq, sdrplay_gr, correction,
 		sdrplay_biast, sdrplay_notch_filter, sdrplay_agc, sdrplay_tuner);
+		break;
+#endif
+#if WITH_SOAPYSDR
+	case INPUT_SOAPYSDR:
+		soapysdr_init(&ctx, device, soapysdr_antenna, centerfreq, gain, correction,
+		soapysdr_settings, soapysdr_gain);
 		break;
 #endif
 	default:
