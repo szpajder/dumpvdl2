@@ -41,26 +41,13 @@ static void soapysdr_verbose_device_search() {
 
 void soapysdr_init(vdl2_state_t *ctx, char *dev, char *antenna, int freq, float gain,
 int ppm_error, char* settings, char* gains_param) {
-	SoapySDRKwargs args = {};
 	soapysdr_verbose_device_search();
-	SoapySDRKwargs dev_param = SoapySDRKwargs_fromString(dev);
-	if(dev_param.size < 1) {
-		fprintf(stderr, "Wrong device string.");
-		_exit(1);
-	} else {
-		for(size_t i = 0; i < dev_param.size; i++) {
-			SoapySDRKwargs_set(&args, dev_param.keys[i], dev_param.vals[i]);
-		}
-	}
 
-	SoapySDRDevice *sdr = SoapySDRDevice_make(&args);
-	SoapySDRKwargs_clear(&args);
-
+	SoapySDRDevice *sdr = SoapySDRDevice_makeStrArgs(dev);
 	if(sdr == NULL) {
-		fprintf(stderr, "SoapySDRDevice_make failed: %s\n", SoapySDRDevice_lastError());
+		fprintf(stderr, "Could not open SoapySDR device '%s': %s\n", dev, SoapySDRDevice_lastError());
 		_exit(1);
 	}
-
 	if(SoapySDRDevice_setSampleRate(sdr, SOAPY_SDR_RX, 0, SOAPYSDR_RATE) != 0) {
 		fprintf(stderr, "setSampleRate failed: %s\n", SoapySDRDevice_lastError());
 		_exit(1);
