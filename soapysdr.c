@@ -17,13 +17,13 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdio.h>			// fprintf()
-#include <stdlib.h>			// atof()
+#include <stdlib.h>			// atof(), free()
 #include <string.h>			// strcmp()
 #include <unistd.h>			// _exit(), usleep()
 #include <SoapySDR/Types.h>		// SoapySDRKwargs_*
 #include <SoapySDR/Device.h>		// SoapySDRStream, SoapySDRDevice_*
 #include <SoapySDR/Formats.h>		// SOAPY_SDR_CS16, SoapySDR_formatToSize()
-#include "dumpvdl2.h"			// vdl2_state_t, do_exit
+#include "dumpvdl2.h"			// vdl2_state_t, do_exit, XFREE()
 #include "soapysdr.h"
 
 static void soapysdr_verbose_device_search() {
@@ -68,7 +68,7 @@ int ppm_error, char* settings, char* gains_param) {
 	}
 
 // If both --gain and --soapy-gain are present, the latter takes precedence.
-	if(strcmp(gains_param, "") != 0) {
+	if(gains_param != NULL) {
 		SoapySDRKwargs gains = SoapySDRKwargs_fromString(gains_param);
 		if(gains.size < 1) {
 			fprintf(stderr, "Unable to parse gains string, "
@@ -83,6 +83,7 @@ int ppm_error, char* settings, char* gains_param) {
 
 		}
 		SoapySDRKwargs_clear(&gains);
+		XFREE(gains_param);
 	} else {
 		if(gain == SDR_AUTO_GAIN) {
 			if(SoapySDRDevice_hasGainMode(sdr, SOAPY_SDR_RX, 0) == false) {
@@ -104,16 +105,16 @@ int ppm_error, char* settings, char* gains_param) {
 		}
 	}
 
-	if(strcmp(antenna, "") != 0) {
+	if(antenna != NULL) {
 		if(SoapySDRDevice_setAntenna(sdr, SOAPY_SDR_RX, 0, antenna) != 0) {
 			fprintf(stderr, "Could not select antenna %s: %s\n", antenna, SoapySDRDevice_lastError());
 			_exit(1);
 		}
+		XFREE(antenna);
 	}
 	fprintf(stderr, "Antenna: %s\n", SoapySDRDevice_getAntenna(sdr, SOAPY_SDR_RX, 0));
 
-	// Setup settings
-	if(strcmp(settings, "") != 0) {
+	if(settings != NULL) {
 		SoapySDRKwargs settings_param = SoapySDRKwargs_fromString(settings);
 		if(settings_param.size < 1) {
 			fprintf(stderr, "Unable to parse settings string, must be a sequence of 'name1=value1,name2=value2,...'.\n");
@@ -127,6 +128,7 @@ int ppm_error, char* settings, char* gains_param) {
 				(strcmp(settings_param.vals[i], setting_value) == 0) ? "done" : "failed");
 		}
 		SoapySDRKwargs_clear(&settings_param);
+		XFREE(settings);
 	}
 
 	size_t elemsize = SoapySDR_formatToSize(SOAPY_SDR_CS16);

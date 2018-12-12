@@ -346,9 +346,9 @@ int main(int argc, char **argv) {
 	int sdrplay_gr = SDR_AUTO_GAIN;
 #endif
 #if WITH_SOAPYSDR
-	char *soapysdr_settings = "";
-	char *soapysdr_antenna = "";
-	char *soapysdr_gain = "";
+	char *soapysdr_settings = NULL;
+	char *soapysdr_antenna = NULL;
+	char *soapysdr_gain = NULL;
 #endif
 	int opt;
 	struct option long_opts[] = {
