@@ -347,7 +347,7 @@ int main(int argc, char **argv) {
 #endif
 #if WITH_SOAPYSDR
 	char *soapysdr_settings = "";
-	char *soapysdr_antenna = "RX";
+	char *soapysdr_antenna = "";
 	char *soapysdr_gain = "";
 #endif
 	int opt;

@@ -104,9 +104,11 @@ int ppm_error, char* settings, char* gains_param) {
 		}
 	}
 
-	if(SoapySDRDevice_setAntenna(sdr, SOAPY_SDR_RX, 0, antenna) != 0) {
-		fprintf(stderr, "setAntenna failed: %s\n", SoapySDRDevice_lastError());
-		_exit(1);
+	if(strcmp(antenna, "") != 0) {
+		if(SoapySDRDevice_setAntenna(sdr, SOAPY_SDR_RX, 0, antenna) != 0) {
+			fprintf(stderr, "Could not select antenna %s: %s\n", antenna, SoapySDRDevice_lastError());
+			_exit(1);
+		}
 	}
 	fprintf(stderr, "Antenna: %s\n", SoapySDRDevice_getAntenna(sdr, SOAPY_SDR_RX, 0));
 
