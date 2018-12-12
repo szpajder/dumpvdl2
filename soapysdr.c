@@ -67,32 +67,40 @@ int ppm_error, char* settings, char* gains_param) {
 		}
 	}
 
-	if((gain == SDR_AUTO_GAIN) && (SoapySDRDevice_hasGainMode(sdr, SOAPY_SDR_RX, 0))) {
-		if(SoapySDRDevice_setGainMode(sdr, SOAPY_SDR_RX, 0, true) != 0) {
-			fprintf(stderr, "setGainMode to automatic failed: %s\n", SoapySDRDevice_lastError());
+// If both --gain and --soapy-gain are present, the latter takes precedence.
+	if(strcmp(gains_param, "") != 0) {
+		SoapySDRKwargs gains = SoapySDRKwargs_fromString(gains_param);
+		if(gains.size < 1) {
+			fprintf(stderr, "Unable to parse gains string, "
+				"must be a sequence of 'name1=value1,name2=value2,...'.\n");
 			_exit(1);
 		}
-	} else {
-		if(strcmp(gains_param, "") == 0) {
-			if(SoapySDRDevice_setGain(sdr, SOAPY_SDR_RX, 0, (double)gain) != 0) {
-				fprintf(stderr, "setGain failed: %s\n", SoapySDRDevice_lastError());
-				_exit(1);
-			}
-		} else {
-			// Setup gain from string
-			SoapySDRKwargs gains = SoapySDRKwargs_fromString(gains_param);
-			if(gains.size < 1) {
-				fprintf(stderr, "Unable to parse gains string, must be a sequence of 'name1=value1,name2=value2,...'.\n");
-				_exit(1);
-			}
-			for(size_t i = 0; i < gains.size; i++) {
-				SoapySDRDevice_setGainElement(sdr, SOAPY_SDR_RX, 0, gains.keys[i], atof(gains.vals[i]));
-				debug_print("Set gain %s to %.2f\n", gains.keys[i], atof(gains.vals[i]));
-				double gain_value = SoapySDRDevice_getGainElement(sdr, SOAPY_SDR_RX, 0, gains.keys[i]);
-				fprintf(stderr, "Set gain %s to %.2f\n", gains.keys[i], gain_value);
+		for(size_t i = 0; i < gains.size; i++) {
+			SoapySDRDevice_setGainElement(sdr, SOAPY_SDR_RX, 0, gains.keys[i], atof(gains.vals[i]));
+			debug_print("Set gain %s to %.2f\n", gains.keys[i], atof(gains.vals[i]));
+			double gain_value = SoapySDRDevice_getGainElement(sdr, SOAPY_SDR_RX, 0, gains.keys[i]);
+			fprintf(stderr, "Gain element %s set to %.2f dB\n", gains.keys[i], gain_value);
 
+		}
+		SoapySDRKwargs_clear(&gains);
+	} else {
+		if(gain == SDR_AUTO_GAIN) {
+			if(SoapySDRDevice_hasGainMode(sdr, SOAPY_SDR_RX, 0) == false) {
+				fprintf(stderr, "Selected device does not support auto gain. "
+					"Please specify manual gain with --gain or --soapy-gain option\n");
+				_exit(1);
 			}
-			SoapySDRKwargs_clear(&gains);
+			if(SoapySDRDevice_setGainMode(sdr, SOAPY_SDR_RX, 0, true) != 0) {
+				fprintf(stderr, "Could not enable auto gain: %s\n", SoapySDRDevice_lastError());
+				_exit(1);
+			}
+			fprintf(stderr, "Auto gain enabled\n");
+		} else {
+			if(SoapySDRDevice_setGain(sdr, SOAPY_SDR_RX, 0, (double)gain) != 0) {
+				fprintf(stderr, "Could not set gain: %s\n", SoapySDRDevice_lastError());
+				_exit(1);
+			}
+			fprintf(stderr, "Gain set to %.2f dB\n", gain);
 		}
 	}
 
