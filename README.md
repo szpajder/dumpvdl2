@@ -341,7 +341,7 @@ For full list of supported filtering options, run:
 
         ./dumpvdl2 --msg-filter help
 
-Refer to `FILTERING_EXAMPLES.md` file for more examples and details.
+Refer to `doc/FILTERING_EXAMPLES.md` file for more examples and details.
 
 ### Statistics
 
