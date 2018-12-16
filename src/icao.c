@@ -218,8 +218,9 @@ void decode_ulcs_acse(icao_apdu_t *icao_apdu, uint8_t *buf, uint32_t len, uint32
 		debug_print("Decoding failed at position %ld\n", (long)rval.consumed);
 		goto ulcs_acse_cleanup;
 	}
-	if(DEBUG)
-		asn_fprint(stderr, &asn_DEF_ACSE_apdu, acse_apdu, 1);
+#ifdef DEBUG
+	asn_fprint(stderr, &asn_DEF_ACSE_apdu, acse_apdu, 1);
+#endif
 
 	AE_qualifier_form2_t ae_qualifier = ICAO_APP_TYPE_UNKNOWN;
 	Association_information_t *user_info = NULL;
@@ -273,10 +274,10 @@ static void decode_fully_encoded_data(icao_apdu_t *icao_apdu, uint8_t *buf, uint
 		debug_print("uper_decode_complete() failed at position %ld\n", (long)rval.consumed);
 		goto fed_cleanup;
 	}
-	if(DEBUG) {
-		asn_fprint(stderr, &asn_DEF_Fully_encoded_data, fed, 1);
-		debug_print("%ld bytes consumed, %ld left\n", (long)rval.consumed, (long)(len) - (long)rval.consumed);
-	}
+#ifdef DEBUG
+	asn_fprint(stderr, &asn_DEF_Fully_encoded_data, fed, 1);
+#endif
+	debug_print("%ld bytes consumed, %ld left\n", (long)rval.consumed, (long)(len) - (long)rval.consumed);
 
 	if(fed->data.presentation_data_values.present != PDV_list__presentation_data_values_PR_arbitrary) {
 		debug_print("%s", "unsupported encoding of fully-encoded-data\n");

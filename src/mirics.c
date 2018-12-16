@@ -1,7 +1,7 @@
 /*
  *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
  *
- *  Copyright (c) 2017 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2018 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 #include <unistd.h>
 #include <mirisdr.h>
 #include "dumpvdl2.h"
-#include "mirisdr.h"
+#include "mirics.h"
 
 static mirisdr_dev_t *mirisdr = NULL;
 

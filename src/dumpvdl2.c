@@ -25,16 +25,17 @@
 #include <signal.h>
 #include <errno.h>
 #include <libacars/libacars.h>	// LA_VERSION
-#if WITH_RTLSDR
+#include "config.h"
+#ifdef WITH_RTLSDR
 #include "rtl.h"
 #endif
-#if WITH_MIRISDR
-#include "mirisdr.h"
+#ifdef WITH_MIRISDR
+#include "mirics.h"
 #endif
-#if WITH_SDRPLAY
+#ifdef WITH_SDRPLAY
 #include "sdrplay.h"
 #endif
-#if WITH_SOAPYSDR
+#ifdef WITH_SOAPYSDR
 #include "soapysdr.h"
 #endif
 #include "dumpvdl2.h"
@@ -48,16 +49,16 @@ pthread_t decoder_thread;
 void sighandler(int sig) {
 	fprintf(stderr, "Got signal %d, exiting\n", sig);
 	do_exit = 1;
-#if WITH_RTLSDR
+#ifdef WITH_RTLSDR
 	rtl_cancel();
 #endif
-#if WITH_MIRISDR
+#ifdef WITH_MIRISDR
 	mirisdr_cancel();
 #endif
-#if WITH_SDRPLAY
+#ifdef WITH_SDRPLAY
 	sdrplay_cancel();
 #endif
-#if WITH_SOAPYSDR
+#ifdef WITH_SOAPYSDR
 	soapysdr_cancel();
 #endif
 }
@@ -145,19 +146,19 @@ void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
 
 void usage() {
 	fprintf(stderr, "Usage:\n\n");
-#if WITH_RTLSDR
+#ifdef WITH_RTLSDR
 	fprintf(stderr, "RTL-SDR receiver:\n");
 	fprintf(stderr, "\tdumpvdl2 [output_options] --rtlsdr <device_id> [rtlsdr_options] [<freq_1> [freq_2 [...]]]\n");
 #endif
-#if WITH_MIRISDR
+#ifdef WITH_MIRISDR
 	fprintf(stderr, "MIRI-SDR receiver:\n");
 	fprintf(stderr, "\tdumpvdl2 [output_options] --mirisdr <device_id> [mirisdr_options] [<freq_1> [freq_2 [...]]]\n");
 #endif
-#if WITH_SDRPLAY
+#ifdef WITH_SDRPLAY
 	fprintf(stderr, "SDRPLAY RSP receiver:\n");
 	fprintf(stderr, "\tdumpvdl2 [output_options] --sdrplay <device_id> [sdrplay_options] [<freq_1> [freq_2 [...]]]\n");
 #endif
-#if WITH_SOAPYSDR
+#ifdef WITH_SOAPYSDR
 	fprintf(stderr, "SOAPYSDR compatible receiver:\n");
 	fprintf(stderr, "\tdumpvdl2 [output_options] --soapysdr <device_id> [soapysdr_options] [<freq_1> [freq_2 [...]]]\n");
 #endif
@@ -176,17 +177,17 @@ void usage() {
 	fprintf(stderr, "\t--extended-header\t\tOutput additional fields in message header\n");
 	fprintf(stderr, "\t--msg-filter <filter_spec>\tMessage types to display (default: all) (\"--msg-filter help\" for details)\n");
 	fprintf(stderr, "\t--output-acars-pp <host:port>\tSend ACARS messages to Planeplotter over UDP/IP\n");
-#if USE_STATSD
+#ifdef USE_STATSD
 	fprintf(stderr, "\t--statsd <host>:<port>\t\tSend statistics to Etsy StatsD server <host>:<port> (default: disabled)\n");
 #endif
-#if WITH_RTLSDR
+#ifdef WITH_RTLSDR
 	fprintf(stderr, "\nrtlsdr_options:\n");
 	fprintf(stderr, "\t--rtlsdr <device_id>\t\tUse RTL device with specified ID or serial number (default: ID=0)\n");
 	fprintf(stderr, "\t--gain <gain>\t\t\tSet gain (decibels)\n");
 	fprintf(stderr, "\t--correction <correction>\tSet freq correction (ppm)\n");
 	fprintf(stderr, "\t--centerfreq <center_frequency>\tSet center frequency in Hz (default: auto)\n");
 #endif
-#if WITH_MIRISDR
+#ifdef WITH_MIRISDR
 	fprintf(stderr, "\nmirisdr_options:\n");
 	fprintf(stderr, "\t--mirisdr <device_id>\t\tUse Mirics device with specified ID or serial number (default: ID=0)\n");
 	fprintf(stderr, "\t--hw-type <device_type>\t\t0 - default, 1 - SDRPlay\n");
@@ -195,7 +196,7 @@ void usage() {
 	fprintf(stderr, "\t--centerfreq <center_frequency>\tSet center frequency in Hz (default: auto)\n");
 	fprintf(stderr, "\t--usb-mode <usb_transfer_mode>\t0 - isochronous (default), 1 - bulk\n");
 #endif
-#if WITH_SDRPLAY
+#ifdef WITH_SDRPLAY
 	fprintf(stderr, "\nsdrplay_options:\n");
 	fprintf(stderr, "\t--sdrplay <device_id>\t\tUse SDRPlay RSP device with specified ID or serial number (default: ID=0)\n");
 	fprintf(stderr, "\t--gr <gr>\t\t\tSet system gain reduction, in dB, positive (-100 = enables AGC)\n");
@@ -207,7 +208,7 @@ void usage() {
 	fprintf(stderr, "\t--notch-filter <0/1>\t\tRSP2/1a/duo AM/FM/bcast notch filter control: 0 - off (default), 1 - on\n");
 	fprintf(stderr, "\t--tuner <1/2>\t\t\tRSPduo tuner selection: (default: 1)\n");
 #endif
-#if WITH_SOAPYSDR
+#ifdef WITH_SOAPYSDR
 	fprintf(stderr, "\nsoapysdr_options:\n");
 	fprintf(stderr, "\t--soapysdr <device_id>\t\tUse SoapySDR compatible device with specified ID (default: ID=0)\n");
 	fprintf(stderr, "\t--device-settings <key1=val1,key2=val2,...>\tSet device-specific parameters (default: none)\n");
@@ -328,16 +329,16 @@ int main(int argc, char **argv) {
 	int num_channels = 0;
 	enum input_types input = INPUT_UNDEF;
 	enum sample_formats sample_fmt = SFMT_UNDEF;
-#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY || WITH_SOAPYSDR
+#if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SOAPYSDR
 	char *device = NULL;
 	float gain = SDR_AUTO_GAIN;
 	int correction = 0;
 #endif
-#if WITH_MIRISDR
+#ifdef WITH_MIRISDR
 	int mirisdr_hw_flavour = 0;
 	int mirisdr_usb_xfer_mode = 0;
 #endif
-#if WITH_SDRPLAY
+#ifdef WITH_SDRPLAY
 	char* sdrplay_antenna = "A";
 	int sdrplay_biast = 0;
 	int sdrplay_notch_filter = 0;
@@ -345,7 +346,7 @@ int main(int argc, char **argv) {
 	int sdrplay_agc = 0;
 	int sdrplay_gr = SDR_AUTO_GAIN;
 #endif
-#if WITH_SOAPYSDR
+#ifdef WITH_SOAPYSDR
 	char *soapysdr_settings = NULL;
 	char *soapysdr_antenna = NULL;
 	char *soapysdr_gain = NULL;
@@ -365,12 +366,12 @@ int main(int argc, char **argv) {
 		{ "sample-format",	required_argument,	NULL,	__OPT_SAMPLE_FORMAT },
 		{ "msg-filter",		required_argument,	NULL,	__OPT_MSG_FILTER },
 		{ "output-acars-pp",	required_argument,	NULL,	__OPT_OUTPUT_ACARS_PP },
-#if WITH_MIRISDR
+#ifdef WITH_MIRISDR
 		{ "mirisdr",		required_argument,	NULL,	__OPT_MIRISDR },
 		{ "hw-type",		required_argument,	NULL,	__OPT_HW_TYPE },
 		{ "usb-mode",		required_argument,	NULL,	__OPT_USB_MODE },
 #endif
-#if WITH_SDRPLAY
+#ifdef WITH_SDRPLAY
 		{ "sdrplay",		required_argument,	NULL,	__OPT_SDRPLAY },
 		{ "antenna",		required_argument,	NULL,	__OPT_ANTENNA },
 		{ "biast",		required_argument,	NULL,	__OPT_BIAST },
@@ -379,29 +380,29 @@ int main(int argc, char **argv) {
 		{ "gr",			required_argument,	NULL,	__OPT_GR },
 		{ "tuner",		required_argument,	NULL,	__OPT_TUNER },
 #endif
-#if WITH_SOAPYSDR
+#ifdef WITH_SOAPYSDR
 		{ "soapysdr",		required_argument,	NULL,	__OPT_SOAPYSDR },
 		{ "device-settings",	required_argument,	NULL,	__OPT_DEVICE_SETTINGS },
 		{ "soapy-antenna",	required_argument,	NULL,	__OPT_SOAPY_ANTENNA },
 		{ "soapy-gain",		required_argument,	NULL,	__OPT_SOAPY_GAIN },
 #endif
-#if WITH_RTLSDR
+#ifdef WITH_RTLSDR
 		{ "rtlsdr",		required_argument,	NULL,	__OPT_RTLSDR },
 #endif
-#if WITH_RTLSDR || WITH_MIRISDR || WITH_SOAPYSDR
+#if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SOAPYSDR
 		{ "gain",		required_argument,	NULL,	__OPT_GAIN },
 #endif
-#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY || WITH_SOAPYSDR
+#if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SOAPYSDR
 		{ "correction",		required_argument,	NULL,	__OPT_CORRECTION },
 #endif
-#if USE_STATSD
+#ifdef USE_STATSD
 		{ "statsd",		required_argument,	NULL,	__OPT_STATSD },
 #endif
 		{ "help",		no_argument,		NULL,	__OPT_HELP },
 		{ 0,			0,			0,	0 }
 	};
 
-#if USE_STATSD
+#ifdef USE_STATSD
 	char *statsd_addr = NULL;
 	int statsd_enabled = 0;
 #endif
@@ -447,7 +448,7 @@ int main(int argc, char **argv) {
 		case __OPT_CENTERFREQ:
 			centerfreq = strtoul(optarg, NULL, 10);
 			break;
-#if WITH_MIRISDR
+#ifdef WITH_MIRISDR
 		case __OPT_MIRISDR:
 			device = optarg;
 			input = INPUT_MIRISDR;
@@ -460,7 +461,7 @@ int main(int argc, char **argv) {
 			mirisdr_usb_xfer_mode = atoi(optarg);
 			break;
 #endif
-#if WITH_SDRPLAY
+#ifdef WITH_SDRPLAY
 		case __OPT_SDRPLAY:
 			device = optarg;
 			input = INPUT_SDRPLAY;
@@ -485,7 +486,7 @@ int main(int argc, char **argv) {
 			sdrplay_tuner = atoi(optarg);
 			break;
 #endif
-#if WITH_SOAPYSDR
+#ifdef WITH_SOAPYSDR
 		case __OPT_SOAPYSDR:
 			device = optarg;
 			input = INPUT_SOAPYSDR;
@@ -501,19 +502,19 @@ int main(int argc, char **argv) {
 			soapysdr_gain = strdup(optarg);
 			break;
 #endif
-#if WITH_RTLSDR
+#ifdef WITH_RTLSDR
 		case __OPT_RTLSDR:
 			device = optarg;
 			input = INPUT_RTLSDR;
 			oversample = RTL_OVERSAMPLE;
 			break;
 #endif
-#if WITH_RTLSDR || WITH_MIRISDR || WITH_SOAPYSDR
+#if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SOAPYSDR
 		case __OPT_GAIN:
 			gain = atof(optarg);
 			break;
 #endif
-#if WITH_RTLSDR || WITH_MIRISDR || WITH_SDRPLAY || WITH_SOAPYSDR
+#if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SOAPYSDR
 		case __OPT_CORRECTION:
 			correction = atoi(optarg);
 			break;
@@ -524,7 +525,7 @@ int main(int argc, char **argv) {
 		case __OPT_OVERSAMPLE:
 			oversample = atoi(optarg);
 			break;
-#if USE_STATSD
+#ifdef USE_STATSD
 		case __OPT_STATSD:
 			statsd_addr = strdup(optarg);
 			statsd_enabled = 1;
@@ -593,7 +594,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Failed to initialize RS codec\n");
 		_exit(3);
 	}
-#if USE_STATSD
+#ifdef USE_STATSD
 	if(statsd_enabled && input != INPUT_FILE) {
 		if(statsd_initialize(statsd_addr) < 0) {
 				fprintf(stderr, "Failed to initialize statsd client - disabling\n");
@@ -626,23 +627,23 @@ int main(int argc, char **argv) {
 		process_file(&ctx, infile, sample_fmt);
 		pthread_barrier_wait(&demods_ready);
 		break;
-#if WITH_RTLSDR
+#ifdef WITH_RTLSDR
 	case INPUT_RTLSDR:
 		rtl_init(&ctx, device, centerfreq, gain, correction);
 		break;
 #endif
-#if WITH_MIRISDR
+#ifdef WITH_MIRISDR
 	case INPUT_MIRISDR:
 		mirisdr_init(&ctx, device, mirisdr_hw_flavour, centerfreq, gain, correction, mirisdr_usb_xfer_mode);
 		break;
 #endif
-#if WITH_SDRPLAY
+#ifdef WITH_SDRPLAY
 	case INPUT_SDRPLAY:
 		sdrplay_init(&ctx, device, sdrplay_antenna, centerfreq, sdrplay_gr, correction,
 		sdrplay_biast, sdrplay_notch_filter, sdrplay_agc, sdrplay_tuner);
 		break;
 #endif
-#if WITH_SOAPYSDR
+#ifdef WITH_SOAPYSDR
 	case INPUT_SOAPYSDR:
 		soapysdr_init(&ctx, device, soapysdr_antenna, centerfreq, gain, correction,
 		soapysdr_settings, soapysdr_gain);

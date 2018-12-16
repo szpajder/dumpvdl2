@@ -1,7 +1,7 @@
 /*
  *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
  *
- *  Copyright (c) 2017 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2018 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -60,19 +60,19 @@
 #define __OPT_USB_MODE			10
 #endif
 
-#if WITH_RTLSDR
+#ifdef WITH_RTLSDR
 #define __OPT_RTLSDR			11
 #endif
 
-#if WITH_MIRISDR || WITH_RTLSDR || WITH_SOAPYSDR
+#if defined WITH_MIRISDR || defined WITH_RTLSDR || defined WITH_SOAPYSDR
 #define __OPT_GAIN			12
 #endif
 
-#if WITH_MIRISDR || WITH_RTLSDR || WITH_SDRPLAY || WITH_SOAPYSDR
+#if defined WITH_MIRISDR || defined WITH_RTLSDR || defined WITH_SDRPLAY || defined WITH_SOAPYSDR
 #define __OPT_CORRECTION		13
 #endif
 
-#if USE_STATSD
+#ifdef USE_STATSD
 #define __OPT_STATSD			14
 #endif
 #define __OPT_MSG_FILTER		15
@@ -128,21 +128,26 @@ typedef struct {
 	char *description;
 } msg_filterspec_t;
 
+#define nop() do {} while (0)
+
+#ifdef DEBUG
 #define debug_print(fmt, ...) \
-	do { if (DEBUG) fprintf(stderr, "%s(): " fmt, __func__, __VA_ARGS__); } while (0)
+	do { fprintf(stderr, "%s(): " fmt, __func__, __VA_ARGS__); } while (0)
 
 #define debug_print_buf_hex(buf, len, fmt, ...) \
 	do { \
-		if (DEBUG) { \
-			fprintf(stderr, "%s(): " fmt, __func__, __VA_ARGS__); \
-			fprintf(stderr, "%s(): ", __func__); \
-			for(int zz = 0; zz < (len); zz++) { \
-				fprintf(stderr, "%02x ", buf[zz]); \
-				if(zz && (zz+1) % 32 == 0) fprintf(stderr, "\n%s(): ", __func__); \
-			} \
-			fprintf(stderr, "\n"); \
+		fprintf(stderr, "%s(): " fmt, __func__, __VA_ARGS__); \
+		fprintf(stderr, "%s(): ", __func__); \
+		for(int zz = 0; zz < (len); zz++) { \
+			fprintf(stderr, "%02x ", buf[zz]); \
+			if(zz && (zz+1) % 32 == 0) fprintf(stderr, "\n%s(): ", __func__); \
 		} \
+		fprintf(stderr, "\n"); \
 	} while(0)
+#else
+#define debug_print(fmt, ...) nop()
+#define debug_print_buf_hex(buf, len, fmt, ...) nop()
+#endif
 
 #define ONES(x) ~(~0 << (x))
 #define XCALLOC(nmemb, size) xcalloc((nmemb), (size), __FILE__, __LINE__, __func__)
@@ -163,16 +168,16 @@ typedef struct {
 enum demod_states { DM_INIT, DM_SYNC };
 enum decoder_states { DEC_HEADER, DEC_DATA, DEC_IDLE };
 enum input_types {
-#if WITH_RTLSDR
+#ifdef WITH_RTLSDR
 	INPUT_RTLSDR,
 #endif
-#if WITH_MIRISDR
+#ifdef WITH_MIRISDR
 	INPUT_MIRISDR,
 #endif
-#if WITH_SDRPLAY
+#ifdef WITH_SDRPLAY
 	INPUT_SDRPLAY,
 #endif
-#if WITH_SOAPYSDR
+#ifdef WITH_SOAPYSDR
 	INPUT_SOAPYSDR,
 #endif
 	INPUT_FILE,
@@ -262,14 +267,17 @@ int rotate_outfile();
 void output_raw(uint8_t *buf, uint32_t len);
 
 // statsd.c
-#if USE_STATSD
+#ifdef USE_STATSD
 int statsd_initialize(char *statsd_addr);
 void statsd_initialize_counters(uint32_t freq);
-#endif
 void statsd_counter_increment(uint32_t freq, char *counter);
 void statsd_timing_delta_send(uint32_t freq, char *timer, struct timeval *ts);
-#define statsd_increment(freq, counter) do { if(USE_STATSD) statsd_counter_increment(freq, counter); } while(0)
-#define statsd_timing_delta(freq, timer, start) do { if(USE_STATSD) statsd_timing_delta_send(freq, timer, start); } while(0)
+#define statsd_increment(freq, counter) do { statsd_counter_increment(freq, counter); } while(0)
+#define statsd_timing_delta(freq, timer, start) do { statsd_timing_delta_send(freq, timer, start); } while(0)
+#else
+#define statsd_increment(freq, counter) nop()
+#define statsd_timing_delta(freq, timer, start) nop()
+#endif
 
 // util.c
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func);

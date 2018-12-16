@@ -1,7 +1,7 @@
 /*
  *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
  *
- *  Copyright (c) 2017 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2018 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,6 +22,6 @@
 #define MIRISDR_BUFCNT 32
 #define MIRISDR_OVERSAMPLE 13
 #define MIRISDR_RATE (SYMBOL_RATE * SPS * MIRISDR_OVERSAMPLE)
-// mirisdr.c
+// mirics.c
 void mirisdr_init(vdl2_state_t *ctx, char *dev, int flavour, uint32_t freq, float gain, int freq_offset, int usb_xfer_mode);
 void mirisdr_cancel();
