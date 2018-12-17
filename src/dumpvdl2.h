@@ -70,7 +70,7 @@
 #define __OPT_CORRECTION		13
 #endif
 
-#ifdef USE_STATSD
+#ifdef WITH_STATSD
 #define __OPT_STATSD			14
 #endif
 #define __OPT_MSG_FILTER		15
@@ -265,7 +265,7 @@ int rotate_outfile();
 void output_raw(uint8_t *buf, uint32_t len);
 
 // statsd.c
-#ifdef USE_STATSD
+#ifdef WITH_STATSD
 int statsd_initialize(char *statsd_addr);
 void statsd_initialize_counters(uint32_t freq);
 void statsd_counter_increment(uint32_t freq, char *counter);

@@ -25,7 +25,7 @@
 #include <unistd.h>
 #include <glib.h>
 #include "config.h"
-#ifdef USE_STATSD
+#ifdef WITH_STATSD
 #include <sys/time.h>
 #endif
 #include "dumpvdl2.h"
@@ -233,7 +233,7 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 		v->decoder_state = DEC_DATA;
 		return;
 	case DEC_DATA:
-#ifdef USE_STATSD
+#ifdef WITH_STATSD
 		gettimeofday(&v->tstart, NULL);
 #endif
 		bitstream_descramble(v->bs, &v->lfsr);

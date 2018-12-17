@@ -44,7 +44,7 @@ option(SOAPYSDR "Enable SoapySDR support" ON)
 set(WITH_SOAPYSDR FALSE)
 
 option(ETSY_STATSD "Enable Etsy StatsD support" ON)
-set(USE_STATSD FALSE)
+set(WITH_STATSD FALSE)
 
 # TODO: LDFLAGS, INCLUDE_DIRS, CFLAGS, CFLAGS_OTHER
 if(RTLSDR)
@@ -92,7 +92,7 @@ endif()
 if(ETSY_STATSD)
 	find_library(STATSD_FOUND statsdclient)
 	if(STATSD_FOUND)
-		set(USE_STATSD TRUE)
+		set(WITH_STATSD TRUE)
 		list(APPEND dumpvdl2_extra_sources statsd.c)
 		list(APPEND dumpvdl2_extra_libs statsdclient)
 	endif()
@@ -105,7 +105,7 @@ message(STATUS "  - mirisdr:\t\trequested: ${MIRISDR}\tenabled: ${WITH_MIRISDR}"
 message(STATUS "  - sdrplay:\t\trequested: ${SDRPLAY}\tenabled: ${WITH_SDRPLAY}")
 message(STATUS "  - soapysdr:\trequested: ${SOAPYSDR}\tenabled: ${WITH_SOAPYSDR}")
 message(STATUS "- Other options:")
-message(STATUS "  - Etsy StatsD:\trequested: ${ETSY_STATSD}\tenabled: ${USE_STATSD}")
+message(STATUS "  - Etsy StatsD:\trequested: ${ETSY_STATSD}\tenabled: ${WITH_STATSD}")
 
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"

@@ -177,7 +177,7 @@ void usage() {
 	fprintf(stderr, "\t--extended-header\t\tOutput additional fields in message header\n");
 	fprintf(stderr, "\t--msg-filter <filter_spec>\tMessage types to display (default: all) (\"--msg-filter help\" for details)\n");
 	fprintf(stderr, "\t--output-acars-pp <host:port>\tSend ACARS messages to Planeplotter over UDP/IP\n");
-#ifdef USE_STATSD
+#ifdef WITH_STATSD
 	fprintf(stderr, "\t--statsd <host>:<port>\t\tSend statistics to Etsy StatsD server <host>:<port> (default: disabled)\n");
 #endif
 #ifdef WITH_RTLSDR
@@ -395,14 +395,14 @@ int main(int argc, char **argv) {
 #if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SOAPYSDR
 		{ "correction",		required_argument,	NULL,	__OPT_CORRECTION },
 #endif
-#ifdef USE_STATSD
+#ifdef WITH_STATSD
 		{ "statsd",		required_argument,	NULL,	__OPT_STATSD },
 #endif
 		{ "help",		no_argument,		NULL,	__OPT_HELP },
 		{ 0,			0,			0,	0 }
 	};
 
-#ifdef USE_STATSD
+#ifdef WITH_STATSD
 	char *statsd_addr = NULL;
 	int statsd_enabled = 0;
 #endif
@@ -525,7 +525,7 @@ int main(int argc, char **argv) {
 		case __OPT_OVERSAMPLE:
 			oversample = atoi(optarg);
 			break;
-#ifdef USE_STATSD
+#ifdef WITH_STATSD
 		case __OPT_STATSD:
 			statsd_addr = strdup(optarg);
 			statsd_enabled = 1;
@@ -594,7 +594,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Failed to initialize RS codec\n");
 		_exit(3);
 	}
-#ifdef USE_STATSD
+#ifdef WITH_STATSD
 	if(statsd_enabled && input != INPUT_FILE) {
 		if(statsd_initialize(statsd_addr) < 0) {
 				fprintf(stderr, "Failed to initialize statsd client - disabling\n");
