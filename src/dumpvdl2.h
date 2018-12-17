@@ -27,9 +27,6 @@
 #include "config.h"
 #include "tlv.h"
 
-#ifndef DUMPVDL2_VERSION
-#define DUMPVDL2_VERSION "1.5.0"
-#endif
 #define RS_K 249				// Reed-Solomon vector length (bytes)
 #define RS_N 255				// Reed-Solomon codeword length (bytes)
 #define TRLEN 17				// transmission length field length (bits)
@@ -293,4 +290,7 @@ size_t slurp_hexstring(char* string, uint8_t **buf);
 extern uint32_t msg_filter;
 extern int do_exit;
 extern pthread_barrier_t demods_ready, samples_ready;
+
+// version.c
+extern char const * const DUMPVDL2_VERSION;
 #endif // !_DUMPVDL2_H

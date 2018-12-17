@@ -111,6 +111,12 @@ configure_file(
 	@ONLY
 )
 
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/version.c
+		${CMAKE_CURRENT_BINARY_DIR}/_version.c
+	COMMAND ${CMAKE_COMMAND} -DDUMPVDL2_VERSION=${DUMPVDL2_VERSION} -P ${CMAKE_CURRENT_SOURCE_DIR}/version.cmake
+)
+
 add_subdirectory (asn1)
 add_subdirectory (libfec)
 
@@ -137,6 +143,7 @@ add_library (dumpvdl2_base OBJECT
 	util.c
 	x25.c
 	xid.c
+	${CMAKE_CURRENT_BINARY_DIR}/version.c
 )
 
 include_directories (
