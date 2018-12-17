@@ -188,7 +188,7 @@ static void parse_avlc(avlc_frame_qentry_t *v) {
 	switch(frame.src.a_addr.type) {
 	case ADDRTYPE_AIRCRAFT:
 		msg_type |= MSGFLT_SRC_AIR;
-#if USE_STATSD
+#ifdef USE_STATSD
 		switch(frame.dst.a_addr.type) {
 		case ADDRTYPE_GS_ADM:
 		case ADDRTYPE_GS_DEL:
@@ -206,7 +206,7 @@ static void parse_avlc(avlc_frame_qentry_t *v) {
 	case ADDRTYPE_GS_ADM:
 	case ADDRTYPE_GS_DEL:
 		msg_type |= MSGFLT_SRC_GND;
-#if USE_STATSD
+#ifdef USE_STATSD
 		switch(frame.dst.a_addr.type) {
 		case ADDRTYPE_AIRCRAFT:
 			statsd_increment(v->freq, "avlc.msg.gnd2air");

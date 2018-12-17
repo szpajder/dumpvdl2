@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include <sys/time.h>
 #include <pthread.h>		// pthread_t, pthread_barrier_t
+#include "config.h"
 #include "tlv.h"
 
 #ifndef DUMPVDL2_VERSION
