@@ -99,11 +99,13 @@ if(ETSY_STATSD)
 endif()
 
 message(STATUS "dumpvdl2 configuration summary:")
-message(STATUS "- SDR drivers::")
+message(STATUS "- SDR drivers:")
 message(STATUS "  - librtsdr:\trequested: ${RTLSDR}\tenabled: ${WITH_RTLSDR}")
 message(STATUS "  - mirisdr:\t\trequested: ${MIRISDR}\tenabled: ${WITH_MIRISDR}")
 message(STATUS "  - sdrplay:\t\trequested: ${SDRPLAY}\tenabled: ${WITH_SDRPLAY}")
 message(STATUS "  - soapysdr:\trequested: ${SOAPYSDR}\tenabled: ${WITH_SOAPYSDR}")
+message(STATUS "- Other options:")
+message(STATUS "  - Etsy StatsD:\trequested: ${ETSY_STATSD}\tenabled: ${USE_STATSD}")
 
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
