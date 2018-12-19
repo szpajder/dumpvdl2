@@ -271,7 +271,7 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 				statsd_increment(v->freq, "decoder.errors.deinterleave_fec");
 				goto cleanup;
 			}
-#if DEBUG
+#ifdef DEBUG
 			debug_print("%s", "Deinterleaved blocks:\n");
 			for(int r = 0; r < v->num_blocks; r++) {
 				debug_print_buf_hex(rs_tab[r], RS_N, "Block %d:\n", r);

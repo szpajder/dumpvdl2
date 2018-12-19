@@ -201,7 +201,7 @@ int const enable_notch_filter, int enable_agc, int tuner) {
 		_exit(1);
 	}
 	fprintf(stderr, "Using SDRPlay API version %.3f\n", ver);
-#if DEBUG
+#ifdef DEBUG
 	mir_sdr_DebugEnable(1);
 #endif
 	int devIdx = sdrplay_verbose_device_search(dev, &hw_type);

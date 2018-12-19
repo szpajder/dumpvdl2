@@ -314,13 +314,13 @@ void *process_samples(void *arg) {
 // decimation
 			if(++cnt == v->oversample) {
 				cnt = 0;
-#if DEBUG
+#ifdef DEBUG
 				v->samplenum++;
 #endif
 				demod(v, lp_re[0], lp_im[0]);
 			}
 		}
-#if DEBUG
+#ifdef DEBUG
 		if(++v->bufnum == 10) {
 			v->bufnum = 0;
 			debug_print("%u: noise_floor: %.1f dBFS\n", v->freq, 20.0f * log10f(v->mag_nf + 0.001f));
