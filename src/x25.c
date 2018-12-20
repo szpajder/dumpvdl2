@@ -17,10 +17,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdio.h>
-#include <endian.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include "config.h"		// IS_BIG_ENDIAN
 #include "dumpvdl2.h"
 #include "x25.h"
 #include "clnp.h"

@@ -19,21 +19,21 @@
 #ifndef _AVLC_H
 #define _AVLC_H 1
 #include <stdint.h>
-#include <endian.h>		// __BYTE_ORDER
 #include <sys/time.h>		// struct timeval
 #include <glib.h>		// GAsyncQueue
+#include "config.h"		// IS_BIG_ENDIAN
 
 typedef union {
 	uint32_t val;
 	struct {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-		uint32_t addr:24;
-		uint8_t type:3;
-		uint8_t status:1;
-#elif __BYTE_ORDER == __BIG_ENDIAN
+#ifdef IS_BIG_ENDIAN
 		uint8_t status:1;
 		uint8_t type:3;
 		uint32_t addr:24;
+#else
+		uint32_t addr:24;
+		uint8_t type:3;
+		uint8_t status:1;
 #endif
 	} a_addr;
 } avlc_addr_t;

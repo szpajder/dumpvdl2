@@ -1,5 +1,6 @@
 include(CheckCCompilerFlag)
 include(CheckIncludeFile)
+include(TestBigEndian)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 
 # strdup
@@ -21,6 +22,8 @@ CHECK_C_COMPILER_FLAG(-ffast-math CC_HAS_FFAST_MATH)
 if(CC_HAS_FFAST_MATH)
 	add_definitions(-ffast-math)
 endif()
+
+TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
 
 find_package(PkgConfig REQUIRED)
 

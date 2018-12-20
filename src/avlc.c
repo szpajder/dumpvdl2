@@ -24,6 +24,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <glib.h>
+#include "config.h"		// IS_BIG_ENDIAN
 #include "dumpvdl2.h"
 #include "avlc.h"
 #include "xid.h"
@@ -33,50 +34,48 @@
 #define MIN_AVLC_LEN	11
 #define GOOD_FCS	0xF0B8u
 
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-#define BSHIFT 24
-#elif __BYTE_ORDER == __BIG_ENDIAN
+#ifdef IS_BIG_ENDIAN
 #define BSHIFT 0
 #else
-#error Unsupported endianness
+#define BSHIFT 24
 #endif
 
 // X.25 control field
 typedef union {
 	uint8_t val;
 	struct {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-		uint8_t type:1;
-		uint8_t send_seq:3;
-		uint8_t poll:1;
-		uint8_t recv_seq:3;
-#elif __BYTE_ORDER == __BIG_ENDIAN
+#ifdef IS_BIG_ENDIAN
 		uint8_t recv_seq:3;
 		uint8_t poll:1;
 		uint8_t send_seq:3;
 		uint8_t type:1;
+#else
+		uint8_t type:1;
+		uint8_t send_seq:3;
+		uint8_t poll:1;
+		uint8_t recv_seq:3;
 #endif
 	} I;
 	struct {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-		uint8_t type:2;
-		uint8_t sfunc:2;
-		uint8_t pf:1;
-		uint8_t recv_seq:3;
-#elif __BYTE_ORDER == __BIG_ENDIAN
+#ifdef IS_BIG_ENDIAN
 		uint8_t recv_seq:3;
 		uint8_t pf:1;
 		uint8_t sfunc:2;
 		uint8_t type:2;
+#else
+		uint8_t type:2;
+		uint8_t sfunc:2;
+		uint8_t pf:1;
+		uint8_t recv_seq:3;
 #endif
 	} S;
 	struct {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-		uint8_t type:2;
-		uint8_t mfunc:6;
-#elif __BYTE_ORDER == __BIG_ENDIAN
+#ifdef IS_BIG_ENDIAN
 		uint8_t mfunc:6;
 		uint8_t type:2;
+#else
+		uint8_t type:2;
+		uint8_t mfunc:6;
 #endif
 	} U;
 } lcf_t;

@@ -17,7 +17,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdint.h>
-#include <endian.h>
+#include "config.h"		// IS_BIG_ENDIAN
 #include "tlv.h"
 
 #define ESIS_HDR_LEN		9
@@ -30,14 +30,12 @@ typedef struct {
 	uint8_t len;
 	uint8_t version;
 	uint8_t reserved;
-#if __BYTE_ORDER__ == __LITTLE_ENDIAN
-	uint8_t type:5;
-	uint8_t pad:3;
-#elif __BYTE_ORDER__ == __BIG_ENDIAN
+#ifdef IS_BIG_ENDIAN
 	uint8_t pad:3;
 	uint8_t type:5;
 #else
-#error Unsupported endianness
+	uint8_t type:5;
+	uint8_t pad:3;
 #endif
 	uint8_t holdtime[2];	// not using uint16_t to avoid padding and to match PDU octet layout
 	uint8_t cksum[2];

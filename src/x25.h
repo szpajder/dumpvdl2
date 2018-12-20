@@ -18,9 +18,10 @@
  */
 #ifndef _X25_H
 #define _X25_H
-#include <endian.h>
 #include <stdint.h>
+#include "config.h"		// IS_BIG_ENDIAN
 #include "tlv.h"
+
 #define X25_MIN_LEN		3
 #define GFI_X25_MOD8		1
 #define MAX_X25_ADDR_LEN	8	// bytes
@@ -55,29 +56,27 @@
 #define X25_DIAG		0xf1
 
 typedef struct {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-	uint8_t chan_group:4;
-	uint8_t gfi:4;
-#elif __BYTE_ORDER == __BIG_ENDIAN
+#ifdef IS_BIG_ENDIAN
 	uint8_t gfi:4;
 	uint8_t chan_group:4;
 #else
-#error Unsupported endianness
+	uint8_t chan_group:4;
+	uint8_t gfi:4;
 #endif
 	uint8_t chan_num;
 	union {
 		uint8_t val;
 		struct {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-			uint8_t pad:1;
-			uint8_t sseq:3;
-			uint8_t more:1;
-			uint8_t rseq:3;
-#elif __BYTE_ORDER == __BIG_ENDIAN
+#ifdef IS_BIG_ENDIAN
 			uint8_t rseq:3;
 			uint8_t more:1;
 			uint8_t sseq:3;
 			uint8_t pad:1;
+#else
+			uint8_t pad:1;
+			uint8_t sseq:3;
+			uint8_t more:1;
+			uint8_t rseq:3;
 #endif
 		} data;
 	} type;
