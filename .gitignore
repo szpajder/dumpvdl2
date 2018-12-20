@@ -1,5 +1,5 @@
 *.o
-*.a
 dumpvdl2
-decpdlc
 test
+build
+build-*
