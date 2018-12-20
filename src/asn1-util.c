@@ -35,9 +35,9 @@ int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, i
 		debug_print("uper_decode_complete failed: %d\n", rval.code);
 		return -1;
 	}
-	if(rval.consumed < size) {
-		debug_print("uper_decode_complete left %zd unparsed octets\n", size - rval.consumed);
-		return size - rval.consumed;
+	if(rval.consumed < (size_t)size) {
+		debug_print("uper_decode_complete left %zd unparsed octets\n", (size_t)size - rval.consumed);
+		return (int)((size_t)size - rval.consumed);
 	}
 #ifdef DEBUG
 	asn_fprint(stderr, td, *struct_ptr, 1);

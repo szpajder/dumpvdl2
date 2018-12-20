@@ -47,7 +47,7 @@ void bitstream_destroy(bitstream_t *bs) {
 int bitstream_append_msbfirst(bitstream_t *bs, const uint8_t *v, const uint32_t numbytes, const uint32_t numbits) {
 	if(bs->end + numbits * numbytes > bs->len)
 		return -1;
-	for(int i = 0; i < numbytes; i++) {
+	for(uint32_t i = 0; i < numbytes; i++) {
 		uint8_t t = v[i];
 		for(int j = numbits - 1; j >= 0; j--)
 			bs->buf[bs->end++] = (t >> j) & 0x01;
@@ -58,9 +58,9 @@ int bitstream_append_msbfirst(bitstream_t *bs, const uint8_t *v, const uint32_t 
 int bitstream_append_lsbfirst(bitstream_t *bs, const uint8_t *bytes, const uint32_t numbytes, const uint32_t numbits) {
 	if(bs->end + numbits * numbytes > bs->len)
 		 return -1;
-	for(int i = 0; i < numbytes; i++) {
+	for(uint32_t i = 0; i < numbytes; i++) {
 		uint8_t t = bytes[i];
-		for(int j = 0; j < numbits; j++)
+		for(uint32_t j = 0; j < numbits; j++)
 			bs->buf[bs->end++] = (t >> j) & 0x01;
 	}
 	return 0;
@@ -90,11 +90,10 @@ int bitstream_read_word_msbfirst(bitstream_t *bs, uint32_t *ret, const uint32_t 
 
 void bitstream_descramble(bitstream_t *bs, uint16_t *lfsr) {
 	uint8_t bit;
-	int i;
 
 	if(bs->descrambler_pos < bs->start)
 		bs->descrambler_pos = bs->start;
-	for(i = bs->descrambler_pos; i < bs->end; i++) {
+	for(uint32_t i = bs->descrambler_pos; i < bs->end; i++) {
 		/* LFSR length: 15; feedback polynomial: x^15 + x + 1 */
 		bit = ((*lfsr >> 0) ^ (*lfsr >> 14)) & 1;
 		*lfsr = (*lfsr >> 1) | (bit << 14);
@@ -106,7 +105,7 @@ void bitstream_descramble(bitstream_t *bs, uint16_t *lfsr) {
 
 int bitstream_copy_next_frame(bitstream_t *src, bitstream_t *dst) {
 	int ones;
-	int i, j;
+	uint32_t i, j;
 restart:
 	ones = 0;
 	bitstream_reset(dst);

@@ -180,6 +180,8 @@ static const dict cotp_er_reject_causes[] = {
 };
 
 static void output_cotp_pdu(gpointer p, gpointer user_data) {
+// -Wunused-parameter
+	(void)user_data;
 	cotp_pdu_t *pdu = (cotp_pdu_t *)p;
 	char *str;
 	if(!pdu->cotp_tpdu_valid) {

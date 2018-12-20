@@ -292,7 +292,7 @@ void *process_samples(void *arg) {
 	while(1) {
 		pthread_barrier_wait(&demods_ready);
 		pthread_barrier_wait(&samples_ready);
-		for(int i = 0; i < sbuf_len;) {
+		for(uint32_t i = 0; i < sbuf_len;) {
 			for(int k = INP_LPF_NPOLES; k > 0; k--) {
 				   re[k] =    re[k-1];
 				   im[k] =    im[k-1];
@@ -330,6 +330,8 @@ void *process_samples(void *arg) {
 }
 
 void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx) {
+// -Wunused-parameter
+	(void)ctx;
 	if(len == 0) return;
 	pthread_barrier_wait(&demods_ready);
 	sbuf_len = len;
@@ -346,6 +348,8 @@ void process_buf_uchar_init() {
 }
 
 void process_buf_short(unsigned char *buf, uint32_t len, void *ctx) {
+// -Wunused-parameter
+	(void)ctx;
 	if(len == 0) return;
 	int16_t *bbuf = (int16_t *)buf;
 	pthread_barrier_wait(&demods_ready);

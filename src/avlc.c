@@ -267,6 +267,8 @@ static void parse_avlc(avlc_frame_qentry_t *v) {
 GAsyncQueue *frame_queue = NULL;
 
 void *parse_avlc_frames(void *arg) {
+// -Wunused-parameter
+	(void)arg;
 	avlc_frame_qentry_t *q = NULL;
 	frame_queue = g_async_queue_new();
 	while(1) {

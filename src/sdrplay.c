@@ -49,6 +49,13 @@ static char *hw_descr[NUM_HW_TYPES] = {
 
 static void sdrplay_streamCallback(short *xi, short *xq, unsigned int firstSampleNum, int grChanged,
 int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, unsigned int hwRemoved, void *cbContext) {
+// -Wunused-parameter
+	(void)firstSampleNum;
+	(void)grChanged;
+	(void)rfChanged;
+	(void)fsChanged;
+	(void)reset;
+	(void)hwRemoved;
 	int i, j, count1, count2, new_buf_flag;
 	int end, input_index;
 	sdrplay_ctx_t *SDRPlay = (sdrplay_ctx_t*)cbContext;
@@ -106,6 +113,10 @@ int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, unsig
 }
 
 static void sdrplay_gainCallback(unsigned int gRdB, unsigned int lnaGRdB, void *cbContext) {
+// -Wunused-parameter
+	(void)gRdB;
+	(void)lnaGRdB;
+	(void)cbContext;
 	debug_print("Gain change: gRdb=%u lnaGRdB=%u \n", gRdB, lnaGRdB);
 }
 
@@ -129,8 +140,8 @@ static int sdrplay_verbose_device_search(char * const dev, sdrplay_hw_type *hw_t
 	}
 
 	fprintf(stderr, "\nFound %d device(s):\n", numDevs);
-	for(int i = 0; i < numDevs; i++) {
-		fprintf(stderr, "  %s %d:  SN: %s\n",
+	for(unsigned int i = 0; i < numDevs; i++) {
+		fprintf(stderr, "  %s %u:  SN: %s\n",
 			devices[i].devAvail ? "        " : "(in use)",
 			i,
 			devices[i].SerNo != NULL ? devices[i].SerNo : "<none>"
@@ -147,13 +158,13 @@ static int sdrplay_verbose_device_search(char * const dev, sdrplay_hw_type *hw_t
 	}
 
 	// Does the string match a serial number?
-	for (int i = 0; i < numDevs; i++) {
+	for (unsigned int i = 0; i < numDevs; i++) {
 		if(devices[i].SerNo == NULL) {
 			continue;
 		} else if(strcmp(dev, devices[i].SerNo) != 0) {
 			continue;
 		}
-		devIdx = (unsigned int)i;
+		devIdx = i;
 		goto dev_found;
 	}
 
@@ -190,6 +201,9 @@ dev_found:
 void sdrplay_init(vdl2_state_t * const ctx, char * const dev, char * const antenna,
 uint32_t const freq, int const gr, int const ppm_error, int const enable_biast,
 int const enable_notch_filter, int enable_agc, int tuner) {
+// -Wunused-parameter
+	(void)ctx;
+
 	mir_sdr_ErrT err;
 	float ver;
 	sdrplay_ctx_t SDRPlay;

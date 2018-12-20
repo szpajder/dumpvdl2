@@ -114,6 +114,8 @@ static uint32_t calc_centerfreq(uint32_t *freq, int cnt, uint32_t source_rate) {
 }
 
 void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
+// -Wunused-parameter
+	(void)ctx;
 	FILE *f;
 	uint32_t len;
 	unsigned char buf[FILE_BUFSIZE];

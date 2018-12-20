@@ -273,12 +273,12 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 			}
 #ifdef DEBUG
 			debug_print("%s", "Deinterleaved blocks:\n");
-			for(int r = 0; r < v->num_blocks; r++) {
+			for(uint32_t r = 0; r < v->num_blocks; r++) {
 				debug_print_buf_hex(rs_tab[r], RS_N, "Block %d:\n", r);
 			}
 #endif
 			bitstream_reset(v->bs);
-			for(int r = 0; r < v->num_blocks; r++) {
+			for(uint32_t r = 0; r < v->num_blocks; r++) {
 				statsd_increment(v->freq, "decoder.blocks.processed");
 				int num_fec_octets = RS_N - RS_K;	// full block
 				if(r == v->num_blocks - 1) {		// final, partial block

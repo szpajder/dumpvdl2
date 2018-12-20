@@ -148,7 +148,7 @@ void output_raw(uint8_t *buf, uint32_t len) {
 	if(len == 0)
 		return;
 	fprintf(outf, "   ");
-	for(int i = 0; i < len; i++)
+	for(uint32_t i = 0; i < len; i++)
 		fprintf(outf, "%02x ", buf[i]);
 	fprintf(outf, "\n");
 }

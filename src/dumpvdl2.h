@@ -147,7 +147,7 @@ typedef struct {
 #define debug_print_buf_hex(buf, len, fmt, ...) nop()
 #endif
 
-#define ONES(x) ~(~0 << (x))
+#define ONES(x) ~(~0u << (x))
 #define XCALLOC(nmemb, size) xcalloc((nmemb), (size), __FILE__, __LINE__, __func__)
 #define XREALLOC(ptr, size) xrealloc((ptr), (size), __FILE__, __LINE__, __func__)
 #define XFREE(ptr) do { free(ptr); ptr = NULL; } while(0)
