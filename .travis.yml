@@ -37,7 +37,8 @@ install:
   - cmake ../
   - make
   - sudo make install
-  - sudo ldconfig
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo ldconfig; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then sudo update_dyld_shared_cache; fi
   - popd
 
 script:
