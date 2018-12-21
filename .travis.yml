@@ -13,6 +13,8 @@ matrix:
   include:
     - os: linux
       compiler: gcc
+    - os: osx
+      compiler: clang
 
 addons:
   apt:
@@ -21,6 +23,9 @@ addons:
     - libglib2.0-dev
     - pkg-config
     - librtlsdr-dev
+  homebrew:
+    packages:
+    - glib
 
 install:
   # libacars
