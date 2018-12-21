@@ -26,4 +26,5 @@
 #cmakedefine WITH_STATSD
 #cmakedefine IS_BIG_ENDIAN
 #cmakedefine HAVE_PTHREAD_BARRIERS
+#define SINCOSF @SINCOSF@
 #endif // !_CONFIG_H
