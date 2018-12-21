@@ -5,7 +5,7 @@
 #ifndef	_RELATIVE_OID_H_
 #define	_RELATIVE_OID_H_
 
-#include <OBJECT_IDENTIFIER.h>
+#include "OBJECT_IDENTIFIER.h"
 
 #ifdef __cplusplus
 extern "C" {

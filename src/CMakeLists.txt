@@ -188,7 +188,6 @@ add_library (dumpvdl2_base OBJECT
 
 include_directories (
 	${CMAKE_CURRENT_SOURCE_DIR}
-	${CMAKE_CURRENT_SOURCE_DIR}/asn1
 )
 
 target_include_directories (dumpvdl2_base PUBLIC
