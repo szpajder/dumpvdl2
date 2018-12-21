@@ -184,6 +184,7 @@ add_library (dumpvdl2_base OBJECT
 	x25.c
 	xid.c
 	${CMAKE_CURRENT_BINARY_DIR}/version.c
+	${dumpvdl2_extra_sources}
 )
 
 target_include_directories (dumpvdl2_base PUBLIC
@@ -193,13 +194,8 @@ target_include_directories (dumpvdl2_base PUBLIC
 # can't do this per target with cmake <3.13
 link_directories(${link_dirs})
 
-add_library (dumpvdl2_optional OBJECT
-	${dumpvdl2_extra_sources}
-)
-
 set(dumpvdl2_obj_files
 	$<TARGET_OBJECTS:dumpvdl2_base>
-	$<TARGET_OBJECTS:dumpvdl2_optional>
 	$<TARGET_OBJECTS:asn1>
 	$<TARGET_OBJECTS:fec>
 )
