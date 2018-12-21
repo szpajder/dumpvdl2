@@ -1,0 +1,40 @@
+language: c
+dist: trusty
+
+env:
+  global:
+    - MAKEFLAGS="-j2"
+    - LIBACARS_BRANCH="master"
+
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+
+addons:
+  apt:
+    update: true
+    packages:
+    - libglib2.0-dev
+    - pkg-config
+    - librtlsdr-dev
+
+install:
+  # libacars
+  - git clone https://github.com/szpajder/libacars.git
+  - pushd libacars
+  - git checkout ${LIBACARS_BRANCH}
+  - mkdir build
+  - cd build
+  - cmake ../
+  - make
+  - sudo make install
+  - sudo ldconfig
+  - popd
+
+script:
+  - mkdir build
+  - cd build
+  - cmake ../
+  - make VERBOSE=1
+  - sudo make install
