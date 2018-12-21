@@ -154,12 +154,6 @@ typedef struct {
 #define XCALLOC(nmemb, size) xcalloc((nmemb), (size), __FILE__, __LINE__, __func__)
 #define XREALLOC(ptr, size) xrealloc((ptr), (size), __FILE__, __LINE__, __func__)
 #define XFREE(ptr) do { free(ptr); ptr = NULL; } while(0)
-#define XASPRINTF(failcode, strp, fmt, ...) \
-	do { \
-		if(xasprintf(__FILE__, __LINE__, __func__, (strp), (fmt), __VA_ARGS__) == -1) { \
-			return (failcode); \
-		} \
-	} while(0);
 
 typedef struct {
 	uint8_t *buf;
@@ -283,7 +277,6 @@ void statsd_timing_delta_send(uint32_t freq, char *timer, struct timeval *ts);
 // util.c
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func);
 void *xrealloc(void *ptr, size_t size, const char *file, const int line, const char *func);
-int xasprintf(const char *file, const int line, const char *func, char **strp, const char *fmt, ...);
 char *fmt_hexstring(uint8_t *data, uint16_t len);
 char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len);
 char *fmt_bitfield(uint8_t val, const dict *d);

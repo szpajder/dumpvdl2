@@ -16,7 +16,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define _GNU_SOURCE	// for vasprintf()
 #include <stdio.h>
 #include <stdarg.h>	// va_list, etc
 #include <stdint.h>
@@ -45,18 +44,6 @@ void *xrealloc(void *ptr, size_t size, const char *file, const int line, const c
 		_exit(1);
 	}
 	return ptr;
-}
-
-int xasprintf(const char *file, const int line, const char *func, char **strp, const char *fmt, ...) {
-	va_list ap;
-	va_start(ap, fmt);
-	int r = vasprintf(strp, fmt, ap);
-	va_end(ap);
-	if(r == -1) {
-		fprintf(stderr, "%s:%d: %s(): vasprintf() failed (out of memory?)\n",
-			file, line, func);
-	}
-	return r;
 }
 
 char *fmt_hexstring(uint8_t *data, uint16_t len) {
