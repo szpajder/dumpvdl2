@@ -186,10 +186,6 @@ add_library (dumpvdl2_base OBJECT
 	${CMAKE_CURRENT_BINARY_DIR}/version.c
 )
 
-include_directories (
-	${CMAKE_CURRENT_SOURCE_DIR}
-)
-
 target_include_directories (dumpvdl2_base PUBLIC
 	${dumpvdl2_include_dirs}
 )
