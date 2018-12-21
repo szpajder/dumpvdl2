@@ -2680,7 +2680,7 @@ Timehhmmss ::= SEQUENCE
   seconds       TimeSeconds
 }
 
-TimeHours ::= INTEGER (0..23)
+-- TimeHours ::= INTEGER (0..23)
 -- unit = Hour, Range (0..23), resolution = 1
 
 TimeUnitNameFrequency ::= SEQUENCE
@@ -2690,7 +2690,7 @@ TimeUnitNameFrequency ::= SEQUENCE
     frequency Frequency
 }
 
-TimeMinutes ::= INTEGER (0..59)
+-- TimeMinutes ::= INTEGER (0..59)
 -- unit = Minute, Range (0..59), resolution = 1
 
 TimePosition ::= SEQUENCE

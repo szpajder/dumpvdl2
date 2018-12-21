@@ -243,9 +243,7 @@ set(ASN_MODULE_SOURCES
 	TimeDistanceSpecifiedDirection.c
 	TimeDistanceToFromPosition.c
 	Timehhmmss.c
-	TimeHours.c
 	TimeUnitNameFrequency.c
-	TimeMinutes.c
 	TimePosition.c
 	TimePositionLevel.c
 	TimePositionLevelSpeed.c
