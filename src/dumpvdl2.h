@@ -26,6 +26,9 @@
 #include <pthread.h>		// pthread_t, pthread_barrier_t
 #include "config.h"
 #include "tlv.h"
+#ifndef HAVE_PTHREAD_BARRIERS
+#include "pthread_barrier.h"
+#endif
 
 #define RS_K 249				// Reed-Solomon vector length (bytes)
 #define RS_N 255				// Reed-Solomon codeword length (bytes)

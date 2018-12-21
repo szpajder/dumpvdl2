@@ -24,7 +24,12 @@
 #include <math.h>		// sincosf, hypotf, atan2
 #include <string.h>		// memset
 #include <sys/time.h>		// gettimeofday
+#include "config.h"
+#ifdef HAVE_PTHREAD_BARRIERS
 #include <pthread.h>		// pthread_barrier_wait
+#else
+#include "pthread_barrier.h"
+#endif
 #include "chebyshev.h"		// chebyshev_lpf_init
 #include "dumpvdl2.h"
 

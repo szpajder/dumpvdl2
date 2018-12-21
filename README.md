@@ -859,6 +859,8 @@ Contains code from the following software projects:
 - Rocksoft^tm Model CRC Algorithm Table Generation Program V1.0
   by Ross Williams
 
+- DarwinPthreadBarrier, (c) 2015, Aleksey Demakov
+
 - librtlsdr-keenerd, (c) 2013-2014 by Kyle Keen
 
 - asn1c, (c) 2003-2017 by Lev Walkin and contributors

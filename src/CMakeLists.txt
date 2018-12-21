@@ -1,5 +1,6 @@
 include(CheckCCompilerFlag)
 include(CheckIncludeFile)
+include(CheckSymbolExists)
 include(TestBigEndian)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 
@@ -24,6 +25,16 @@ if(CC_HAS_FFAST_MATH)
 endif()
 
 TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
+
+set(CMAKE_REQUIRED_FLAGS_ORIG ${CMAKE_REQUIRED_FLAGS})
+if(CC_HAS_PTHREAD)
+	set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -pthread")
+endif()
+CHECK_SYMBOL_EXISTS(pthread_barrier_wait pthread.h HAVE_PTHREAD_BARRIERS)
+if(!HAVE_PTHREAD_BARRIERS)
+	list(APPEND dumpvdl2_extra_sources pthread_barrier.c)
+endif()
+set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS_ORIG})
 
 find_package(PkgConfig REQUIRED)
 
