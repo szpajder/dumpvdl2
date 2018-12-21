@@ -43,5 +43,5 @@ script:
   - sudo make install
   - dumpvdl2 ${VDL2_TEST1}
   - res=`dumpvdl2 ${VDL2_TEST1} | egrep -c "${VDL2_TEST1_EXPECT}"`
-  - if [[ "x$res" = "x" ]]; then false;
-  - if [[ $res -eq ${VDL2_TEST1_RESULT} ]]; then true
+  - if [[ "x$res" = "x" ]]; then false; fi
+  - if [[ $res -eq ${VDL2_TEST1_RESULT} ]]; then true; fi
