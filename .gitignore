@@ -1,5 +1,4 @@
 *.o
 dumpvdl2
-test
 build
 build-*
