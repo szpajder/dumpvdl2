@@ -26,6 +26,7 @@ addons:
   homebrew:
     packages:
     - glib
+    - librtlsdr
 
 install:
   # libacars
