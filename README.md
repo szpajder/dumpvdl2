@@ -6,7 +6,8 @@ Current stable version: 1.5.0 (released Nov 17, 2018)
 
 ## Features
 
-- Runs under Linux (tested on: x86, x86-64, Raspberry Pi)
+- Runs under Linux (tested on: x86, x86-64, ARM) and MacOS (not tested very
+  well, feedback welcome)
 - Supports following SDR hardware:
   - RTLSDR (via [rtl-sdr library](http://osmocom.org/projects/sdr/wiki/rtl-sdr))
   - Mirics SDR (via [libmirisdr-4](https://github.com/f4exb/libmirisdr-4))
@@ -36,8 +37,7 @@ Current stable version: 1.5.0 (released Nov 17, 2018)
 - [X] ICAO ATN-B1 CPDLC (Controller-Pilot Data Link Communications) - supported
 - [ ] ICAO ATN-B1 ADS-C (Automatic Dependent Surveillance - Contract) - not
   supported
-- [X] FANS 1/A CPDLC - supported via libacars library
-- [X] FANS 1/A ADS-C - supported via libacars library
+- [X] All applications and protocols handled by libacars library (full list [here](https://github.com/szpajder/libacars/blob/master/README.md#supported-message-types))
 
 ## Installation
 
@@ -850,7 +850,7 @@ testing of dumpvdl2. Special thanks go to:
 
 ## License
 
-Copyright (c) 2017-2018 Tomasz Lemiech <szpajder@gmail.com>
+Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
 
 Contains code from the following software projects:
 
@@ -877,6 +877,5 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 
 // vim: textwidth=80
