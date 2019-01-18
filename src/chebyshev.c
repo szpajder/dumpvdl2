@@ -22,6 +22,7 @@
 #include <math.h>		// expf, sincosf, sinf, tanf, sqrtf, powf, M_PI
 #include <stdlib.h>		// calloc
 #include <string.h>		// memset
+#include "config.h"		// SINCOSF
 #include "chebyshev.h"		// MAX_POLES, MAX_RIPPLE
 #include "dumpvdl2.h"		// debug_print, XCALLOC
 #define LP_BSIZE (MAX_POLES + 3)
@@ -31,7 +32,7 @@
 static void chebyshev_lpf_calc_pole(int const p, float const cutoff_freq, float const ripple,
 				int const npoles, float * const AA, float * const BB) {
 	float rp, ip;
-	sincosf(M_PI/(2 * npoles) + (p-1) * M_PI / npoles, &ip, &rp);
+	SINCOSF(M_PI/(2 * npoles) + (p-1) * M_PI / npoles, &ip, &rp);
 	rp = -rp;
 	if(ripple != 0.f) {
 		float es = sqrtf(powf(100.f / (100.f - ripple), 2.f) - 1.f);

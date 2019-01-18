@@ -24,7 +24,12 @@
 #include <math.h>		// sincosf, hypotf, atan2
 #include <string.h>		// memset
 #include <sys/time.h>		// gettimeofday
+#include "config.h"
+#ifdef HAVE_PTHREAD_BARRIERS
 #include <pthread.h>		// pthread_barrier_wait
+#else
+#include "pthread_barrier.h"
+#endif
 #include "chebyshev.h"		// chebyshev_lpf_init
 #include "dumpvdl2.h"
 
@@ -366,7 +371,7 @@ void input_lpf_init(uint32_t sample_rate) {
 
 void sincosf_lut_init() {
 	for(uint32_t i = 0; i < 256; i++)
-		sincosf(2.0f * M_PI * (float)i / 256.0f, sin_lut + i, cos_lut + i);
+		SINCOSF(2.0f * M_PI * (float)i / 256.0f, sin_lut + i, cos_lut + i);
 	sin_lut[256] = sin_lut[0];
 	cos_lut[256] = cos_lut[0];
 }

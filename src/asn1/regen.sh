@@ -8,7 +8,7 @@ set -e
 
 rm -f *.c *.h CMakeLists.inc
 
-asn1c -fcompound-names -gen-PER $ASN_MODULES
+asn1c -fcompound-names -fincludes-quoted -gen-PER $ASN_MODULES
 
 ./am2cmake.pl Makefile.am.sample ASN_MODULE_SOURCES >CMakeLists.inc
 rm -f Makefile.am.sample converter-sample.c
@@ -22,3 +22,5 @@ patch -p0 < patches/asn_system_h_default_source.diff
 patch -p0 < patches/asn_fprint_parameterized_indentation.diff
 # expose _fetch_present_idx from constr_CHOICE.c
 patch -p0 < patches/CHOICE_expose__fetch_present_idx.diff
+# replace < > includes with quoted includes in static headers
+patch -p0 < patches/quoted_includes.diff

@@ -1,5 +1,6 @@
 include(CheckCCompilerFlag)
 include(CheckIncludeFile)
+include(CheckSymbolExists)
 include(TestBigEndian)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 
@@ -24,6 +25,35 @@ if(CC_HAS_FFAST_MATH)
 endif()
 
 TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
+
+set(CMAKE_REQUIRED_FLAGS_ORIG ${CMAKE_REQUIRED_FLAGS})
+if(CC_HAS_PTHREAD)
+	set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -pthread")
+endif()
+CHECK_SYMBOL_EXISTS(pthread_barrier_wait pthread.h HAVE_PTHREAD_BARRIERS)
+if(NOT HAVE_PTHREAD_BARRIERS)
+	list(APPEND dumpvdl2_extra_sources pthread_barrier.c)
+endif()
+set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS_ORIG})
+
+set(CMAKE_REQUIRED_DEFINITIONS_ORIG ${CMAKE_REQUIRED_DEFINITIONS})
+list(APPEND CMAKE_REQUIRED_DEFINITIONS "-D_GNU_SOURCE")
+set(CMAKE_REQUIRED_LIBRARIES_ORIG ${CMAKE_REQUIRED_LIBRARIES})
+list(APPEND CMAKE_REQUIRED_LIBRARIES m)
+CHECK_SYMBOL_EXISTS(sincosf math.h HAVE_SINCOSF)
+if(HAVE_SINCOSF)
+	set(SINCOSF "sincosf")
+else()
+	CHECK_SYMBOL_EXISTS(__sincosf math.h HAVE___SINCOSF)
+	if(HAVE___SINCOSF)
+		set(SINCOSF "__sincosf")
+	endif()
+endif()
+if(NOT HAVE_SINCOSF AND NOT HAVE___SINCOSF)
+	message(FATAL_ERROR "Required function sincosf() is unavailable")
+endif()
+set(CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS_ORIG})
+set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES_ORIG})
 
 find_package(PkgConfig REQUIRED)
 
@@ -154,11 +184,7 @@ add_library (dumpvdl2_base OBJECT
 	x25.c
 	xid.c
 	${CMAKE_CURRENT_BINARY_DIR}/version.c
-)
-
-include_directories (
-	${CMAKE_CURRENT_SOURCE_DIR}
-	${CMAKE_CURRENT_SOURCE_DIR}/asn1
+	${dumpvdl2_extra_sources}
 )
 
 target_include_directories (dumpvdl2_base PUBLIC
@@ -168,13 +194,8 @@ target_include_directories (dumpvdl2_base PUBLIC
 # can't do this per target with cmake <3.13
 link_directories(${link_dirs})
 
-add_library (dumpvdl2_optional OBJECT
-	${dumpvdl2_extra_sources}
-)
-
 set(dumpvdl2_obj_files
 	$<TARGET_OBJECTS:dumpvdl2_base>
-	$<TARGET_OBJECTS:dumpvdl2_optional>
 	$<TARGET_OBJECTS:asn1>
 	$<TARGET_OBJECTS:fec>
 )

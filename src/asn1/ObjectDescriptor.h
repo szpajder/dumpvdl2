@@ -5,7 +5,7 @@
 #ifndef	_ObjectDescriptor_H_
 #define	_ObjectDescriptor_H_
 
-#include <GraphicString.h>
+#include "GraphicString.h"
 
 #ifdef __cplusplus
 extern "C" {

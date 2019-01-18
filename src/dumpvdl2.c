@@ -25,7 +25,11 @@
 #include <signal.h>
 #include <errno.h>
 #include <libacars/libacars.h>	// LA_VERSION
+#include <pthread.h>
 #include "config.h"
+#ifndef HAVE_PTHREAD_BARRIERS
+#include "pthread_barrier.h"
+#endif
 #ifdef WITH_RTLSDR
 #include "rtl.h"
 #endif
