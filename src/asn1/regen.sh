@@ -1,7 +1,7 @@
 #!/bin/bash
 # This file is a part of dumpvdl2
 #
-# Copyright (c) 2018 Tomasz Lemiech <szpajder@gmail.com>
+# Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
 
 ASN_MODULES="atn-cm.asn1 atn-cpdlc.asn1 atn-ulcs.asn1"
 set -e

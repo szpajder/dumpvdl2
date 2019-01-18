@@ -2,7 +2,7 @@
 #
 # This file is a part of dumpvdl2
 #
-# Copyright (c) 2018 Tomasz Lemiech <szpajder@gmail.com>
+# Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
 
 sub usage {
 	print STDERR <<EOF
