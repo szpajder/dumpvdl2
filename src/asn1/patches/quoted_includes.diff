@@ -1,0 +1,887 @@
+diff -ur ANY.c ANY.c
+--- ANY.c	2018-12-21 22:56:16.387096146 +0100
++++ ANY.c	2018-12-21 23:00:58.571435490 +0100
+@@ -2,8 +2,8 @@
+  * Copyright (c) 2004 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <ANY.h>
++#include "asn_internal.h"
++#include "ANY.h"
+ #include <errno.h>
+ 
+ static asn_OCTET_STRING_specifics_t asn_DEF_ANY_specs = {
+diff -ur ANY.h ANY.h
+--- ANY.h	2018-12-21 22:56:16.386096134 +0100
++++ ANY.h	2018-12-21 23:00:58.934439784 +0100
+@@ -5,7 +5,7 @@
+ #ifndef ASN_TYPE_ANY_H
+ #define ASN_TYPE_ANY_H
+ 
+-#include <OCTET_STRING.h>	/* Implemented via OCTET STRING type */
++#include "OCTET_STRING.h"	/* Implemented via OCTET STRING type */
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur asn_codecs_prim.c asn_codecs_prim.c
+--- asn_codecs_prim.c	2018-12-21 22:56:16.388096158 +0100
++++ asn_codecs_prim.c	2018-12-21 23:00:58.573435513 +0100
+@@ -2,8 +2,8 @@
+  * Copyright (c) 2003, 2004 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <asn_codecs_prim.h>
++#include "asn_internal.h"
++#include "asn_codecs_prim.h"
+ #include <errno.h>
+ 
+ /*
+diff -ur asn_codecs_prim.h asn_codecs_prim.h
+--- asn_codecs_prim.h	2018-12-21 22:56:16.388096158 +0100
++++ asn_codecs_prim.h	2018-12-21 23:00:58.935439795 +0100
+@@ -5,7 +5,7 @@
+ #ifndef	ASN_CODECS_PRIM_H
+ #define	ASN_CODECS_PRIM_H
+ 
+-#include <asn_application.h>
++#include "asn_application.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur asn_SEQUENCE_OF.c asn_SEQUENCE_OF.c
+--- asn_SEQUENCE_OF.c	2018-12-21 22:56:16.387096146 +0100
++++ asn_SEQUENCE_OF.c	2018-12-21 23:00:58.573435513 +0100
+@@ -2,8 +2,8 @@
+  * Copyright (c) 2003, 2004 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <asn_SEQUENCE_OF.h>
++#include "asn_internal.h"
++#include "asn_SEQUENCE_OF.h"
+ 
+ typedef A_SEQUENCE_OF(void) asn_sequence;
+ 
+diff -ur asn_SEQUENCE_OF.h asn_SEQUENCE_OF.h
+--- asn_SEQUENCE_OF.h	2018-12-21 22:56:16.387096146 +0100
++++ asn_SEQUENCE_OF.h	2018-12-21 23:00:58.935439795 +0100
+@@ -5,7 +5,7 @@
+ #ifndef	ASN_SEQUENCE_OF_H
+ #define	ASN_SEQUENCE_OF_H
+ 
+-#include <asn_SET_OF.h>
++#include "asn_SET_OF.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur asn_SET_OF.c asn_SET_OF.c
+--- asn_SET_OF.c	2018-12-21 22:56:16.387096146 +0100
++++ asn_SET_OF.c	2018-12-21 23:00:58.573435513 +0100
+@@ -2,8 +2,8 @@
+  * Copyright (c) 2003, 2004 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <asn_SET_OF.h>
++#include "asn_internal.h"
++#include "asn_SET_OF.h"
+ #include <errno.h>
+ 
+ /*
+diff -ur ber_decoder.c ber_decoder.c
+--- ber_decoder.c	2018-12-21 22:56:16.388096158 +0100
++++ ber_decoder.c	2018-12-21 23:00:58.888439240 +0100
+@@ -2,7 +2,7 @@
+  * Copyright (c) 2003, 2004 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
++#include "asn_internal.h"
+ 
+ #undef	ADVANCE
+ #define	ADVANCE(num_bytes)	do {					\
+diff -ur ber_decoder.h ber_decoder.h
+--- ber_decoder.h	2018-12-21 22:56:16.388096158 +0100
++++ ber_decoder.h	2018-12-21 23:00:58.938439831 +0100
+@@ -5,7 +5,7 @@
+ #ifndef	_BER_DECODER_H_
+ #define	_BER_DECODER_H_
+ 
+-#include <asn_application.h>
++#include "asn_application.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur ber_tlv_length.c ber_tlv_length.c
+--- ber_tlv_length.c	2018-12-21 22:56:16.388096158 +0100
++++ ber_tlv_length.c	2018-12-21 23:00:58.888439240 +0100
+@@ -2,9 +2,9 @@
+  * Copyright (c) 2003, 2004 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <ber_tlv_length.h>
+-#include <ber_tlv_tag.h>
++#include "asn_internal.h"
++#include "ber_tlv_length.h"
++#include "ber_tlv_tag.h"
+ 
+ ssize_t
+ ber_fetch_length(int _is_constructed, const void *bufptr, size_t size,
+diff -ur ber_tlv_tag.c ber_tlv_tag.c
+--- ber_tlv_tag.c	2018-12-21 22:56:16.388096158 +0100
++++ ber_tlv_tag.c	2018-12-21 23:00:58.889439251 +0100
+@@ -2,8 +2,8 @@
+  * Copyright (c) 2003, 2004 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <ber_tlv_tag.h>
++#include "asn_internal.h"
++#include "ber_tlv_tag.h"
+ #include <errno.h>
+ 
+ ssize_t
+diff -ur BIT_STRING.c BIT_STRING.c
+--- BIT_STRING.c	2018-12-21 22:56:16.388096158 +0100
++++ BIT_STRING.c	2018-12-21 23:00:58.889439251 +0100
+@@ -2,9 +2,9 @@
+  * Copyright (c) 2003, 2004 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <BIT_STRING.h>
+-#include <asn_internal.h>
++#include "asn_internal.h"
++#include "BIT_STRING.h"
++#include "asn_internal.h"
+ 
+ /*
+  * BIT STRING basic type description.
+diff -ur BIT_STRING.h BIT_STRING.h
+--- BIT_STRING.h	2018-12-21 22:56:16.388096158 +0100
++++ BIT_STRING.h	2018-12-21 23:00:58.938439831 +0100
+@@ -5,7 +5,7 @@
+ #ifndef	_BIT_STRING_H_
+ #define	_BIT_STRING_H_
+ 
+-#include <OCTET_STRING.h>	/* Some help from OCTET STRING */
++#include "OCTET_STRING.h"	/* Some help from OCTET STRING */
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur BOOLEAN.c BOOLEAN.c
+--- BOOLEAN.c	2018-12-21 22:56:16.387096146 +0100
++++ BOOLEAN.c	2018-12-21 23:00:58.889439251 +0100
+@@ -2,9 +2,9 @@
+  * Copyright (c) 2003, 2005 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <asn_codecs_prim.h>
+-#include <BOOLEAN.h>
++#include "asn_internal.h"
++#include "asn_codecs_prim.h"
++#include "BOOLEAN.h"
+ 
+ /*
+  * BOOLEAN basic type description.
+diff -ur BOOLEAN.h BOOLEAN.h
+--- BOOLEAN.h	2018-12-21 22:56:16.387096146 +0100
++++ BOOLEAN.h	2018-12-21 23:00:58.939439843 +0100
+@@ -5,7 +5,7 @@
+ #ifndef	_BOOLEAN_H_
+ #define	_BOOLEAN_H_
+ 
+-#include <asn_application.h>
++#include "asn_application.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur constraints.h constraints.h
+--- constraints.h	2018-12-21 22:56:16.388096158 +0100
++++ constraints.h	2018-12-21 23:00:58.940439855 +0100
+@@ -5,7 +5,7 @@
+ #ifndef	ASN1_CONSTRAINTS_VALIDATOR_H
+ #define	ASN1_CONSTRAINTS_VALIDATOR_H
+ 
+-#include <asn_system.h>		/* Platform-dependent types */
++#include "asn_system.h"		/* Platform-dependent types */
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur constr_CHOICE.c constr_CHOICE.c
+--- constr_CHOICE.c	2018-12-21 22:56:16.412096442 +0100
++++ constr_CHOICE.c	2018-12-21 23:00:58.892439287 +0100
+@@ -3,9 +3,9 @@
+  * All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <constr_CHOICE.h>
+-#include <per_opentype.h>
++#include "asn_internal.h"
++#include "constr_CHOICE.h"
++#include "per_opentype.h"
+ 
+ /*
+  * Number of bytes left for this structure.
+diff -ur constr_CHOICE.h constr_CHOICE.h
+--- constr_CHOICE.h	2018-12-21 22:56:16.412096442 +0100
++++ constr_CHOICE.h	2018-12-21 23:00:58.940439855 +0100
+@@ -6,7 +6,7 @@
+ #ifndef	_CONSTR_CHOICE_H_
+ #define	_CONSTR_CHOICE_H_
+ 
+-#include <asn_application.h>
++#include "asn_application.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur constr_SEQUENCE.c constr_SEQUENCE.c
+--- constr_SEQUENCE.c	2018-12-21 22:56:16.388096158 +0100
++++ constr_SEQUENCE.c	2018-12-21 23:00:58.893439299 +0100
+@@ -3,9 +3,9 @@
+  * All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <constr_SEQUENCE.h>
+-#include <per_opentype.h>
++#include "asn_internal.h"
++#include "constr_SEQUENCE.h"
++#include "per_opentype.h"
+ 
+ /*
+  * Number of bytes left for this structure.
+diff -ur constr_SEQUENCE.h constr_SEQUENCE.h
+--- constr_SEQUENCE.h	2018-12-21 22:56:16.388096158 +0100
++++ constr_SEQUENCE.h	2018-12-21 23:00:58.940439855 +0100
+@@ -5,7 +5,7 @@
+ #ifndef	_CONSTR_SEQUENCE_H_
+ #define	_CONSTR_SEQUENCE_H_
+ 
+-#include <asn_application.h>
++#include "asn_application.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur constr_SEQUENCE_OF.c constr_SEQUENCE_OF.c
+--- constr_SEQUENCE_OF.c	2018-12-21 22:56:16.388096158 +0100
++++ constr_SEQUENCE_OF.c	2018-12-21 23:00:58.894439310 +0100
+@@ -3,9 +3,9 @@
+  * All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <constr_SEQUENCE_OF.h>
+-#include <asn_SEQUENCE_OF.h>
++#include "asn_internal.h"
++#include "constr_SEQUENCE_OF.h"
++#include "asn_SEQUENCE_OF.h"
+ 
+ /*
+  * The DER encoder of the SEQUENCE OF type.
+diff -ur constr_SEQUENCE_OF.h constr_SEQUENCE_OF.h
+--- constr_SEQUENCE_OF.h	2018-12-21 22:56:16.388096158 +0100
++++ constr_SEQUENCE_OF.h	2018-12-21 23:00:58.940439855 +0100
+@@ -5,8 +5,8 @@
+ #ifndef	_CONSTR_SEQUENCE_OF_H_
+ #define	_CONSTR_SEQUENCE_OF_H_
+ 
+-#include <asn_application.h>
+-#include <constr_SET_OF.h>		/* Implemented using SET OF */
++#include "asn_application.h"
++#include "constr_SET_OF.h"		/* Implemented using SET OF */
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur constr_SET_OF.c constr_SET_OF.c
+--- constr_SET_OF.c	2018-12-21 22:56:16.388096158 +0100
++++ constr_SET_OF.c	2018-12-21 23:00:58.895439322 +0100
+@@ -3,9 +3,9 @@
+  * All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <constr_SET_OF.h>
+-#include <asn_SET_OF.h>
++#include "asn_internal.h"
++#include "constr_SET_OF.h"
++#include "asn_SET_OF.h"
+ 
+ /*
+  * Number of bytes left for this structure.
+diff -ur constr_SET_OF.h constr_SET_OF.h
+--- constr_SET_OF.h	2018-12-21 22:56:16.388096158 +0100
++++ constr_SET_OF.h	2018-12-21 23:00:58.940439855 +0100
+@@ -5,7 +5,7 @@
+ #ifndef	_CONSTR_SET_OF_H_
+ #define	_CONSTR_SET_OF_H_
+ 
+-#include <asn_application.h>
++#include "asn_application.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur constr_TYPE.c constr_TYPE.c
+--- constr_TYPE.c	2018-12-21 22:56:16.411096430 +0100
++++ constr_TYPE.c	2018-12-21 23:00:58.895439322 +0100
+@@ -2,8 +2,8 @@
+  * Copyright (c) 2003, 2004 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <constr_TYPE.h>
++#include "asn_internal.h"
++#include "constr_TYPE.h"
+ #include <errno.h>
+ 
+ /*
+diff -ur constr_TYPE.h constr_TYPE.h
+--- constr_TYPE.h	2018-12-21 22:56:16.411096430 +0100
++++ constr_TYPE.h	2018-12-21 23:00:58.940439855 +0100
+@@ -12,8 +12,8 @@
+ #ifndef	_CONSTR_TYPE_H_
+ #define	_CONSTR_TYPE_H_
+ 
+-#include <ber_tlv_length.h>
+-#include <ber_tlv_tag.h>
++#include "ber_tlv_length.h"
++#include "ber_tlv_tag.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+@@ -35,13 +35,13 @@
+ 	ber_tlv_len_t left;	/* Number of bytes left, -1 for indefinite */
+ } asn_struct_ctx_t;
+ 
+-#include <ber_decoder.h>	/* Basic Encoding Rules decoder */
+-#include <der_encoder.h>	/* Distinguished Encoding Rules encoder */
+-#include <xer_decoder.h>	/* Decoder of XER (XML, text) */
+-#include <xer_encoder.h>	/* Encoder into XER (XML, text) */
+-#include <per_decoder.h>	/* Packet Encoding Rules decoder */
+-#include <per_encoder.h>	/* Packet Encoding Rules encoder */
+-#include <constraints.h>	/* Subtype constraints support */
++#include "ber_decoder.h"	/* Basic Encoding Rules decoder */
++#include "der_encoder.h"	/* Distinguished Encoding Rules encoder */
++#include "xer_decoder.h"	/* Decoder of XER (XML, text) */
++#include "xer_encoder.h"	/* Encoder into XER (XML, text) */
++#include "per_decoder.h"	/* Packet Encoding Rules decoder */
++#include "per_encoder.h"	/* Packet Encoding Rules encoder */
++#include "constraints.h"	/* Subtype constraints support */
+ 
+ /*
+  * Free the structure according to its specification.
+diff -ur der_encoder.c der_encoder.c
+--- der_encoder.c	2018-12-21 22:56:16.388096158 +0100
++++ der_encoder.c	2018-12-21 23:00:58.897439346 +0100
+@@ -2,7 +2,7 @@
+  * Copyright (c) 2003, 2004 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
++#include "asn_internal.h"
+ #include <errno.h>
+ 
+ static ssize_t der_write_TL(ber_tlv_tag_t tag, ber_tlv_len_t len,
+diff -ur der_encoder.h der_encoder.h
+--- der_encoder.h	2018-12-21 22:56:16.388096158 +0100
++++ der_encoder.h	2018-12-21 23:00:58.941439867 +0100
+@@ -5,7 +5,7 @@
+ #ifndef	_DER_ENCODER_H_
+ #define	_DER_ENCODER_H_
+ 
+-#include <asn_application.h>
++#include "asn_application.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur GraphicString.c GraphicString.c
+--- GraphicString.c	2018-12-21 22:56:16.387096146 +0100
++++ GraphicString.c	2018-12-21 23:00:58.902439405 +0100
+@@ -2,8 +2,8 @@
+  * Copyright (c) 2003 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <GraphicString.h>
++#include "asn_internal.h"
++#include "GraphicString.h"
+ 
+ /*
+  * GraphicString basic type description.
+diff -ur GraphicString.h GraphicString.h
+--- GraphicString.h	2018-12-21 22:56:16.387096146 +0100
++++ GraphicString.h	2018-12-21 23:00:58.944439902 +0100
+@@ -5,7 +5,7 @@
+ #ifndef	_GraphicString_H_
+ #define	_GraphicString_H_
+ 
+-#include <OCTET_STRING.h>
++#include "OCTET_STRING.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur IA5String.c IA5String.c
+--- IA5String.c	2018-12-21 22:56:16.387096146 +0100
++++ IA5String.c	2018-12-21 23:00:58.903439417 +0100
+@@ -2,8 +2,8 @@
+  * Copyright (c) 2003 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <IA5String.h>
++#include "asn_internal.h"
++#include "IA5String.h"
+ 
+ /*
+  * IA5String basic type description.
+diff -ur IA5String.h IA5String.h
+--- IA5String.h	2018-12-21 22:56:16.387096146 +0100
++++ IA5String.h	2018-12-21 23:00:58.944439902 +0100
+@@ -5,7 +5,7 @@
+ #ifndef	_IA5String_H_
+ #define	_IA5String_H_
+ 
+-#include <OCTET_STRING.h>
++#include "OCTET_STRING.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur INTEGER.c INTEGER.c
+--- INTEGER.c	2018-12-21 22:56:16.387096146 +0100
++++ INTEGER.c	2018-12-21 23:00:58.904439429 +0100
+@@ -3,9 +3,9 @@
+  * All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <INTEGER.h>
+-#include <asn_codecs_prim.h>	/* Encoder and decoder of a primitive type */
++#include "asn_internal.h"
++#include "INTEGER.h"
++#include "asn_codecs_prim.h"	/* Encoder and decoder of a primitive type */
+ #include <errno.h>
+ 
+ /*
+diff -ur INTEGER.h INTEGER.h
+--- INTEGER.h	2018-12-21 22:56:16.387096146 +0100
++++ INTEGER.h	2018-12-21 23:00:58.944439902 +0100
+@@ -5,8 +5,8 @@
+ #ifndef	_INTEGER_H_
+ #define	_INTEGER_H_
+ 
+-#include <asn_application.h>
+-#include <asn_codecs_prim.h>
++#include "asn_application.h"
++#include "asn_codecs_prim.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur NativeEnumerated.c NativeEnumerated.c
+--- NativeEnumerated.c	2018-12-21 22:56:16.387096146 +0100
++++ NativeEnumerated.c	2018-12-21 23:00:58.910439500 +0100
+@@ -9,8 +9,8 @@
+  * implementation deals with the standard (machine-specific) representation
+  * of them instead of using the platform-independent buffer.
+  */
+-#include <asn_internal.h>
+-#include <NativeEnumerated.h>
++#include "asn_internal.h"
++#include "NativeEnumerated.h"
+ 
+ /*
+  * NativeEnumerated basic type description.
+diff -ur NativeEnumerated.h NativeEnumerated.h
+--- NativeEnumerated.h	2018-12-21 22:56:16.387096146 +0100
++++ NativeEnumerated.h	2018-12-21 23:00:58.948439949 +0100
+@@ -13,7 +13,7 @@
+ #ifndef	_NativeEnumerated_H_
+ #define	_NativeEnumerated_H_
+ 
+-#include <NativeInteger.h>
++#include "NativeInteger.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur NativeInteger.c NativeInteger.c
+--- NativeInteger.c	2018-12-21 22:56:16.387096146 +0100
++++ NativeInteger.c	2018-12-21 23:00:58.911439512 +0100
+@@ -10,8 +10,8 @@
+  * implementation deals with the standard (machine-specific) representation
+  * of them instead of using the platform-independent buffer.
+  */
+-#include <asn_internal.h>
+-#include <NativeInteger.h>
++#include "asn_internal.h"
++#include "NativeInteger.h"
+ 
+ /*
+  * NativeInteger basic type description.
+diff -ur NativeInteger.h NativeInteger.h
+--- NativeInteger.h	2018-12-21 22:56:16.387096146 +0100
++++ NativeInteger.h	2018-12-21 23:00:58.948439949 +0100
+@@ -12,8 +12,8 @@
+ #ifndef	_NativeInteger_H_
+ #define	_NativeInteger_H_
+ 
+-#include <asn_application.h>
+-#include <INTEGER.h>
++#include "asn_application.h"
++#include "INTEGER.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur NULL.c NULL.c
+--- NULL.c	2018-12-21 22:56:16.387096146 +0100
++++ NULL.c	2018-12-21 23:00:58.911439512 +0100
+@@ -2,10 +2,10 @@
+  * Copyright (c) 2003, 2005 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <asn_codecs_prim.h>
+-#include <NULL.h>
+-#include <BOOLEAN.h>	/* Implemented in terms of BOOLEAN type */
++#include "asn_internal.h"
++#include "asn_codecs_prim.h"
++#include "NULL.h"
++#include "BOOLEAN.h"	/* Implemented in terms of BOOLEAN type */
+ 
+ /*
+  * NULL basic type description.
+diff -ur NULL.h NULL.h
+--- NULL.h	2018-12-21 22:56:16.387096146 +0100
++++ NULL.h	2018-12-21 23:00:58.948439949 +0100
+@@ -5,7 +5,7 @@
+ #ifndef	ASN_TYPE_NULL_H
+ #define	ASN_TYPE_NULL_H
+ 
+-#include <asn_application.h>
++#include "asn_application.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur NumericString.c NumericString.c
+--- NumericString.c	2018-12-21 22:56:16.387096146 +0100
++++ NumericString.c	2018-12-21 23:00:58.911439512 +0100
+@@ -2,8 +2,8 @@
+  * Copyright (c) 2003, 2006 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <NumericString.h>
++#include "asn_internal.h"
++#include "NumericString.h"
+ 
+ /*
+  * NumericString basic type description.
+diff -ur NumericString.h NumericString.h
+--- NumericString.h	2018-12-21 22:56:16.387096146 +0100
++++ NumericString.h	2018-12-21 23:00:58.948439949 +0100
+@@ -5,7 +5,7 @@
+ #ifndef	_NumericString_H_
+ #define	_NumericString_H_
+ 
+-#include <OCTET_STRING.h>
++#include "OCTET_STRING.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur ObjectDescriptor.c ObjectDescriptor.c
+--- ObjectDescriptor.c	2018-12-21 22:56:16.387096146 +0100
++++ ObjectDescriptor.c	2018-12-21 23:00:58.911439512 +0100
+@@ -2,8 +2,8 @@
+  * Copyright (c) 2003, 2004 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <ObjectDescriptor.h>
++#include "asn_internal.h"
++#include "ObjectDescriptor.h"
+ 
+ /*
+  * ObjectDescriptor basic type description.
+diff -ur ObjectDescriptor.h ObjectDescriptor.h
+--- ObjectDescriptor.h	2018-12-21 22:56:16.387096146 +0100
++++ ObjectDescriptor.h	2018-12-21 23:00:58.948439949 +0100
+@@ -5,7 +5,7 @@
+ #ifndef	_ObjectDescriptor_H_
+ #define	_ObjectDescriptor_H_
+ 
+-#include <GraphicString.h>
++#include "GraphicString.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur OBJECT_IDENTIFIER.c OBJECT_IDENTIFIER.c
+--- OBJECT_IDENTIFIER.c	2018-12-21 22:56:16.387096146 +0100
++++ OBJECT_IDENTIFIER.c	2018-12-21 23:00:58.912439523 +0100
+@@ -2,10 +2,10 @@
+  * Copyright (c) 2003, 2004 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <INTEGER.h>
+-#include <OBJECT_IDENTIFIER.h>
+-#include <OCTET_STRING.h>
++#include "asn_internal.h"
++#include "INTEGER.h"
++#include "OBJECT_IDENTIFIER.h"
++#include "OCTET_STRING.h"
+ #include <limits.h>	/* for CHAR_BIT */
+ #include <errno.h>
+ 
+diff -ur OBJECT_IDENTIFIER.h OBJECT_IDENTIFIER.h
+--- OBJECT_IDENTIFIER.h	2018-12-21 22:56:16.387096146 +0100
++++ OBJECT_IDENTIFIER.h	2018-12-21 23:00:58.948439949 +0100
+@@ -6,8 +6,8 @@
+ #ifndef	_OBJECT_IDENTIFIER_H_
+ #define	_OBJECT_IDENTIFIER_H_
+ 
+-#include <asn_application.h>
+-#include <asn_codecs_prim.h>
++#include "asn_application.h"
++#include "asn_codecs_prim.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur OCTET_STRING.c OCTET_STRING.c
+--- OCTET_STRING.c	2018-12-21 22:56:16.388096158 +0100
++++ OCTET_STRING.c	2018-12-21 23:00:58.914439547 +0100
+@@ -3,9 +3,9 @@
+  * All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <OCTET_STRING.h>
+-#include <BIT_STRING.h>	/* for .bits_unused member */
++#include "asn_internal.h"
++#include "OCTET_STRING.h"
++#include "BIT_STRING.h"	/* for .bits_unused member */
+ #include <errno.h>
+ 
+ /*
+diff -ur OCTET_STRING.h OCTET_STRING.h
+--- OCTET_STRING.h	2018-12-21 22:56:16.388096158 +0100
++++ OCTET_STRING.h	2018-12-21 23:00:58.949439961 +0100
+@@ -5,7 +5,7 @@
+ #ifndef	_OCTET_STRING_H_
+ #define	_OCTET_STRING_H_
+ 
+-#include <asn_application.h>
++#include "asn_application.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur per_decoder.c per_decoder.c
+--- per_decoder.c	2018-12-21 22:56:16.389096170 +0100
++++ per_decoder.c	2018-12-21 23:00:58.914439547 +0100
+@@ -1,6 +1,6 @@
+-#include <asn_application.h>
+-#include <asn_internal.h>
+-#include <per_decoder.h>
++#include "asn_application.h"
++#include "asn_internal.h"
++#include "per_decoder.h"
+ 
+ /*
+  * Decode a "Production of a complete encoding", X.691#10.1.
+diff -ur per_decoder.h per_decoder.h
+--- per_decoder.h	2018-12-21 22:56:16.389096170 +0100
++++ per_decoder.h	2018-12-21 23:00:58.949439961 +0100
+@@ -5,8 +5,8 @@
+ #ifndef	_PER_DECODER_H_
+ #define	_PER_DECODER_H_
+ 
+-#include <asn_application.h>
+-#include <per_support.h>
++#include "asn_application.h"
++#include "per_support.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur per_encoder.c per_encoder.c
+--- per_encoder.c	2018-12-21 22:56:16.389096170 +0100
++++ per_encoder.c	2018-12-21 23:00:58.914439547 +0100
+@@ -1,6 +1,6 @@
+-#include <asn_application.h>
+-#include <asn_internal.h>
+-#include <per_encoder.h>
++#include "asn_application.h"
++#include "asn_internal.h"
++#include "per_encoder.h"
+ 
+ static asn_enc_rval_t uper_encode_internal(asn_TYPE_descriptor_t *td, asn_per_constraints_t *, void *sptr, asn_app_consume_bytes_f *cb, void *app_key);
+ 
+diff -ur per_encoder.h per_encoder.h
+--- per_encoder.h	2018-12-21 22:56:16.389096170 +0100
++++ per_encoder.h	2018-12-21 23:00:58.949439961 +0100
+@@ -5,8 +5,8 @@
+ #ifndef	_PER_ENCODER_H_
+ #define	_PER_ENCODER_H_
+ 
+-#include <asn_application.h>
+-#include <per_support.h>
++#include "asn_application.h"
++#include "per_support.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur per_opentype.c per_opentype.c
+--- per_opentype.c	2018-12-21 22:56:16.389096170 +0100
++++ per_opentype.c	2018-12-21 23:00:58.915439559 +0100
+@@ -2,10 +2,10 @@
+  * Copyright (c) 2007 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <per_support.h>
+-#include <constr_TYPE.h>
+-#include <per_opentype.h>
++#include "asn_internal.h"
++#include "per_support.h"
++#include "constr_TYPE.h"
++#include "per_opentype.h"
+ 
+ typedef struct uper_ugot_key {
+ 	asn_per_data_t oldpd;	/* Old per data source */
+diff -ur per_support.c per_support.c
+--- per_support.c	2018-12-21 22:56:16.389096170 +0100
++++ per_support.c	2018-12-21 23:00:58.915439559 +0100
+@@ -3,9 +3,9 @@
+  * All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_system.h>
+-#include <asn_internal.h>
+-#include <per_support.h>
++#include "asn_system.h"
++#include "asn_internal.h"
++#include "per_support.h"
+ 
+ char *
+ per_data_string(asn_per_data_t *pd) {
+diff -ur per_support.h per_support.h
+--- per_support.h	2018-12-21 22:56:16.389096170 +0100
++++ per_support.h	2018-12-21 23:00:58.949439961 +0100
+@@ -6,7 +6,7 @@
+ #ifndef	_PER_SUPPORT_H_
+ #define	_PER_SUPPORT_H_
+ 
+-#include <asn_system.h>		/* Platform-specific types */
++#include "asn_system.h"		/* Platform-specific types */
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur RELATIVE-OID.c RELATIVE-OID.c
+--- RELATIVE-OID.c	2018-12-21 22:56:16.387096146 +0100
++++ RELATIVE-OID.c	2018-12-21 23:00:58.920439618 +0100
+@@ -3,10 +3,10 @@
+  * 	All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
+-#include <RELATIVE-OID.h>
+-#include <OCTET_STRING.h>
+-#include <asn_codecs_prim.h>	/* Encoder and decoder of a primitive type */
++#include "asn_internal.h"
++#include "RELATIVE-OID.h"
++#include "OCTET_STRING.h"
++#include "asn_codecs_prim.h"	/* Encoder and decoder of a primitive type */
+ #include <limits.h>	/* for CHAR_BIT */
+ #include <errno.h>
+ 
+diff -ur RELATIVE-OID.h RELATIVE-OID.h
+--- RELATIVE-OID.h	2018-12-21 22:56:16.387096146 +0100
++++ RELATIVE-OID.h	2018-12-21 23:00:58.952439997 +0100
+@@ -5,7 +5,7 @@
+ #ifndef	_RELATIVE_OID_H_
+ #define	_RELATIVE_OID_H_
+ 
+-#include <OBJECT_IDENTIFIER.h>
++#include "OBJECT_IDENTIFIER.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur xer_decoder.c xer_decoder.c
+--- xer_decoder.c	2018-12-21 22:56:16.388096158 +0100
++++ xer_decoder.c	2018-12-21 23:00:58.932439760 +0100
+@@ -2,9 +2,9 @@
+  * Copyright (c) 2004, 2005 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_application.h>
+-#include <asn_internal.h>
+-#include <xer_support.h>		/* XER/XML parsing support */
++#include "asn_application.h"
++#include "asn_internal.h"
++#include "xer_support.h"		/* XER/XML parsing support */
+ 
+ 
+ /*
+diff -ur xer_decoder.h xer_decoder.h
+--- xer_decoder.h	2018-12-21 22:56:16.388096158 +0100
++++ xer_decoder.h	2018-12-21 23:00:58.958440068 +0100
+@@ -5,7 +5,7 @@
+ #ifndef	_XER_DECODER_H_
+ #define	_XER_DECODER_H_
+ 
+-#include <asn_application.h>
++#include "asn_application.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur xer_encoder.c xer_encoder.c
+--- xer_encoder.c	2018-12-21 22:56:16.389096170 +0100
++++ xer_encoder.c	2018-12-21 23:00:58.932439760 +0100
+@@ -2,7 +2,7 @@
+  * Copyright (c) 2003, 2004 Lev Walkin <vlm@lionet.info>. All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_internal.h>
++#include "asn_internal.h"
+ #include <stdio.h>
+ #include <errno.h>
+ 
+diff -ur xer_encoder.h xer_encoder.h
+--- xer_encoder.h	2018-12-21 22:56:16.389096170 +0100
++++ xer_encoder.h	2018-12-21 23:00:58.958440068 +0100
+@@ -5,7 +5,7 @@
+ #ifndef	_XER_ENCODER_H_
+ #define	_XER_ENCODER_H_
+ 
+-#include <asn_application.h>
++#include "asn_application.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -ur xer_support.c xer_support.c
+--- xer_support.c	2018-12-21 22:56:16.388096158 +0100
++++ xer_support.c	2018-12-21 23:00:58.932439760 +0100
+@@ -4,8 +4,8 @@
+  * 	All rights reserved.
+  * Redistribution and modifications are permitted subject to BSD license.
+  */
+-#include <asn_system.h>
+-#include <xer_support.h>
++#include "asn_system.h"
++#include "xer_support.h"
+ 
+ /* Parser states */
+ typedef enum {
+diff -ur xer_support.h xer_support.h
+--- xer_support.h	2018-12-21 22:56:16.388096158 +0100
++++ xer_support.h	2018-12-21 23:00:58.958440068 +0100
+@@ -6,7 +6,7 @@
+ #ifndef	_XER_SUPPORT_H_
+ #define	_XER_SUPPORT_H_
+ 
+-#include <asn_system.h>		/* Platform-specific types */
++#include "asn_system.h"		/* Platform-specific types */
+ 
+ #ifdef __cplusplus
+ extern "C" {
