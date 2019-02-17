@@ -328,10 +328,10 @@ static void output_avlc(const avlc_frame_qentry_t *v, const avlc_frame_t *f, uin
 	if(output_raw_frames)
 		output_raw(raw_buf, len);
 	if(IS_S(f->lcf)) {
-		fprintf(outf, "AVLC: type: S (%s) P/F: %x rseq: %x\n", S_cmd[f->lcf.S.sfunc], f->lcf.S.pf, f->lcf.S.recv_seq);
+		fprintf(outf, "AVLC type: S (%s) P/F: %x rseq: %x\n", S_cmd[f->lcf.S.sfunc], f->lcf.S.pf, f->lcf.S.recv_seq);
 		output_raw((uint8_t *)f->data, f->datalen);
 	} else if(IS_U(f->lcf)) {
-		fprintf(outf, "AVLC: type: U (%s) P/F: %x\n", U_cmd[U_MFUNC(f->lcf)], U_PF(f->lcf));
+		fprintf(outf, "AVLC type: U (%s) P/F: %x\n", U_cmd[U_MFUNC(f->lcf)], U_PF(f->lcf));
 		output_avlc_U(f);
 	} else {	// IS_I == true
 		fprintf(outf, "AVLC type: I sseq: %x rseq: %x poll: %x\n", f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
