@@ -79,9 +79,16 @@ int init_output_file(char *file) {
 		filename_prefix = file;
 		prefix_len = strlen(filename_prefix);
 		if(hourly || daily) {
+			char *basename = strrchr(filename_prefix, '/');
+			if(basename != NULL) {
+				basename++;
+			} else {
+				basename = filename_prefix;
+			}
 			char *ext = strrchr(filename_prefix, '.');
-			if(ext != NULL && (ext == filename_prefix || ext[1] == '\0'))
+			if(ext != NULL && (ext <= basename || ext[1] == '\0')) {
 				ext = NULL;
+			}
 			if(ext) {
 				extension = strdup(ext);
 				*ext = '\0';
