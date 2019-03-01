@@ -60,15 +60,15 @@ static int open_outfile() {
 		filename = XCALLOC(prefix_len + tlen + 2, sizeof(uint8_t));
 		sprintf(filename, "%s%s%s", filename_prefix, suffix, extension);
 	} else {
-		filename = filename_prefix;
+		filename = strdup(filename_prefix);
 	}
 
 	if((outf = fopen(filename, "a+")) == NULL) {
 		fprintf(stderr, "Could not open output file %s: %s\n", filename, strerror(errno));
+		XFREE(filename);
 		return -1;
 	}
 	XFREE(filename);
-
 	return 0;
 }
 
