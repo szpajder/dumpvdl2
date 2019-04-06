@@ -25,6 +25,7 @@
 #include <stdlib.h>		// abort()
 #include <sys/time.h>
 #include <pthread.h>		// pthread_t, pthread_barrier_t
+#include <libacars/vstring.h>	// la_vstring
 #include "config.h"
 #include "tlv.h"
 #ifndef HAVE_PTHREAD_BARRIERS
@@ -312,6 +313,9 @@ char *fmt_hexstring(uint8_t *data, uint16_t len);
 char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len);
 char *fmt_bitfield(uint8_t val, const dict *d);
 size_t slurp_hexstring(char* string, uint8_t **buf);
+char *hexdump(uint8_t *data, size_t len);
+void append_hexdump_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int indent);
+void append_hexstring_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int indent);
 
 // dumpvdl2.c
 extern uint32_t msg_filter;
