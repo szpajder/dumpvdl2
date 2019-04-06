@@ -26,6 +26,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <libacars/libacars.h>		// la_proto_node, la_proto_tree_format_text()
+#include <libacars/vstring.h>		// la_vstring
 #include "dumpvdl2.h"
 
 FILE *outf;
@@ -137,7 +139,7 @@ int init_pp(char *pp_addr) {
 	return 0;
 }
 
-int rotate_outfile() {
+static int rotate_outfile() {
 	struct tm new_tm;
 	time_t t = time(NULL);
 	if(utc)
@@ -158,4 +160,15 @@ void output_raw(uint8_t *buf, uint32_t len) {
 	for(uint32_t i = 0; i < len; i++)
 		fprintf(outf, "%02x ", buf[i]);
 	fprintf(outf, "\n");
+}
+
+void output_proto_tree(la_proto_node *root) {
+	ASSERT(root != NULL);
+	if((daily || hourly) && rotate_outfile() < 0) {
+		_exit(1);
+	}
+	la_vstring *vstr = la_proto_tree_format_text(NULL, root);
+	fprintf(outf, "%s\n", vstr->str);
+	fflush(outf);
+	la_vstring_destroy(vstr, true);
 }

@@ -18,12 +18,15 @@
  */
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>		// strftime, gmtime, localtime
 #include <math.h>
 #include <unistd.h>
 #include <glib.h>
+#include <libacars/libacars.h>	// la_type_descriptor, la_proto_node
+#include <libacars/vstring.h>	// la_vstring
 #include "config.h"		// IS_BIG_ENDIAN
 #include "dumpvdl2.h"
 #include "avlc.h"
@@ -109,6 +112,8 @@ typedef struct {
 	uint32_t datalen;
 	uint8_t data_valid;
 	void *data;
+// TEMP
+	avlc_frame_qentry_t *q;
 } avlc_frame_t;
 
 static const char *status_ag_descr[] = {
@@ -150,118 +155,116 @@ static const char *U_cmd[] = {
 	"TEST"
 };
 
-// forward declaration
-static void output_avlc(const avlc_frame_qentry_t *v, const avlc_frame_t *f, uint8_t *raw_buf, uint32_t len);
+// Forward declaration
+la_type_descriptor const la_DEF_avlc_frame;
 
 uint32_t parse_dlc_addr(uint8_t *buf) {
 	debug_print("%02x %02x %02x %02x\n", buf[0], buf[1], buf[2], buf[3]);
 	return reverse((buf[0] >> 1) | (buf[1] << 6) | (buf[2] << 13) | ((buf[3] & 0xfe) << 20), 28) & ONES(28);
 }
 
-static void parse_avlc(avlc_frame_qentry_t *v) {
-	uint8_t *buf = v->buf;
-	uint32_t len = v->len;
+static la_proto_node *parse_avlc(avlc_frame_qentry_t *q, uint32_t *msg_type) {
+	uint8_t *buf = q->buf;
+	uint32_t len = q->len;
 	debug_print_buf_hex(buf, len, "%s", "Frame data:\n");
 
 // FCS check
 	uint16_t fcs = crc16_ccitt(buf, len, 0xFFFFu);
 	debug_print("Check FCS: %04x\n", fcs);
-	if(fcs != GOOD_FCS) {
+	if(fcs == GOOD_FCS) {
+		debug_print("%s", "FCS check OK\n");
+		statsd_increment(q->freq, "avlc.frames.good");
+		len -= 2;
+	} else {
 		debug_print("%s", "FCS check failed\n");
-		statsd_increment(v->freq, "avlc.errors.bad_fcs");
-		return;
+		statsd_increment(q->freq, "avlc.errors.bad_fcs");
+		return NULL;
 	}
-	debug_print("%s", "FCS check OK\n");
-	statsd_increment(v->freq, "avlc.frames.good");
-	len -= 2;
+
+	la_proto_node *node = la_proto_node_new();
+	node->td = &la_DEF_avlc_frame;
+	avlc_frame_t *frame = XCALLOC(1, sizeof(avlc_frame_t));
+	node->data = frame;
+	node->next = NULL;
+// FIXME: make a copy
+	frame->q = q;
 
 	uint8_t *ptr = buf;
-	avlc_frame_t frame;
-	memset(&frame, 0, sizeof(frame));
-	uint32_t msg_type = 0;
-	frame.num = v->idx;
-	frame.dst.val = parse_dlc_addr(ptr);
+	frame->num = q->idx;
+	frame->dst.val = parse_dlc_addr(ptr);
 	ptr += 4; len -= 4;
-	frame.src.val = parse_dlc_addr(ptr);
+	frame->src.val = parse_dlc_addr(ptr);
 	ptr += 4; len -= 4;
 
-	switch(frame.src.a_addr.type) {
+	switch(frame->src.a_addr.type) {
 	case ADDRTYPE_AIRCRAFT:
-		msg_type |= MSGFLT_SRC_AIR;
+		*msg_type |= MSGFLT_SRC_AIR;
 #ifdef WITH_STATSD
-		switch(frame.dst.a_addr.type) {
+		switch(frame->dst.a_addr.type) {
 		case ADDRTYPE_GS_ADM:
 		case ADDRTYPE_GS_DEL:
-			statsd_increment(v->freq, "avlc.msg.air2gnd");
+			statsd_increment(q->freq, "avlc.msg.air2gnd");
 			break;
 		case ADDRTYPE_AIRCRAFT:
-			statsd_increment(v->freq, "avlc.msg.air2air");
+			statsd_increment(q->freq, "avlc.msg.air2air");
 			break;
 		case ADDRTYPE_ALL:
-			statsd_increment(v->freq, "avlc.msg.air2all");
+			statsd_increment(q->freq, "avlc.msg.air2all");
 			break;
 		}
 #endif
 		break;
 	case ADDRTYPE_GS_ADM:
 	case ADDRTYPE_GS_DEL:
-		msg_type |= MSGFLT_SRC_GND;
+		*msg_type |= MSGFLT_SRC_GND;
 #ifdef WITH_STATSD
-		switch(frame.dst.a_addr.type) {
+		switch(frame->dst.a_addr.type) {
 		case ADDRTYPE_AIRCRAFT:
-			statsd_increment(v->freq, "avlc.msg.gnd2air");
+			statsd_increment(q->freq, "avlc.msg.gnd2air");
 			break;
 		case ADDRTYPE_GS_ADM:
 		case ADDRTYPE_GS_DEL:
-			statsd_increment(v->freq, "avlc.msg.gnd2gnd");
+			statsd_increment(q->freq, "avlc.msg.gnd2gnd");
 			break;
 		case ADDRTYPE_ALL:
-			statsd_increment(v->freq, "avlc.msg.gnd2all");
+			statsd_increment(q->freq, "avlc.msg.gnd2all");
 			break;
 		}
 #endif
 		break;
 	}
 
-	frame.lcf.val = *ptr++;
+	frame->lcf.val = *ptr++;
 	len--;
-	frame.data_valid = 0;
-	frame.data = NULL;
-	if(IS_S(frame.lcf)) {
-		msg_type |= MSGFLT_AVLC_S;
+	frame->data_valid = 0;
+	frame->data = NULL;
+	if(IS_S(frame->lcf)) {
+		*msg_type |= MSGFLT_AVLC_S;
 		/* TODO */
-	} else if(IS_U(frame.lcf)) {
-		msg_type |= MSGFLT_AVLC_U;
-		switch(U_MFUNC(frame.lcf)) {
+	} else if(IS_U(frame->lcf)) {
+		*msg_type |= MSGFLT_AVLC_U;
+		switch(U_MFUNC(frame->lcf)) {
 		case XID:
-			frame.data = parse_xid(frame.src.a_addr.status, U_PF(frame.lcf), ptr, len, &msg_type);
+			frame->data = parse_xid(frame->src.a_addr.status, U_PF(frame->lcf), ptr, len, msg_type);
 			break;
 		}
-	} else { 	// IS_I(frame.lcf) == true
-		msg_type |= MSGFLT_AVLC_I;
+	} else { 	// IS_I(frame->lcf) == true
+		*msg_type |= MSGFLT_AVLC_I;
 		if(len > 3 && ptr[0] == 0xff && ptr[1] == 0xff && ptr[2] == 0x01) {
-			frame.proto = PROTO_ACARS;
-			frame.data = parse_acars(ptr + 3, len - 3, &msg_type);
+			frame->proto = PROTO_ACARS;
+			frame->data = parse_acars(ptr + 3, len - 3, msg_type);
 		} else {
-			frame.proto = PROTO_X25;
-			frame.data = parse_x25(ptr, len, &msg_type);
+			frame->proto = PROTO_X25;
+			frame->data = parse_x25(ptr, len, msg_type);
 		}
 	}
-	if(frame.data == NULL) {	// unparseable frame
-		frame.data = ptr;
-		frame.datalen = len;
+	if(frame->data == NULL) {	// unparseable frame
+		frame->data = ptr;
+		frame->datalen = len;
 	} else {
-		frame.data_valid = 1;
+		frame->data_valid = 1;
 	}
-	if((msg_type & msg_filter) == msg_type) {
-		debug_print("msg_type: %x msg_filter: %x (accepted)\n", msg_type, msg_filter);
-		output_avlc(v, &frame, ptr, len);
-	} else {
-		debug_print("msg_type: %x msg_filter: %x (filtered out)\n", msg_type, msg_filter);
-	}
-	if(frame.proto == PROTO_ACARS && frame.data_valid == 1) {
-		destroy_acars(frame.data);
-	}
+	return node;
 }
 
 GAsyncQueue *frame_queue = NULL;
@@ -270,6 +273,9 @@ void *parse_avlc_frames(void *arg) {
 // -Wunused-parameter
 	(void)arg;
 	avlc_frame_qentry_t *q = NULL;
+	la_proto_node *root = NULL;
+	uint32_t msg_type = 0;
+
 	frame_queue = g_async_queue_new();
 	while(1) {
 		q = (avlc_frame_qentry_t *)g_async_queue_pop(frame_queue);
@@ -280,45 +286,52 @@ void *parse_avlc_frames(void *arg) {
 			goto cleanup;
 		}
 		debug_print("Frame %d: len=%u\n", q->idx, q->len);
-		parse_avlc(q);
+		msg_type = 0;
+		root = parse_avlc(q, &msg_type);
+		if(root == NULL) {
+			goto cleanup;
+		}
+		if((msg_type & msg_filter) == msg_type) {
+			debug_print("msg_type: %x msg_filter: %x (accepted)\n", msg_type, msg_filter);
+			output_proto_tree(root);
+		} else {
+			debug_print("msg_type: %x msg_filter: %x (filtered out)\n", msg_type, msg_filter);
+		}
 cleanup:
+		la_proto_tree_destroy(root);
+		root = NULL;
 		XFREE(q->buf);
 		XFREE(q);
 	}
 }
 
-static void output_avlc_U(const avlc_frame_t *f) {
-	switch(U_MFUNC(f->lcf)) {
-	case XID:
-		if(f->data_valid)
-			output_xid((xid_msg_t *)f->data);
-		else {
-			fprintf(outf, "-- Unparseable XID\n");
-			output_raw((uint8_t *)f->data, f->datalen);
-		}
-		break;
-	default:
-		output_raw((uint8_t *)f->data, f->datalen);
-	}
-}
+void avlc_format_text(la_vstring * const vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+	ASSERT(indent >= 0);
 
-static void output_avlc(const avlc_frame_qentry_t *v, const avlc_frame_t *f, uint8_t *raw_buf, uint32_t len) {
-	if(f == NULL) return;
-	if((daily || hourly) && rotate_outfile() < 0)
-		_exit(1);
+	CAST_PTR(f, avlc_frame_t *, data);
+
 	char ftime[30];
 	strftime(ftime, sizeof(ftime), "%F %T %Z",
-		(utc ? gmtime(&v->burst_timestamp.tv_sec) : localtime(&v->burst_timestamp.tv_sec)));
-	float sig_pwr_dbfs = 10.0f * log10f(v->frame_pwr);
-	float nf_pwr_dbfs = 20.0f * log10f(v->mag_nf + 0.001f);
-	fprintf(outf, "\n[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB] [%.1f ppm]",
-		ftime, (float)v->freq / 1e+6, sig_pwr_dbfs, nf_pwr_dbfs, sig_pwr_dbfs-nf_pwr_dbfs,
-		v->ppm_error);
+		(utc ? gmtime(&f->q->burst_timestamp.tv_sec) : localtime(&f->q->burst_timestamp.tv_sec)));
+	float sig_pwr_dbfs = 10.0f * log10f(f->q->frame_pwr);
+	float nf_pwr_dbfs = 20.0f * log10f(f->q->mag_nf + 0.001f);
+	LA_ISPRINTF(vstr, indent, "[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB] [%.1f ppm]",
+		ftime, (float)f->q->freq / 1e+6, sig_pwr_dbfs, nf_pwr_dbfs, sig_pwr_dbfs-nf_pwr_dbfs,
+		f->q->ppm_error);
+
 	if(extended_header) {
-		fprintf(outf, " [S:%d] [L:%u] [F:%d] [#%u]",
-			 v->synd_weight, v->datalen_octets, v->num_fec_corrections, f->num);
+		la_vstring_append_sprintf(vstr, " [S:%d] [L:%u] [F:%d] [#%u]",
+			 f->q->synd_weight, f->q->datalen_octets, f->q->num_fec_corrections, f->num);
 	}
-	fprintf(outf, "\n%06X (%s, %s) -> %06X (%s): %s\n",
+	la_vstring_append_sprintf(vstr, "%s", "\n");
+
+	if(output_raw_frames && f->q->len > 0) {
+		append_hexdump_with_indent(vstr, f->q->buf, f->q->len, indent+1);
+	}
+
+	LA_ISPRINTF(vstr, indent, "%06X (%s, %s) -> %06X (%s): %s\n",
 		f->src.a_addr.addr,
 		addrtype_descr[f->src.a_addr.type],
 		status_ag_descr[f->dst.a_addr.status],	// A/G
@@ -326,36 +339,55 @@ static void output_avlc(const avlc_frame_qentry_t *v, const avlc_frame_t *f, uin
 		addrtype_descr[f->dst.a_addr.type],
 		status_cr_descr[f->src.a_addr.status]	// C/R
 	);
-	if(output_raw_frames)
-		output_raw(raw_buf, len);
 	if(IS_S(f->lcf)) {
-		fprintf(outf, "AVLC type: S (%s) P/F: %x rseq: %x\n", S_cmd[f->lcf.S.sfunc], f->lcf.S.pf, f->lcf.S.recv_seq);
-		output_raw((uint8_t *)f->data, f->datalen);
+		LA_ISPRINTF(vstr, indent, "AVLC type: S (%s) P/F: %x rseq: %x\n",
+			S_cmd[f->lcf.S.sfunc], f->lcf.S.pf, f->lcf.S.recv_seq);
+		if(f->datalen > 0) {
+			append_hexstring_with_indent(vstr, (uint8_t *)f->data, f->datalen, indent+1);
+		}
 	} else if(IS_U(f->lcf)) {
-		fprintf(outf, "AVLC type: U (%s) P/F: %x\n", U_cmd[U_MFUNC(f->lcf)], U_PF(f->lcf));
-		output_avlc_U(f);
+		LA_ISPRINTF(vstr, indent, "AVLC type: U (%s) P/F: %x\n", U_cmd[U_MFUNC(f->lcf)], U_PF(f->lcf));
+		switch(U_MFUNC(f->lcf)) {
+		case XID:
+			if(f->data_valid)
+				output_xid((xid_msg_t *)f->data);
+			else {
+				LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable XID\n");
+				append_hexstring_with_indent(vstr, (uint8_t *)f->data, f->datalen, indent+1);
+			}
+			break;
+		default:
+			if(f->datalen > 0) {
+				append_hexstring_with_indent(vstr, (uint8_t *)f->data, f->datalen, indent+1);
+			}
+		}
 	} else {	// IS_I == true
-		fprintf(outf, "AVLC type: I sseq: %x rseq: %x poll: %x\n", f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
+		LA_ISPRINTF(vstr, indent, "AVLC type: I sseq: %x rseq: %x poll: %x\n", f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
 		switch(f->proto) {
 		case PROTO_ACARS:
 			if(f->data_valid)
 				output_acars(f->data);
 			else {
-				fprintf(outf, "-- Unparseable ACARS payload\n");
-				output_raw((uint8_t *)f->data, f->datalen);
+				LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable ACARS payload\n");
+				append_hexstring_with_indent(vstr, (uint8_t *)f->data, f->datalen, indent+1);
 			}
 			break;
 		case PROTO_X25:
 			if(f->data_valid)
 				output_x25((x25_pkt_t *)f->data);
 			else {
-				fprintf(outf, "-- Unparseable X.25 packet\n");
-				output_raw((uint8_t *)f->data, f->datalen);
+				LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable X.25 packet\n");
+				append_hexstring_with_indent(vstr, (uint8_t *)f->data, f->datalen, indent+1);
 			}
 			break;
 		default:
-			output_raw((uint8_t *)f->data, f->datalen);
+//			append_hexdump_with_indent(vstr, f->q->buf, f->q->len, indent+1);
+			append_hexstring_with_indent(vstr, (uint8_t *)f->data, f->datalen, indent+1);
 		}
 	}
-	fflush(outf);
 }
+
+la_type_descriptor const la_DEF_avlc_frame = {
+	.format_text = avlc_format_text,
+	.destroy = NULL
+};

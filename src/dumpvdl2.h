@@ -25,6 +25,7 @@
 #include <stdlib.h>		// abort()
 #include <sys/time.h>
 #include <pthread.h>		// pthread_t, pthread_barrier_t
+#include <libacars/libacars.h>	// la_proto_node
 #include <libacars/vstring.h>	// la_vstring
 #include "config.h"
 #include "tlv.h"
@@ -290,8 +291,8 @@ extern uint8_t hourly, daily, utc, output_raw_frames, dump_asn1, extended_header
 extern int pp_sockfd;
 int init_output_file(char *file);
 int init_pp(char *pp_addr);
-int rotate_outfile();
 void output_raw(uint8_t *buf, uint32_t len);
+void output_proto_tree(la_proto_node *root);
 
 // statsd.c
 #ifdef WITH_STATSD
