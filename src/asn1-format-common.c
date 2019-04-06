@@ -21,7 +21,8 @@
 #include "asn1/INTEGER.h"		// asn_INTEGER_enum_map_t
 #include "asn1/constr_CHOICE.h"		// _fetch_present_idx()
 #include "asn1/asn_SET_OF.h"		// _A_CSET_FROM_VOID()
-#include "asn1-util.h"			// CAST_PTR, ASN1_FORMATTER_PROTOTYPE, IFPRINTF
+#include "asn1-util.h"			// ASN1_FORMATTER_PROTOTYPE, IFPRINTF
+#include "dumpvdl2.h"			// CAST_PTR
 #include "tlv.h"			// dict_search
 
 char const *value2enum(asn_TYPE_descriptor_t *td, long const value) {

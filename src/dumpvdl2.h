@@ -22,6 +22,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>		// abort()
 #include <sys/time.h>
 #include <pthread.h>		// pthread_t, pthread_barrier_t
 #include "config.h"
@@ -131,6 +132,35 @@ typedef struct {
 
 #define nop() do {} while (0)
 
+#ifdef __GNUC__
+#define LIKELY(x) (__builtin_expect(!!(x),1))
+#define UNLIKELY(x) (__builtin_expect(!!(x),0))
+#else
+#define LIKELY(x) (x)
+#define UNLIKELY(x) (x)
+#endif
+
+#ifdef __GNUC__
+#define PRETTY_FUNCTION __PRETTY_FUNCTION__
+#else
+#define PRETTY_FUNCTION ""
+#endif
+
+#define ASSERT_se(expr)			\
+	do {					\
+		if (UNLIKELY(!(expr))) {	\
+			fprintf(stderr, "Assertion '%s' failed at %s:%u, function %s(). Aborting.\n", \
+				#expr , __FILE__, __LINE__, PRETTY_FUNCTION); \
+			abort();		\
+		}				\
+	} while (0)
+
+#ifdef NDEBUG
+#define ASSERT(expr) nop()
+#else
+#define ASSERT(expr) ASSERT_se(expr)
+#endif
+
 #ifdef DEBUG
 #define debug_print(fmt, ...) \
 	do { fprintf(stderr, "%s(): " fmt, __func__, __VA_ARGS__); } while (0)
@@ -151,6 +181,7 @@ typedef struct {
 #endif
 
 #define ONES(x) ~(~0u << (x))
+#define CAST_PTR(x, t, y) t x = (t)(y)
 #define XCALLOC(nmemb, size) xcalloc((nmemb), (size), __FILE__, __LINE__, __func__)
 #define XREALLOC(ptr, size) xrealloc((ptr), (size), __FILE__, __LINE__, __func__)
 #define XFREE(ptr) do { free(ptr); ptr = NULL; } while(0)
