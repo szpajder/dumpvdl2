@@ -29,7 +29,7 @@
 #include "avlc.h"		// avlc_addr_t
 
 // Forward declaration
-la_type_descriptor la_DEF_XID_msg;
+la_type_descriptor proto_DEF_XID_msg;
 
 // list indexed with a bitfield consisting of:
 // 4. C/R bit value
@@ -261,7 +261,7 @@ static const tlv_dict xid_vdl_params[] = {
 la_proto_node *xid_parse(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	xid_msg_t *msg = XCALLOC(1, sizeof(xid_msg_t));
 	la_proto_node *node = la_proto_node_new();
-	node->td = &la_DEF_XID_msg;
+	node->td = &proto_DEF_XID_msg;
 	node->data = msg;
 	node->next = NULL;
 
@@ -364,7 +364,7 @@ void xid_destroy(void *data) {
 	XFREE(data);
 }
 
-la_type_descriptor la_DEF_XID_msg = {
+la_type_descriptor proto_DEF_XID_msg = {
 	.format_text = xid_format_text,
 	.destroy = xid_destroy
 };

@@ -156,7 +156,7 @@ static const char *U_cmd[] = {
 };
 
 // Forward declaration
-la_type_descriptor const la_DEF_avlc_frame;
+la_type_descriptor const proto_DEF_avlc_frame;
 
 uint32_t parse_dlc_addr(uint8_t *buf) {
 	debug_print("%02x %02x %02x %02x\n", buf[0], buf[1], buf[2], buf[3]);
@@ -182,7 +182,7 @@ static la_proto_node *parse_avlc(avlc_frame_qentry_t *q, uint32_t *msg_type) {
 	}
 
 	la_proto_node *node = la_proto_node_new();
-	node->td = &la_DEF_avlc_frame;
+	node->td = &proto_DEF_avlc_frame;
 	avlc_frame_t *frame = XCALLOC(1, sizeof(avlc_frame_t));
 	node->data = frame;
 	node->next = NULL;
@@ -374,7 +374,7 @@ void avlc_format_text(la_vstring * const vstr, void const * const data, int inde
 	}
 }
 
-la_type_descriptor const la_DEF_avlc_frame = {
+la_type_descriptor const proto_DEF_avlc_frame = {
 	.format_text = avlc_format_text,
 	.destroy = NULL
 };
