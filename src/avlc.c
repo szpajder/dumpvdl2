@@ -102,16 +102,11 @@ typedef union {
 #define ADDRTYPE_GS_DEL		5
 #define ADDRTYPE_ALL		7
 
-enum avlc_protocols { PROTO_X25, PROTO_ACARS, PROTO_UNKNOWN };
 typedef struct {
 	uint32_t num;
 	avlc_addr_t src;
 	avlc_addr_t dst;
 	lcf_t lcf;
-	enum avlc_protocols proto;
-	uint32_t datalen;
-	uint8_t data_valid;
-	void *data;
 // TEMP
 	avlc_frame_qentry_t *q;
 } avlc_frame_t;
@@ -236,33 +231,24 @@ static la_proto_node *parse_avlc(avlc_frame_qentry_t *q, uint32_t *msg_type) {
 
 	frame->lcf.val = *ptr++;
 	len--;
-	frame->data_valid = 0;
-	frame->data = NULL;
 	if(IS_S(frame->lcf)) {
 		*msg_type |= MSGFLT_AVLC_S;
 		/* TODO */
+		node->next = unknown_proto_pdu_new(ptr, len);
 	} else if(IS_U(frame->lcf)) {
 		*msg_type |= MSGFLT_AVLC_U;
 		if(U_MFUNC(frame->lcf) == XID) {
 			node->next = xid_parse(frame->src.a_addr.status, U_PF(frame->lcf), ptr, len, msg_type);
+		} else {
+			node->next = unknown_proto_pdu_new(ptr, len);
 		}
 	} else { 	// IS_I(frame->lcf) == true
 		*msg_type |= MSGFLT_AVLC_I;
 		if(len > 3 && ptr[0] == 0xff && ptr[1] == 0xff && ptr[2] == 0x01) {
-			frame->proto = PROTO_ACARS;
-			frame->data = NULL;
 			node->next = parse_acars(ptr + 3, len - 3, msg_type);
 		} else {
-			frame->proto = PROTO_X25;
-			frame->data = NULL;
 			node->next = x25_parse(ptr, len, msg_type);
 		}
-	}
-	if(frame->data == NULL) {	// unparseable frame
-		frame->data = ptr;
-		frame->datalen = len;
-	} else {
-		frame->data_valid = 1;
 	}
 	return node;
 }
@@ -342,29 +328,12 @@ void avlc_format_text(la_vstring * const vstr, void const * const data, int inde
 	if(IS_S(f->lcf)) {
 		LA_ISPRINTF(vstr, indent, "AVLC type: S (%s) P/F: %x rseq: %x\n",
 			S_cmd[f->lcf.S.sfunc], f->lcf.S.pf, f->lcf.S.recv_seq);
-		if(f->datalen > 0) {
-			append_hexstring_with_indent(vstr, (uint8_t *)f->data, f->datalen, indent+1);
-		}
 	} else if(IS_U(f->lcf)) {
-		LA_ISPRINTF(vstr, indent, "AVLC type: U (%s) P/F: %x\n", U_cmd[U_MFUNC(f->lcf)], U_PF(f->lcf));
-		switch(U_MFUNC(f->lcf)) {
-		case XID:
-			break;
-		default:
-			if(f->datalen > 0) {
-				append_hexstring_with_indent(vstr, (uint8_t *)f->data, f->datalen, indent+1);
-			}
-		}
+		LA_ISPRINTF(vstr, indent, "AVLC type: U (%s) P/F: %x\n",
+			U_cmd[U_MFUNC(f->lcf)], U_PF(f->lcf));
 	} else {	// IS_I == true
-		LA_ISPRINTF(vstr, indent, "AVLC type: I sseq: %x rseq: %x poll: %x\n", f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
-		switch(f->proto) {
-		case PROTO_ACARS:
-		case PROTO_X25:
-			break;
-		default:
-//			append_hexdump_with_indent(vstr, f->q->buf, f->q->len, indent+1);
-			append_hexstring_with_indent(vstr, (uint8_t *)f->data, f->datalen, indent+1);
-		}
+		LA_ISPRINTF(vstr, indent, "AVLC type: I sseq: %x rseq: %x poll: %x\n",
+			f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
 	}
 }
 
