@@ -18,6 +18,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <libacars/vstring.h>		// la_vstring
 #include "tlv.h"
 #include "dumpvdl2.h"
 
@@ -105,6 +106,24 @@ void output_tlv(FILE *f, tlv_list_t *list, const tlv_dict *d) {
 		} else {
 			str = fmt_hexstring(p->val, p->len);
 			fprintf(f, " (Unknown code 0x%02x): %s\n", p->type, str);
+		}
+		XFREE(str);
+	}
+}
+
+void tlv_format_as_text(la_vstring *vstr, tlv_list_t *list, const tlv_dict *d, int indent) {
+	if(list == NULL || d == NULL) return;
+	ASSERT(vstr != NULL);
+	ASSERT(indent >= 0);
+	for(tlv_list_t *p = list; p != NULL; p = p->next) {
+		tlv_dict *entry = tlv_dict_search(d, p->type);
+		char *str = NULL;
+		if(entry != NULL) {
+			str = (*(entry->stringify))(p->val, p->len);
+			LA_ISPRINTF(vstr, indent, "%s: %s\n", entry->description, str);
+		} else {
+			str = fmt_hexstring(p->val, p->len);
+			LA_ISPRINTF(vstr, indent, " (Unknown code 0x%02x): %s\n", p->type, str);
 		}
 		XFREE(str);
 	}
