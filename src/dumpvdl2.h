@@ -308,6 +308,11 @@ void statsd_timing_delta_send(uint32_t freq, char *timer, struct timeval *ts);
 #endif
 
 // util.c
+typedef struct {
+	void *buf;
+	size_t len;
+} octet_string_t;
+extern la_type_descriptor proto_DEF_unknown;
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func);
 void *xrealloc(void *ptr, size_t size, const char *file, const int line, const char *func);
 char *fmt_hexstring(uint8_t *data, uint16_t len);
@@ -317,6 +322,8 @@ size_t slurp_hexstring(char* string, uint8_t **buf);
 char *hexdump(uint8_t *data, size_t len);
 void append_hexdump_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int indent);
 void append_hexstring_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int indent);
+void unknown_proto_format_text(la_vstring * const vstr, void const * const data, int indent);
+la_proto_node *unknown_proto_pdu_new(void *buf, size_t len);
 
 // dumpvdl2.c
 extern uint32_t msg_filter;
