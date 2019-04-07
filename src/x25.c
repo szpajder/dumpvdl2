@@ -316,10 +316,11 @@ void x25_format_text(la_vstring * const vstr, void const * const data, int inden
 	char *name = (char *)dict_search(x25_pkttype_names, pkt->type);
 	LA_ISPRINTF(vstr, indent, "X.25 %s: grp: %u chan: %u", name, pkt->hdr->chan_group, pkt->hdr->chan_num);
 	if(pkt->addr_block_present) {
-		la_vstring_append_sprintf(vstr, " src: %s dst: %s",
-			fmt_x25_addr(pkt->calling.addr, pkt->calling.len),
-			fmt_x25_addr(pkt->called.addr, pkt->called.len)
-		);
+		char *calling = fmt_x25_addr(pkt->calling.addr, pkt->calling.len);
+		char *called = fmt_x25_addr(pkt->called.addr, pkt->called.len);
+		la_vstring_append_sprintf(vstr, " src: %s dst: %s", calling, called);
+		XFREE(calling);
+		XFREE(called);
 	} else if(pkt->type == X25_DATA) {
 		la_vstring_append_sprintf(vstr, " sseq: %u rseq: %u more: %u",
 			pkt->hdr->type.data.sseq, pkt->hdr->type.data.rseq, pkt->hdr->type.data.more);
