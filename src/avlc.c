@@ -83,11 +83,11 @@ typedef union {
 	} U;
 } lcf_t;
 
-#define IS_I(lcf) ((lcf).val & 0x1) == 0x0
-#define IS_S(lcf) ((lcf).val & 0x3) == 0x1
-#define IS_U(lcf) ((lcf).val & 0x3) == 0x3
-#define U_MFUNC(lcf) (lcf).U.mfunc & 0x3b
-#define U_PF(lcf) ((lcf).U.mfunc >> 2) & 0x1
+#define IS_I(lcf) (((lcf).val & 0x1) == 0x0)
+#define IS_S(lcf) (((lcf).val & 0x3) == 0x1)
+#define IS_U(lcf) (((lcf).val & 0x3) == 0x3)
+#define U_MFUNC(lcf) ((lcf).U.mfunc & 0x3b)
+#define U_PF(lcf) (((lcf).U.mfunc >> 2) & 0x1)
 
 #define UI	0x00
 #define DM	0x03
@@ -243,10 +243,8 @@ static la_proto_node *parse_avlc(avlc_frame_qentry_t *q, uint32_t *msg_type) {
 		/* TODO */
 	} else if(IS_U(frame->lcf)) {
 		*msg_type |= MSGFLT_AVLC_U;
-		switch(U_MFUNC(frame->lcf)) {
-		case XID:
-			frame->data = parse_xid(frame->src.a_addr.status, U_PF(frame->lcf), ptr, len, msg_type);
-			break;
+		if(U_MFUNC(frame->lcf) == XID) {
+			node->next = xid_parse(frame->src.a_addr.status, U_PF(frame->lcf), ptr, len, msg_type);
 		}
 	} else { 	// IS_I(frame->lcf) == true
 		*msg_type |= MSGFLT_AVLC_I;
@@ -350,12 +348,6 @@ void avlc_format_text(la_vstring * const vstr, void const * const data, int inde
 		LA_ISPRINTF(vstr, indent, "AVLC type: U (%s) P/F: %x\n", U_cmd[U_MFUNC(f->lcf)], U_PF(f->lcf));
 		switch(U_MFUNC(f->lcf)) {
 		case XID:
-			if(f->data_valid)
-				output_xid((xid_msg_t *)f->data);
-			else {
-				LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable XID\n");
-				append_hexstring_with_indent(vstr, (uint8_t *)f->data, f->datalen, indent+1);
-			}
 			break;
 		default:
 			if(f->datalen > 0) {

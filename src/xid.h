@@ -16,6 +16,9 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <stdbool.h>
+#include <stdint.h>
+#include <libacars/libacars.h>		// la_proto_node
 #include "tlv.h"
 #define XID_FMT_ID		0x82
 #define XID_GID_PUBLIC		0x80
@@ -48,11 +51,11 @@ typedef struct {
 } vdl_modulation_descr_t;
 
 typedef struct {
-	enum xid_types type;
 	tlv_list_t *pub_params;
 	tlv_list_t *vdl_params;
+	enum xid_types type;
+	bool err;
 } xid_msg_t;
 
 // xid.c
-xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uint32_t *msg_type);
-void output_xid(xid_msg_t *msg);
+la_proto_node *xid_parse(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uint32_t *msg_type);
