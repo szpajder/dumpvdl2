@@ -66,10 +66,6 @@ la_proto_node *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	} else if(*msg_type & MSGFLT_SRC_GND) {
 		msg_dir = LA_MSG_DIR_GND2AIR;
 	}
-	if(msg_dir == LA_MSG_DIR_UNKNOWN) {
-		debug_print("%s", "Message direction is unknown!\n");
-		return NULL;
-	}
 	la_proto_node *node = la_acars_parse(buf, len, msg_dir);
 	update_msg_type(msg_type, node);
 	return node;
