@@ -252,7 +252,8 @@ static la_proto_node *parse_avlc(avlc_frame_qentry_t *q, uint32_t *msg_type) {
 		*msg_type |= MSGFLT_AVLC_I;
 		if(len > 3 && ptr[0] == 0xff && ptr[1] == 0xff && ptr[2] == 0x01) {
 			frame->proto = PROTO_ACARS;
-			frame->data = parse_acars(ptr + 3, len - 3, msg_type);
+			frame->data = NULL;
+			node->next = parse_acars(ptr + 3, len - 3, msg_type);
 		} else {
 			frame->proto = PROTO_X25;
 			frame->data = parse_x25(ptr, len, msg_type);
@@ -365,12 +366,6 @@ void avlc_format_text(la_vstring * const vstr, void const * const data, int inde
 		LA_ISPRINTF(vstr, indent, "AVLC type: I sseq: %x rseq: %x poll: %x\n", f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
 		switch(f->proto) {
 		case PROTO_ACARS:
-			if(f->data_valid)
-				output_acars(f->data);
-			else {
-				LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable ACARS payload\n");
-				append_hexstring_with_indent(vstr, (uint8_t *)f->data, f->datalen, indent+1);
-			}
 			break;
 		case PROTO_X25:
 			if(f->data_valid)
