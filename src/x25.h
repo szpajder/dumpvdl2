@@ -19,6 +19,8 @@
 #ifndef _X25_H
 #define _X25_H
 #include <stdint.h>
+#include <stdbool.h>
+#include <libacars/libacars.h>	// la_proto_node
 #include "config.h"		// IS_BIG_ENDIAN
 #include "tlv.h"
 
@@ -89,10 +91,12 @@ typedef struct {
 
 typedef struct {
 	x25_hdr_t *hdr;
+	void *data;
+	tlv_list_t *facilities;
+	x25_addr_t calling, called;
+	uint32_t datalen;
 	uint8_t type;
 	uint8_t addr_block_present;
-	x25_addr_t calling, called;
-	tlv_list_t *facilities;
 	uint8_t compression;
 	uint8_t clr_cause;
 	uint8_t diag_code;
@@ -100,11 +104,9 @@ typedef struct {
 	uint8_t rseq, sseq;
 	uint8_t proto;
 	uint8_t data_valid;
-	void *data;
-	uint32_t datalen;
+	bool err;
 } x25_pkt_t;
 
 // x25.c
-x25_pkt_t *parse_x25(uint8_t *buf, uint32_t len, uint32_t *msg_type);
-void output_x25(x25_pkt_t *pkt);
+la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type);
 #endif // !_X25_H

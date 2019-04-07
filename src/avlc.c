@@ -254,7 +254,8 @@ static la_proto_node *parse_avlc(avlc_frame_qentry_t *q, uint32_t *msg_type) {
 			node->next = parse_acars(ptr + 3, len - 3, msg_type);
 		} else {
 			frame->proto = PROTO_X25;
-			frame->data = parse_x25(ptr, len, msg_type);
+			frame->data = NULL;
+			node->next = x25_parse(ptr, len, msg_type);
 		}
 	}
 	if(frame->data == NULL) {	// unparseable frame
@@ -358,14 +359,7 @@ void avlc_format_text(la_vstring * const vstr, void const * const data, int inde
 		LA_ISPRINTF(vstr, indent, "AVLC type: I sseq: %x rseq: %x poll: %x\n", f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
 		switch(f->proto) {
 		case PROTO_ACARS:
-			break;
 		case PROTO_X25:
-			if(f->data_valid)
-				output_x25((x25_pkt_t *)f->data);
-			else {
-				LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable X.25 packet\n");
-				append_hexstring_with_indent(vstr, (uint8_t *)f->data, f->datalen, indent+1);
-			}
 			break;
 		default:
 //			append_hexdump_with_indent(vstr, f->q->buf, f->q->len, indent+1);
