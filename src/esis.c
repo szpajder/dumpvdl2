@@ -20,9 +20,14 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libacars/libacars.h>	// la_type_descriptor, la_proto_node
+#include <libacars/vstring.h>	// la_vstring, LA_ISPRINTF()
 #include "esis.h"
 #include "dumpvdl2.h"
 #include "tlv.h"
+
+// Forward declaration
+la_type_descriptor const proto_DEF_esis_pdu;
 
 const dict atn_traffic_types[] = {
 	{  1, "ATS" },
@@ -48,15 +53,17 @@ const dict atsc_traffic_classes[] = {
 static char *fmt_subnet_caps(uint8_t *data, uint16_t len) {
 	if(len < 1) return strdup("<empty>");
 	char *tr_types = NULL, *tr_classes = NULL;
-	if((data[0] & 0x1f) == 0x1f)
+	if((data[0] & 0x1f) == 0x1f) {
 		tr_types = strdup("all");
-	else
+	} else {
 		tr_types = fmt_bitfield(data[0], atn_traffic_types);
+	}
 	if(data[0] & 1 && len > 1) {	/* ATS traffic allowed - next octet is present and contains ATSC classes */
-		if(data[1] == 0xff)
+		if(data[1] == 0xff) {
 			tr_classes = strdup("all");
-		else
+		} else {
 			tr_classes = fmt_bitfield(data[1], atsc_traffic_classes);
+		}
 	}
 
 	char *buf = XCALLOC(512, sizeof(char));
@@ -100,72 +107,101 @@ static int parse_octet_string(uint8_t *buf, uint32_t len, uint8_t **dst, uint8_t
 	return 1 + buflen;	// total number of consumed octets
 }
 
-esis_pdu_t *parse_esis_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	static esis_pdu_t *pdu;
+la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+	esis_pdu_t *pdu = XCALLOC(1, sizeof(esis_pdu_t));
+	la_proto_node *node = la_proto_node_new();
+	node->td = &proto_DEF_esis_pdu;
+	node->data = pdu;
+	node->next = NULL;
+
+	pdu->err = true;		// fail-safe default
 	if(len < ESIS_HDR_LEN) {
 		debug_print("Too short (len %u < min len %u)\n", len, ESIS_HDR_LEN);
-		return NULL;
-	}
-	if(pdu == NULL) {
-		pdu = XCALLOC(1, sizeof(esis_pdu_t));
-	} else {
-		tlv_list_free(pdu->options);
-		memset(pdu, 0, sizeof(esis_pdu_t));
+		goto end;
 	}
 	esis_hdr_t *hdr = (esis_hdr_t *)buf;
 	if(hdr->version != 1) {
 		debug_print("Unsupported PDU version %u\n", hdr->version);
-		return NULL;
+		goto end;
 	}
 	pdu->holdtime = ((uint16_t)hdr->holdtime[0] << 8) | ((uint16_t)hdr->holdtime[1]);
 	debug_print("pid: %02x len: %u type: %u holdtime: %u\n",
 		hdr->pid, hdr->len, hdr->type, pdu->holdtime);
 	if(len < hdr->len) {
 		debug_print("Too short (len %u < PDU len %u)\n", len, hdr->len);
-		return NULL;
+		goto end;
 	}
 	buf += ESIS_HDR_LEN; len -= ESIS_HDR_LEN;
 	debug_print("skipping %u hdr octets, len is now %u\n", ESIS_HDR_LEN, len);
 
 	int ret = parse_octet_string(buf, len, &pdu->net_addr, &pdu->net_addr_len);
-	if(ret < 0)
-		return NULL;
+	if(ret < 0) {
+		goto end;
+	}
 	buf += ret; len -= ret;
 	switch(hdr->type) {
 	case ESIS_PDU_TYPE_ESH:
 	case ESIS_PDU_TYPE_ISH:
 		if(len > 0) {
 			pdu->options = tlv_deserialize(buf, len, 1);
-			if(pdu->options == NULL)
-				return NULL;
+			if(pdu->options == NULL) {
+				goto end;
+			}
 		}
 		break;
 	default:
 		debug_print("Unknown PDU type 0x%02x\n", hdr->type);
-		return NULL;
+		goto end;
 	}
 	pdu->hdr = hdr;
 	*msg_type |= MSGFLT_ESIS;
-	return pdu;
+	pdu->err = false;
+end:
+	return node;
 }
 
-void output_esis(esis_pdu_t *pdu) {
+static void esis_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+	ASSERT(indent >= 0);
+
+	CAST_PTR(pdu, esis_pdu_t *, data);
+	if(pdu->err == true) {
+		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable ES-IS PDU\n");
+		return;
+	}
 	esis_hdr_t *hdr = pdu->hdr;
 	char *pdu_name = (char *)dict_search(esis_pdu_types, hdr->type);
-	fprintf(outf, "ES-IS %s: Hold Time: %u sec\n", pdu_name, pdu->holdtime);
+	LA_ISPRINTF(vstr, indent, "ES-IS %s: Hold Time: %u sec\n", pdu_name, pdu->holdtime);
+	indent++;
 
 	char *str = fmt_hexstring_with_ascii(pdu->net_addr, pdu->net_addr_len);
 	switch(hdr->type) {
 	case ESIS_PDU_TYPE_ESH:
-		fprintf(outf, " SA : %s\n", str);
+		LA_ISPRINTF(vstr, indent, "SA : %s\n", str);
 		break;
 	case ESIS_PDU_TYPE_ISH:
-		fprintf(outf, " NET: %s\n", str);
+		LA_ISPRINTF(vstr, indent, "NET: %s\n", str);
 		break;
 	}
 	XFREE(str);
 	if(pdu->options != NULL) {
-		fprintf(outf, " Options:\n");
-		output_tlv(outf, pdu->options, esis_option_names);
+		LA_ISPRINTF(vstr, indent, "%s", "Options:\n");
+		tlv_format_as_text(vstr, pdu->options, esis_option_names, indent+1);
 	}
 }
+
+void esis_pdu_destroy(void *data) {
+	if(data == NULL) {
+		return;
+	}
+	CAST_PTR(pdu, esis_pdu_t *, data);
+	tlv_list_free(pdu->options);
+	pdu->options = NULL;
+	XFREE(data);
+}
+
+la_type_descriptor const proto_DEF_esis_pdu = {
+	.format_text = esis_pdu_format_text,
+	.destroy = esis_pdu_destroy
+};

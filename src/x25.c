@@ -179,21 +179,21 @@ static int parse_x25_facility_field(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) 
 	return 1 + fac_len;
 }
 
-static void *parse_x25_user_data(x25_pkt_t *pkt, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+static la_proto_node *parse_x25_user_data(x25_pkt_t *pkt, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	if(buf == NULL || len == 0)
 		return NULL;
 	uint8_t proto = *buf;
 	if(proto == SN_PROTO_CLNP) {
 		pkt->proto = SN_PROTO_CLNP;
-		return parse_clnp_pdu(buf, len, msg_type);
+		return clnp_pdu_parse(buf, len, msg_type);
 	} else if(proto == SN_PROTO_ESIS) {
 		pkt->proto = SN_PROTO_ESIS;
-		return parse_esis_pdu(buf, len, msg_type);
+		return esis_pdu_parse(buf, len, msg_type);
 	}
 	uint8_t pdu_type = proto >> 4;
 	if(pdu_type < 4) {
 		pkt->proto = SN_PROTO_CLNP_INIT_COMPRESSED;
-		return parse_clnp_compressed_init_pdu(buf, len, msg_type);
+		return clnp_compressed_init_pdu_parse(buf, len, msg_type);
 	}
 	pkt->proto = proto;
 	return NULL;
@@ -265,7 +265,7 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	/* FALLTHROUGH */
 	/* because Fast Select is on, so there might be a data PDU in call req or accept */
 	case X25_DATA:
-		pkt->data = parse_x25_user_data(pkt, ptr, len, msg_type);
+		node->next = parse_x25_user_data(pkt, ptr, len, msg_type);
 		break;
 	case X25_CLEAR_REQUEST:
 		if(len > 0) {
@@ -340,28 +340,8 @@ void x25_format_text(la_vstring * const vstr, void const * const data, int inden
 	case X25_DATA:
 		switch(pkt->proto) {
 		case SN_PROTO_CLNP_INIT_COMPRESSED:
-			if(pkt->data_valid) {
-				output_clnp_compressed(pkt->data);
-			} else {
-				LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable CLNP PDU\n");
-				output_raw(pkt->data, pkt->datalen);
-			}
-			break;
 		case SN_PROTO_CLNP:
-			if(pkt->data_valid) {
-				output_clnp(pkt->data);
-			} else {
-				LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable CLNP PDU\n");
-				output_raw(pkt->data, pkt->datalen);
-			}
-			break;
 		case SN_PROTO_ESIS:
-			if(pkt->data_valid) {
-				output_esis(pkt->data);
-			} else {
-				LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable ES-IS PDU\n");
-				output_raw(pkt->data, pkt->datalen);
-			}
 			break;
 		case SN_PROTO_IDRP:
 			LA_ISPRINTF(vstr, indent, "%s", "IDRP PDU:\n");

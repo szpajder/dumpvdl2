@@ -17,6 +17,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdint.h>
+#include <stdbool.h>
+#include <libacars/libacars.h>		// la_proto_node
 #include "x25.h"
 
 // CLNP header dissection is not implemented yet
@@ -28,10 +30,9 @@ typedef struct {
 	uint8_t data_valid;
 	void *data;
 	uint32_t datalen;
+	bool err;
 } clnp_pdu_t;
 
 // clnp.c
-clnp_pdu_t *parse_clnp_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_type);
-clnp_pdu_t *parse_clnp_compressed_init_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_type);
-void output_clnp(clnp_pdu_t *pdu);
-void output_clnp_compressed(clnp_pdu_t *pdu);
+la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type);
+la_proto_node *clnp_compressed_init_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type);
