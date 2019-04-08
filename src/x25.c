@@ -179,24 +179,20 @@ static int parse_x25_facility_field(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) 
 	return 1 + fac_len;
 }
 
-static la_proto_node *parse_x25_user_data(x25_pkt_t *pkt, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	if(buf == NULL || len == 0)
 		return NULL;
 	uint8_t proto = *buf;
 	if(proto == SN_PROTO_CLNP) {
-		pkt->proto = SN_PROTO_CLNP;
 		return clnp_pdu_parse(buf, len, msg_type);
 	} else if(proto == SN_PROTO_ESIS) {
-		pkt->proto = SN_PROTO_ESIS;
 		return esis_pdu_parse(buf, len, msg_type);
 	}
 	uint8_t pdu_type = proto >> 4;
 	if(pdu_type < 4) {
-		pkt->proto = SN_PROTO_CLNP_INIT_COMPRESSED;
 		return clnp_compressed_init_pdu_parse(buf, len, msg_type);
 	}
-	pkt->proto = proto;
-	return NULL;
+	return unknown_proto_pdu_new(buf, len);
 }
 
 la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
@@ -265,7 +261,7 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	/* FALLTHROUGH */
 	/* because Fast Select is on, so there might be a data PDU in call req or accept */
 	case X25_DATA:
-		node->next = parse_x25_user_data(pkt, ptr, len, msg_type);
+		node->next = parse_x25_user_data(ptr, len, msg_type);
 		break;
 	case X25_CLEAR_REQUEST:
 		if(len > 0) {
@@ -291,13 +287,6 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		goto end;
 	}
 	pkt->hdr = hdr;
-	if(pkt->data == NULL) {		// unparsed payload
-		pkt->data = ptr;
-		pkt->datalen = len;
-		pkt->data_valid = 0;
-	} else {
-		pkt->data_valid = 1;
-	}
 	pkt->err = false;
 end:
 	return node;
@@ -338,19 +327,6 @@ void x25_format_text(la_vstring * const vstr, void const * const data, int inden
 		/* FALLTHROUGH */
 		/* because Fast Select is on, so there might be a data PDU in call req or accept */
 	case X25_DATA:
-		switch(pkt->proto) {
-		case SN_PROTO_CLNP_INIT_COMPRESSED:
-		case SN_PROTO_CLNP:
-		case SN_PROTO_ESIS:
-			break;
-		case SN_PROTO_IDRP:
-			LA_ISPRINTF(vstr, indent, "%s", "IDRP PDU:\n");
-			output_raw(pkt->data, pkt->datalen);
-			break;
-		default:
-			LA_ISPRINTF(vstr, indent, "Unknown protocol 0x%02x PDU:\n", pkt->proto);
-			break;
-		}
 		break;
 	case X25_CLEAR_REQUEST:
 		LA_ISPRINTF(vstr, indent, "Cause: %02x\n", pkt->clr_cause);

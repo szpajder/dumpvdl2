@@ -32,7 +32,6 @@
 #define X25_SNDCF_VERSION	1
 #define MIN_X25_SNDCF_LEN	4
 
-#define SN_PROTO_CLNP_INIT_COMPRESSED	0x01
 #define	SN_PROTO_CLNP			0x81
 #define	SN_PROTO_ESIS			0x82
 #define	SN_PROTO_IDRP			0x85
@@ -91,10 +90,8 @@ typedef struct {
 
 typedef struct {
 	x25_hdr_t *hdr;
-	void *data;
 	tlv_list_t *facilities;
 	x25_addr_t calling, called;
-	uint32_t datalen;
 	uint8_t type;
 	uint8_t addr_block_present;
 	uint8_t compression;
@@ -102,8 +99,6 @@ typedef struct {
 	uint8_t diag_code;
 	uint8_t more_data;
 	uint8_t rseq, sseq;
-	uint8_t proto;
-	uint8_t data_valid;
 	bool err;
 } x25_pkt_t;
 
