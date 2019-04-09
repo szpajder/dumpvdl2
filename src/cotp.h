@@ -17,7 +17,9 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdint.h>
+#include <stdbool.h>
 #include <glib.h>
+#include <libacars/libacars.h>		// la_proto_node
 
 // These defines apply to upper nibble of the TPDU code only
 #define COTP_TPDU_CR	0xe0
@@ -38,10 +40,9 @@ typedef struct {
 	uint8_t code;
 // protocol class for CR/CC, disconnect reason for DR, reject cause for ER
 	uint8_t class_or_status;
-	uint8_t cotp_tpdu_valid;	// this TPDU has been parsed successfully
 	uint8_t data_valid;		// higher level PDU has been parsed successfully
+	bool err;
 } cotp_pdu_t;
 
 // cotp.c
-GSList *parse_cotp_concatenated_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_type);
-void output_cotp_concatenated_pdu(GSList *pdu_list);
+la_proto_node *cotp_concatenated_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type);

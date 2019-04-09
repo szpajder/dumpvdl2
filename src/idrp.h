@@ -17,6 +17,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdint.h>
+#include <stdbool.h>
+#include <libacars/libacars.h>		// la_proto_node
 #include "tlv.h"
 #define BISPDU_HDR_LEN			30U
 #define BISPDU_OPEN_VERSION		1
@@ -56,6 +58,7 @@ typedef struct {
 	uint8_t err_code, err_subcode;
 	uint8_t err_fsm_bispdu_type, err_fsm_state;
 	uint8_t open_src_rdi_len;
+	bool err;
 } idrp_pdu_t;
 
 typedef struct {
@@ -64,5 +67,4 @@ typedef struct {
 } bispdu_err_t;
 
 // idrp.c
-idrp_pdu_t *parse_idrp_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_type);
-void output_idrp(idrp_pdu_t *pdu);
+la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type);

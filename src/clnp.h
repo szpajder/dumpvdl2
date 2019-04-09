@@ -26,10 +26,6 @@
 #define CLNP_COMPRESSED_INIT_MIN_LEN 4
 
 typedef struct {
-	uint8_t proto;
-	uint8_t data_valid;
-	void *data;
-	uint32_t datalen;
 	bool err;
 } clnp_pdu_t;
 

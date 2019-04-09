@@ -18,34 +18,43 @@
  */
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include <glib.h>
+#include <libacars/libacars.h>		// la_proto_node
+#include <libacars/vstring.h>		// la_vstring
 #include "dumpvdl2.h"
 #include "tlv.h"
 #include "cotp.h"
 #include "icao.h"
 
-static void cotp_pdu_free(gpointer pdu) {
-	if(pdu == NULL) return;
-/*	cotp_pdu_t *p = (cotp_pdu_t *)pdu;
-	if(p->data_valid)
-		XFREE(p->data); */
-	XFREE(pdu);
-}
+// Forward declaration
+la_type_descriptor const proto_DEF_cotp_concatenated_pdu;
 
-static int parse_cotp_pdu(cotp_pdu_t *pdu, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+typedef struct {
+	cotp_pdu_t *pdu;
+	la_proto_node *next_node;
+	int consumed;
+} cotp_pdu_parse_result;
+
+static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+	cotp_pdu_parse_result r = { NULL, NULL, 0 };
+	cotp_pdu_t *pdu = XCALLOC(1, sizeof(cotp_pdu_t));
+	r.pdu = pdu;
+
+	pdu->err = true;	// fail-safe default
 	int final_pdu = 0;
 	uint8_t li = buf[0];
 	buf++; len--;
 	if(li == 0 || li == 255) {
 		debug_print("invalid header length indicator: %u\n", li);
-		return -1;
+		goto fail;
 	}
 	if(len < li) {
 		debug_print("header truncated: len %u < li %u\n", len, li);
-		return -1;
+		goto fail;
 	}
 	uint8_t code = buf[0];
 	switch(code & 0xf0) {
@@ -68,7 +77,7 @@ static int parse_cotp_pdu(cotp_pdu_t *pdu, uint8_t *buf, uint32_t len, uint32_t 
 	case COTP_TPDU_DR:
 		if(len < 6) {
 			debug_print("Truncated TPDU: code: 0x%02x len: %u\n", pdu->code, len);
-			return -1;
+			goto fail;
 		}
 		if(pdu->code == COTP_TPDU_DR)
 			pdu->class_or_status = buf[5];		// reason
@@ -79,7 +88,7 @@ static int parse_cotp_pdu(cotp_pdu_t *pdu, uint8_t *buf, uint32_t len, uint32_t 
 	case COTP_TPDU_ER:
 		if(len < 4) {
 			debug_print("Truncated TPDU: code: 0x%02x len: %u\n", pdu->code, len);
-			return -1;
+			goto fail;
 		}
 		pdu->class_or_status = buf[3];			// reject cause
 		break;
@@ -94,9 +103,8 @@ static int parse_cotp_pdu(cotp_pdu_t *pdu, uint8_t *buf, uint32_t len, uint32_t 
 		break;
 	default:
 		debug_print("Unknown TPDU code 0x%02x\n", pdu->code);
-		return -1;
+		goto fail;
 	}
-	pdu->cotp_tpdu_valid = 1;
 	if(final_pdu) {
 // user data is allowed in this PDU; if it's there, try to parse it
 		buf += li; len -= li;
@@ -110,34 +118,45 @@ static int parse_cotp_pdu(cotp_pdu_t *pdu, uint8_t *buf, uint32_t len, uint32_t 
 				pdu->datalen = len;
 			}
 		}
-		return 1 + li + len;	// whole buffer consumed
-	}
+		r.consumed =  1 + li + len;	// whole buffer consumed
+	} else {
 // consume TPDU header only; next TPDU may be present
-	return 1 + li;
+		r.consumed = 1 + li;
+	}
+	pdu->err = false;
+	return r;
+fail:
+	r.consumed = -1;
+	return r;
 }
 
-GSList *parse_cotp_concatenated_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	static GSList *pdu_list = NULL;
-	cotp_pdu_t *pdu = NULL;
-	int ret;
+la_proto_node *cotp_concatenated_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+	GSList *pdu_list = NULL;
+	la_proto_node *node = la_proto_node_new();
+	node->td = &proto_DEF_cotp_concatenated_pdu;
+	node->next = NULL;
 
-	if(pdu_list != NULL) {
-		g_slist_free_full(pdu_list, cotp_pdu_free);
-		pdu_list = NULL;
-	}
 	while(len > 0) {
+// Concatenated PDU is, as the name says, several COTP PDUs concatenated together.
+// We therefore construct a GSList of cotp_pdu_t's. Only the last (final) PDU may
+// contain higher level protocol described by its own la_type_descriptor,
+// so we may simplify things a bit and provide only a single next node for the whole
+// concatenated PDU instead of having a separate next node for each contained PDU,
+// which (the next node) would be NULL anyway, except for the last one.
 		debug_print("Remaining length: %u\n", len);
-		pdu = XCALLOC(1, sizeof(cotp_pdu_t));
-		pdu_list = g_slist_append(pdu_list, pdu);
-		if((ret = parse_cotp_pdu(pdu, buf, len, msg_type)) < 0) {
-// parsing failed; store raw buffer in the PDU struct for raw output
-			pdu->data = buf;
-			pdu->datalen = len;
+		cotp_pdu_parse_result r = cotp_pdu_parse(buf, len, msg_type);
+		pdu_list = g_slist_append(pdu_list, r.pdu);
+		if(r.consumed < 0) {	// parsing failed
 			break;
 		}
-		buf += ret; len -= ret;
+		buf += r.consumed; len -= r.consumed;
+		if(r.next_node != NULL) {
+// We reached final PDU and we have a next protocol node in the hierarchy.
+			node->next = r.next_node;
+		}
 	}
-	return pdu_list;
+	node->data = pdu_list;
+	return node;
 }
 
 static const dict cotp_tpdu_codes[] = {
@@ -179,30 +198,43 @@ static const dict cotp_er_reject_causes[] = {
 	{ 0,  NULL }
 };
 
-static void output_cotp_pdu(gpointer p, gpointer user_data) {
-// -Wunused-parameter
-	(void)user_data;
-	cotp_pdu_t *pdu = (cotp_pdu_t *)p;
+typedef struct {
+	la_vstring *vstr;
+	int indent;
+} fmt_ctx_t;
+
+static void output_cotp_pdu_as_text(gpointer p, gpointer user_data) {
+	ASSERT(p != NULL);
+	ASSERT(user_data != NULL);
+	CAST_PTR(pdu, cotp_pdu_t *, p);
+	CAST_PTR(ctx, fmt_ctx_t *, user_data);
+
+	la_vstring *vstr = ctx->vstr;
+	int indent = ctx->indent;
 	char *str;
-	if(!pdu->cotp_tpdu_valid) {
-		fprintf(outf, "-- Unparseable COTP TPDU\n");
-		output_raw(pdu->data, pdu->datalen);
+
+	if(pdu->err == true) {
+		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable COTP TPDU\n");
 		return;
 	}
 	char *tpdu_name = (char *)dict_search(cotp_tpdu_codes, pdu->code);
-	fprintf(outf, "COTP %s:\n", tpdu_name ? tpdu_name : "(unknown TPDU code 0x%02x)");
+	ASSERT(tpdu_name != NULL);
+	LA_ISPRINTF(vstr, indent, "COTP %s:\n", tpdu_name);
+	indent++;
 	switch(pdu->code) {
 	case COTP_TPDU_CR:
 	case COTP_TPDU_CC:
-		fprintf(outf, " Protocol class: %u\n", pdu->class_or_status);
+		LA_ISPRINTF(vstr, indent, "Protocol class: %u\n", pdu->class_or_status);
 		break;
 	case COTP_TPDU_ER:
 		str = (char *)dict_search(cotp_er_reject_causes, pdu->class_or_status);
-		fprintf(outf, " Reject cause: %u (%s)\n", pdu->class_or_status, (str ? str : "<unknown>"));
+		LA_ISPRINTF(vstr, indent, "Reject cause: %u (%s)\n", pdu->class_or_status,
+			(str ? str : "<unknown>"));
 		break;
 	case COTP_TPDU_DR:
 		str = (char *)dict_search(cotp_dr_reasons, pdu->class_or_status);
-		fprintf(outf, " Reason: %u (%s)\n", pdu->class_or_status, (str ? str : "<unknown>"));
+		LA_ISPRINTF(vstr, indent, "Reason: %u (%s)\n", pdu->class_or_status,
+			(str ? str : "<unknown>"));
 		break;
 	}
 	if(pdu->data != NULL) {
@@ -213,10 +245,30 @@ static void output_cotp_pdu(gpointer p, gpointer user_data) {
 	}
 }
 
-void output_cotp_concatenated_pdu(GSList *pdu_list) {
-	if(pdu_list == NULL) {
-		fprintf(outf, "-- NULL COTP TPDU\n");
+void cotp_concatenated_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+	ASSERT(indent >= 0);
+
+	CAST_PTR(pdu_list, GSList *, data);
+	g_slist_foreach(pdu_list, output_cotp_pdu_as_text, &(fmt_ctx_t){ .vstr = vstr, .indent = indent});
+}
+
+static void cotp_pdu_destroy(gpointer pdu) {
+	XFREE(pdu);
+}
+
+
+void cotp_concatenated_pdu_destroy(void *data) {
+	if(data == NULL) {
 		return;
 	}
-	g_slist_foreach(pdu_list, output_cotp_pdu, NULL);
+	CAST_PTR(pdu_list, GSList *, data);
+	g_slist_free_full(pdu_list, cotp_pdu_destroy);
+// No XFREE(data) here - g_slist_free_full frees the top pointer.
 }
+
+la_type_descriptor const proto_DEF_cotp_concatenated_pdu = {
+	.format_text = cotp_concatenated_pdu_format_text,
+	.destroy = cotp_concatenated_pdu_destroy
+};
