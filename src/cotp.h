@@ -34,13 +34,9 @@
 #define COTP_TPDU_ER	0x70
 
 typedef struct {
-	void *data;
-	tlv_list_t *options;
-	uint32_t datalen;
 	uint8_t code;
 // protocol class for CR/CC, disconnect reason for DR, reject cause for ER
 	uint8_t class_or_status;
-	uint8_t data_valid;		// higher level PDU has been parsed successfully
 	bool err;
 } cotp_pdu_t;
 

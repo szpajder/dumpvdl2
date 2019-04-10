@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <libacars/libacars.h>		// la_proto_node
+#include <libacars/vstring.h>		// la_vstring
 #include "asn1/BIT_STRING.h"
 #include "asn1/ACSE-apdu.h"
 #include "asn1/CMAircraftMessage.h"
@@ -28,13 +30,16 @@
 #include "asn1/GroundPDUs.h"
 #include "asn1/ProtectedAircraftPDUs.h"
 #include "asn1/ProtectedGroundPDUs.h"
-#include "dumpvdl2.h"			// outf
+#include "dumpvdl2.h"
 #include "asn1-util.h"			// asn1_decode_as()
-#include "asn1-format-icao.h"		// asn1_output_icao()
+#include "asn1-format-icao.h"		// asn1_output_icao_as_text()
 #include "icao.h"
 
 #define ACSE_APDU_TYPE_MATCHES(type, value) ((type) == (value) || (type) == ACSE_apdu_PR_NOTHING)
 #define APP_TYPE_MATCHES(type, value) ((type) == (value) || (type) == ICAO_APP_TYPE_UNKNOWN)
+
+// Forward declaration
+la_type_descriptor const proto_DEF_icao_apdu;
 
 static int decode_protected_ATCDownlinkMessage(void **decoded_result, asn_TYPE_descriptor_t **decoded_apdu_type,
 ACSE_apdu_PR acse_apdu_type, uint8_t *buf, int size) {
@@ -307,18 +312,17 @@ fed_cleanup:
 	return;
 }
 
-icao_apdu_t *parse_icao_apdu(uint8_t *buf, uint32_t datalen, uint32_t *msg_type) {
-	static icao_apdu_t *icao_apdu = NULL;
+la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t datalen, uint32_t *msg_type) {
+	icao_apdu_t *icao_apdu = XCALLOC(1, sizeof(icao_apdu_t));
+	la_proto_node *node = la_proto_node_new();
+	node->td = &proto_DEF_icao_apdu;
+	node->data = icao_apdu;
+	node->next = NULL;
+
+	icao_apdu->err = true;		// fail-safe default
 	if(datalen < 1) {
 		debug_print("APDU too short (len: %d)\n", datalen);
-		return NULL;
-	}
-	if(icao_apdu == NULL) {
-		icao_apdu = XCALLOC(1, sizeof(icao_apdu_t));
-	} else {
-		if(icao_apdu->type != NULL)
-			icao_apdu->type->free_struct(icao_apdu->type, icao_apdu->data, 0);
-		memset(icao_apdu, 0, sizeof(icao_apdu_t));
+		goto end;
 	}
 	uint8_t *ptr = buf;
 	uint32_t len = datalen;
@@ -327,7 +331,7 @@ icao_apdu_t *parse_icao_apdu(uint8_t *buf, uint32_t datalen, uint32_t *msg_type)
 	if((ptr[0] & 80) != 0) {
 		if(len < 3) {
 			debug_print("SPDU too short (len: %d)\n", len);
-			goto icao_decoding_failed;
+			goto end;
 		}
 		ptr++; len--;
 /* The next octet shall then contain a X.226 Amdt 1 (1997) Presentation layer protocol
@@ -335,7 +339,7 @@ icao_apdu_t *parse_icao_apdu(uint8_t *buf, uint32_t datalen, uint32_t *msg_type)
  * encoding information - 0x2 indicates ASN.1 encoded with Packed Encoding Rules (X.691) */
 		if((ptr[0] & 2) != 2) {
 			debug_print("Unknown PPDU payload encoding: %u\n", ptr[0] & 2);
-			goto icao_decoding_failed;
+			goto end;
 		}
 		ptr++; len--;
 /* Decode as ICAO Doc 9705 / X.227 ACSE APDU */
@@ -347,26 +351,47 @@ icao_apdu_t *parse_icao_apdu(uint8_t *buf, uint32_t datalen, uint32_t *msg_type)
 		decode_fully_encoded_data(icao_apdu, ptr, len, msg_type);
 	}
 	if(icao_apdu->type == NULL) {
-icao_decoding_failed:
-		icao_apdu->data = buf;
-		icao_apdu->datalen = datalen;
+		goto end;
 	}
-	return icao_apdu;
+	icao_apdu->err = false;
+	return node;
+end:
+	node->next = unknown_proto_pdu_new(buf, datalen);
+	return node;
 }
 
-void output_icao_apdu(icao_apdu_t *icao_apdu) {
-	if(icao_apdu == NULL) {
-		fprintf(outf, "-- NULL ICAO APDU\n");
+void icao_apdu_format_text(la_vstring *vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+	ASSERT(indent >= 0);
+
+	CAST_PTR(icao_apdu, icao_apdu_t *, data);
+	if(icao_apdu->err == true) {
+		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable ICAO APDU\n");
 		return;
 	}
-	if(icao_apdu->type != NULL) {
-		if(icao_apdu->data != NULL) {
-			if(dump_asn1)
-				asn_fprint(outf, icao_apdu->type, icao_apdu->data, 1);
-			asn1_output_icao(outf, icao_apdu->type, icao_apdu->data, 0);
-		} else {
-			fprintf(outf, "%s: <empty PDU>\n", icao_apdu->type->name);
+	if(icao_apdu->data != NULL) {
+		if(dump_asn1) {
+			asn_sprintf(vstr, icao_apdu->type, icao_apdu->data, indent);
 		}
-	} else
-		output_raw(icao_apdu->data, icao_apdu->datalen);
+		asn1_output_icao_as_text(vstr, icao_apdu->type, icao_apdu->data, indent);
+	} else {
+		LA_ISPRINTF(vstr, indent, "%s: <empty PDU>\n", icao_apdu->type->name);
+	}
 }
+
+void icao_apdu_destroy(void *data) {
+	if(data == NULL) {
+		return;
+	}
+	CAST_PTR(icao_apdu, icao_apdu_t *, data);
+	if(icao_apdu->type != NULL) {
+		icao_apdu->type->free_struct(icao_apdu->type, icao_apdu->data, 0);
+	}
+	XFREE(data);
+}
+
+la_type_descriptor const proto_DEF_icao_apdu = {
+	.format_text = icao_apdu_format_text,
+	.destroy  = icao_apdu_destroy
+};

@@ -109,14 +109,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 // user data is allowed in this PDU; if it's there, try to parse it
 		buf += li; len -= li;
 		if(len > 0) {
-			pdu->data = parse_icao_apdu(buf, len, msg_type);
-			if(pdu->data != NULL) {
-				pdu->data_valid = 1;
-			} else {
-				pdu->data_valid = 0;
-				pdu->data = buf;
-				pdu->datalen = len;
-			}
+			r.next_node = icao_apdu_parse(buf, len, msg_type);
 		}
 		r.consumed =  1 + li + len;	// whole buffer consumed
 	} else {
@@ -236,12 +229,6 @@ static void output_cotp_pdu_as_text(gpointer p, gpointer user_data) {
 		LA_ISPRINTF(vstr, indent, "Reason: %u (%s)\n", pdu->class_or_status,
 			(str ? str : "<unknown>"));
 		break;
-	}
-	if(pdu->data != NULL) {
-		if(pdu->data_valid)
-			output_icao_apdu(pdu->data);
-		else
-			output_raw(pdu->data, pdu->datalen);
 	}
 }
 
