@@ -42,6 +42,7 @@ typedef struct asn_struct_ctx_s {
 #include "per_decoder.h"	/* Packet Encoding Rules decoder */
 #include "per_encoder.h"	/* Packet Encoding Rules encoder */
 #include "constraints.h"	/* Subtype constraints support */
+#include <libacars/vstring.h>	/* libacars vstring */
 
 /*
  * Free the structure according to its specification.
@@ -170,6 +171,13 @@ typedef struct asn_TYPE_tag2member_s {
  * (See also xer_fprint() in xer_encoder.h)
  */
 int asn_fprint(FILE *stream,		/* Destination stream descriptor */
+	asn_TYPE_descriptor_t *td,	/* ASN.1 type descriptor */
+	const void *struct_ptr,		/* Structure to be printed */
+	int indent);			/* Indentation level */
+
+/* libacars-specific printing routine */
+
+int asn_sprintf(la_vstring *vstr,	/* Destination vstring pointer */
 	asn_TYPE_descriptor_t *td,	/* ASN.1 type descriptor */
 	const void *struct_ptr,		/* Structure to be printed */
 	int indent);			/* Indentation level */
