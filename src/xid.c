@@ -22,14 +22,51 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
-#include <libacars/libacars.h>	// la_proto_node
+#include <libacars/libacars.h>	// la_proto_node, la_proto_node_new()
+#include <libacars/vstring.h>	// la_vstring
 #include "dumpvdl2.h"
 #include "tlv.h"
-#include "xid.h"
 #include "avlc.h"		// avlc_addr_t
 
 // Forward declaration
-la_type_descriptor proto_DEF_XID_msg;
+la_type_descriptor const proto_DEF_XID_msg;
+
+#define XID_FMT_ID		0x82
+#define XID_GID_PUBLIC		0x80
+#define XID_GID_PRIVATE		0xF0
+#define XID_MIN_GROUPLEN	3		// group_id + group_len (0)
+#define XID_MIN_LEN (1 + 2 * XID_MIN_GROUPLEN)	// XID fmt + empty pub group + empty priv group
+#define XID_PARAM_CONN_MGMT	1
+
+struct xid_descr {
+	char *name;
+	char *description;
+};
+
+enum xid_types {
+	XID_CMD_LCR = 1,
+	XID_CMD_HO_REQ = 2,
+	GSIF = 3,
+	XID_CMD_LE = 4,
+	XID_CMD_HO_INIT = 6,
+	XID_CMD_LPM = 7,
+	XID_RSP_LE = 12,
+	XID_RSP_LCR = 13,
+	XID_RSP_HO = 14,
+	XID_RSP_LPM = 15
+};
+
+typedef struct {
+	uint8_t bit;
+	char *description;
+} vdl_modulation_descr_t;
+
+typedef struct {
+	tlv_list_t *pub_params;
+	tlv_list_t *vdl_params;
+	enum xid_types type;
+	bool err;
+} xid_msg_t;
 
 // list indexed with a bitfield consisting of:
 // 4. C/R bit value
@@ -364,7 +401,7 @@ void xid_destroy(void *data) {
 	XFREE(data);
 }
 
-la_type_descriptor proto_DEF_XID_msg = {
+la_type_descriptor const proto_DEF_XID_msg = {
 	.format_text = xid_format_text,
 	.destroy = xid_destroy
 };
