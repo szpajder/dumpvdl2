@@ -240,27 +240,29 @@ la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		debug_print("Too short (len %u < min len %u)\n", len, BISPDU_HDR_LEN);
 		goto end;
 	}
-	idrp_hdr_t *hdr = (idrp_hdr_t *)buf;
+	uint8_t *ptr = buf;
+	uint32_t remaining = len;
+	idrp_hdr_t *hdr = (idrp_hdr_t *)ptr;
 	uint16_t pdu_len = ((uint16_t)hdr->len[0] << 8) | ((uint16_t)hdr->len[1]);
 	debug_print("pid: %02x len: %u type: %u seq: %u ack: %u coff: %u cavail: %u\n",
 		hdr->pid, pdu_len, hdr->type, ntohl(hdr->seq), ntohl(hdr->ack), hdr->coff, hdr->cavail);
 	debug_print_buf_hex(hdr->validation, 16, "%s", "Validation:\n");
-	if(len < pdu_len) {
-		debug_print("Too short (len %u < PDU len %u)\n", len, pdu_len);
+	if(remaining < pdu_len) {
+		debug_print("Too short (len %u < PDU len %u)\n", remaining, pdu_len);
 		goto end;
 	}
-	buf += BISPDU_HDR_LEN; len -= BISPDU_HDR_LEN;
-	debug_print("skipping %u hdr octets, len is now %u\n", BISPDU_HDR_LEN, len);
+	ptr += BISPDU_HDR_LEN; remaining -= BISPDU_HDR_LEN;
+	debug_print("skipping %u hdr octets, %u octets remaining\n", BISPDU_HDR_LEN, remaining);
 	int result = 0;
 	switch(hdr->type) {
 	case BISPDU_TYPE_OPEN:
-		result = parse_idrp_open_pdu(pdu, buf, len);
+		result = parse_idrp_open_pdu(pdu, ptr, remaining);
 		break;
 	case BISPDU_TYPE_UPDATE:
-		result = parse_idrp_update_pdu(pdu, buf, len);
+		result = parse_idrp_update_pdu(pdu, ptr, remaining);
 		break;
 	case BISPDU_TYPE_ERROR:
-		result = parse_idrp_error_pdu(pdu, buf, len);
+		result = parse_idrp_error_pdu(pdu, ptr, remaining);
 		break;
 	case BISPDU_TYPE_KEEPALIVE:
 	case BISPDU_TYPE_CEASE:
@@ -283,7 +285,9 @@ la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 
 	pdu->hdr = hdr;
 	pdu->err = false;
+	return node;
 end:
+	node->next = unknown_proto_pdu_new(buf, len);
 	return node;
 }
 
@@ -310,7 +314,9 @@ static void idrp_error_format_text(la_vstring *vstr, idrp_pdu_t *pdu, int indent
 		LA_ISPRINTF(vstr, indent, "Subcode: %u (%s)\n", pdu->err_subcode, subcode ? subcode : "unknown");
 	}
 print_err_payload:
-	append_hexstring_with_indent(vstr, pdu->data, pdu->datalen, indent);
+	if(pdu->data != NULL && pdu->datalen > 0) {
+		append_hexstring_with_indent(vstr, pdu->data, pdu->datalen, indent);
+	}
 }
 
 void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
