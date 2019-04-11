@@ -46,17 +46,20 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 
 	pdu->err = true;	// fail-safe default
 	int final_pdu = 0;
-	uint8_t li = buf[0];
-	buf++; len--;
+	uint8_t *ptr = buf;
+	uint32_t remaining = len;
+
+	uint8_t li = ptr[0];
+	ptr++; remaining--;
 	if(li == 0 || li == 255) {
 		debug_print("invalid header length indicator: %u\n", li);
 		goto fail;
 	}
-	if(len < li) {
-		debug_print("header truncated: len %u < li %u\n", len, li);
+	if(remaining < li) {
+		debug_print("header truncated: len %u < li %u\n", remaining, li);
 		goto fail;
 	}
-	uint8_t code = buf[0];
+	uint8_t code = ptr[0];
 	switch(code & 0xf0) {
 	case COTP_TPDU_CR:
 	case COTP_TPDU_CC:
@@ -75,22 +78,22 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 	case COTP_TPDU_CR:
 	case COTP_TPDU_CC:
 	case COTP_TPDU_DR:
-		if(len < 6) {
-			debug_print("Truncated TPDU: code: 0x%02x len: %u\n", pdu->code, len);
+		if(remaining < 6) {
+			debug_print("Truncated TPDU: code: 0x%02x len: %u\n", pdu->code, remaining);
 			goto fail;
 		}
 		if(pdu->code == COTP_TPDU_DR)
-			pdu->class_or_status = buf[5];		// reason
+			pdu->class_or_status = ptr[5];		// reason
 		else
-			pdu->class_or_status = buf[5] >> 4;	// protocol class
+			pdu->class_or_status = ptr[5] >> 4;	// protocol class
 		final_pdu = 1;
 		break;
 	case COTP_TPDU_ER:
-		if(len < 4) {
-			debug_print("Truncated TPDU: code: 0x%02x len: %u\n", pdu->code, len);
+		if(remaining < 4) {
+			debug_print("Truncated TPDU: code: 0x%02x len: %u\n", pdu->code, remaining);
 			goto fail;
 		}
-		pdu->class_or_status = buf[3];			// reject cause
+		pdu->class_or_status = ptr[3];			// reject cause
 		break;
 	case COTP_TPDU_DT:
 	case COTP_TPDU_ED:
@@ -107,11 +110,11 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 	}
 	if(final_pdu) {
 // user data is allowed in this PDU; if it's there, try to parse it
-		buf += li; len -= li;
-		if(len > 0) {
-			r.next_node = icao_apdu_parse(buf, len, msg_type);
+		ptr += li; remaining -= li;
+		if(remaining > 0) {
+			r.next_node = icao_apdu_parse(ptr, remaining, msg_type);
 		}
-		r.consumed =  1 + li + len;	// whole buffer consumed
+		r.consumed = len;	// whole buffer consumed
 	} else {
 // consume TPDU header only; next TPDU may be present
 		r.consumed = 1 + li;
@@ -119,7 +122,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 	pdu->err = false;
 	return r;
 fail:
-	r.consumed = -1;
+	r.next_node = unknown_proto_pdu_new(buf, len);
 	return r;
 }
 
@@ -139,14 +142,14 @@ la_proto_node *cotp_concatenated_pdu_parse(uint8_t *buf, uint32_t len, uint32_t 
 		debug_print("Remaining length: %u\n", len);
 		cotp_pdu_parse_result r = cotp_pdu_parse(buf, len, msg_type);
 		pdu_list = g_slist_append(pdu_list, r.pdu);
-		if(r.consumed < 0) {	// parsing failed
-			break;
-		}
-		buf += r.consumed; len -= r.consumed;
 		if(r.next_node != NULL) {
 // We reached final PDU and we have a next protocol node in the hierarchy.
 			node->next = r.next_node;
 		}
+		if(r.pdu->err == true) {	// parsing failed
+			break;
+		}
+		buf += r.consumed; len -= r.consumed;
 	}
 	node->data = pdu_list;
 	return node;
