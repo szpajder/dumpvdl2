@@ -71,11 +71,15 @@ la_proto_node *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	return node;
 }
 
-static void output_acars_pp(la_proto_node const * const node) {
-	if(node == NULL || node->td != &la_DEF_acars_message) {
+void acars_output_pp(la_proto_node *tree) {
+	if(pp_sockfd == 0) {
 		return;
 	}
-	la_acars_msg *msg = node->data;
+	la_proto_node *acars_node = la_proto_tree_find_acars(tree);
+	if(acars_node == NULL) {
+		return;
+	}
+	la_acars_msg *msg = acars_node->data;
 	char *txt = strdup(msg->txt);
 	for(char *ptr = txt; *ptr != 0; ptr++) {
 		if (*ptr == '\n' || *ptr == '\r') {
@@ -91,21 +95,4 @@ static void output_acars_pp(la_proto_node const * const node) {
 	}
 	XFREE(txt);
 	la_vstring_destroy(vstr, true);
-}
-
-void output_acars(void const *msg) {
-	if(msg == NULL) {
-		return;
-	}
-	la_proto_node *node = (la_proto_node *)msg;
-	la_vstring *vstr = la_proto_tree_format_text(NULL, node);
-	fprintf(outf, "%s", vstr->str);
-	la_vstring_destroy(vstr, true);
-	if(pp_sockfd > 0) {
-		output_acars_pp(node);
-	}
-}
-
-void destroy_acars(void *msg) {
-	la_proto_tree_destroy((la_proto_node *)msg);
 }

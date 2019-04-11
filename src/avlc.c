@@ -283,6 +283,7 @@ void *parse_avlc_frames(void *arg) {
 		} else {
 			debug_print("msg_type: %x msg_filter: %x (filtered out)\n", msg_type, msg_filter);
 		}
+		acars_output_pp(root);
 cleanup:
 		la_proto_tree_destroy(root);
 		root = NULL;
