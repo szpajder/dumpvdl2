@@ -265,6 +265,7 @@ uint32_t reverse(uint32_t v, int numbits);
 
 // decode.c
 void decode_vdl_frame(vdl2_channel_t *v);
+void *avlc_decoder_thread(void *arg);
 
 // demod.c
 extern float *sbuf;

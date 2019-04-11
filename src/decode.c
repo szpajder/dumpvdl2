@@ -24,12 +24,14 @@
 #include <limits.h>
 #include <unistd.h>
 #include <glib.h>
+#include <libacars/libacars.h>	// la_proto_node, la_proto_tree_destroy()
 #include "config.h"
 #ifdef WITH_STATSD
 #include <sys/time.h>
 #endif
 #include "dumpvdl2.h"
-#include "avlc.h"		// avlc_frame_qentry_t, frame_queue
+#include "avlc.h"		// avlc_frame_qentry_t
+#include "acars.h"		// acars_output_pp
 
 // Reasonable limits for transmission lengths in bits
 // This is to avoid blocking the decoder in DEC_DATA for a long time
@@ -151,6 +153,8 @@ static int deinterleave(uint8_t *in, uint32_t len, uint32_t rows, uint32_t cols,
 	}
 	return 0;
 }
+
+GAsyncQueue *frame_queue = NULL;
 
 static void enqueue_frame(vdl2_channel_t const * const v, int const frame_num, uint8_t *buf, size_t const len) {
 	avlc_frame_qentry_t *qentry = XCALLOC(1, sizeof(avlc_frame_qentry_t));
@@ -351,5 +355,36 @@ cleanup:
 		return;
 	case DEC_IDLE:
 		return;
+	}
+}
+
+void *avlc_decoder_thread(void *arg) {
+// -Wunused-parameter
+	(void)arg;
+	avlc_frame_qentry_t *q = NULL;
+	la_proto_node *root = NULL;
+	uint32_t msg_type = 0;
+
+	frame_queue = g_async_queue_new();
+	while(1) {
+		q = (avlc_frame_qentry_t *)g_async_queue_pop(frame_queue);
+		statsd_increment(q->freq, "avlc.frames.processed");
+		msg_type = 0;
+		root = avlc_parse(q, &msg_type);
+		if(root == NULL) {
+			goto cleanup;
+		}
+		if((msg_type & msg_filter) == msg_type) {
+			debug_print("msg_type: %x msg_filter: %x (accepted)\n", msg_type, msg_filter);
+			output_proto_tree(root);
+		} else {
+			debug_print("msg_type: %x msg_filter: %x (filtered out)\n", msg_type, msg_filter);
+		}
+		acars_output_pp(root);
+cleanup:
+		la_proto_tree_destroy(root);
+		root = NULL;
+		XFREE(q->buf);
+		XFREE(q);
 	}
 }

@@ -107,7 +107,6 @@ typedef struct {
 	avlc_addr_t src;
 	avlc_addr_t dst;
 	lcf_t lcf;
-// TEMP
 	avlc_frame_qentry_t *q;
 } avlc_frame_t;
 
@@ -158,9 +157,16 @@ uint32_t parse_dlc_addr(uint8_t *buf) {
 	return reverse((buf[0] >> 1) | (buf[1] << 6) | (buf[2] << 13) | ((buf[3] & 0xfe) << 20), 28) & ONES(28);
 }
 
-static la_proto_node *parse_avlc(avlc_frame_qentry_t *q, uint32_t *msg_type) {
+la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type) {
+	ASSERT(q != NULL);
 	uint8_t *buf = q->buf;
 	uint32_t len = q->len;
+	if(len < MIN_AVLC_LEN) {
+		debug_print("Frame %d: too short (len=%u required=%d)\n", q->idx, len, MIN_AVLC_LEN);
+		statsd_increment(q->freq, "avlc.errors.too_short");
+		return NULL;
+	}
+	debug_print("Frame %d: len=%u\n", q->idx, len);
 	debug_print_buf_hex(buf, len, "%s", "Frame data:\n");
 
 // FCS check
@@ -181,7 +187,6 @@ static la_proto_node *parse_avlc(avlc_frame_qentry_t *q, uint32_t *msg_type) {
 	avlc_frame_t *frame = XCALLOC(1, sizeof(avlc_frame_t));
 	node->data = frame;
 	node->next = NULL;
-// FIXME: make a copy
 	frame->q = q;
 
 	uint8_t *ptr = buf;
@@ -251,45 +256,6 @@ static la_proto_node *parse_avlc(avlc_frame_qentry_t *q, uint32_t *msg_type) {
 		}
 	}
 	return node;
-}
-
-GAsyncQueue *frame_queue = NULL;
-
-void *parse_avlc_frames(void *arg) {
-// -Wunused-parameter
-	(void)arg;
-	avlc_frame_qentry_t *q = NULL;
-	la_proto_node *root = NULL;
-	uint32_t msg_type = 0;
-
-	frame_queue = g_async_queue_new();
-	while(1) {
-		q = (avlc_frame_qentry_t *)g_async_queue_pop(frame_queue);
-		statsd_increment(q->freq, "avlc.frames.processed");
-		if(q->len < MIN_AVLC_LEN) {
-			debug_print("Frame %d: too short (len=%u required=%d)\n", q->idx, q->len, MIN_AVLC_LEN);
-			statsd_increment(q->freq, "avlc.errors.too_short");
-			goto cleanup;
-		}
-		debug_print("Frame %d: len=%u\n", q->idx, q->len);
-		msg_type = 0;
-		root = parse_avlc(q, &msg_type);
-		if(root == NULL) {
-			goto cleanup;
-		}
-		if((msg_type & msg_filter) == msg_type) {
-			debug_print("msg_type: %x msg_filter: %x (accepted)\n", msg_type, msg_filter);
-			output_proto_tree(root);
-		} else {
-			debug_print("msg_type: %x msg_filter: %x (filtered out)\n", msg_type, msg_filter);
-		}
-		acars_output_pp(root);
-cleanup:
-		la_proto_tree_destroy(root);
-		root = NULL;
-		XFREE(q->buf);
-		XFREE(q);
-	}
 }
 
 void avlc_format_text(la_vstring * const vstr, void const * const data, int indent) {
