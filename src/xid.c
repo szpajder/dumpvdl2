@@ -17,14 +17,56 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <libacars/libacars.h>	// la_proto_node, la_proto_node_new()
+#include <libacars/vstring.h>	// la_vstring
 #include "dumpvdl2.h"
 #include "tlv.h"
-#include "xid.h"
 #include "avlc.h"		// avlc_addr_t
+
+// Forward declaration
+la_type_descriptor const proto_DEF_XID_msg;
+
+#define XID_FMT_ID		0x82
+#define XID_GID_PUBLIC		0x80
+#define XID_GID_PRIVATE		0xF0
+#define XID_MIN_GROUPLEN	3		// group_id + group_len (0)
+#define XID_MIN_LEN (1 + 2 * XID_MIN_GROUPLEN)	// XID fmt + empty pub group + empty priv group
+#define XID_PARAM_CONN_MGMT	1
+
+struct xid_descr {
+	char *name;
+	char *description;
+};
+
+enum xid_types {
+	XID_CMD_LCR = 1,
+	XID_CMD_HO_REQ = 2,
+	GSIF = 3,
+	XID_CMD_LE = 4,
+	XID_CMD_HO_INIT = 6,
+	XID_CMD_LPM = 7,
+	XID_RSP_LE = 12,
+	XID_RSP_LCR = 13,
+	XID_RSP_HO = 14,
+	XID_RSP_LPM = 15
+};
+
+typedef struct {
+	uint8_t bit;
+	char *description;
+} vdl_modulation_descr_t;
+
+typedef struct {
+	tlv_list_t *pub_params;
+	tlv_list_t *vdl_params;
+	enum xid_types type;
+	bool err;
+} xid_msg_t;
 
 // list indexed with a bitfield consisting of:
 // 4. C/R bit value
@@ -253,84 +295,118 @@ static const tlv_dict xid_vdl_params[] = {
 	{ 0x00, NULL, NULL }
 };
 
-xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	static xid_msg_t *msg = NULL;
+la_proto_node *xid_parse(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+	xid_msg_t *msg = XCALLOC(1, sizeof(xid_msg_t));
+	la_proto_node *node = la_proto_node_new();
+	node->td = &proto_DEF_XID_msg;
+	node->data = msg;
+	node->next = NULL;
 
+	msg->err = true;		// fail-safe default
 	if(len < XID_MIN_LEN) {
 		debug_print("%s", "XID too short\n");
-		return NULL;
-	}
-	if(buf[0] != XID_FMT_ID) {
-		debug_print("%s", "Unknown XID format\n");
-		return NULL;
-	}
-	buf++; len--;
-	if(msg == NULL) {
-		msg = XCALLOC(1, sizeof(xid_msg_t));
-	} else {
-		tlv_list_free(msg->pub_params);
-		tlv_list_free(msg->vdl_params);
-		msg->pub_params = msg->vdl_params = NULL;
+		goto end;
 	}
 	uint8_t *ptr = buf;
-	while(len >= XID_MIN_GROUPLEN) {
+	uint32_t remaining = len;
+	if(ptr[0] != XID_FMT_ID) {
+		debug_print("%s", "Unknown XID format\n");
+		goto end;
+	}
+	ptr++; remaining--;
+	while(remaining >= XID_MIN_GROUPLEN) {
 		uint8_t gid = *ptr;
-		ptr++; len--;
+		ptr++; remaining--;
 		uint16_t grouplen = (ptr[0] << 8) | ptr[1];
-		ptr += 2; len -= 2;
+		ptr += 2; remaining -= 2;
 		if(grouplen > len) {
-			debug_print("XID group %02x truncated: grouplen=%u buflen=%u\n", gid, grouplen, len);
-			return NULL;
+			debug_print("XID group %02x truncated: grouplen=%u buflen=%u\n", gid,
+				grouplen, remaining);
+			goto end;
 		}
 		switch(gid) {
 		case XID_GID_PUBLIC:
 			if(msg->pub_params != NULL) {
 				debug_print("Duplicate XID group 0x%02x\n", XID_GID_PUBLIC);
-				return NULL;
+				goto end;
 			}
 			msg->pub_params = tlv_deserialize(ptr, grouplen, 1);
 			break;
 		case XID_GID_PRIVATE:
 			if(msg->vdl_params != NULL) {
 				debug_print("Duplicate XID group 0x%02x\n", XID_GID_PRIVATE);
-				return NULL;
+				goto end;
 			}
 			msg->vdl_params = tlv_deserialize(ptr, grouplen, 1);
 			break;
 		default:
 			debug_print("Unknown XID Group ID 0x%x, ignored\n", gid);
 		}
-		ptr += grouplen; len -= grouplen;
+		ptr += grouplen; remaining -= grouplen;
 	}
-	if(len > 0)
-		debug_print("Warning: %u unparsed octets left at end of XID message\n", len);
 // pub_params are optional, vdl_params are mandatory
 	if(msg->vdl_params == NULL) {
 		debug_print("%s", "Incomplete XID message\n");
-		return NULL;
+		goto end;
+	}
+	if(remaining > 0) {
+		debug_print("Warning: %u unparsed octets left at end of XID message\n", remaining);
+		node->next = unknown_proto_pdu_new(ptr, remaining);
 	}
 // find connection management parameter to figure out the XID type
 	uint8_t cm;
 	tlv_list_t *tmp = tlv_list_search(msg->vdl_params, XID_PARAM_CONN_MGMT);
-	if(tmp != NULL && tmp->len > 0)
+	if(tmp != NULL && tmp->len > 0) {
 		cm = (tmp->val)[0];
-	else
+	} else {
 		cm = 0xFF;
+	}
 	msg->type = ((cr & 0x1) << 3) | ((pf & 0x1) << 2) | ((cm & 0x1) << 1) | ((cm & 0x2) >> 1);
-	if(msg->type == GSIF)
+	if(msg->type == GSIF) {
 		*msg_type |= MSGFLT_XID_GSIF;
-	else
+	} else {
 		*msg_type |= MSGFLT_XID_NO_GSIF;
-	return msg;
+	}
+	msg->err = false;
+	return node;
+end:
+	node->next = unknown_proto_pdu_new(buf, len);
+	return node;
 }
 
-void output_xid(xid_msg_t *msg) {
-	fprintf(outf, "XID: %s\n", xid_names[msg->type].description);
+void xid_format_text(la_vstring * const vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+	ASSERT(indent >= 0);
+
+	CAST_PTR(msg, xid_msg_t *, data);
+	if(msg->err == true) {
+		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable XID\n");
+		return;
+	}
+	LA_ISPRINTF(vstr, indent, "XID: %s\n", xid_names[msg->type].description);
+	indent++;
 // pub_params are optional, vdl_params are mandatory
 	if(msg->pub_params) {
-		fprintf(outf, "Public params:\n");
-		output_tlv(outf, msg->pub_params, xid_pub_params);
+		LA_ISPRINTF(vstr, indent, "%s", "Public params:\n");
+		tlv_format_as_text(vstr, msg->pub_params, xid_pub_params, indent+1);
 	}
-	fprintf(outf, "VDL params:\n");
-	output_tlv(outf, msg->vdl_params, xid_vdl_params);
+	LA_ISPRINTF(vstr, indent, "%s", "VDL params:\n");
+	tlv_format_as_text(vstr, msg->vdl_params, xid_vdl_params, indent+1);
 }
+
+void xid_destroy(void *data) {
+	if(data == NULL) {
+		return;
+	}
+	CAST_PTR(msg, xid_msg_t *, data);
+	tlv_list_free(msg->pub_params);
+	tlv_list_free(msg->vdl_params);
+	msg->pub_params = msg->vdl_params = NULL;
+	XFREE(data);
+}
+
+la_type_descriptor const proto_DEF_XID_msg = {
+	.format_text = xid_format_text,
+	.destroy = xid_destroy
+};

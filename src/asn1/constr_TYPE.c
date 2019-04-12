@@ -5,6 +5,7 @@
 #include "asn_internal.h"
 #include "constr_TYPE.h"
 #include <errno.h>
+#include <libacars/vstring.h>
 
 /*
  * Version of the ASN.1 infrastructure shipped with compiler.
@@ -62,6 +63,30 @@ _print2fp(const void *buffer, size_t size, void *app_key) {
 	return 0;
 }
 
+/* Append the data to the specified vstring */
+static int
+_print2vstring(const void *buffer, size_t size, void *app_key) {
+	la_vstring *vstr = (la_vstring *)app_key;
+	la_vstring_append_buffer(vstr, buffer, size);
+	return 0;
+}
+
+/* libacars-specific printer */
+int
+asn_sprintf(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *struct_ptr, int indent) {
+	if(!vstr || !td || !struct_ptr) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* Invoke type-specific printer */
+	if(td->print_struct(td, struct_ptr, indent, _print2vstring, vstr))
+		return -1;
+
+	/* Terminate the output */
+	_print2vstring("\n", 1, vstr);
+	return 0;
+}
 
 /*
  * Some compilers do not support variable args macros.

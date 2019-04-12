@@ -21,9 +21,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <libacars/libacars.h>		// la_proto_node
+#include <libacars/vstring.h>		// la_vstring
 #include "idrp.h"
 #include "dumpvdl2.h"
 #include "tlv.h"
+
+// Forward declaration
+la_type_descriptor const proto_DEF_idrp_pdu;
 
 static const dict bispdu_types[] = {
 	{ BISPDU_TYPE_OPEN,		"Open" },
@@ -223,38 +228,41 @@ static int parse_idrp_error_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	return 0;
 }
 
-idrp_pdu_t *parse_idrp_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	static idrp_pdu_t *pdu;
+la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+	idrp_pdu_t *pdu = XCALLOC(1, sizeof(idrp_pdu_t));
+	la_proto_node *node = la_proto_node_new();
+	node->td = &proto_DEF_idrp_pdu;
+	node->data = pdu;
+	node->next = NULL;
+
+	pdu->err = true;	// fail-safe default
 	if(len < BISPDU_HDR_LEN) {
 		debug_print("Too short (len %u < min len %u)\n", len, BISPDU_HDR_LEN);
-		return NULL;
+		goto end;
 	}
-	if(pdu == NULL) {
-		pdu = XCALLOC(1, sizeof(idrp_pdu_t));
-	} else {
-		memset(pdu, 0, sizeof(idrp_pdu_t));
-	}
-	idrp_hdr_t *hdr = (idrp_hdr_t *)buf;
+	uint8_t *ptr = buf;
+	uint32_t remaining = len;
+	idrp_hdr_t *hdr = (idrp_hdr_t *)ptr;
 	uint16_t pdu_len = ((uint16_t)hdr->len[0] << 8) | ((uint16_t)hdr->len[1]);
 	debug_print("pid: %02x len: %u type: %u seq: %u ack: %u coff: %u cavail: %u\n",
 		hdr->pid, pdu_len, hdr->type, ntohl(hdr->seq), ntohl(hdr->ack), hdr->coff, hdr->cavail);
 	debug_print_buf_hex(hdr->validation, 16, "%s", "Validation:\n");
-	if(len < pdu_len) {
-		debug_print("Too short (len %u < PDU len %u)\n", len, pdu_len);
-		return NULL;
+	if(remaining < pdu_len) {
+		debug_print("Too short (len %u < PDU len %u)\n", remaining, pdu_len);
+		goto end;
 	}
-	buf += BISPDU_HDR_LEN; len -= BISPDU_HDR_LEN;
-	debug_print("skipping %u hdr octets, len is now %u\n", BISPDU_HDR_LEN, len);
+	ptr += BISPDU_HDR_LEN; remaining -= BISPDU_HDR_LEN;
+	debug_print("skipping %u hdr octets, %u octets remaining\n", BISPDU_HDR_LEN, remaining);
 	int result = 0;
 	switch(hdr->type) {
 	case BISPDU_TYPE_OPEN:
-		result = parse_idrp_open_pdu(pdu, buf, len);
+		result = parse_idrp_open_pdu(pdu, ptr, remaining);
 		break;
 	case BISPDU_TYPE_UPDATE:
-		result = parse_idrp_update_pdu(pdu, buf, len);
+		result = parse_idrp_update_pdu(pdu, ptr, remaining);
 		break;
 	case BISPDU_TYPE_ERROR:
-		result = parse_idrp_error_pdu(pdu, buf, len);
+		result = parse_idrp_error_pdu(pdu, ptr, remaining);
 		break;
 	case BISPDU_TYPE_KEEPALIVE:
 	case BISPDU_TYPE_CEASE:
@@ -265,69 +273,101 @@ idrp_pdu_t *parse_idrp_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		debug_print("Unknown BISPDU type 0x%02x\n", hdr->type);
 		result = -1;
 	}
-	if(result < 0)		// unparseable PDU
-		return NULL;
+	if(result < 0) {		// unparseable PDU
+		goto end;
+	}
 
-	if(hdr->type == BISPDU_TYPE_KEEPALIVE)
+	if(hdr->type == BISPDU_TYPE_KEEPALIVE) {
 		*msg_type |= MSGFLT_IDRP_KEEPALIVE;
-	else
+	} else {
 		*msg_type |= MSGFLT_IDRP_NO_KEEPALIVE;
+	}
 
 	pdu->hdr = hdr;
-	return pdu;
+	pdu->err = false;
+	return node;
+end:
+	node->next = unknown_proto_pdu_new(buf, len);
+	return node;
 }
 
-static void output_idrp_error(idrp_pdu_t *pdu) {
+static void idrp_error_format_text(la_vstring *vstr, idrp_pdu_t *pdu, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(pdu != NULL);
+	ASSERT(indent >= 0);
+
 	bispdu_err_t *err = (bispdu_err_t *)dict_search(bispdu_errors, pdu->err_code);
-	fprintf(outf, " Code: %u (%s)\n", pdu->err_code, err ? err->descr : "unknown");
+	LA_ISPRINTF(vstr, indent, "Code: %u (%s)\n", pdu->err_code, err ? err->descr : "unknown");
 	if(!err) {
-		fprintf(outf, " Subcode: %u (unknown)\n", pdu->err_subcode);
+		LA_ISPRINTF(vstr, indent, "Subcode: %u (unknown)\n", pdu->err_subcode);
 		goto print_err_payload;
 	}
 	if(pdu->err_code == BISPDU_ERR_FSM) {	// special case
 		char *bispdu_name = (char *)dict_search(bispdu_types, pdu->err_fsm_bispdu_type);
 		char *fsm_state_name = (char *)dict_search(FSM_states, pdu->err_fsm_state);
-		fprintf(outf, " Erroneous BISPDU type: %s\n FSM state: %s\n",
-			bispdu_name ? bispdu_name : "unknown",
-			fsm_state_name ? fsm_state_name : "unknown"
-		);
+		LA_ISPRINTF(vstr, indent, "Erroneous BISPDU type: %s\n",
+			bispdu_name ? bispdu_name : "unknown");
+		LA_ISPRINTF(vstr, indent, "FSM state: %s\n",
+			fsm_state_name ? fsm_state_name : "unknown");
 	} else {
 		char *subcode = (char *)dict_search(err->subcodes, pdu->err_subcode);
-		fprintf(outf, " Subcode: %u (%s)\n", pdu->err_subcode, subcode ? subcode : "unknown");
+		LA_ISPRINTF(vstr, indent, "Subcode: %u (%s)\n", pdu->err_subcode, subcode ? subcode : "unknown");
 	}
 print_err_payload:
-	output_raw(pdu->data, pdu->datalen);
+	if(pdu->data != NULL && pdu->datalen > 0) {
+		append_hexstring_with_indent(vstr, pdu->data, pdu->datalen, indent);
+	}
 }
 
-void output_idrp(idrp_pdu_t *pdu) {
+void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+	ASSERT(indent >= 0);
+
+	CAST_PTR(pdu, idrp_pdu_t *, data);
+	if(pdu->err == true) {
+		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable IDRP PDU\n");
+		return;
+	}
 	idrp_hdr_t *hdr = pdu->hdr;
 	char *bispdu_name = (char *)dict_search(bispdu_types, hdr->type);
-	fprintf(outf, "IDRP %s: seq: %u ack: %u credit_offered: %u credit_avail: %u\n",
+	LA_ISPRINTF(vstr, indent, "IDRP %s: seq: %u ack: %u credit_offered: %u credit_avail: %u\n",
 		bispdu_name, ntohl(hdr->seq), ntohl(hdr->ack), hdr->coff, hdr->cavail);
+	indent++;
 	switch(pdu->hdr->type) {
 	case BISPDU_TYPE_OPEN:
-		fprintf(outf, " Hold Time: %u seconds\n", pdu->open_holdtime);
-		fprintf(outf, " Max. PDU size: %u octets\n", pdu->open_max_pdu_size);
-		fprintf(outf, " Source RDI: %s\n", fmt_hexstring_with_ascii(pdu->open_src_rdi, pdu->open_src_rdi_len));
-		output_raw(pdu->data, pdu->datalen);
+		LA_ISPRINTF(vstr, indent, "Hold Time: %u seconds\n", pdu->open_holdtime);
+		LA_ISPRINTF(vstr, indent, "Max. PDU size: %u octets\n", pdu->open_max_pdu_size);
+		{
+			char *fmt = fmt_hexstring_with_ascii(pdu->open_src_rdi, pdu->open_src_rdi_len);
+			LA_ISPRINTF(vstr, indent, "Source RDI: %s\n", fmt);
+			XFREE(fmt);
+			if(pdu->data != NULL && pdu->datalen > 0) {
+				append_hexstring_with_indent(vstr, pdu->data, pdu->datalen, indent);
+			}
+		}
 		break;
 	case BISPDU_TYPE_UPDATE:
 		if(pdu->withdrawn_routes != NULL) {
-			fprintf(outf, " Withdrawn Routes:\n");
-			for(tlv_list_t *p = pdu->withdrawn_routes; p != NULL; p = p->next)
-				output_raw(p->val, p->len);
+			LA_ISPRINTF(vstr, indent, "%s", "Withdrawn Routes:\n");
+			for(tlv_list_t *p = pdu->withdrawn_routes; p != NULL; p = p->next) {
+				char *fmt = fmt_hexstring(p->val, p->len);
+				LA_ISPRINTF(vstr, indent+1, "%s\n", fmt);
+				XFREE(fmt);
+			}
 		}
-		if(pdu->path_attributes != NULL)
-			output_tlv(outf, pdu->path_attributes, path_attribute_names);
+		if(pdu->path_attributes != NULL) {
+			tlv_format_as_text(vstr, pdu->path_attributes, path_attribute_names, indent);
+		}
 
 		if(pdu->datalen > 0) {
 			char *fmt = fmt_hexstring_with_ascii(pdu->data, pdu->datalen);
-			fprintf(outf, " NLRI: %s\n", fmt);
+			LA_ISPRINTF(vstr, indent, "NLRI: %s\n", fmt);
 			XFREE(fmt);
 		}
 		break;
 	case BISPDU_TYPE_ERROR:
-		output_idrp_error(pdu);
+		idrp_error_format_text(vstr, pdu, indent);
 		break;
 	case BISPDU_TYPE_KEEPALIVE:
 	case BISPDU_TYPE_CEASE:
@@ -336,3 +376,18 @@ void output_idrp(idrp_pdu_t *pdu) {
 		break;
 	}
 }
+
+void idrp_pdu_destroy(void *data) {
+	if(data == NULL) {
+		return;
+	}
+	CAST_PTR(pdu, idrp_pdu_t *, data);
+	tlv_list_free(pdu->withdrawn_routes);
+	tlv_list_free(pdu->path_attributes);
+	XFREE(data);
+}
+
+la_type_descriptor const proto_DEF_idrp_pdu = {
+	.format_text = idrp_pdu_format_text,
+	.destroy = idrp_pdu_destroy
+};

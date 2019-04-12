@@ -17,6 +17,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdint.h>
+#include <stdbool.h>
 #include "config.h"		// IS_BIG_ENDIAN
 #include "tlv.h"
 
@@ -47,9 +48,8 @@ typedef struct {
 	tlv_list_t *options;
 	uint16_t holdtime;
 	uint8_t net_addr_len;
+	bool err;
 } esis_pdu_t;
 
 // esis.c
-esis_pdu_t *parse_esis_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_type);
-void output_esis(esis_pdu_t *pdu);
-
+la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type);

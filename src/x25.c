@@ -20,6 +20,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libacars/libacars.h>	// la_type_descriptor, la_proto_node
+#include <libacars/vstring.h>	// la_vstring, LA_ISPRINTF()
 #include "config.h"		// IS_BIG_ENDIAN
 #include "dumpvdl2.h"
 #include "x25.h"
@@ -60,6 +62,10 @@ static const dict x25_comp_algos[] = {
 	{ 0x01, "LREF-CAN" },
 	{ 0x0,  NULL }
 };
+
+// Forward declaration
+
+la_type_descriptor const proto_DEF_X25_pkt;
 
 static char *fmt_x25_addr(uint8_t *data, uint8_t len) {
 // len is in nibbles here
@@ -173,47 +179,41 @@ static int parse_x25_facility_field(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) 
 	return 1 + fac_len;
 }
 
-static void *parse_x25_user_data(x25_pkt_t *pkt, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	if(buf == NULL || len == 0)
 		return NULL;
 	uint8_t proto = *buf;
 	if(proto == SN_PROTO_CLNP) {
-		pkt->proto = SN_PROTO_CLNP;
-		return parse_clnp_pdu(buf, len, msg_type);
+		return clnp_pdu_parse(buf, len, msg_type);
 	} else if(proto == SN_PROTO_ESIS) {
-		pkt->proto = SN_PROTO_ESIS;
-		return parse_esis_pdu(buf, len, msg_type);
+		return esis_pdu_parse(buf, len, msg_type);
 	}
 	uint8_t pdu_type = proto >> 4;
 	if(pdu_type < 4) {
-		pkt->proto = SN_PROTO_CLNP_INIT_COMPRESSED;
-		return parse_clnp_compressed_init_pdu(buf, len, msg_type);
+		return clnp_compressed_init_pdu_parse(buf, len, msg_type);
 	}
-	pkt->proto = proto;
-	return NULL;
+	return unknown_proto_pdu_new(buf, len);
 }
 
-x25_pkt_t *parse_x25(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	static x25_pkt_t *pkt = NULL;
-	int ret;
+la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+	x25_pkt_t *pkt = XCALLOC(1, sizeof(x25_pkt_t));
+	la_proto_node *node = la_proto_node_new();
+	node->td = &proto_DEF_X25_pkt;
+	node->data = pkt;
+	node->next = NULL;
 
+	pkt->err = true;		// fail-safe value
 	if(len < X25_MIN_LEN) {
 		debug_print("Too short (len %u < min len %u)\n", len, X25_MIN_LEN);
-		return NULL;
+		goto end;
 	}
 
 	x25_hdr_t *hdr = (x25_hdr_t *)buf;
-	debug_print("gfi=0x%02x group=0x%02x chan=0x%02x type=0x%02x\n", hdr->gfi, hdr->chan_group, hdr->chan_num, hdr->type.val);
+	debug_print("gfi=0x%02x group=0x%02x chan=0x%02x type=0x%02x\n", hdr->gfi,
+		hdr->chan_group, hdr->chan_num, hdr->type.val);
 	if(hdr->gfi != GFI_X25_MOD8) {
 		debug_print("Unsupported GFI 0x%x\n", hdr->gfi);
-		return NULL;
-	}
-	if(pkt == NULL) {
-		pkt = XCALLOC(1, sizeof(x25_pkt_t));
-	} else {
-		if(pkt->facilities != NULL)
-			tlv_list_free(pkt->facilities);
-		memset(pkt, 0, sizeof(x25_pkt_t));
+		goto end;
 	}
 
 	uint8_t *ptr = buf + sizeof(x25_hdr_t);
@@ -232,18 +232,22 @@ x25_pkt_t *parse_x25(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 			pkt->type = pkttype;
 		*msg_type |= MSGFLT_X25_CONTROL;
 	}
+	int ret;
 	switch(pkt->type) {
 	case X25_CALL_REQUEST:
 	case X25_CALL_ACCEPTED:
-		if((ret = parse_x25_address_block(pkt, ptr, len)) < 0)
-			return NULL;
+		if((ret = parse_x25_address_block(pkt, ptr, len)) < 0) {
+			goto end;
+		}
 		ptr += ret; len -= ret;
-		if((ret = parse_x25_facility_field(pkt, ptr, len)) < 0)
-			return NULL;
+		if((ret = parse_x25_facility_field(pkt, ptr, len)) < 0) {
+			goto end;
+		}
 		ptr += ret; len -= ret;
 		if(pkt->type == X25_CALL_REQUEST) {
-			if((ret = parse_x25_callreq_sndcf(pkt, ptr, len)) < 0)
-				return NULL;
+			if((ret = parse_x25_callreq_sndcf(pkt, ptr, len)) < 0) {
+				goto end;
+			}
 			ptr += ret; len -= ret;
 		} else if(pkt->type == X25_CALL_ACCEPTED) {
 			if(len > 0) {
@@ -251,12 +255,13 @@ x25_pkt_t *parse_x25(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 				len--;
 			} else {
 				debug_print("%s", "X25_CALL_ACCEPT: no payload\n");
-				return NULL;
+				goto end;
 			}
 		}
-	/* FALLTHROUGH because Fast Select is on, so there might be a data PDU in call req or accept */
+	/* FALLTHROUGH */
+	/* because Fast Select is on, so there might be a data PDU in call req or accept */
 	case X25_DATA:
-		pkt->data = parse_x25_user_data(pkt, ptr, len, msg_type);
+		node->next = parse_x25_user_data(ptr, len, msg_type);
 		break;
 	case X25_CLEAR_REQUEST:
 		if(len > 0) {
@@ -279,78 +284,70 @@ x25_pkt_t *parse_x25(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		break;
 	default:
 		debug_print("Unsupported packet identifier 0x%02x\n", pkt->type);
-		return NULL;
+		goto end;
 	}
 	pkt->hdr = hdr;
-	if(pkt->data == NULL) {		// unparsed payload
-		pkt->data = ptr;
-		pkt->datalen = len;
-		pkt->data_valid = 0;
-	} else {
-		pkt->data_valid = 1;
-	}
-	return pkt;
+	pkt->err = false;
+end:
+	return node;
 }
 
-void output_x25(x25_pkt_t *pkt) {
+void x25_format_text(la_vstring * const vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+	ASSERT(indent >= 0);
+
+	CAST_PTR(pkt, x25_pkt_t *, data);
+	if(pkt->err == true) {
+		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable X.25 packet\n");
+		return;
+	}
 	char *name = (char *)dict_search(x25_pkttype_names, pkt->type);
-	fprintf(outf, "X.25 %s: grp: %u chan: %u", name, pkt->hdr->chan_group, pkt->hdr->chan_num);
+	LA_ISPRINTF(vstr, indent, "X.25 %s: grp: %u chan: %u", name, pkt->hdr->chan_group, pkt->hdr->chan_num);
 	if(pkt->addr_block_present) {
-		fprintf(outf, " src: %s dst: %s",
-			fmt_x25_addr(pkt->calling.addr, pkt->calling.len),
-			fmt_x25_addr(pkt->called.addr, pkt->called.len)
-		);
+		char *calling = fmt_x25_addr(pkt->calling.addr, pkt->calling.len);
+		char *called = fmt_x25_addr(pkt->called.addr, pkt->called.len);
+		la_vstring_append_sprintf(vstr, " src: %s dst: %s", calling, called);
+		XFREE(calling);
+		XFREE(called);
 	} else if(pkt->type == X25_DATA) {
-		fprintf(outf, " sseq: %u rseq: %u more: %u",
+		la_vstring_append_sprintf(vstr, " sseq: %u rseq: %u more: %u",
 			pkt->hdr->type.data.sseq, pkt->hdr->type.data.rseq, pkt->hdr->type.data.more);
 	}
-	fprintf(outf, "\n");
+	la_vstring_append_sprintf(vstr, "%s", "\n");
+	indent++;
 	switch(pkt->type) {
 	case X25_CALL_REQUEST:
 	case X25_CALL_ACCEPTED:
-		fprintf(outf, "Facilities:\n");
-		output_tlv(outf, pkt->facilities, x25_facility_names);
+		LA_ISPRINTF(vstr, indent, "%s", "Facilities:\n");
+		tlv_format_as_text(vstr, pkt->facilities, x25_facility_names, indent+1);
 		char *comp = fmt_bitfield(pkt->compression, x25_comp_algos);
-		fprintf(outf, "Compression support: %s\n", comp);
+		LA_ISPRINTF(vstr, indent, "Compression support: %s\n", comp);
 		XFREE(comp);
-		/* FALLTHROUGH because Fast Select is on, so there might be a data PDU in call req or accept */
+		/* FALLTHROUGH */
+		/* because Fast Select is on, so there might be a data PDU in call req or accept */
 	case X25_DATA:
-		switch(pkt->proto) {
-		case SN_PROTO_CLNP_INIT_COMPRESSED:
-			if(pkt->data_valid) {
-				output_clnp_compressed(pkt->data);
-			} else {
-				fprintf(outf, "-- Unparseable CLNP PDU\n");
-				output_raw(pkt->data, pkt->datalen);
-			}
-			break;
-		case SN_PROTO_CLNP:
-			if(pkt->data_valid) {
-				output_clnp(pkt->data);
-			} else {
-				fprintf(outf, "-- Unparseable CLNP PDU\n");
-				output_raw(pkt->data, pkt->datalen);
-			}
-			break;
-		case SN_PROTO_ESIS:
-			if(pkt->data_valid) {
-				output_esis(pkt->data);
-			} else {
-				fprintf(outf, "-- Unparseable ES-IS PDU\n");
-				output_raw(pkt->data, pkt->datalen);
-			}
-			break;
-		case SN_PROTO_IDRP:
-			fprintf(outf, "IDRP PDU:\n");
-			output_raw(pkt->data, pkt->datalen);
-			break;
-		default:
-			fprintf(outf, "Unknown protocol 0x%02x PDU:\n", pkt->proto);
-			break;
-		}
 		break;
 	case X25_CLEAR_REQUEST:
-		fprintf(outf, " Cause: %02x\n Diagnostic code: %02x\n", pkt->clr_cause, pkt->diag_code);
+		LA_ISPRINTF(vstr, indent, "Cause: %02x\n", pkt->clr_cause);
+		LA_ISPRINTF(vstr, indent, "Diagnostic code: %02x\n", pkt->diag_code);
 		break;
 	}
 }
+
+void x25_destroy(void *data) {
+	if(data == NULL) {
+		return;
+	}
+	CAST_PTR(pkt, x25_pkt_t *, data);
+	if(pkt->facilities != NULL) {
+		tlv_list_free(pkt->facilities);
+		pkt->facilities = NULL;
+	}
+	XFREE(data);
+}
+
+la_type_descriptor const proto_DEF_X25_pkt = {
+	.format_text = x25_format_text,
+	.destroy = x25_destroy
+};

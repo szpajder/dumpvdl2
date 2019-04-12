@@ -43,7 +43,6 @@
 #include "soapysdr.h"
 #endif
 #include "dumpvdl2.h"
-#include "avlc.h"		// parse_avlc_frames
 
 int do_exit = 0;
 uint32_t msg_filter = MSGFLT_ALL;
@@ -89,7 +88,7 @@ static void setup_threads(vdl2_state_t *ctx) {
 			perror("pthread_barrier_init failed");
 			_exit(2);
 	}
-	if((ret = pthread_create(&decoder_thread, NULL, &parse_avlc_frames, NULL) != 0)) {
+	if((ret = pthread_create(&decoder_thread, NULL, &avlc_decoder_thread, NULL) != 0)) {
 		errno = ret;
 		perror("pthread_create failed");
 		_exit(2);

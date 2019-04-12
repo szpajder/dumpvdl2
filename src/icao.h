@@ -17,12 +17,14 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdint.h>
+#include <stdbool.h>
+#include <libacars/libacars.h>		// la_proto_node
 #include "asn1/constr_TYPE.h"
 
 typedef struct {
 	asn_TYPE_descriptor_t *type;
 	void *data;
-	uint32_t datalen;
+	bool err;
 } icao_apdu_t;
 
 // app-type values for ATN applications
@@ -31,5 +33,4 @@ typedef struct {
 #define ICAO_APP_TYPE_UNKNOWN	-1
 
 // icao.c
-icao_apdu_t *parse_icao_apdu(uint8_t *buf, uint32_t datalen, uint32_t *msg_type);
-void output_icao_apdu(icao_apdu_t *pdu);
+la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t datalen, uint32_t *msg_type);
