@@ -65,7 +65,7 @@ static const dict x25_comp_algos[] = {
 
 // Forward declaration
 
-la_type_descriptor proto_DEF_X25_pkt;
+la_type_descriptor const proto_DEF_X25_pkt;
 
 static char *fmt_x25_addr(uint8_t *data, uint8_t len) {
 // len is in nibbles here
@@ -347,7 +347,7 @@ void x25_destroy(void *data) {
 	XFREE(data);
 }
 
-la_type_descriptor proto_DEF_X25_pkt = {
+la_type_descriptor const proto_DEF_X25_pkt = {
 	.format_text = x25_format_text,
 	.destroy = x25_destroy
 };

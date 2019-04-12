@@ -313,7 +313,7 @@ typedef struct {
 	void *buf;
 	size_t len;
 } octet_string_t;
-extern la_type_descriptor proto_DEF_unknown;
+extern la_type_descriptor const proto_DEF_unknown;
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func);
 void *xrealloc(void *ptr, size_t size, const char *file, const int line, const char *func);
 char *fmt_hexstring(uint8_t *data, uint16_t len);

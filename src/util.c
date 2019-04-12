@@ -217,7 +217,7 @@ void unknown_proto_format_text(la_vstring * const vstr, void const * const data,
 	append_hexstring_with_indent(vstr, ostring->buf, ostring->len, indent);
 }
 
-la_type_descriptor proto_DEF_unknown = {
+la_type_descriptor const proto_DEF_unknown = {
 	.format_text = unknown_proto_format_text,
 	.destroy = NULL
 };
