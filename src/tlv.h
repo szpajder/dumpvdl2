@@ -43,7 +43,6 @@ typedef struct {
 // tlv.c
 void tlv_list_free(tlv_list_t *p);
 void tlv_list_append(tlv_list_t **head, uint8_t type, uint16_t len, uint8_t *value);
-void output_tlv(FILE *f, tlv_list_t *list, const tlv_dict *d);
 void tlv_format_as_text(la_vstring *vstr, tlv_list_t *list, const tlv_dict *d, int indent);
 void *dict_search(const dict *list, uint8_t id);
 tlv_list_t *tlv_list_search(tlv_list_t *ptr, uint8_t type);
