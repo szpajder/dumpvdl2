@@ -342,6 +342,9 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 			char *fmt = fmt_hexstring_with_ascii(pdu->open_src_rdi, pdu->open_src_rdi_len);
 			LA_ISPRINTF(vstr, indent, "Source RDI: %s\n", fmt);
 			XFREE(fmt);
+			if(pdu->data != NULL && pdu->datalen > 0) {
+				append_hexstring_with_indent(vstr, pdu->data, pdu->datalen, indent);
+			}
 		}
 		break;
 	case BISPDU_TYPE_UPDATE:
