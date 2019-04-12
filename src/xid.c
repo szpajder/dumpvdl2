@@ -307,19 +307,21 @@ la_proto_node *xid_parse(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uin
 		debug_print("%s", "XID too short\n");
 		goto end;
 	}
-	if(buf[0] != XID_FMT_ID) {
+	uint8_t *ptr = buf;
+	uint32_t remaining = len;
+	if(ptr[0] != XID_FMT_ID) {
 		debug_print("%s", "Unknown XID format\n");
 		goto end;
 	}
-	buf++; len--;
-	uint8_t *ptr = buf;
-	while(len >= XID_MIN_GROUPLEN) {
+	ptr++; remaining--;
+	while(remaining >= XID_MIN_GROUPLEN) {
 		uint8_t gid = *ptr;
-		ptr++; len--;
+		ptr++; remaining--;
 		uint16_t grouplen = (ptr[0] << 8) | ptr[1];
-		ptr += 2; len -= 2;
+		ptr += 2; remaining -= 2;
 		if(grouplen > len) {
-			debug_print("XID group %02x truncated: grouplen=%u buflen=%u\n", gid, grouplen, len);
+			debug_print("XID group %02x truncated: grouplen=%u buflen=%u\n", gid,
+				grouplen, remaining);
 			goto end;
 		}
 		switch(gid) {
@@ -340,15 +342,16 @@ la_proto_node *xid_parse(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uin
 		default:
 			debug_print("Unknown XID Group ID 0x%x, ignored\n", gid);
 		}
-		ptr += grouplen; len -= grouplen;
-	}
-	if(len > 0) {
-		debug_print("Warning: %u unparsed octets left at end of XID message\n", len);
+		ptr += grouplen; remaining -= grouplen;
 	}
 // pub_params are optional, vdl_params are mandatory
 	if(msg->vdl_params == NULL) {
 		debug_print("%s", "Incomplete XID message\n");
 		goto end;
+	}
+	if(remaining > 0) {
+		debug_print("Warning: %u unparsed octets left at end of XID message\n", remaining);
+		node->next = unknown_proto_pdu_new(ptr, remaining);
 	}
 // find connection management parameter to figure out the XID type
 	uint8_t cm;
@@ -365,7 +368,9 @@ la_proto_node *xid_parse(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uin
 		*msg_type |= MSGFLT_XID_NO_GSIF;
 	}
 	msg->err = false;
+	return node;
 end:
+	node->next = unknown_proto_pdu_new(buf, len);
 	return node;
 }
 
