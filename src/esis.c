@@ -115,11 +115,13 @@ la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	node->next = NULL;
 
 	pdu->err = true;		// fail-safe default
-	if(len < ESIS_HDR_LEN) {
-		debug_print("Too short (len %u < min len %u)\n", len, ESIS_HDR_LEN);
+	uint8_t *ptr = buf;
+	uint32_t remaining = len;
+	if(remaining < ESIS_HDR_LEN) {
+		debug_print("Too short (len %u < min len %u)\n", remaining, ESIS_HDR_LEN);
 		goto end;
 	}
-	esis_hdr_t *hdr = (esis_hdr_t *)buf;
+	esis_hdr_t *hdr = (esis_hdr_t *)ptr;
 	if(hdr->version != 1) {
 		debug_print("Unsupported PDU version %u\n", hdr->version);
 		goto end;
@@ -127,23 +129,23 @@ la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	pdu->holdtime = ((uint16_t)hdr->holdtime[0] << 8) | ((uint16_t)hdr->holdtime[1]);
 	debug_print("pid: %02x len: %u type: %u holdtime: %u\n",
 		hdr->pid, hdr->len, hdr->type, pdu->holdtime);
-	if(len < hdr->len) {
-		debug_print("Too short (len %u < PDU len %u)\n", len, hdr->len);
+	if(remaining < hdr->len) {
+		debug_print("Too short (len %u < PDU len %u)\n", remaining, hdr->len);
 		goto end;
 	}
-	buf += ESIS_HDR_LEN; len -= ESIS_HDR_LEN;
-	debug_print("skipping %u hdr octets, len is now %u\n", ESIS_HDR_LEN, len);
+	ptr += ESIS_HDR_LEN; remaining -= ESIS_HDR_LEN;
+	debug_print("skipping %u hdr octets, len is now %u\n", ESIS_HDR_LEN, remaining);
 
-	int ret = parse_octet_string(buf, len, &pdu->net_addr, &pdu->net_addr_len);
+	int ret = parse_octet_string(ptr, remaining, &pdu->net_addr, &pdu->net_addr_len);
 	if(ret < 0) {
 		goto end;
 	}
-	buf += ret; len -= ret;
+	ptr += ret; remaining -= ret;
 	switch(hdr->type) {
 	case ESIS_PDU_TYPE_ESH:
 	case ESIS_PDU_TYPE_ISH:
-		if(len > 0) {
-			pdu->options = tlv_deserialize(buf, len, 1);
+		if(remaining > 0) {
+			pdu->options = tlv_deserialize(ptr, remaining, 1);
 			if(pdu->options == NULL) {
 				goto end;
 			}
@@ -156,7 +158,9 @@ la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	pdu->hdr = hdr;
 	*msg_type |= MSGFLT_ESIS;
 	pdu->err = false;
+	return node;
 end:
+	node->next = unknown_proto_pdu_new(buf, len);
 	return node;
 }
 
