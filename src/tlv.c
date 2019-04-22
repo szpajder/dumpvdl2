@@ -107,7 +107,7 @@ void tlv_format_as_text(la_vstring *vstr, tlv_list_t *list, const tlv_dict *d, i
 			LA_ISPRINTF(vstr, indent, "%s: %s\n", entry->description, str);
 		} else {
 			str = fmt_hexstring(p->val, p->len);
-			LA_ISPRINTF(vstr, indent, " (Unknown code 0x%02x): %s\n", p->type, str);
+			LA_ISPRINTF(vstr, indent, "(Unknown code 0x%02x): %s\n", p->type, str);
 		}
 		XFREE(str);
 	}
