@@ -30,6 +30,18 @@
 #include "cotp.h"
 #include "icao.h"
 
+// X.225 Session Protocol Machine disconnect reason codes
+#define SPM_PROTOCOL_ERROR 0
+#define SPM_DISC_NORMAL_NO_REUSE 1
+#define SPM_DISC_NORMAL_REUSE_NOT_POSSIBLE 2
+#define SPM_DISC_REASON_MAX SPM_DISC_NORMAL_REUSE_NOT_POSSIBLE
+
+static char const * const x225_xport_disc_reason_codes[] = {
+	[SPM_PROTOCOL_ERROR] = "Protocol error, cannnot sent ABORT SPDU",
+	[SPM_DISC_NORMAL_NO_REUSE] = "OK, transport connection not reused",
+	[SPM_DISC_NORMAL_REUSE_NOT_POSSIBLE] = "OK, transport connection reuse not possible"
+};
+
 // Forward declaration
 la_type_descriptor const proto_DEF_cotp_concatenated_pdu;
 
@@ -44,7 +56,8 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 	cotp_pdu_t *pdu = XCALLOC(1, sizeof(cotp_pdu_t));
 	r.pdu = pdu;
 
-	pdu->err = true;	// fail-safe default
+	pdu->err = true;			// fail-safe default
+	pdu->x225_xport_disc_reason = -1;	// X.225 xport disc reason not present
 	int final_pdu = 0;
 	uint8_t *ptr = buf;
 	uint32_t remaining = len;
@@ -112,7 +125,17 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 // user data is allowed in this PDU; if it's there, try to parse it
 		ptr += li; remaining -= li;
 		if(remaining > 0) {
-			r.next_node = icao_apdu_parse(ptr, remaining, msg_type);
+			if(pdu->code == COTP_TPDU_DR && remaining == 1) {
+// special case - single-byte user-data field in DR contains Session Protocol Machine
+// disconnect reason code (X.225 6.6.4)
+				if(ptr[0] <= SPM_DISC_REASON_MAX) {
+					pdu->x225_xport_disc_reason = (int16_t)ptr[0];
+				} else {
+					r.next_node = unknown_proto_pdu_new(ptr, remaining);
+				}
+			} else {
+				r.next_node = icao_apdu_parse(ptr, remaining, msg_type);
+			}
 		}
 		r.consumed = len;	// whole buffer consumed
 	} else {
@@ -231,6 +254,13 @@ static void output_cotp_pdu_as_text(gpointer p, gpointer user_data) {
 		str = (char *)dict_search(cotp_dr_reasons, pdu->class_or_status);
 		LA_ISPRINTF(vstr, indent, "Reason: %u (%s)\n", pdu->class_or_status,
 			(str ? str : "<unknown>"));
+		if(pdu->x225_xport_disc_reason >= 0) {
+			LA_ISPRINTF(vstr, indent,
+				"X.225 disconnect reason: %hd (%s)\n",
+				pdu->x225_xport_disc_reason,
+				x225_xport_disc_reason_codes[pdu->x225_xport_disc_reason]
+			);
+		}
 		break;
 	}
 }

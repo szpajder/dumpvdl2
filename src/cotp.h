@@ -34,6 +34,7 @@
 #define COTP_TPDU_ER	0x70
 
 typedef struct {
+	int16_t x225_xport_disc_reason;
 	uint8_t code;
 // protocol class for CR/CC, disconnect reason for DR, reject cause for ER
 	uint8_t class_or_status;
