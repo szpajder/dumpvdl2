@@ -281,8 +281,8 @@ static const dict cotp_tpdu_codes[] = {
 	{ COTP_TPDU_DC, "Disconnect Confirm" },
 	{ COTP_TPDU_DT, "Data" },
 	{ COTP_TPDU_ED, "Expedited Data" },
-	{ COTP_TPDU_AK, "Data Acknowledgement" },
-	{ COTP_TPDU_EA, "Expedited Data Acknowledgement" },
+	{ COTP_TPDU_AK, "Data Ack" },
+	{ COTP_TPDU_EA, "Expedited Data Ack" },
 	{ COTP_TPDU_RJ, "Reject" },
 	{ COTP_TPDU_ER, "Error" },
 	{ 0,  NULL }
@@ -318,7 +318,7 @@ static const dict cotp_er_reject_causes[] = {
 // specific formatting routines for them, since they will probably never
 // be used in practice.
 static tlv_dict const cotp_variable_part_params[] = {
-	{ 0x08, fmt_hexstring, "ATN extended checksum" },
+	{ 0x08, fmt_hexstring, "ATN checksum" },
 	{ 0x85, fmt_uint16_msbfirst, "Ack time (ms)" },
 	{ 0x86, fmt_hexstring, "Residual error rate" },			// not required
 	{ 0x87, fmt_uint16_msbfirst, "Priority" },
@@ -326,7 +326,7 @@ static tlv_dict const cotp_variable_part_params[] = {
 	{ 0x89, fmt_hexstring, "Throughput" },				// not required
 	{ 0x8a, fmt_uint16_msbfirst, "Subsequence number" },
 	{ 0x8b, fmt_uint16_msbfirst, "Reassignment time (s)" },
-	{ 0x8c, fmt_fc_confirmation, "Flow control confirmation" },
+	{ 0x8c, fmt_fc_confirmation, "Flow control" },
 	{ 0x8f, fmt_hexstring, "Selective ACK" },
 	{ 0xc0, fmt_tpdu_size, "TPDU size (bytes)" },
 	{ 0xc1, fmt_uint16_msbfirst, "Calling transport selector" },
@@ -372,65 +372,66 @@ static void output_cotp_pdu_as_text(gpointer p, gpointer user_data) {
 	char *tpdu_name = (char *)dict_search(cotp_tpdu_codes, pdu->code);
 	ASSERT(tpdu_name != NULL);
 
-	LA_ISPRINTF(vstr, indent, "X.224 COTP %s%s:", tpdu_name,
+	LA_ISPRINTF(vstr, indent, "X.224 COTP %s%s:\n", tpdu_name,
 		pdu->extended ? " (extended)" : "");
-	switch(pdu->code) {
-	case COTP_TPDU_CR:
-	case COTP_TPDU_CC:
-	case COTP_TPDU_DR:
-	case COTP_TPDU_DC:
-		la_vstring_append_sprintf(vstr, " src_ref: 0x%04x", pdu->src_ref);
-		/* FALLTHROUGH */
-	default:
-		la_vstring_append_sprintf(vstr, " dst_ref: 0x%04x\n", pdu->dst_ref);
-	}
 	indent++;
 
 	switch(pdu->code) {
 	case COTP_TPDU_CR:
 	case COTP_TPDU_CC:
-		LA_ISPRINTF(vstr, indent, "Initial credit: %hu\n", pdu->credit);
+	case COTP_TPDU_DR:
+	case COTP_TPDU_DC:
+		LA_ISPRINTF(vstr, indent, "src_ref: 0x%04x dst_ref: 0x%04x\n", pdu->src_ref, pdu->dst_ref);
+		break;
+	default:
+		LA_ISPRINTF(vstr, indent, "dst_ref: 0x%04x\n", pdu->dst_ref);
+	}
+
+	switch(pdu->code) {
+	case COTP_TPDU_CR:
+	case COTP_TPDU_CC:
+		LA_ISPRINTF(vstr, indent, "Initial Credit: %hu\n", pdu->credit);
 		LA_ISPRINTF(vstr, indent, "Protocol class: %u\n", pdu->class_or_disc_reason);
 		LA_ISPRINTF(vstr, indent, "Options: %02x (use %s PDU formats)\n", pdu->options,
 			pdu->options & 2 ? "extended" : "normal");
-		tlv_format_as_text(vstr, pdu->variable_part_params, cotp_variable_part_params, indent);
 		break;
 	case COTP_TPDU_AK:
 	case COTP_TPDU_RJ:
-		LA_ISPRINTF(vstr, indent, "Credit: %hu\n", pdu->credit);
-		/* FALLTHROUGH */
+		LA_ISPRINTF(vstr, indent, "rseq: %u credit: %hu\n", pdu->tpdu_seq, pdu->credit);
+		break;
 	case COTP_TPDU_EA:
 		LA_ISPRINTF(vstr, indent, "rseq: %u\n", pdu->tpdu_seq);
-		tlv_format_as_text(vstr, pdu->variable_part_params, cotp_variable_part_params, indent);
 		break;
 	case COTP_TPDU_ER:
 		str = (char *)dict_search(cotp_er_reject_causes, pdu->class_or_disc_reason);
 		LA_ISPRINTF(vstr, indent, "Reject cause: %u (%s)\n", pdu->class_or_disc_reason,
 			(str ? str : "<unknown>"));
-		tlv_format_as_text(vstr, pdu->variable_part_params, cotp_er_variable_part_params, indent);
 		break;
 	case COTP_TPDU_DT:
 	case COTP_TPDU_ED:
-		LA_ISPRINTF(vstr, indent, "Request ACK: %u\n", pdu->roa);
-		LA_ISPRINTF(vstr, indent, "sseq: %u eot: %u\n", pdu->tpdu_seq, pdu->eot);
-		tlv_format_as_text(vstr, pdu->variable_part_params, cotp_variable_part_params, indent);
+		LA_ISPRINTF(vstr, indent, "sseq: %u req_of_ack: %u EoT: %u\n",
+			pdu->tpdu_seq, pdu->roa, pdu->eot);
 		break;
 	case COTP_TPDU_DR:
 		str = (char *)dict_search(cotp_dr_reasons, pdu->class_or_disc_reason);
 		LA_ISPRINTF(vstr, indent, "Reason: %u (%s)\n", pdu->class_or_disc_reason,
 			(str ? str : "<unknown>"));
-		tlv_format_as_text(vstr, pdu->variable_part_params, cotp_variable_part_params, indent);
-		if(pdu->x225_xport_disc_reason >= 0) {
-			LA_ISPRINTF(vstr, indent,
-				"X.225 disconnect reason: %hd (%s)\n",
-				pdu->x225_xport_disc_reason,
-				x225_xport_disc_reason_codes[pdu->x225_xport_disc_reason]
-			);
-		}
 		break;
 	case COTP_TPDU_DC:
-		tlv_format_as_text(vstr, pdu->variable_part_params, cotp_variable_part_params, indent);
 		break;
+	}
+	if(pdu->code == COTP_TPDU_ER) {
+		tlv_format_as_text(vstr, pdu->variable_part_params, cotp_er_variable_part_params, indent);
+	} else {
+		tlv_format_as_text(vstr, pdu->variable_part_params, cotp_variable_part_params, indent);
+	}
+
+	if(pdu->code == COTP_TPDU_DR && pdu->x225_xport_disc_reason >= 0) {
+		LA_ISPRINTF(vstr, indent,
+			"X.225 disconnect reason: %hd (%s)\n",
+			pdu->x225_xport_disc_reason,
+			x225_xport_disc_reason_codes[pdu->x225_xport_disc_reason]
+		);
 	}
 }
 
