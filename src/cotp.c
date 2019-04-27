@@ -63,12 +63,9 @@ static char *fmt_fc_confirmation(uint8_t *data, uint16_t len) {
 	if(data == NULL) return strdup("<undef>");
 	if(len != 8) return fmt_hexstring(data, len);
 	char *buf = XCALLOC(128, sizeof(char));
-	uint32_t acked_tpdu_nr = ((uint32_t)(data[0] & 0x7f) << 24) |
-		((uint32_t)data[1] << 16) |
-		((uint32_t)data[2] << 8) |
-		(uint32_t)data[3];
-	uint16_t acked_subseq = ((uint16_t)data[4] << 8) | (uint16_t)data[5];
-	uint16_t acked_credit = ((uint16_t)data[6] << 8) | (uint16_t)data[7];
+	uint32_t acked_tpdu_nr = extract_uint32_msbfirst(data) & 0x7fffffffu;
+	uint16_t acked_subseq = extract_uint16_msbfirst(data + 4);
+	uint16_t acked_credit = extract_uint16_msbfirst(data + 6);
 	snprintf(buf, 128, "acked_tpdu_nr: %u acked_subseq: %hu acked_credit: %hu",
 		acked_tpdu_nr, acked_subseq, acked_credit);
 	return buf;
@@ -117,7 +114,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 	}
 	debug_print("TPDU code: 0x%02x\n", pdu->code);
 
-	pdu->dst_ref = (ptr[1] << 8) | ptr[2];
+	pdu->dst_ref = extract_uint16_msbfirst(ptr + 1);
 
 	uint16_t variable_part_offset = 0;
 	switch(pdu->code) {
@@ -128,7 +125,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 			debug_print("Truncated TPDU: code: 0x%02x len: %u\n", pdu->code, remaining);
 			goto fail;
 		}
-		pdu->src_ref = (ptr[3] << 8) | ptr[4];
+		pdu->src_ref = extract_uint16_msbfirst(ptr + 3);
 
 		if(pdu->code == COTP_TPDU_DR) {
 			pdu->class_or_disc_reason = ptr[5];		// reason
@@ -154,10 +151,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 				goto fail;
 			}
 			pdu->eot = (ptr[3] & 0x80) >> 7;
-			pdu->tpdu_seq = ((uint32_t)(ptr[3] & 0x7f) << 24) |
-				((uint32_t)ptr[4] << 16) |
-				((uint32_t)ptr[5] << 8) |
-				(uint32_t)ptr[6];
+			pdu->tpdu_seq = extract_uint32_msbfirst(ptr + 3) & 0x7fffffffu;
 			variable_part_offset = 7;
 			pdu->extended = true;
 		} else {			// normal format
@@ -169,7 +163,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 		final_pdu = 1;
 		break;
 	case COTP_TPDU_DC:
-		pdu->src_ref = (ptr[3] << 8) | ptr[4];
+		pdu->src_ref = extract_uint16_msbfirst(ptr + 3);
 		variable_part_offset = 5;
 		break;
 	case COTP_TPDU_AK:
@@ -178,11 +172,8 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 				debug_print("Truncated TPDU: len: %u\n", remaining);
 				goto fail;
 			}
-			pdu->tpdu_seq = ((uint32_t)(ptr[3] & 0x7f) << 24) |
-				((uint32_t)ptr[4] << 16) |
-				((uint32_t)ptr[5] << 8) |
-				(uint32_t)ptr[6];
-			pdu->credit = ((uint16_t)ptr[7] << 8) | (uint16_t)ptr[8];
+			pdu->tpdu_seq = extract_uint32_msbfirst(ptr + 3) & 0x7fffffffu;
+			pdu->credit = extract_uint16_msbfirst(ptr + 7);
 			variable_part_offset = 9;
 			pdu->extended = true;
 		} else {
@@ -197,10 +188,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 				debug_print("Truncated TPDU: len: %u\n", remaining);
 				goto fail;
 			}
-			pdu->tpdu_seq = ((uint32_t)(ptr[3] & 0x7f) << 24) |
-				((uint32_t)ptr[4] << 16) |
-				((uint32_t)ptr[5] << 8) |
-				(uint32_t)ptr[6];
+			pdu->tpdu_seq = extract_uint32_msbfirst(ptr + 3) & 0x7fffffffu;
 			variable_part_offset = 7;
 			pdu->extended = true;
 		} else {
@@ -215,11 +203,8 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 				debug_print("Truncated TPDU: len: %u\n", remaining);
 				goto fail;
 			}
-			pdu->tpdu_seq = ((uint32_t)(ptr[3] & 0x7f) << 24) |
-				((uint32_t)ptr[4] << 16) |
-				((uint32_t)ptr[5] << 8) |
-				(uint32_t)ptr[6];
-			pdu->credit = ((uint16_t)ptr[7] << 8) | (uint16_t)ptr[8];
+			pdu->tpdu_seq = extract_uint32_msbfirst(ptr + 3) & 0x7fffffffu;
+			pdu->credit = extract_uint16_msbfirst(ptr + 7);
 			pdu->extended = true;
 		} else {
 			pdu->tpdu_seq = (uint32_t)(ptr[3] & 0x7f);

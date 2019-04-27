@@ -102,6 +102,17 @@ char *fmt_bitfield(uint8_t val, const dict *d) {
 	return buf;
 }
 
+uint32_t extract_uint32_msbfirst(uint8_t const * const data) {
+	ASSERT(data != NULL);
+	return	((uint32_t)data[0] << 24) | ((uint32_t)data[1] << 16) |
+		((uint32_t)data[2] << 8) | (uint32_t)data[3];
+}
+
+uint16_t extract_uint16_msbfirst(uint8_t const * const data) {
+	ASSERT(data != NULL);
+	return	((uint16_t)data[0] << 8) | (uint16_t)data[1];
+}
+
 char *fmt_uint16_msbfirst(uint8_t *data, uint16_t len) {
 	if(data == NULL) return strdup("<undef>");
 	if(len == 0) return strdup("none");

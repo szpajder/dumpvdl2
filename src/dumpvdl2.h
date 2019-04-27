@@ -316,6 +316,8 @@ typedef struct {
 extern la_type_descriptor const proto_DEF_unknown;
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func);
 void *xrealloc(void *ptr, size_t size, const char *file, const int line, const char *func);
+uint16_t extract_uint16_msbfirst(uint8_t const * const data);
+uint32_t extract_uint32_msbfirst(uint8_t const * const data);
 char *fmt_hexstring(uint8_t *data, uint16_t len);
 char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len);
 char *fmt_uint16_msbfirst(uint8_t *data, uint16_t len);
