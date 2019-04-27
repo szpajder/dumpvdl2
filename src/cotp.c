@@ -71,6 +71,14 @@ static char *fmt_fc_confirmation(uint8_t *data, uint16_t len) {
 	return buf;
 }
 
+#define TPDU_CHECK_LEN(len, val, goto_on_fail) \
+	do { \
+		if((len) < (val)) { \
+			debug_print("Truncated TPDU: len: %u < %u\n", (len), (val)); \
+			goto goto_on_fail; \
+		} \
+	} while(0)
+
 static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	cotp_pdu_parse_result r = { NULL, NULL, 0 };
 	cotp_pdu_t *pdu = XCALLOC(1, sizeof(cotp_pdu_t));
@@ -90,10 +98,6 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 	}
 	if(remaining < li) {
 		debug_print("header truncated: len %u < li %u\n", remaining, li);
-		goto fail;
-	}
-	if(remaining < COTP_TPDU_MIN_LEN) {
-		debug_print("TPDU too short: len %u < min_len %u\n", remaining, COTP_TPDU_MIN_LEN);
 		goto fail;
 	}
 	uint8_t code = ptr[0];
@@ -121,10 +125,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 	case COTP_TPDU_CR:
 	case COTP_TPDU_CC:
 	case COTP_TPDU_DR:
-		if(remaining < 6) {
-			debug_print("Truncated TPDU: code: 0x%02x len: %u\n", pdu->code, remaining);
-			goto fail;
-		}
+		TPDU_CHECK_LEN(remaining, 6, fail);
 		pdu->src_ref = extract_uint16_msbfirst(ptr + 3);
 
 		if(pdu->code == COTP_TPDU_DR) {
@@ -137,6 +138,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 		final_pdu = 1;
 		break;
 	case COTP_TPDU_ER:
+		TPDU_CHECK_LEN(remaining, 4, fail);
 		pdu->class_or_disc_reason = ptr[3];			// reject cause
 		variable_part_offset = 4;
 		break;
@@ -146,15 +148,13 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 // This assumption holds true only if the length of all options in the variable part
 // is even (which is true for all options described in X.224 and Doc9705).
 		if(li & 1) {
-			if(remaining < 7) {
-				debug_print("Truncated TPDU: len: %u\n", remaining);
-				goto fail;
-			}
+			TPDU_CHECK_LEN(remaining, 7, fail);
 			pdu->eot = (ptr[3] & 0x80) >> 7;
 			pdu->tpdu_seq = extract_uint32_msbfirst(ptr + 3) & 0x7fffffffu;
 			variable_part_offset = 7;
 			pdu->extended = true;
 		} else {			// normal format
+			TPDU_CHECK_LEN(remaining, 4, fail);
 			pdu->eot = (ptr[3] & 0x80) >> 7;
 			pdu->tpdu_seq = (uint32_t)(ptr[3] & 0x7f);
 			variable_part_offset = 4;
@@ -168,15 +168,13 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 		break;
 	case COTP_TPDU_AK:
 		if(li & 1) {
-			if(remaining < 9) {
-				debug_print("Truncated TPDU: len: %u\n", remaining);
-				goto fail;
-			}
+			TPDU_CHECK_LEN(remaining, 9, fail);
 			pdu->tpdu_seq = extract_uint32_msbfirst(ptr + 3) & 0x7fffffffu;
 			pdu->credit = extract_uint16_msbfirst(ptr + 7);
 			variable_part_offset = 9;
 			pdu->extended = true;
 		} else {
+			TPDU_CHECK_LEN(remaining, 4, fail);
 			pdu->tpdu_seq = (uint32_t)(ptr[3] & 0x7f);
 			variable_part_offset = 4;
 			pdu->extended = false;
@@ -184,14 +182,12 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 		break;
 	case COTP_TPDU_EA:
 		if(li & 1) {
-			if(remaining < 7) {
-				debug_print("Truncated TPDU: len: %u\n", remaining);
-				goto fail;
-			}
+			TPDU_CHECK_LEN(remaining, 7, fail);
 			pdu->tpdu_seq = extract_uint32_msbfirst(ptr + 3) & 0x7fffffffu;
 			variable_part_offset = 7;
 			pdu->extended = true;
 		} else {
+			TPDU_CHECK_LEN(remaining, 4, fail);
 			pdu->tpdu_seq = (uint32_t)(ptr[3] & 0x7f);
 			variable_part_offset = 4;
 			pdu->extended = false;
@@ -199,14 +195,12 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 		break;
 	case COTP_TPDU_RJ:
 		if(li & 1) {
-			if(remaining < 9) {
-				debug_print("Truncated TPDU: len: %u\n", remaining);
-				goto fail;
-			}
+			TPDU_CHECK_LEN(remaining, 9, fail);
 			pdu->tpdu_seq = extract_uint32_msbfirst(ptr + 3) & 0x7fffffffu;
 			pdu->credit = extract_uint16_msbfirst(ptr + 7);
 			pdu->extended = true;
 		} else {
+			TPDU_CHECK_LEN(remaining, 4, fail);
 			pdu->tpdu_seq = (uint32_t)(ptr[3] & 0x7f);
 			pdu->extended = false;
 		}
@@ -219,6 +213,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 		pdu->variable_part_params = tlv_deserialize(ptr + variable_part_offset,
 			(uint16_t)li - variable_part_offset,  1);
 		if(pdu->variable_part_params == NULL) {
+			debug_print("%s", "tlv_deserialize failed on variable part\n");
 			goto fail;
 		}
 	}

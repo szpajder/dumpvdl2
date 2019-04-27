@@ -34,8 +34,6 @@
 #define COTP_TPDU_RJ	0x50
 #define COTP_TPDU_ER	0x70
 
-#define COTP_TPDU_MIN_LEN 4
-
 typedef struct {
 	tlv_list_t *variable_part_params;
 	uint32_t tpdu_seq;	// TPDU sequence number (valid for DT, ED, AK)
