@@ -24,6 +24,8 @@
 typedef struct {
 	asn_TYPE_descriptor_t *type;
 	void *data;
+	uint8_t spdu_id;
+	uint8_t spdu_special_data;
 	bool err;
 } icao_apdu_t;
 

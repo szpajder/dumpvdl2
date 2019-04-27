@@ -322,43 +322,71 @@ la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t datalen, uint32_t *msg_typ
 	icao_apdu->err = true;		// fail-safe default
 	if(datalen < 1) {
 		debug_print("APDU too short (len: %d)\n", datalen);
-		goto end;
+		goto fail;
 	}
 	uint8_t *ptr = buf;
 	uint32_t len = datalen;
-/* Check if it's a X.225 Amdt 1 (1997) Short-form SPDU.
- * All SPDU types have the 8-th bit of SI&P field (the first octet) set to 1. */
-	if((ptr[0] & 80) != 0) {
-		if(len < 3) {
-			debug_print("SPDU too short (len: %d)\n", len);
+// Check if it's a X.225 Amdt 1 (1997) Short-form SPDU.
+// All SPDU types have the 8-th bit of SI&P field (the first octet) set to 1.
+	if((ptr[0] & 0x80) != 0) {
+		icao_apdu->spdu_id = ptr[0] & 0xf8;
+		icao_apdu->spdu_special_data = ptr[0] & 0x3;
+		ptr++; len--;
+		if(len == 0) {
 			goto end;
 		}
-		ptr++; len--;
-/* The next octet shall then contain a X.226 Amdt 1 (1997) Presentation layer protocol
- * control information. We only care about two least significant bits, which carry
- * encoding information - 0x2 indicates ASN.1 encoded with Packed Encoding Rules (X.691) */
+// The next octet shall then contain a X.226 Amdt 1 (1997) Presentation layer protocol
+// control information. We only care about two least significant bits, which carry
+// encoding information - 0x2 indicates ASN.1 encoded with Packed Encoding Rules (X.691)
 		if((ptr[0] & 2) != 2) {
 			debug_print("Unknown PPDU payload encoding: %u\n", ptr[0] & 2);
-			goto end;
+			goto fail;
 		}
 		ptr++; len--;
-/* Decode as ICAO Doc 9705 / X.227 ACSE APDU */
+		if(len == 0) {
+			goto end;
+		}
+// Decode as ICAO Doc 9705 / X.227 ACSE APDU
+// Special case: Short Connect SPDUs often contain single-byte payloads with a value of 0.
+// Skip these, because the ASN.1 parser will error-out on them.
+		if(len == 1 && ptr[0] == 0) {
+			goto end;
+		}
 		decode_ulcs_acse(icao_apdu, ptr, len, msg_type);
+		if(icao_apdu->type == NULL) {
+			goto fail;
+		}
 	} else {
-/* Long-Form SPDUs are not used in the ATN, hence this must be a NULL encoding of Session
- * Layer and Presentation Layer, ie. only user data field is present without any header.
- * Decode it as Fully-encoded-data. */
+// Long-Form SPDUs are not used in the ATN, hence this must be a NULL encoding of Session
+// Layer and Presentation Layer, ie. only user data field is present without any header.
+// Decode it as Fully-encoded-data.
 		decode_fully_encoded_data(icao_apdu, ptr, len, msg_type);
+		if(icao_apdu->type == NULL) {
+			goto fail;
+		}
 	}
-	if(icao_apdu->type == NULL) {
-		goto end;
-	}
+end:
 	icao_apdu->err = false;
 	return node;
-end:
+fail:
 	node->next = unknown_proto_pdu_new(buf, datalen);
 	return node;
 }
+
+#define X225_SPDU_SCN  0xe8
+#define X225_SPDU_SAC  0xf0
+#define X225_SPDU_SACC 0xd8
+#define X225_SPDU_SRF  0xe0
+#define X225_SPDU_SRFC 0xa0
+
+static dict const x225_spdu_names[] = {
+	{ X225_SPDU_SCN,  "Short Connect" },
+	{ X225_SPDU_SAC,  "Short Accept" },
+	{ X225_SPDU_SACC, "Short Accept Continue" },
+	{ X225_SPDU_SRF,  "Short Refuse" },
+	{ X225_SPDU_SRFC, "Short Refuse Continue" },
+	{ 0, NULL }
+};
 
 void icao_apdu_format_text(la_vstring *vstr, void const * const data, int indent) {
 	ASSERT(vstr != NULL);
@@ -368,6 +396,25 @@ void icao_apdu_format_text(la_vstring *vstr, void const * const data, int indent
 	CAST_PTR(icao_apdu, icao_apdu_t *, data);
 	if(icao_apdu->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable ICAO APDU\n");
+		return;
+	}
+	if(icao_apdu->spdu_id != 0) {
+		char *str = dict_search(x225_spdu_names, icao_apdu->spdu_id);
+		if(str != NULL) {
+			LA_ISPRINTF(vstr, indent, "X.225 Session SPDU: %s\n", str);
+		} else {
+			LA_ISPRINTF(vstr, indent, "X.225 Session SPDU: unknown type (0x%02x)\n",
+				icao_apdu->spdu_id);
+		}
+		if(icao_apdu->spdu_id == X225_SPDU_SRF) {
+			LA_ISPRINTF(vstr, indent+1, "Refusal: %s\n",
+				(icao_apdu->spdu_special_data & 1 ? "persistent" : "transient"));
+			LA_ISPRINTF(vstr, indent+1, "Transport connection: %s\n",
+				(icao_apdu->spdu_special_data & 2 ? "release" : "retain"));
+		}
+	}
+	if(icao_apdu->type == NULL) {
+		LA_ISPRINTF(vstr, indent, "%s", "-- Empty ICAO APDU\n");
 		return;
 	}
 	if(icao_apdu->data != NULL) {
