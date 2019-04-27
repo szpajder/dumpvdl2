@@ -318,6 +318,8 @@ void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const
 void *xrealloc(void *ptr, size_t size, const char *file, const int line, const char *func);
 char *fmt_hexstring(uint8_t *data, uint16_t len);
 char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len);
+char *fmt_uint16_msbfirst(uint8_t *data, uint16_t len);
+char *fmt_uint32_msbfirst(uint8_t *data, uint16_t len);
 char *fmt_bitfield(uint8_t val, const dict *d);
 size_t slurp_hexstring(char* string, uint8_t **buf);
 char *hexdump(uint8_t *data, size_t len);

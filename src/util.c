@@ -102,6 +102,37 @@ char *fmt_bitfield(uint8_t val, const dict *d) {
 	return buf;
 }
 
+char *fmt_uint16_msbfirst(uint8_t *data, uint16_t len) {
+	if(data == NULL) return strdup("<undef>");
+	if(len == 0) return strdup("none");
+	if(len > 2) return fmt_hexstring(data, len);
+	char *buf = XCALLOC(6, sizeof(char));
+	if(len == 1) {
+		snprintf(buf, 6, "%hhu", data[0]);
+	} else {	// len == 2
+		snprintf(buf, 6, "%hu",
+			((uint16_t)data[0] << 8) |
+			((uint16_t)data[1])
+		);
+	}
+	return buf;
+}
+
+char *fmt_uint32_msbfirst(uint8_t *data, uint16_t len) {
+	if(data == NULL) return strdup("<undef>");
+	if(len == 0) return strdup("<none>");
+	if(len != 4) return fmt_hexstring(data, len);
+	char *buf = XCALLOC(16, sizeof(char));
+	snprintf(buf, 16, "%u",
+		((uint32_t)data[0] << 24) |
+		((uint32_t)data[1] << 16) |
+		((uint32_t)data[2] << 8)  |
+		((uint32_t)data[3])
+	);
+	return buf;
+}
+
+
 size_t slurp_hexstring(char* string, uint8_t **buf) {
 	if(string == NULL)
 		return 0;
