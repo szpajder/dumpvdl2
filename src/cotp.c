@@ -21,7 +21,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <arpa/inet.h>
 #include <glib.h>
 #include <libacars/libacars.h>		// la_proto_node
 #include <libacars/vstring.h>		// la_vstring
@@ -51,6 +50,30 @@ typedef struct {
 	int consumed;
 } cotp_pdu_parse_result;
 
+static char *fmt_tpdu_size(uint8_t *data, uint16_t len) {
+	if(data == NULL) return strdup("<undef>");
+	if(len != 1) return fmt_hexstring(data, len);
+	if(data[0] < 0x7 || data[0] >> 0xd) return fmt_hexstring(data, len);
+	char *buf = XCALLOC(8, sizeof(char));
+	snprintf(buf, 8, "%u", 1 << data[0]);
+	return buf;
+}
+
+static char *fmt_fc_confirmation(uint8_t *data, uint16_t len) {
+	if(data == NULL) return strdup("<undef>");
+	if(len != 8) return fmt_hexstring(data, len);
+	char *buf = XCALLOC(128, sizeof(char));
+	uint32_t acked_tpdu_nr = ((uint32_t)(data[0] & 0x7f) << 24) |
+		((uint32_t)data[1] << 16) |
+		((uint32_t)data[2] << 8) |
+		(uint32_t)data[3];
+	uint16_t acked_subseq = ((uint16_t)data[4] << 8) | (uint16_t)data[5];
+	uint16_t acked_credit = ((uint16_t)data[6] << 8) | (uint16_t)data[7];
+	snprintf(buf, 128, "acked_tpdu_nr: %u acked_subseq: %hu acked_credit: %hu",
+		acked_tpdu_nr, acked_subseq, acked_credit);
+	return buf;
+}
+
 static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	cotp_pdu_parse_result r = { NULL, NULL, 0 };
 	cotp_pdu_t *pdu = XCALLOC(1, sizeof(cotp_pdu_t));
@@ -72,6 +95,10 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 		debug_print("header truncated: len %u < li %u\n", remaining, li);
 		goto fail;
 	}
+	if(remaining < COTP_TPDU_MIN_LEN) {
+		debug_print("TPDU too short: len %u < min_len %u\n", remaining, COTP_TPDU_MIN_LEN);
+		goto fail;
+	}
 	uint8_t code = ptr[0];
 	switch(code & 0xf0) {
 	case COTP_TPDU_CR:
@@ -79,14 +106,20 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 	case COTP_TPDU_AK:
 	case COTP_TPDU_RJ:
 		pdu->code = code & 0xf0;
+		pdu->credit = (uint16_t)(code & 0x0f);
 		break;
 	case COTP_TPDU_DT:
 		pdu->code = code & 0xfe;
+		pdu->roa = code & 0x1;
 		break;
 	default:
 		pdu->code = code;
 	}
 	debug_print("TPDU code: 0x%02x\n", pdu->code);
+
+	pdu->dst_ref = (ptr[1] << 8) | ptr[2];
+
+	uint16_t variable_part_offset = 0;
 	switch(pdu->code) {
 	case COTP_TPDU_CR:
 	case COTP_TPDU_CC:
@@ -95,31 +128,114 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 			debug_print("Truncated TPDU: code: 0x%02x len: %u\n", pdu->code, remaining);
 			goto fail;
 		}
-		if(pdu->code == COTP_TPDU_DR)
-			pdu->class_or_status = ptr[5];		// reason
-		else
-			pdu->class_or_status = ptr[5] >> 4;	// protocol class
+		pdu->src_ref = (ptr[3] << 8) | ptr[4];
+
+		if(pdu->code == COTP_TPDU_DR) {
+			pdu->class_or_disc_reason = ptr[5];		// reason
+		} else {						// CR or CC
+			pdu->class_or_disc_reason = ptr[5] >> 4;	// protocol class
+			pdu->options = ptr[5] & 0xf;
+		}
+		variable_part_offset = 6;
 		final_pdu = 1;
 		break;
 	case COTP_TPDU_ER:
-		if(remaining < 4) {
-			debug_print("Truncated TPDU: code: 0x%02x len: %u\n", pdu->code, remaining);
-			goto fail;
-		}
-		pdu->class_or_status = ptr[3];			// reject cause
+		pdu->class_or_disc_reason = ptr[3];			// reject cause
+		variable_part_offset = 4;
 		break;
 	case COTP_TPDU_DT:
 	case COTP_TPDU_ED:
+// If the header length is odd, assume it's an extended format.
+// This assumption holds true only if the length of all options in the variable part
+// is even (which is true for all options described in X.224 and Doc9705).
+		if(li & 1) {
+			if(remaining < 7) {
+				debug_print("Truncated TPDU: len: %u\n", remaining);
+				goto fail;
+			}
+			pdu->eot = (ptr[3] & 0x80) >> 7;
+			pdu->tpdu_seq = ((uint32_t)(ptr[3] & 0x7f) << 24) |
+				((uint32_t)ptr[4] << 16) |
+				((uint32_t)ptr[5] << 8) |
+				(uint32_t)ptr[6];
+			variable_part_offset = 7;
+			pdu->extended = true;
+		} else {			// normal format
+			pdu->eot = (ptr[3] & 0x80) >> 7;
+			pdu->tpdu_seq = (uint32_t)(ptr[3] & 0x7f);
+			variable_part_offset = 4;
+			pdu->extended = false;
+		}
 		final_pdu = 1;
 		break;
 	case COTP_TPDU_DC:
+		pdu->src_ref = (ptr[3] << 8) | ptr[4];
+		variable_part_offset = 5;
+		break;
 	case COTP_TPDU_AK:
+		if(li & 1) {
+			if(remaining < 9) {
+				debug_print("Truncated TPDU: len: %u\n", remaining);
+				goto fail;
+			}
+			pdu->tpdu_seq = ((uint32_t)(ptr[3] & 0x7f) << 24) |
+				((uint32_t)ptr[4] << 16) |
+				((uint32_t)ptr[5] << 8) |
+				(uint32_t)ptr[6];
+			pdu->credit = ((uint16_t)ptr[7] << 8) | (uint16_t)ptr[8];
+			variable_part_offset = 9;
+			pdu->extended = true;
+		} else {
+			pdu->tpdu_seq = (uint32_t)(ptr[3] & 0x7f);
+			variable_part_offset = 4;
+			pdu->extended = false;
+		}
+		break;
 	case COTP_TPDU_EA:
+		if(li & 1) {
+			if(remaining < 7) {
+				debug_print("Truncated TPDU: len: %u\n", remaining);
+				goto fail;
+			}
+			pdu->tpdu_seq = ((uint32_t)(ptr[3] & 0x7f) << 24) |
+				((uint32_t)ptr[4] << 16) |
+				((uint32_t)ptr[5] << 8) |
+				(uint32_t)ptr[6];
+			variable_part_offset = 7;
+			pdu->extended = true;
+		} else {
+			pdu->tpdu_seq = (uint32_t)(ptr[3] & 0x7f);
+			variable_part_offset = 4;
+			pdu->extended = false;
+		}
+		break;
 	case COTP_TPDU_RJ:
+		if(li & 1) {
+			if(remaining < 9) {
+				debug_print("Truncated TPDU: len: %u\n", remaining);
+				goto fail;
+			}
+			pdu->tpdu_seq = ((uint32_t)(ptr[3] & 0x7f) << 24) |
+				((uint32_t)ptr[4] << 16) |
+				((uint32_t)ptr[5] << 8) |
+				(uint32_t)ptr[6];
+			pdu->credit = ((uint16_t)ptr[7] << 8) | (uint16_t)ptr[8];
+			pdu->extended = true;
+		} else {
+			pdu->tpdu_seq = (uint32_t)(ptr[3] & 0x7f);
+			pdu->extended = false;
+		}
 		break;
 	default:
 		debug_print("Unknown TPDU code 0x%02x\n", pdu->code);
 		goto fail;
+	}
+	if(variable_part_offset > 0 && remaining > variable_part_offset) {
+		pdu->variable_part_params = tlv_deserialize(ptr + variable_part_offset,
+			(uint16_t)li - variable_part_offset,  1);
+		if(pdu->variable_part_params == NULL) {
+			goto fail;
+		}
 	}
 	if(final_pdu) {
 // user data is allowed in this PDU; if it's there, try to parse it
@@ -217,6 +333,43 @@ static const dict cotp_er_reject_causes[] = {
 	{ 0,  NULL }
 };
 
+// Some rarely used parameters which are not required to be supported
+// in the ATN are printed as hex strings. There's no point in providing
+// specific formatting routines for them, since they will probably never
+// be used in practice.
+static tlv_dict const cotp_variable_part_params[] = {
+	{ 0x08, fmt_hexstring, "ATN extended checksum" },
+	{ 0x85, fmt_uint16_msbfirst, "Ack time (ms)" },
+	{ 0x86, fmt_hexstring, "Residual error rate" },			// not required
+	{ 0x87, fmt_uint16_msbfirst, "Priority" },
+	{ 0x88, fmt_hexstring, "Transit delay" },			// not required
+	{ 0x89, fmt_hexstring, "Throughput" },				// not required
+	{ 0x8a, fmt_uint16_msbfirst, "Subsequence number" },
+	{ 0x8b, fmt_uint16_msbfirst, "Reassignment time (s)" },
+	{ 0x8c, fmt_fc_confirmation, "Flow control confirmation" },
+	{ 0x8f, fmt_hexstring, "Selective ACK" },
+	{ 0xc0, fmt_tpdu_size, "TPDU size (bytes)" },
+	{ 0xc1, fmt_uint16_msbfirst, "Calling transport selector" },
+	{ 0xc2, fmt_uint16_msbfirst, "Called/responding transport selector" },
+	{ 0xc3, fmt_hexstring, "Checksum" },
+	{ 0xc4, fmt_uint16_msbfirst, "Version" },
+	{ 0xc5, fmt_hexstring, "Protection params" },			// not required
+	{ 0xc6, fmt_hexstring, "Additional options" },
+	{ 0xc7, fmt_hexstring, "Additional protocol class(es)" },
+	{ 0xe0, fmt_hexstring, "Additional info" },			// DR
+	{ 0xf0, fmt_hexstring, "Preferred max. TPDU size (bytes)" },	// not required
+	{ 0xf2, fmt_uint32_msbfirst, "Inactivity timer (ms)" },
+	{ 0x00, NULL, NULL }
+};
+
+// Can't use cotp_variable_part_params for ER, because parameter 0xc1
+// has a different meaning.
+static tlv_dict const cotp_er_variable_part_params[] = {
+	{ 0xc1, fmt_hexstring, "Invalid TPDU header" },
+	{ 0xc3, fmt_hexstring, "Checksum" },
+	{ 0x00, NULL, NULL }
+};
+
 typedef struct {
 	la_vstring *vstr;
 	int indent;
@@ -233,27 +386,60 @@ static void output_cotp_pdu_as_text(gpointer p, gpointer user_data) {
 	char *str;
 
 	if(pdu->err == true) {
-		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable COTP TPDU\n");
+		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable X.224 COTP TPDU\n");
 		return;
 	}
 	char *tpdu_name = (char *)dict_search(cotp_tpdu_codes, pdu->code);
 	ASSERT(tpdu_name != NULL);
-	LA_ISPRINTF(vstr, indent, "COTP %s:\n", tpdu_name);
-	indent++;
+
+	LA_ISPRINTF(vstr, indent, "X.224 COTP %s%s:", tpdu_name,
+		pdu->extended ? " (extended)" : "");
 	switch(pdu->code) {
 	case COTP_TPDU_CR:
 	case COTP_TPDU_CC:
-		LA_ISPRINTF(vstr, indent, "Protocol class: %u\n", pdu->class_or_status);
+	case COTP_TPDU_DR:
+	case COTP_TPDU_DC:
+		la_vstring_append_sprintf(vstr, " src_ref: 0x%04x", pdu->src_ref);
+		/* FALLTHROUGH */
+	default:
+		la_vstring_append_sprintf(vstr, " dst_ref: 0x%04x\n", pdu->dst_ref);
+	}
+	indent++;
+
+	switch(pdu->code) {
+	case COTP_TPDU_CR:
+	case COTP_TPDU_CC:
+		LA_ISPRINTF(vstr, indent, "Initial credit: %hu\n", pdu->credit);
+		LA_ISPRINTF(vstr, indent, "Protocol class: %u\n", pdu->class_or_disc_reason);
+		LA_ISPRINTF(vstr, indent, "Options: %02x (use %s PDU formats)\n", pdu->options,
+			pdu->options & 2 ? "extended" : "normal");
+		tlv_format_as_text(vstr, pdu->variable_part_params, cotp_variable_part_params, indent);
+		break;
+	case COTP_TPDU_AK:
+	case COTP_TPDU_RJ:
+		LA_ISPRINTF(vstr, indent, "Credit: %hu\n", pdu->credit);
+		/* FALLTHROUGH */
+	case COTP_TPDU_EA:
+		LA_ISPRINTF(vstr, indent, "rseq: %u\n", pdu->tpdu_seq);
+		tlv_format_as_text(vstr, pdu->variable_part_params, cotp_variable_part_params, indent);
 		break;
 	case COTP_TPDU_ER:
-		str = (char *)dict_search(cotp_er_reject_causes, pdu->class_or_status);
-		LA_ISPRINTF(vstr, indent, "Reject cause: %u (%s)\n", pdu->class_or_status,
+		str = (char *)dict_search(cotp_er_reject_causes, pdu->class_or_disc_reason);
+		LA_ISPRINTF(vstr, indent, "Reject cause: %u (%s)\n", pdu->class_or_disc_reason,
 			(str ? str : "<unknown>"));
+		tlv_format_as_text(vstr, pdu->variable_part_params, cotp_er_variable_part_params, indent);
+		break;
+	case COTP_TPDU_DT:
+	case COTP_TPDU_ED:
+		LA_ISPRINTF(vstr, indent, "Request ACK: %u\n", pdu->roa);
+		LA_ISPRINTF(vstr, indent, "sseq: %u eot: %u\n", pdu->tpdu_seq, pdu->eot);
+		tlv_format_as_text(vstr, pdu->variable_part_params, cotp_variable_part_params, indent);
 		break;
 	case COTP_TPDU_DR:
-		str = (char *)dict_search(cotp_dr_reasons, pdu->class_or_status);
-		LA_ISPRINTF(vstr, indent, "Reason: %u (%s)\n", pdu->class_or_status,
+		str = (char *)dict_search(cotp_dr_reasons, pdu->class_or_disc_reason);
+		LA_ISPRINTF(vstr, indent, "Reason: %u (%s)\n", pdu->class_or_disc_reason,
 			(str ? str : "<unknown>"));
+		tlv_format_as_text(vstr, pdu->variable_part_params, cotp_variable_part_params, indent);
 		if(pdu->x225_xport_disc_reason >= 0) {
 			LA_ISPRINTF(vstr, indent,
 				"X.225 disconnect reason: %hd (%s)\n",
@@ -261,6 +447,9 @@ static void output_cotp_pdu_as_text(gpointer p, gpointer user_data) {
 				x225_xport_disc_reason_codes[pdu->x225_xport_disc_reason]
 			);
 		}
+		break;
+	case COTP_TPDU_DC:
+		tlv_format_as_text(vstr, pdu->variable_part_params, cotp_variable_part_params, indent);
 		break;
 	}
 }
@@ -274,7 +463,9 @@ void cotp_concatenated_pdu_format_text(la_vstring * const vstr, void const * con
 	g_slist_foreach(pdu_list, output_cotp_pdu_as_text, &(fmt_ctx_t){ .vstr = vstr, .indent = indent});
 }
 
-static void cotp_pdu_destroy(gpointer pdu) {
+static void cotp_pdu_destroy(gpointer ptr) {
+	CAST_PTR(pdu, cotp_pdu_t *, ptr);
+	tlv_list_free(pdu->variable_part_params);
 	XFREE(pdu);
 }
 

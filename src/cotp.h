@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <glib.h>
 #include <libacars/libacars.h>		// la_proto_node
+#include "tlv.h"
 
 // These defines apply to upper nibble of the TPDU code only
 #define COTP_TPDU_CR	0xe0
@@ -33,11 +34,21 @@
 #define COTP_TPDU_RJ	0x50
 #define COTP_TPDU_ER	0x70
 
+#define COTP_TPDU_MIN_LEN 4
+
 typedef struct {
+	tlv_list_t *variable_part_params;
+	uint32_t tpdu_seq;	// TPDU sequence number (valid for DT, ED, AK)
+	uint16_t src_ref, dst_ref;
+	uint16_t credit;	// (credit for AK, RJ, initial credit for CR, CC)
 	int16_t x225_xport_disc_reason;
 	uint8_t code;
+	uint8_t roa;		// Request of Acknowledgment (valid for DT)
+	uint8_t eot;		// last fragment of TSDU (valid for DT, ED)
+	uint8_t	options;	// Option flags (valid for CR)
 // protocol class for CR/CC, disconnect reason for DR, reject cause for ER
-	uint8_t class_or_status;
+	uint8_t class_or_disc_reason;
+	bool extended;		// TPDU format - normal or extended
 	bool err;
 } cotp_pdu_t;
 
