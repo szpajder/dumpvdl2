@@ -203,21 +203,23 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	node->next = NULL;
 
 	pkt->err = true;		// fail-safe value
-	if(len < X25_MIN_LEN) {
-		debug_print("Too short (len %u < min len %u)\n", len, X25_MIN_LEN);
-		goto end;
+	uint8_t *ptr = buf;
+	uint32_t remaining = len;
+	if(remaining < X25_MIN_LEN) {
+		debug_print("Too short (len %u < min len %u)\n", remaining, X25_MIN_LEN);
+		goto fail;
 	}
 
-	x25_hdr_t *hdr = (x25_hdr_t *)buf;
+	x25_hdr_t *hdr = (x25_hdr_t *)ptr;
 	debug_print("gfi=0x%02x group=0x%02x chan=0x%02x type=0x%02x\n", hdr->gfi,
 		hdr->chan_group, hdr->chan_num, hdr->type.val);
 	if(hdr->gfi != GFI_X25_MOD8) {
 		debug_print("Unsupported GFI 0x%x\n", hdr->gfi);
-		goto end;
+		goto fail;
 	}
 
-	uint8_t *ptr = buf + sizeof(x25_hdr_t);
-	len -= sizeof(x25_hdr_t);
+	ptr += sizeof(x25_hdr_t);
+	remaining -= sizeof(x25_hdr_t);
 
 	pkt->type = hdr->type.val;
 // Clear out insignificant bits in pkt->type to simplify comparisons later on
@@ -236,41 +238,41 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	switch(pkt->type) {
 	case X25_CALL_REQUEST:
 	case X25_CALL_ACCEPTED:
-		if((ret = parse_x25_address_block(pkt, ptr, len)) < 0) {
-			goto end;
+		if((ret = parse_x25_address_block(pkt, ptr, remaining)) < 0) {
+			goto fail;
 		}
-		ptr += ret; len -= ret;
-		if((ret = parse_x25_facility_field(pkt, ptr, len)) < 0) {
-			goto end;
+		ptr += ret; remaining -= ret;
+		if((ret = parse_x25_facility_field(pkt, ptr, remaining)) < 0) {
+			goto fail;
 		}
-		ptr += ret; len -= ret;
+		ptr += ret; remaining -= ret;
 		if(pkt->type == X25_CALL_REQUEST) {
-			if((ret = parse_x25_callreq_sndcf(pkt, ptr, len)) < 0) {
-				goto end;
+			if((ret = parse_x25_callreq_sndcf(pkt, ptr, remaining)) < 0) {
+				goto fail;
 			}
-			ptr += ret; len -= ret;
+			ptr += ret; remaining -= ret;
 		} else if(pkt->type == X25_CALL_ACCEPTED) {
-			if(len > 0) {
+			if(remaining > 0) {
 				pkt->compression = *ptr++;
-				len--;
+				remaining--;
 			} else {
 				debug_print("%s", "X25_CALL_ACCEPT: no payload\n");
-				goto end;
+				goto fail;
 			}
 		}
 	/* FALLTHROUGH */
 	/* because Fast Select is on, so there might be a data PDU in call req or accept */
 	case X25_DATA:
-		node->next = parse_x25_user_data(ptr, len, msg_type);
+		node->next = parse_x25_user_data(ptr, remaining, msg_type);
 		break;
 	case X25_CLEAR_REQUEST:
-		if(len > 0) {
+		if(remaining > 0) {
 			pkt->clr_cause = *ptr++;
-			len--;
+			remaining--;
 		}
-		if(len > 0) {
+		if(remaining > 0) {
 			pkt->diag_code = *ptr++;
-			len--;
+			remaining--;
 		}
 		break;
 	case X25_CLEAR_CONFIRM:
@@ -284,11 +286,13 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		break;
 	default:
 		debug_print("Unsupported packet identifier 0x%02x\n", pkt->type);
-		goto end;
+		goto fail;
 	}
 	pkt->hdr = hdr;
 	pkt->err = false;
-end:
+	return node;
+fail:
+	node->next = unknown_proto_pdu_new(buf, len);
 	return node;
 }
 
