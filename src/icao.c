@@ -337,9 +337,10 @@ la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t datalen, uint32_t *msg_typ
 		}
 // The next octet shall then contain a X.226 Amdt 1 (1997) Presentation layer protocol
 // control information. We only care about two least significant bits, which carry
-// encoding information - 0x2 indicates ASN.1 encoded with Packed Encoding Rules (X.691)
-		if((ptr[0] & 2) != 2) {
-			debug_print("Unknown PPDU payload encoding: %u\n", ptr[0] & 2);
+// encoding information - 0x2 indicates ASN.1 encoded with Packed Encoding Rules
+// Unaligned (X.691)
+		if((ptr[0] & 3) != 2) {
+			debug_print("Unknown PPDU payload encoding: %u\n", ptr[0] & 3);
 			goto fail;
 		}
 		ptr++; len--;
