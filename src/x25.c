@@ -68,16 +68,18 @@ static const dict x25_comp_algos[] = {
  * SNDCF Error Report decoder
  **********************************************************/
 
-// Forward declaration
+// Forward declarations
 la_type_descriptor const proto_DEF_X25_SNDCF_error_report;
+static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *msg_type);
 
 typedef struct {
 	uint8_t error_code;
 	uint8_t local_ref;
 	bool err;
+	bool errored_pdu_present;
 } sndcf_err_rpt_t;
 
-static la_proto_node *sndcf_error_report_parse(uint8_t *buf, uint32_t len) {
+static la_proto_node *sndcf_error_report_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	sndcf_err_rpt_t *rpt = XCALLOC(1, sizeof(sndcf_err_rpt_t));
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_X25_SNDCF_error_report;
@@ -92,7 +94,10 @@ static la_proto_node *sndcf_error_report_parse(uint8_t *buf, uint32_t len) {
 	rpt->error_code = buf[1];
 	rpt->local_ref = buf[2];
 	if(len > 3) {
-		node->next = unknown_proto_pdu_new(buf + 3, len - 3);
+		node->next = parse_x25_user_data(buf + 3, len - 3, msg_type);
+		rpt->errored_pdu_present = true;
+	} else {
+		rpt->errored_pdu_present = false;
 	}
 	rpt->err = false;
 	return node;
@@ -128,6 +133,9 @@ void sndcf_error_report_format_text(la_vstring * const vstr, void const * const 
 	LA_ISPRINTF(vstr, indent+1, "Cause: 0x%02x (%s)\n", rpt->error_code,
 		rpt->error_code <= SNDCF_ERR_MAX ? sndcf_error_descriptions[rpt->error_code] : "unknown");
 	LA_ISPRINTF(vstr, indent+1, "Local Reference: 0x%02x\n", rpt->local_ref);
+	if(rpt->errored_pdu_present) {
+		LA_ISPRINTF(vstr, indent, "%s", "Erroneous PDU:\n");
+	}
 }
 
 la_type_descriptor const proto_DEF_X25_SNDCF_error_report = {
@@ -266,7 +274,7 @@ static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *
 	if(pdu_type < 4) {
 		return clnp_compressed_init_pdu_parse(buf, len, msg_type);
 	} else if(proto == 0xe0) {
-		return sndcf_error_report_parse(buf, len);
+		return sndcf_error_report_parse(buf, len, msg_type);
 	}
 	return unknown_proto_pdu_new(buf, len);
 }
