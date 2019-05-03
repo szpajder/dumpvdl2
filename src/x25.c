@@ -272,7 +272,7 @@ static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *
 	}
 	uint8_t pdu_type = proto >> 4;
 	if(pdu_type < 4) {
-		return clnp_compressed_init_pdu_parse(buf, len, msg_type);
+		return clnp_compressed_init_data_pdu_parse(buf, len, msg_type);
 	} else if(proto == 0xe0) {
 		return sndcf_error_report_parse(buf, len, msg_type);
 	}

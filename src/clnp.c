@@ -28,7 +28,7 @@
 #include "cotp.h"
 
 // Forward declarations
-la_type_descriptor const proto_DEF_clnp_compressed_init_pdu;
+la_type_descriptor const proto_DEF_clnp_compressed_init_data_pdu;
 la_type_descriptor const proto_DEF_clnp_pdu;
 
 static la_proto_node *parse_clnp_pdu_payload(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
@@ -75,10 +75,10 @@ end:
 	return node;
 }
 
-la_proto_node *clnp_compressed_init_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	clnp_pdu_t *pdu = XCALLOC(1, sizeof(clnp_pdu_t));
+la_proto_node *clnp_compressed_init_data_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+	clnp_compressed_init_data_pdu_t *pdu = XCALLOC(1, sizeof(clnp_compressed_init_data_pdu_t));
 	la_proto_node *node = la_proto_node_new();
-	node->td = &proto_DEF_clnp_compressed_init_pdu;
+	node->td = &proto_DEF_clnp_compressed_init_data_pdu;
 	node->data = pdu;
 	node->next = NULL;
 
@@ -89,15 +89,33 @@ la_proto_node *clnp_compressed_init_pdu_parse(uint8_t *buf, uint32_t len, uint32
 	}
 
 	uint32_t hdrlen = CLNP_COMPRESSED_INIT_MIN_LEN;
-	if(buf[3] & 0x80) hdrlen += 1;		// EXP flag = 1 means localRef/B octet is present
-	if(buf[0] & 0x10) hdrlen += 2;		// odd PDU type means PDU identifier is present
+	CAST_PTR(hdr, clnp_compressed_init_data_pdu_hdr_t *, buf);
+	pdu->hdr = hdr;
+	if(hdr->exp != 0) hdrlen += 1;		// EXP flag = 1 means localRef/B octet is present
+	if(hdr->type & 1) hdrlen += 2;		// odd PDU type means PDU identifier is present
 
-	debug_print("buf[0]: %02x buf[3]: %02x hdrlen: %u\n", buf[0], buf[3], hdrlen);
+	debug_print("hdrlen: %u type: %02x prio: %02x lifetime: %02x flags: %02x exp: %d lref_a: %02x\n",
+		hdrlen, hdr->type, hdr->priority, hdr->lifetime, hdr->flags.val, hdr->exp, hdr->lref_a);
+
 	if(len < hdrlen) {
 		debug_print("header truncated: buf_len %u < hdr_len %u\n", len, hdrlen);
 		goto end;
 	}
-	buf += hdrlen; len -= hdrlen;
+	buf += 4; len -= 4;
+	if(hdr->exp != 0) {
+		debug_print("lref_b: %02x\n", buf[0]);
+		pdu->lref = ((uint16_t)(hdr->lref_a) << 8) | (uint16_t)buf[0];
+		buf++; len--;
+	} else {
+		pdu->lref = (uint16_t)(hdr->lref_a);
+	}
+	if(hdr->type & 1) {
+		pdu->pdu_id = extract_uint16_msbfirst(buf);
+		pdu->pdu_id_present = true;
+		buf += 2; len -= 2;
+	} else {
+		pdu->pdu_id_present = false;
+	}
 	node->next = parse_clnp_pdu_payload(buf, len, msg_type);
 	pdu->err = false;
 end:
@@ -117,21 +135,27 @@ void clnp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 	LA_ISPRINTF(vstr, indent, "%s", "CLNP PDU:\n");
 }
 
-void clnp_compressed_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
+void clnp_compressed_init_data_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(pdu, clnp_pdu_t *, data);
+	CAST_PTR(pdu, clnp_compressed_init_data_pdu_t *, data);
 	if(pdu->err == true) {
-		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable CLNP PDU\n");
+		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable CLNP Data PDU (compressed)\n");
 		return;
 	}
-	LA_ISPRINTF(vstr, indent, "%s", "CLNP PDU, compressed header:\n");
+	LA_ISPRINTF(vstr, indent, "%s", "CLNP Data PDU (compressed):\n");
+	indent++;
+	LA_ISPRINTF(vstr, indent, "LRef: 0x%x, Prio: %u Lifetime: %u Flags: 0x%02x\n",
+		pdu->lref, pdu->hdr->priority, pdu->hdr->lifetime, pdu->hdr->flags.val);
+	if(pdu->pdu_id_present) {
+		LA_ISPRINTF(vstr, indent, "PDU Id: %u\n", pdu->pdu_id);
+	}
 }
 
-la_type_descriptor const proto_DEF_clnp_compressed_init_pdu = {
-	.format_text = clnp_compressed_pdu_format_text,
+la_type_descriptor const proto_DEF_clnp_compressed_init_data_pdu = {
+	.format_text = clnp_compressed_init_data_pdu_format_text,
 	.destroy = NULL,
 };
 

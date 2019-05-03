@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <libacars/libacars.h>		// la_proto_node
+#include "config.h"
 #include "x25.h"
 
 // CLNP header dissection is not implemented yet
@@ -29,6 +30,56 @@ typedef struct {
 	bool err;
 } clnp_pdu_t;
 
+typedef struct {
+#ifdef IS_BIG_ENDIAN
+	uint8_t type:4;
+	uint8_t priority:4;
+#else
+	uint8_t priority:4;
+	uint8_t type:4;
+#endif
+	uint8_t lifetime;
+	union {
+		uint8_t val;
+		struct {
+#ifdef IS_BIG_ENDIAN
+			uint8_t p:1;
+			uint8_t q:1;
+			uint8_t r:1;
+			uint8_t st:1;
+			uint8_t ce:1;
+			uint8_t tc:1;
+			uint8_t et:1;
+			uint8_t ec:1;
+#else
+			uint8_t ec:1;
+			uint8_t et:1;
+			uint8_t tc:1;
+			uint8_t ce:1;
+			uint8_t st:1;
+			uint8_t r:1;
+			uint8_t q:1;
+			uint8_t p:1;
+#endif
+		} fields;
+	} flags;
+#ifdef IS_BIG_ENDIAN
+	uint8_t exp:1;
+	uint8_t lref_a:7;
+#else
+	uint8_t lref_a:7;
+	uint8_t exp:1;
+#endif
+} clnp_compressed_init_data_pdu_hdr_t;
+
+typedef struct {
+	clnp_compressed_init_data_pdu_hdr_t *hdr;
+	uint16_t lref;
+	uint16_t pdu_id;
+	bool pdu_id_present;
+	bool err;
+} clnp_compressed_init_data_pdu_t;
+
 // clnp.c
 la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type);
-la_proto_node *clnp_compressed_init_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type);
+la_proto_node *clnp_compressed_init_data_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type);
