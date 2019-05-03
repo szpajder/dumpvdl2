@@ -63,8 +63,83 @@ static const dict x25_comp_algos[] = {
 	{ 0x0,  NULL }
 };
 
-// Forward declaration
 
+/**********************************************************
+ * SNDCF Error Report decoder
+ **********************************************************/
+
+// Forward declaration
+la_type_descriptor const proto_DEF_X25_SNDCF_error_report;
+
+typedef struct {
+	uint8_t error_code;
+	uint8_t local_ref;
+	bool err;
+} sndcf_err_rpt_t;
+
+static la_proto_node *sndcf_error_report_parse(uint8_t *buf, uint32_t len) {
+	sndcf_err_rpt_t *rpt = XCALLOC(1, sizeof(sndcf_err_rpt_t));
+	la_proto_node *node = la_proto_node_new();
+	node->td = &proto_DEF_X25_SNDCF_error_report;
+	node->data = rpt;
+	node->next = NULL;
+
+	rpt->err = true;		// fail-safe value
+	if(len < 3) {
+		debug_print("Too short (len %u < min len %u)\n", len, 3);
+		goto fail;
+	}
+	rpt->error_code = buf[1];
+	rpt->local_ref = buf[2];
+	if(len > 3) {
+		node->next = unknown_proto_pdu_new(buf + 3, len - 3);
+	}
+	rpt->err = false;
+	return node;
+fail:
+	node->next = unknown_proto_pdu_new(buf, len);
+	return node;
+}
+
+static char const * const sndcf_error_descriptions[] = {
+	[0] = "Compressed NPDU with unrecognized Local Reference",
+	[1] = "Creation of directory entry outside of sender's permitted range",
+	[2] = "Directory entry exists",
+	[3] = "Local Reference greater than maximum value accepted",
+	[4] = "Data Unit Identifier missing when SP=1",
+	[5] = "reserved",
+	[6] = "reserved",
+	[7] = "Compressed CLNP PDU with unrecognized type",
+	[8] = "Local Reference cancellation error"
+};
+#define SNDCF_ERR_MAX 8
+
+void sndcf_error_report_format_text(la_vstring * const vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+	ASSERT(indent >= 0);
+
+	CAST_PTR(rpt, sndcf_err_rpt_t *, data);
+	if(rpt->err == true) {
+		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable SNDCF Error Report\n");
+		return;
+	}
+	LA_ISPRINTF(vstr, indent, "%s", "SNDCF Error Report:\n");
+	LA_ISPRINTF(vstr, indent+1, "Cause: 0x%02x (%s)\n", rpt->error_code,
+		rpt->error_code <= SNDCF_ERR_MAX ? sndcf_error_descriptions[rpt->error_code] : "unknown");
+	LA_ISPRINTF(vstr, indent+1, "Local Reference: 0x%02x\n", rpt->local_ref);
+}
+
+la_type_descriptor const proto_DEF_X25_SNDCF_error_report = {
+	.format_text = sndcf_error_report_format_text,
+	.destroy = NULL
+};
+
+/**********************************************************
+ * X.25 decoder
+ **********************************************************/
+
+// Forward declaration
 la_type_descriptor const proto_DEF_X25_pkt;
 
 static char *fmt_x25_addr(uint8_t *data, uint8_t len) {
@@ -86,7 +161,6 @@ static char *fmt_x25_addr(uint8_t *data, uint8_t len) {
 	}
 	return buf;
 }
-
 
 static int parse_x25_address_block(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
 	if(len == 0) return -1;
@@ -191,6 +265,8 @@ static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *
 	uint8_t pdu_type = proto >> 4;
 	if(pdu_type < 4) {
 		return clnp_compressed_init_pdu_parse(buf, len, msg_type);
+	} else if(proto == 0xe0) {
+		return sndcf_error_report_parse(buf, len);
 	}
 	return unknown_proto_pdu_new(buf, len);
 }
