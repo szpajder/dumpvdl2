@@ -147,7 +147,7 @@ void clnp_compressed_init_data_pdu_format_text(la_vstring * const vstr, void con
 	}
 	LA_ISPRINTF(vstr, indent, "%s", "CLNP Data PDU (compressed):\n");
 	indent++;
-	LA_ISPRINTF(vstr, indent, "LRef: 0x%x, Prio: %u Lifetime: %u Flags: 0x%02x\n",
+	LA_ISPRINTF(vstr, indent, "LRef: 0x%x Prio: %u Lifetime: %u Flags: 0x%02x\n",
 		pdu->lref, pdu->hdr->priority, pdu->hdr->lifetime, pdu->hdr->flags.val);
 	if(pdu->pdu_id_present) {
 		LA_ISPRINTF(vstr, indent, "PDU Id: %u\n", pdu->pdu_id);
