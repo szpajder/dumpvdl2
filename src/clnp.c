@@ -341,10 +341,10 @@ void clnp_compressed_init_data_pdu_format_text(la_vstring * const vstr, void con
 
 	CAST_PTR(pdu, clnp_compressed_init_data_pdu_t *, data);
 	if(pdu->err == true) {
-		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable CLNP Data PDU (compressed)\n");
+		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable X.233 CLNP compressed header PDU\n");
 		return;
 	}
-	LA_ISPRINTF(vstr, indent, "%s", "CLNP Data PDU (compressed):\n");
+	LA_ISPRINTF(vstr, indent, "%s", "X.233 CLNP Data (compressed header):\n");
 	indent++;
 	LA_ISPRINTF(vstr, indent, "LRef: 0x%x Prio: %u Lifetime: %u Flags: 0x%02x\n",
 		pdu->lref, pdu->hdr->priority, pdu->hdr->lifetime, pdu->hdr->flags.val);
