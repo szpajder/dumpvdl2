@@ -22,14 +22,52 @@
 #include "config.h"
 #include "x25.h"
 
-// CLNP header dissection is not implemented yet
-#define CLNP_MIN_LEN 2
-#define CLNP_COMPRESSED_INIT_MIN_LEN 4
+#define CLNP_NPDU_DT  0x1c
+#define CLNP_NDPU_MD  0x1d
+#define CLNP_NDPU_ER  0x01
+#define CLNP_NDPU_ERP 0x1e
+#define CLNP_NDPU_ERQ 0x1f
+
+#define CLNP_MIN_LEN 9		// length of the fixed part of the header
+typedef struct {
+	uint8_t pid;
+	uint8_t len;
+	uint8_t version;
+	uint8_t lifetime;
+#ifdef IS_BIG_ENDIAN
+	uint8_t sp:1;
+	uint8_t ms:1;
+	uint8_t er:1;
+	uint8_t type:5;
+#else
+	uint8_t type:5;
+	uint8_t er:1;
+	uint8_t ms:1;
+	uint8_t sp:1;
+#endif
+	uint8_t seg_len[2];	// not using uint16_t to avoid padding and to match PDU octet layout
+	uint8_t cksum[2];
+} clnp_hdr_t;
 
 typedef struct {
+// fixed part
+	clnp_hdr_t *hdr;
+// options
+	tlv_list_t *options;
+// address part
+	octet_string_t src_nsap, dst_nsap;
+// decoded fields from fixed part
+	float lifetime_sec;
+	uint16_t seg_len;
+	uint16_t cksum;
+// segmentation part
+	uint16_t pdu_id, seg_off, total_init_pdu_len;
+// error flags
 	bool err;
+	bool payload_truncated;
 } clnp_pdu_t;
 
+#define CLNP_COMPRESSED_INIT_MIN_LEN 4
 typedef struct {
 #ifdef IS_BIG_ENDIAN
 	uint8_t type:4;
