@@ -143,6 +143,12 @@ char *fmt_uint32_msbfirst(uint8_t *data, uint16_t len) {
 	return buf;
 }
 
+octet_string_t *octet_string_new(void *buf, size_t len) {
+	octet_string_t *ostring = XCALLOC(1, sizeof(octet_string_t));
+	ostring->buf = buf;
+	ostring->len = len;
+	return ostring;
+}
 
 size_t slurp_hexstring(char* string, uint8_t **buf) {
 	if(string == NULL)
@@ -265,9 +271,7 @@ la_type_descriptor const proto_DEF_unknown = {
 };
 
 la_proto_node *unknown_proto_pdu_new(void *buf, size_t len) {
-	octet_string_t *ostring = XCALLOC(1, sizeof(octet_string_t));
-	ostring->buf = buf;
-	ostring->len = len;
+	octet_string_t *ostring = octet_string_new(buf, len);
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_unknown;
 	node->data = ostring;
