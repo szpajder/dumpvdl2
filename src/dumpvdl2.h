@@ -324,6 +324,7 @@ char *fmt_uint16_msbfirst(uint8_t *data, uint16_t len);
 char *fmt_uint32_msbfirst(uint8_t *data, uint16_t len);
 char *fmt_bitfield(uint8_t val, const dict *d);
 octet_string_t *octet_string_new(void *buf, size_t len);
+int octet_string_parse(uint8_t *buf, uint32_t len, octet_string_t *result);
 size_t slurp_hexstring(char* string, uint8_t **buf);
 char *hexdump(uint8_t *data, size_t len);
 void append_hexdump_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int indent);

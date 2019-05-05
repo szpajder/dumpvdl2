@@ -150,6 +150,22 @@ octet_string_t *octet_string_new(void *buf, size_t len) {
 	return ostring;
 }
 
+int octet_string_parse(uint8_t *buf, uint32_t len, octet_string_t *result) {
+	ASSERT(buf != NULL);
+	if(len == 0) {
+		debug_print("%s", "empty buffer\n");
+		return -1;
+	}
+	uint8_t buflen = *buf++; len--;
+	if(len < buflen) {
+		debug_print("buffer truncated: len %u < expected %u\n", len, buflen);
+		return -1;
+	}
+	result->buf = buf;
+	result->len = buflen;
+	return 1 + buflen;	// total number of consumed octets
+}
+
 size_t slurp_hexstring(char* string, uint8_t **buf) {
 	if(string == NULL)
 		return 0;
