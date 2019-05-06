@@ -125,19 +125,13 @@ la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		}
 	}
 
-	if(len < pdu->seg_len) {
-		debug_print("payload truncated: len %u < seg_len %u\n", len, pdu->seg_len);
-		node->next = unknown_proto_pdu_new(buf + hdr->len, len - hdr->len);
-		pdu->payload_truncated = true;
-	} else {
 // If this is an Error Report NPDU, the data part contains a header (and possibly some data)
 // of the NPDU which caused the error, so we re-run CLNP parser here.
-		if(pdu->hdr->type == CLNP_NDPU_ER) {
-			node->next = clnp_pdu_parse(buf + hdr->len, len - hdr->len, msg_type);
-		} else {
+	if(pdu->hdr->type == CLNP_NDPU_ER) {
+		node->next = clnp_pdu_parse(buf + hdr->len, len - hdr->len, msg_type);
+	} else {
 // Otherwise process as a normal CLNP payload.
-			node->next = parse_clnp_pdu_payload(buf + hdr->len, len - hdr->len, msg_type);
-		}
+		node->next = parse_clnp_pdu_payload(buf + hdr->len, len - hdr->len, msg_type);
 	}
 	pdu->err = false;
 	return node;
@@ -259,9 +253,6 @@ void clnp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 	}
 	if(pdu->hdr->type == CLNP_NDPU_ER) {
 		LA_ISPRINTF(vstr, indent-1, "%s", "Erroneous NPDU:\n");
-	}
-	if(pdu->payload_truncated) {
-		LA_ISPRINTF(vstr, indent, "%s", "-- Payload truncated\n");
 	}
 }
 

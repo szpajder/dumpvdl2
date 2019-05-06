@@ -64,7 +64,6 @@ typedef struct {
 	uint16_t pdu_id, seg_off, total_init_pdu_len;
 // error flags
 	bool err;
-	bool payload_truncated;
 } clnp_pdu_t;
 
 #define CLNP_COMPRESSED_INIT_MIN_LEN 4
