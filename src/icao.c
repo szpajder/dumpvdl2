@@ -312,7 +312,7 @@ fed_cleanup:
 	return;
 }
 
-la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t datalen, uint32_t *msg_type) {
+la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	icao_apdu_t *icao_apdu = XCALLOC(1, sizeof(icao_apdu_t));
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_icao_apdu;
@@ -320,19 +320,19 @@ la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t datalen, uint32_t *msg_typ
 	node->next = NULL;
 
 	icao_apdu->err = true;		// fail-safe default
-	if(datalen < 1) {
-		debug_print("APDU too short (len: %d)\n", datalen);
+	if(len < 1) {
+		debug_print("APDU too short (len: %u)\n", len);
 		goto fail;
 	}
 	uint8_t *ptr = buf;
-	uint32_t len = datalen;
+	uint32_t remaining = len;
 // Check if it's a X.225 Amdt 1 (1997) Short-form SPDU.
 // All SPDU types have the 8-th bit of SI&P field (the first octet) set to 1.
 	if((ptr[0] & 0x80) != 0) {
 		icao_apdu->spdu_id = ptr[0] & 0xf8;
 		icao_apdu->spdu_special_data = ptr[0] & 0x3;
-		ptr++; len--;
-		if(len == 0) {
+		ptr++; remaining--;
+		if(remaining == 0) {
 			goto end;
 		}
 // The next octet shall then contain a X.226 Amdt 1 (1997) Presentation layer protocol
@@ -343,17 +343,17 @@ la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t datalen, uint32_t *msg_typ
 			debug_print("Unknown PPDU payload encoding: %u\n", ptr[0] & 3);
 			goto fail;
 		}
-		ptr++; len--;
-		if(len == 0) {
+		ptr++; remaining--;
+		if(remaining == 0) {
 			goto end;
 		}
 // Decode as ICAO Doc 9705 / X.227 ACSE APDU
 // Special case: Short Connect SPDUs often contain single-byte payloads with a value of 0.
 // Skip these, because the ASN.1 parser will error-out on them.
-		if(len == 1 && ptr[0] == 0) {
+		if(remaining == 1 && ptr[0] == 0) {
 			goto end;
 		}
-		decode_ulcs_acse(icao_apdu, ptr, len, msg_type);
+		decode_ulcs_acse(icao_apdu, ptr, remaining, msg_type);
 		if(icao_apdu->type == NULL) {
 			goto fail;
 		}
@@ -361,7 +361,7 @@ la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t datalen, uint32_t *msg_typ
 // Long-Form SPDUs are not used in the ATN, hence this must be a NULL encoding of Session
 // Layer and Presentation Layer, ie. only user data field is present without any header.
 // Decode it as Fully-encoded-data.
-		decode_fully_encoded_data(icao_apdu, ptr, len, msg_type);
+		decode_fully_encoded_data(icao_apdu, ptr, remaining, msg_type);
 		if(icao_apdu->type == NULL) {
 			goto fail;
 		}
@@ -370,7 +370,7 @@ end:
 	icao_apdu->err = false;
 	return node;
 fail:
-	node->next = unknown_proto_pdu_new(buf, datalen);
+	node->next = unknown_proto_pdu_new(buf, len);
 	return node;
 }
 

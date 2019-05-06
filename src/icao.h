@@ -35,4 +35,4 @@ typedef struct {
 #define ICAO_APP_TYPE_UNKNOWN	-1
 
 // icao.c
-la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t datalen, uint32_t *msg_type);
+la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type);
