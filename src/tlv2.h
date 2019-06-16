@@ -28,12 +28,13 @@ typedef struct {
 	int indent;
 } tlv2_formatter_ctx_t;
 
-typedef void *(tlv2_parser_f)(uint8_t *buf, uint32_t len);
+typedef void *(tlv2_parser_f)(uint8_t typecode, uint8_t *buf, uint32_t len);
 typedef void(tlv2_formatter_f)(tlv2_formatter_ctx_t * const ctx, char const * const label, void const * const data);
 typedef void(tlv2_destructor_f)(void *data);
 
-#define TLV2_PARSER(x) void *(x)(uint8_t *buf, uint32_t len)
+#define TLV2_PARSER(x) void *(x)(uint8_t typecode, uint8_t *buf, uint32_t len)
 #define TLV2_FORMATTER(x) void (x)(tlv2_formatter_ctx_t * const ctx, char const * const label, void const * const data)
+#define TLV2_DESTRUCTOR(x) void (x)(void *data)
 
 typedef struct {
 	char const * const label;

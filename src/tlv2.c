@@ -24,6 +24,8 @@
 
 // Forward declarations
 tlv2_type_descriptor_t tlv2_DEF_unknown_tag;
+tlv2_type_descriptor_t tlv2_DEF_unparseable_tag;
+tlv2_type_descriptor_t tlv2_DEF_unknown_tag;
 
 static void tlv2_tag_destroy(void *tag) {
 	if(tag == NULL) {
@@ -91,9 +93,13 @@ la_list *tlv2_parse(uint8_t *buf, uint16_t len, dict const *tag_table, uint8_t l
 			td = &tlv2_DEF_unknown_tag;
 		}
 		ASSERT(td->parse != NULL);
-		void *parsed = td->parse(ptr, datalen);
+		void *parsed = NULL;
+reparse:
+		parsed = td->parse(typecode, ptr, datalen);
 		if(parsed == NULL) {
-			td = NULL;
+			td = &tlv2_DEF_unparseable_tag;
+// tlv2_unparseable_tag_parse() does not return NULL, so we don't expect a loop here
+			goto reparse;
 		}
 		head = tlv2_list_append(head, typecode, td, parsed);
 		ptr += datalen; len -= datalen;
@@ -109,13 +115,9 @@ static void tlv2_tag_output_text(void const * const p, void *ctx) {
 	ASSERT(ctx);
 
 	CAST_PTR(t, tlv2_tag_t *, p);
-	CAST_PTR(c, tlv2_formatter_ctx_t *, ctx);
-	if(t->td == NULL) {
-		LA_ISPRINTF(c->vstr, c->indent, "-- Unparseable TLV (code: %u)\n", t->typecode);
-		return;
-	}
+	ASSERT(t->td != NULL);
 	if(t->td->format_text != NULL) {
-		t->td->format_text(c, t->td->label, t->data);
+		t->td->format_text(ctx, t->td->label, t->data);
 	}
 }
 
@@ -135,6 +137,8 @@ void tlv2_list_format_text(la_vstring * const vstr, la_list *tlv_list, int inden
 // Parsers and formatters for common data types
 
 TLV2_PARSER(tlv2_octet_string_parse) {
+// -Wunused-parameter
+	(void)typecode;
 	return octet_string_new(buf, len);
 }
 
@@ -143,12 +147,57 @@ TLV2_FORMATTER(tlv2_octet_string_format_text) {
 	octet_string_format_text(ctx->vstr, data, 0);
 }
 
+typedef struct {
+	uint8_t typecode;
+	octet_string_t *data;
+} tlv2_unparsed_tag_t;
+
+TLV2_PARSER(tlv2_unknown_tag_parse) {
+	tlv2_unparsed_tag_t *t = XCALLOC(1, sizeof(tlv2_unparsed_tag_t));
+	t->typecode = typecode;
+	t->data = octet_string_new(buf, len);
+	return t;
+}
+
+TLV2_FORMATTER(tlv2_unknown_tag_format_text) {
+// -Wunused-parameter
+	(void)label;
+	CAST_PTR(t, tlv2_unparsed_tag_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "-- Unknown TLV (code: 0x%02x): ", t->typecode);
+	octet_string_format_text(ctx->vstr, t->data, 0);
+}
+
+TLV2_DESTRUCTOR(tlv2_unknown_tag_destroy) {
+	if(data == NULL) {
+		return;
+	}
+	CAST_PTR(t, tlv2_unparsed_tag_t *, data);
+	XFREE(t->data);
+	XFREE(t);
+}
+
 tlv2_type_descriptor_t tlv2_DEF_unknown_tag = {
-// TODO: Print typecode in label
 	.label = "Unknown tag",
 	.json_key = NULL,
-	.parse = tlv2_octet_string_parse,
-	.format_text = tlv2_octet_string_format_text,
+	.parse = tlv2_unknown_tag_parse,
+	.format_text = tlv2_unknown_tag_format_text,
 	.format_json = NULL,
-	.destroy = NULL
+	.destroy = tlv2_unknown_tag_destroy
+};
+
+TLV2_FORMATTER(tlv2_unparseable_tag_format_text) {
+// -Wunused-parameter
+	(void)label;
+	CAST_PTR(t, tlv2_unparsed_tag_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "-- Unparseable TLV (code: 0x%02x): ", t->typecode);
+	octet_string_format_text(ctx->vstr, t->data, 0);
+}
+
+tlv2_type_descriptor_t tlv2_DEF_unparseable_tag = {
+	.label = "Unparseable tag",
+	.json_key = NULL,
+	.parse = tlv2_unknown_tag_parse,
+	.format_text = tlv2_unparseable_tag_format_text,
+	.format_json = NULL,
+	.destroy = tlv2_unknown_tag_destroy
 };
