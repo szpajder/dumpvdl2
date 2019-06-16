@@ -180,6 +180,7 @@ add_library (dumpvdl2_base OBJECT
 	output.c
 	rs.c
 	tlv.c
+	tlv2.c
 	util.c
 	x25.c
 	xid.c

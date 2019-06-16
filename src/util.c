@@ -166,6 +166,15 @@ int octet_string_parse(uint8_t *buf, uint32_t len, octet_string_t *result) {
 	return 1 + buflen;	// total number of consumed octets
 }
 
+void octet_string_format_text(la_vstring * const vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data != NULL);
+	ASSERT(indent >= 0);
+
+	CAST_PTR(ostring, octet_string_t *, data);
+	append_hexstring_with_indent(vstr, ostring->buf, ostring->len, indent);
+}
+
 size_t slurp_hexstring(char* string, uint8_t **buf) {
 	if(string == NULL)
 		return 0;
@@ -267,6 +276,7 @@ void append_hexstring_with_indent(la_vstring *vstr, uint8_t *data, size_t len, i
 // la_proto_node routines for unknown protocols
 // which are to be serialized as octet string (hex dump or hex string)
 
+// TODO: make this a wrapper around octet_string_format_text()
 void unknown_proto_format_text(la_vstring * const vstr, void const * const data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data != NULL);
