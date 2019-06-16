@@ -22,6 +22,7 @@
 #include <libacars/libacars.h>		// la_proto_node
 #include <libacars/vstring.h>		// la_vstring
 #include "dumpvdl2.h"
+#include "tlv2.h"
 #include "clnp.h"
 #include "esis.h"			// esis_pdu_parse()
 #include "idrp.h"			// idrp_pdu_parse()
@@ -50,8 +51,110 @@ static la_proto_node *parse_clnp_pdu_payload(uint8_t *buf, uint32_t len, uint32_
  * Uncompressed CLNP NPDU decoder
  **********************************/
 
-// Forward declaration
+// Forward declarations
 la_type_descriptor const proto_DEF_clnp_pdu;
+TLV2_PARSER(clnp_error_code_parse);
+TLV2_FORMATTER(clnp_error_code_format_text);
+
+static dict const clnp_options[] = {
+// Doc 9705, 5.7.6.3.2.4.10
+	{
+		.id = 0x05,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "LRef",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+// Standard X.233 options
+	{
+		.id = 0xc3,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "QoS maintenance",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		 },
+	},
+	{
+		.id = 0xc1,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Discard reason",
+			.parse = clnp_error_code_parse,
+			.format_text = clnp_error_code_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0xc4,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Prefix-based scope control",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		 },
+	},
+	{
+		.id = 0xc5,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Security",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		 },
+	},
+	{
+		.id = 0xc6,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Radius scope control",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		 },
+	},
+	{
+		.id = 0xc8,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Source routing",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		 },
+	},
+	{
+		.id = 0xcb,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Record route",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		 },
+	},
+	{
+		.id = 0xcc,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Padding",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		 },
+	},
+	{
+		.id = 0xcd,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Priority",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		 },
+	},
+	{
+		.id = 0x0,
+		.val = NULL
+	}
+};
+
 
 la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	clnp_pdu_t *pdu = XCALLOC(1, sizeof(clnp_pdu_t));
@@ -118,9 +221,9 @@ la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	int options_part_len = hdr->len - (ptr - buf);
 	debug_print("options_part_len: %d\n", options_part_len);
 	if(options_part_len > 0) {
-		pdu->options = tlv_deserialize(ptr, (uint16_t)options_part_len, 1);
+		pdu->options = tlv2_parse(ptr, (uint16_t)options_part_len, clnp_options, 1);
 		if(pdu->options == NULL) {
-			debug_print("%s", "tlv_deserialize failed on options part\n");
+			debug_print("%s", "tlv2_parse failed on options part\n");
 			goto fail;
 		}
 	}
@@ -140,7 +243,28 @@ fail:
 	return node;
 }
 
-static char *fmt_clnp_error_code(uint8_t *data, uint16_t len) {
+typedef struct {
+	uint8_t code;
+	uint8_t erroneous_octet;
+} clnp_error_t;
+
+TLV2_PARSER(clnp_error_code_parse) {
+// -Wunused-parameter
+	(void)typecode;
+	ASSERT(buf != NULL);
+	ASSERT(len > 0);
+
+	debug_print("len: %u\n", len);
+	if(len != 2) {
+		return NULL;
+	}
+	clnp_error_t *e = XCALLOC(1, sizeof(clnp_error_t));
+	e->code = buf[0];
+	e->erroneous_octet = buf[1];
+	return e;
+}
+
+TLV2_FORMATTER(clnp_error_code_format_text) {
 	static dict const clnp_error_codes[] = {
 		{ .id = 0x00, .val = "Reason not specified" },
 		{ .id = 0x01, .val = "Protocol procedure error" },
@@ -168,34 +292,14 @@ static char *fmt_clnp_error_code(uint8_t *data, uint16_t len) {
 		{ .id = 0xc0, .val = "Reassembly interference" },
 		{ .id = 0, .val = NULL }
 	};
-	if(data == NULL) return strdup("<undef>");
-	if(len != 2) return fmt_hexstring(data, len);
-	char *buf = XCALLOC(128, sizeof(char));
-	char *str = dict_search(clnp_error_codes, data[0]);
-	if(data[1] == 0) {
-		snprintf(buf, 128, "%u (%s)", data[0], str ? str : "unknown");
-	} else {
-		snprintf(buf, 128, "%u (%s), erroneous octet value: 0x%02x",
-			data[0], str ? str : "unknown", data[1]);
+	CAST_PTR(e, clnp_error_t *, data);
+	char *str = dict_search(clnp_error_codes, e->code);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %u (%s)", label, e->code, str ? str : "unknown");
+	if(e->erroneous_octet != 0) {
+		la_vstring_append_sprintf(ctx->vstr, ", erroneous octet value: 0x%02x", e->erroneous_octet);
 	}
-	return buf;
+	la_vstring_append_sprintf(ctx->vstr, "%s", "\n");
 }
-
-static tlv_dict const clnp_options[] = {
-// Doc 9705, 5.7.6.3.2.4.10
-	{ .id = 0x05, .stringify = fmt_hexstring, .description = "LRef" },
-// Standard X.233 options
-	{ .id = 0xc3, .stringify = fmt_hexstring, .description = "QoS maintenance" },
-	{ .id = 0xc1, .stringify = fmt_clnp_error_code, .description = "Error code" },
-	{ .id = 0xc4, .stringify = fmt_hexstring, .description = "Prefix-based scope control" },
-	{ .id = 0xc5, .stringify = fmt_hexstring, .description = "Security" },
-	{ .id = 0xc6, .stringify = fmt_hexstring, .description = "Radius scope control" },
-	{ .id = 0xc8, .stringify = fmt_hexstring, .description = "Source routing" },
-	{ .id = 0xcb, .stringify = fmt_hexstring, .description = "Record route" },
-	{ .id = 0xcc, .stringify = fmt_hexstring, .description = "Padding" },
-	{ .id = 0xcd, .stringify = fmt_hexstring, .description = "Priority" },
-	{ .id = 0x0,  .stringify = NULL,          .description = NULL }
-};
 
 void clnp_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
 	static dict const clnp_pdu_types[] = {
@@ -249,7 +353,7 @@ void clnp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 	}
 	if(pdu->options != NULL) {
 		LA_ISPRINTF(vstr, indent, "%s", "Options:\n");
-		tlv_format_as_text(vstr, pdu->options, clnp_options, indent+1);
+		tlv2_list_format_text(vstr, pdu->options, indent+1);
 	}
 	if(pdu->hdr->type == CLNP_NDPU_ER) {
 		LA_ISPRINTF(vstr, indent-1, "%s", "Erroneous NPDU:\n");
@@ -261,7 +365,7 @@ void clnp_pdu_destroy(void *data) {
 		return;
 	}
 	CAST_PTR(pdu, clnp_pdu_t *, data);
-	tlv_list_free(pdu->options);
+	tlv2_list_destroy(pdu->options);
 	pdu->options = NULL;
 	XFREE(data);
 }

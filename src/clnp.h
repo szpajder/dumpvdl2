@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <libacars/libacars.h>		// la_proto_node
+#include <libacars/list.h>		// la_list
 #include "config.h"
 #include "x25.h"
 
@@ -53,7 +54,7 @@ typedef struct {
 // fixed part
 	clnp_hdr_t *hdr;
 // options
-	tlv_list_t *options;
+	la_list *options;
 // address part
 	octet_string_t src_nsap, dst_nsap;
 // decoded fields from fixed part
