@@ -28,11 +28,11 @@ typedef struct {
 	int indent;
 } tlv2_formatter_ctx_t;
 
-typedef void *(tlv2_parser_f)(uint8_t typecode, uint8_t *buf, uint32_t len);
+typedef void *(tlv2_parser_f)(uint8_t typecode, uint8_t *buf, size_t len);
 typedef void(tlv2_formatter_f)(tlv2_formatter_ctx_t * const ctx, char const * const label, void const * const data);
 typedef void(tlv2_destructor_f)(void *data);
 
-#define TLV2_PARSER(x) void *(x)(uint8_t typecode, uint8_t *buf, uint32_t len)
+#define TLV2_PARSER(x) void *(x)(uint8_t typecode, uint8_t *buf, size_t len)
 #define TLV2_FORMATTER(x) void (x)(tlv2_formatter_ctx_t * const ctx, char const * const label, void const * const data)
 #define TLV2_DESTRUCTOR(x) void (x)(void *data)
 
@@ -54,7 +54,7 @@ typedef struct {
 
 // tlv2.c
 // Generic TLV API
-la_list *tlv2_parse(uint8_t *buf, uint16_t len, dict const *tag_table, uint8_t len_octets);
+la_list *tlv2_parse(uint8_t *buf, size_t len, dict const *tag_table, size_t const len_octets);
 la_list *tlv2_list_search(la_list *ptr, uint8_t const typecode);
 la_list *tlv2_list_append(la_list *head, uint8_t typecode, tlv2_type_descriptor_t *td, uint8_t *data);
 void tlv2_list_format_text(la_vstring * const vstr, la_list *tlv_list, int indent);

@@ -25,7 +25,6 @@
 // Forward declarations
 tlv2_type_descriptor_t tlv2_DEF_unknown_tag;
 tlv2_type_descriptor_t tlv2_DEF_unparseable_tag;
-tlv2_type_descriptor_t tlv2_DEF_unknown_tag;
 
 static void tlv2_tag_destroy(void *tag) {
 	if(tag == NULL) {
@@ -65,26 +64,29 @@ la_list *tlv2_list_search(la_list *ptr, uint8_t const typecode) {
 	}
 	return ptr;
 }
-// FIXME: wszystko na size_t
-la_list *tlv2_parse(uint8_t *buf, uint16_t len, dict const *tag_table, uint8_t len_octets) {
+
+la_list *tlv2_parse(uint8_t *buf, size_t len, dict const *tag_table, size_t const len_octets) {
 	ASSERT(buf != NULL);
 	ASSERT(tag_table != NULL);
 	la_list *head = NULL;
 	uint8_t *ptr = buf;
-	uint8_t tlv_min_datalen = 1 + len_octets;	/* type code + <len_octets> length field + empty data field */
-	uint16_t datalen;
+	size_t tlv_min_datalen = 1 + len_octets;	/* type code + <len_octets> length field + empty data field */
+	size_t datalen;
 	while(len >= tlv_min_datalen) {
 		uint8_t typecode = *ptr;
 		ptr++; len--;
 
-		datalen = *ptr;
+		datalen = (size_t)(*ptr);
 		if(len_octets == 2) {
-			datalen = (datalen << 8) | (uint16_t)ptr[1];
+			datalen = (datalen << 8) | (size_t)ptr[1];
 		}
 
 		ptr += len_octets; len -= len_octets;
 		if(datalen > len) {
-			debug_print("TLV param %02x truncated: datalen=%u buflen=%u\n", typecode, datalen, len);
+			debug_print("TLV param %02x truncated: datalen=%zu buflen=%zu\n", typecode, datalen, len);
+			return NULL;
+		} else if(UNLIKELY(datalen == 0)) {
+			debug_print("TLV param %02x: bad length 0\n", typecode);
 			return NULL;
 		}
 		CAST_PTR(td, tlv2_type_descriptor_t *, dict_search(tag_table, (int)typecode));

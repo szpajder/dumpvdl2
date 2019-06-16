@@ -252,9 +252,7 @@ TLV2_PARSER(clnp_error_code_parse) {
 // -Wunused-parameter
 	(void)typecode;
 	ASSERT(buf != NULL);
-	ASSERT(len > 0);
 
-	debug_print("len: %u\n", len);
 	if(len != 2) {
 		return NULL;
 	}

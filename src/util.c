@@ -150,7 +150,7 @@ octet_string_t *octet_string_new(void *buf, size_t len) {
 	return ostring;
 }
 
-int octet_string_parse(uint8_t *buf, uint32_t len, octet_string_t *result) {
+int octet_string_parse(uint8_t *buf, size_t len, octet_string_t *result) {
 	ASSERT(buf != NULL);
 	if(len == 0) {
 		debug_print("%s", "empty buffer\n");
@@ -158,7 +158,7 @@ int octet_string_parse(uint8_t *buf, uint32_t len, octet_string_t *result) {
 	}
 	uint8_t buflen = *buf++; len--;
 	if(len < buflen) {
-		debug_print("buffer truncated: len %u < expected %u\n", len, buflen);
+		debug_print("buffer truncated: len %zu < expected %u\n", len, buflen);
 		return -1;
 	}
 	result->buf = buf;
