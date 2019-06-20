@@ -187,6 +187,8 @@ typedef struct {
 #define XCALLOC(nmemb, size) xcalloc((nmemb), (size), __FILE__, __LINE__, __func__)
 #define XREALLOC(ptr, size) xrealloc((ptr), (size), __FILE__, __LINE__, __func__)
 #define XFREE(ptr) do { free(ptr); ptr = NULL; } while(0)
+#define NEW(type, x) type *(x) = XCALLOC(1, sizeof(type))
+#define UNUSED(x) (void)(x);
 
 typedef struct {
 	uint8_t *buf;
