@@ -107,7 +107,7 @@ reparse:
 		ptr += datalen; len -= datalen;
 	}
 	if(len > 0) {
-		debug_print("Warning: %u unparsed octets left at end of TLV list\n", len);
+		debug_print("Warning: %zu unparsed octets left at end of TLV list\n", len);
 	}
 	return head;
 }
@@ -139,14 +139,48 @@ void tlv2_list_format_text(la_vstring * const vstr, la_list *tlv_list, int inden
 // Parsers and formatters for common data types
 
 TLV2_PARSER(tlv2_octet_string_parse) {
-// -Wunused-parameter
-	(void)typecode;
+	UNUSED(typecode);
 	return octet_string_new(buf, len);
 }
 
 TLV2_FORMATTER(tlv2_octet_string_format_text) {
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
 	octet_string_format_text(ctx->vstr, data, 0);
+}
+
+TLV2_PARSER(tlv2_uint8_parse) {
+	UNUSED(typecode);
+	if(len < sizeof(uint8_t)) {
+		return NULL;
+	}
+	NEW(uint32_t, ret);
+	*ret = buf[0];
+	return ret;
+}
+
+TLV2_PARSER(tlv2_uint16_msbfirst_parse) {
+	UNUSED(typecode);
+	if(len < sizeof(uint16_t)) {
+		return NULL;
+	}
+	NEW(uint32_t, ret);
+	*ret = (uint32_t)(extract_uint16_msbfirst(buf));
+	return ret;
+}
+
+TLV2_PARSER(tlv2_uint32_msbfirst_parse) {
+	UNUSED(typecode);
+	if(len < sizeof(uint32_t)) {
+		return NULL;
+	}
+	NEW(uint32_t, ret);
+	*ret = extract_uint32_msbfirst(buf);
+	return ret;
+}
+
+TLV2_FORMATTER(tlv2_uint_format_text) {
+	CAST_PTR(u, uint32_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %lu\n", label, *u);
 }
 
 typedef struct {
@@ -162,8 +196,7 @@ TLV2_PARSER(tlv2_unknown_tag_parse) {
 }
 
 TLV2_FORMATTER(tlv2_unknown_tag_format_text) {
-// -Wunused-parameter
-	(void)label;
+	UNUSED(label);
 	CAST_PTR(t, tlv2_unparsed_tag_t *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "-- Unknown TLV (code: 0x%02x): ", t->typecode);
 	octet_string_format_text(ctx->vstr, t->data, 0);
@@ -188,8 +221,7 @@ tlv2_type_descriptor_t tlv2_DEF_unknown_tag = {
 };
 
 TLV2_FORMATTER(tlv2_unparseable_tag_format_text) {
-// -Wunused-parameter
-	(void)label;
+	UNUSED(label);
 	CAST_PTR(t, tlv2_unparsed_tag_t *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "-- Unparseable TLV (code: 0x%02x): ", t->typecode);
 	octet_string_format_text(ctx->vstr, t->data, 0);

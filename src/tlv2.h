@@ -63,4 +63,9 @@ void tlv2_list_destroy(la_list *p);
 // Parsers and formatters for common data types
 TLV2_PARSER(tlv2_octet_string_parse);
 TLV2_FORMATTER(tlv2_octet_string_format_text);
+
+TLV2_PARSER(tlv2_uint8_parse);
+TLV2_PARSER(tlv2_uint16_msbfirst_parse);
+TLV2_PARSER(tlv2_uint32_msbfirst_parse);
+TLV2_FORMATTER(tlv2_uint_format_text);
 #endif // !_TLV2_H
