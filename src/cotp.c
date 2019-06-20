@@ -25,7 +25,7 @@
 #include <libacars/libacars.h>		// la_proto_node
 #include <libacars/vstring.h>		// la_vstring
 #include "dumpvdl2.h"
-#include "tlv.h"
+#include "tlv2.h"
 #include "cotp.h"
 #include "icao.h"
 
@@ -35,40 +35,273 @@
 #define SPM_DISC_NORMAL_REUSE_NOT_POSSIBLE 2
 #define SPM_DISC_REASON_MAX SPM_DISC_NORMAL_REUSE_NOT_POSSIBLE
 
-static char const * const x225_xport_disc_reason_codes[] = {
-	[SPM_PROTOCOL_ERROR] = "Protocol error, cannnot sent ABORT SPDU",
-	[SPM_DISC_NORMAL_NO_REUSE] = "OK, transport connection not reused",
-	[SPM_DISC_NORMAL_REUSE_NOT_POSSIBLE] = "OK, transport connection reuse not possible"
-};
-
-// Forward declaration
+// Forward declarations
+TLV2_PARSER(tpdu_size_parse);
+TLV2_PARSER(flow_control_confirmation_parse);
+TLV2_FORMATTER(flow_control_confirmation_format_text);
 la_type_descriptor const proto_DEF_cotp_concatenated_pdu;
 
-typedef struct {
-	cotp_pdu_t *pdu;
-	la_proto_node *next_node;
-	int consumed;
-} cotp_pdu_parse_result;
+// Some rarely used parameters which are not required to be supported
+// in the ATN are printed as hex strings. There's no point in providing
+// specific formatting routines for them, since they will probably never
+// be used in practice.
+static dict const cotp_variable_part_params[] = {
+	{
+		.id = 0x08,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "ATN checksum",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0x85,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Ack time (ms)",
+			.parse = tlv2_uint16_msbfirst_parse,
+			.format_text = tlv2_uint_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0x86,		// not required
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Residual error rate",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0x87,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Priority",
+			.parse = tlv2_uint16_msbfirst_parse,
+			.format_text = tlv2_uint_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0x88,		// not required
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Transit delay",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0x89,		// not required
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Throughput",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0x8a,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Subsequence number",
+			.parse = tlv2_uint16_msbfirst_parse,
+			.format_text = tlv2_uint_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0x8b,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Reassignment time (s)",
+			.parse = tlv2_uint16_msbfirst_parse,
+			.format_text = tlv2_uint_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0x8c,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Flow control",
+			.parse = flow_control_confirmation_parse,
+			.format_text = flow_control_confirmation_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0x8f,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Selective ACK",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0xc0,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "TPDU size (bytes)",
+			.parse = tpdu_size_parse,
+			.format_text = tlv2_uint_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0xc1,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Calling transport selector",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0xc2,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Called/responding transport selector",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0xc3,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Checksum",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0xc4,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Version",
+			.parse = tlv2_uint8_parse,
+			.format_text = tlv2_uint_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0xc5,		// not required
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Protection params",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0xc6,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Additional options",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0xc7,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Additional protocol class(es)",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0xe0,		// DR
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Additional info",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0xf0,		// not required
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Preferred max. TPDU size (bytes)",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0xf2,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Inactivity timer (ms)",
+			.parse = tlv2_uint32_msbfirst_parse,
+			.format_text = tlv2_uint_format_text,
+			.destroy = NULL
+		},
+	},
+	{
+		.id = 0x00,
+		.val = NULL
+	}
+};
 
-static char *fmt_tpdu_size(uint8_t *data, uint16_t len) {
-	if(data == NULL) return strdup("<undef>");
-	if(len != 1) return fmt_hexstring(data, len);
-	if(data[0] < 0x7 || data[0] >> 0xd) return fmt_hexstring(data, len);
-	char *buf = XCALLOC(8, sizeof(char));
-	snprintf(buf, 8, "%u", 1 << data[0]);
-	return buf;
+// Can't use cotp_variable_part_params for ER, because parameter 0xc1
+// has a different meaning.
+static dict const cotp_er_variable_part_params[] = {
+	{
+		.id = 0xc1,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Invalid TPDU header",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0xc3,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Checksum",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x00,
+		.val = NULL
+	}
+};
+
+TLV2_PARSER(tpdu_size_parse) {
+	UNUSED(typecode);
+	if(len != 1) return NULL;
+	if(buf[0] < 0x7 || buf[0] >> 0xd) return NULL;
+	NEW(uint32_t, ret);
+	*ret = 1 << buf[0];
+	return ret;
 }
 
-static char *fmt_fc_confirmation(uint8_t *data, uint16_t len) {
-	if(data == NULL) return strdup("<undef>");
-	if(len != 8) return fmt_hexstring(data, len);
-	char *buf = XCALLOC(128, sizeof(char));
-	uint32_t acked_tpdu_nr = extract_uint32_msbfirst(data) & 0x7fffffffu;
-	uint16_t acked_subseq = extract_uint16_msbfirst(data + 4);
-	uint16_t acked_credit = extract_uint16_msbfirst(data + 6);
-	snprintf(buf, 128, "acked_tpdu_nr: %u acked_subseq: %hu acked_credit: %hu",
-		acked_tpdu_nr, acked_subseq, acked_credit);
-	return buf;
+typedef struct {
+	uint32_t acked_tpdu_nr;
+	uint16_t acked_subseq;
+	uint16_t acked_credit;
+} cotp_flow_control_confirm_t;
+
+TLV2_PARSER(flow_control_confirmation_parse) {
+	UNUSED(typecode);
+	if(len != 8) return NULL;
+	NEW(cotp_flow_control_confirm_t, ret);
+	ret->acked_tpdu_nr = extract_uint32_msbfirst(buf) & 0x7fffffffu;
+	ret->acked_subseq  = extract_uint16_msbfirst(buf + 4);
+	ret->acked_credit  = extract_uint16_msbfirst(buf + 6);
+	return ret;
+}
+
+TLV2_FORMATTER(flow_control_confirmation_format_text) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	ASSERT(ctx->indent >= 0);
+	CAST_PTR(f, cotp_flow_control_confirm_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
+	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Acked TPDU nr: %u\n", f->acked_tpdu_nr);
+	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Acked subsequence: %hu\n", f->acked_subseq);
+	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Acked credit: %hu\n", f->acked_credit);
 }
 
 #define TPDU_CHECK_LEN(len, val, goto_on_fail) \
@@ -78,6 +311,12 @@ static char *fmt_fc_confirmation(uint8_t *data, uint16_t len) {
 			goto goto_on_fail; \
 		} \
 	} while(0)
+
+typedef struct {
+	cotp_pdu_t *pdu;
+	la_proto_node *next_node;
+	int consumed;
+} cotp_pdu_parse_result;
 
 static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	cotp_pdu_parse_result r = { NULL, NULL, 0 };
@@ -120,7 +359,8 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 
 	pdu->dst_ref = extract_uint16_msbfirst(ptr + 1);
 
-	uint16_t variable_part_offset = 0;
+	uint8_t variable_part_offset = 0;
+	dict const *cotp_params = cotp_variable_part_params;
 	switch(pdu->code) {
 	case COTP_TPDU_CR:
 	case COTP_TPDU_CC:
@@ -141,6 +381,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 		TPDU_CHECK_LEN(remaining, 4, fail);
 		pdu->class_or_disc_reason = ptr[3];			// reject cause
 		variable_part_offset = 4;
+		cotp_params = cotp_er_variable_part_params;
 		break;
 	case COTP_TPDU_DT:
 	case COTP_TPDU_ED:
@@ -210,10 +451,10 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 		goto fail;
 	}
 	if(variable_part_offset > 0 && remaining > variable_part_offset) {
-		pdu->variable_part_params = tlv_deserialize(ptr + variable_part_offset,
-			(uint16_t)li - variable_part_offset,  1);
+		pdu->variable_part_params = tlv2_parse(ptr + variable_part_offset,
+			li - variable_part_offset, cotp_params, 1);
 		if(pdu->variable_part_params == NULL) {
-			debug_print("%s", "tlv_deserialize failed on variable part\n");
+			debug_print("%s", "tlv2_parse failed on variable part\n");
 			goto fail;
 		}
 	}
@@ -274,92 +515,56 @@ la_proto_node *cotp_concatenated_pdu_parse(uint8_t *buf, uint32_t len, uint32_t 
 	return node;
 }
 
-static const dict cotp_tpdu_codes[] = {
-	{ COTP_TPDU_CR, "Connect Request" },
-	{ COTP_TPDU_CC, "Connect Confirm" },
-	{ COTP_TPDU_DR, "Disconnect Request" },
-	{ COTP_TPDU_DC, "Disconnect Confirm" },
-	{ COTP_TPDU_DT, "Data" },
-	{ COTP_TPDU_ED, "Expedited Data" },
-	{ COTP_TPDU_AK, "Data Ack" },
-	{ COTP_TPDU_EA, "Expedited Data Ack" },
-	{ COTP_TPDU_RJ, "Reject" },
-	{ COTP_TPDU_ER, "Error" },
-	{ 0,  NULL }
-};
-
-static const dict cotp_dr_reasons[] = {
-	{   0,	"Reason not specified" },
-	{   1,	"TSAP congestion" },
-	{   2,	"Session entity not attached to TSAP" },
-	{   3,	"Unknown address" },
-	{ 128,	"Normal disconnect" },
-	{ 129,  "Remote transport entity congestion" },
-	{ 130,	"Connection negotiation failed" },
-	{ 131,	"Duplicate source reference" },
-	{ 132,	"Mismatched references" },
-	{ 133,	"Protocol error" },
-	{ 135,	"Reference overflow" },
-	{ 136,	"Connection request refused" },
-	{ 138,	"Header or parameter length invalid" },
-	{   0,  NULL }
-};
-
-static const dict cotp_er_reject_causes[] = {
-	{ 0,	"Reason not specified" },
-	{ 1,	"Invalid parameter code" },
-	{ 2,	"Invalid TPDU type" },
-	{ 3,	"Invalid parameter value" },
-	{ 0,  NULL }
-};
-
-// Some rarely used parameters which are not required to be supported
-// in the ATN are printed as hex strings. There's no point in providing
-// specific formatting routines for them, since they will probably never
-// be used in practice.
-static tlv_dict const cotp_variable_part_params[] = {
-	{ 0x08, fmt_hexstring, "ATN checksum" },
-	{ 0x85, fmt_uint16_msbfirst, "Ack time (ms)" },
-	{ 0x86, fmt_hexstring, "Residual error rate" },			// not required
-	{ 0x87, fmt_uint16_msbfirst, "Priority" },
-	{ 0x88, fmt_hexstring, "Transit delay" },			// not required
-	{ 0x89, fmt_hexstring, "Throughput" },				// not required
-	{ 0x8a, fmt_uint16_msbfirst, "Subsequence number" },
-	{ 0x8b, fmt_uint16_msbfirst, "Reassignment time (s)" },
-	{ 0x8c, fmt_fc_confirmation, "Flow control" },
-	{ 0x8f, fmt_hexstring, "Selective ACK" },
-	{ 0xc0, fmt_tpdu_size, "TPDU size (bytes)" },
-	{ 0xc1, fmt_uint16_msbfirst, "Calling transport selector" },
-	{ 0xc2, fmt_uint16_msbfirst, "Called/responding transport selector" },
-	{ 0xc3, fmt_hexstring, "Checksum" },
-	{ 0xc4, fmt_uint16_msbfirst, "Version" },
-	{ 0xc5, fmt_hexstring, "Protection params" },			// not required
-	{ 0xc6, fmt_hexstring, "Additional options" },
-	{ 0xc7, fmt_hexstring, "Additional protocol class(es)" },
-	{ 0xe0, fmt_hexstring, "Additional info" },			// DR
-	{ 0xf0, fmt_hexstring, "Preferred max. TPDU size (bytes)" },	// not required
-	{ 0xf2, fmt_uint32_msbfirst, "Inactivity timer (ms)" },
-	{ 0x00, NULL, NULL }
-};
-
-// Can't use cotp_variable_part_params for ER, because parameter 0xc1
-// has a different meaning.
-static tlv_dict const cotp_er_variable_part_params[] = {
-	{ 0xc1, fmt_hexstring, "Invalid TPDU header" },
-	{ 0xc3, fmt_hexstring, "Checksum" },
-	{ 0x00, NULL, NULL }
-};
-
-typedef struct {
-	la_vstring *vstr;
-	int indent;
-} fmt_ctx_t;
-
 static void output_cotp_pdu_as_text(gpointer p, gpointer user_data) {
+	static char const * const x225_xport_disc_reason_codes[] = {
+		[SPM_PROTOCOL_ERROR] = "Protocol error, cannnot sent ABORT SPDU",
+		[SPM_DISC_NORMAL_NO_REUSE] = "OK, transport connection not reused",
+		[SPM_DISC_NORMAL_REUSE_NOT_POSSIBLE] = "OK, transport connection reuse not possible"
+	};
+
+	static const dict cotp_tpdu_codes[] = {
+		{ COTP_TPDU_CR, "Connect Request" },
+		{ COTP_TPDU_CC, "Connect Confirm" },
+		{ COTP_TPDU_DR, "Disconnect Request" },
+		{ COTP_TPDU_DC, "Disconnect Confirm" },
+		{ COTP_TPDU_DT, "Data" },
+		{ COTP_TPDU_ED, "Expedited Data" },
+		{ COTP_TPDU_AK, "Data Ack" },
+		{ COTP_TPDU_EA, "Expedited Data Ack" },
+		{ COTP_TPDU_RJ, "Reject" },
+		{ COTP_TPDU_ER, "Error" },
+		{ 0,  NULL }
+	};
+
+	static const dict cotp_dr_reasons[] = {
+		{   0,	"Reason not specified" },
+		{   1,	"TSAP congestion" },
+		{   2,	"Session entity not attached to TSAP" },
+		{   3,	"Unknown address" },
+		{ 128,	"Normal disconnect" },
+		{ 129,  "Remote transport entity congestion" },
+		{ 130,	"Connection negotiation failed" },
+		{ 131,	"Duplicate source reference" },
+		{ 132,	"Mismatched references" },
+		{ 133,	"Protocol error" },
+		{ 135,	"Reference overflow" },
+		{ 136,	"Connection request refused" },
+		{ 138,	"Header or parameter length invalid" },
+		{   0,  NULL }
+	};
+
+	static const dict cotp_er_reject_causes[] = {
+		{ 0,	"Reason not specified" },
+		{ 1,	"Invalid parameter code" },
+		{ 2,	"Invalid TPDU type" },
+		{ 3,	"Invalid parameter value" },
+		{ 0,  NULL }
+	};
+
 	ASSERT(p != NULL);
 	ASSERT(user_data != NULL);
 	CAST_PTR(pdu, cotp_pdu_t *, p);
-	CAST_PTR(ctx, fmt_ctx_t *, user_data);
+	CAST_PTR(ctx, tlv2_formatter_ctx_t *, user_data);
 
 	la_vstring *vstr = ctx->vstr;
 	int indent = ctx->indent;
@@ -420,11 +625,7 @@ static void output_cotp_pdu_as_text(gpointer p, gpointer user_data) {
 	case COTP_TPDU_DC:
 		break;
 	}
-	if(pdu->code == COTP_TPDU_ER) {
-		tlv_format_as_text(vstr, pdu->variable_part_params, cotp_er_variable_part_params, indent);
-	} else {
-		tlv_format_as_text(vstr, pdu->variable_part_params, cotp_variable_part_params, indent);
-	}
+	tlv2_list_format_text(vstr, pdu->variable_part_params, indent);
 
 	if(pdu->code == COTP_TPDU_DR && pdu->x225_xport_disc_reason >= 0) {
 		LA_ISPRINTF(vstr, indent,
@@ -441,15 +642,14 @@ void cotp_concatenated_pdu_format_text(la_vstring * const vstr, void const * con
 	ASSERT(indent >= 0);
 
 	CAST_PTR(pdu_list, GSList *, data);
-	g_slist_foreach(pdu_list, output_cotp_pdu_as_text, &(fmt_ctx_t){ .vstr = vstr, .indent = indent});
+	g_slist_foreach(pdu_list, output_cotp_pdu_as_text, &(tlv2_formatter_ctx_t){ .vstr = vstr, .indent = indent});
 }
 
 static void cotp_pdu_destroy(gpointer ptr) {
 	CAST_PTR(pdu, cotp_pdu_t *, ptr);
-	tlv_list_free(pdu->variable_part_params);
+	tlv2_list_destroy(pdu->variable_part_params);
 	XFREE(pdu);
 }
-
 
 void cotp_concatenated_pdu_destroy(void *data) {
 	if(data == NULL) {
