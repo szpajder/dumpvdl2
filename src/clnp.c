@@ -221,7 +221,7 @@ la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	int options_part_len = hdr->len - (ptr - buf);
 	debug_print("options_part_len: %d\n", options_part_len);
 	if(options_part_len > 0) {
-		pdu->options = tlv2_parse(ptr, (uint16_t)options_part_len, clnp_options, 1);
+		pdu->options = tlv2_parse(ptr, (size_t)options_part_len, clnp_options, 1);
 		if(pdu->options == NULL) {
 			debug_print("%s", "tlv2_parse failed on options part\n");
 			goto fail;
