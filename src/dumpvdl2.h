@@ -184,6 +184,8 @@ typedef struct {
 
 #define ONES(x) ~(~0u << (x))
 #define CAST_PTR(x, t, y) t x = (t)(y)
+#define UINT_TO_PTR(u) ((void *)(long)(u))
+#define PTR_TO_UINT(p) ((uint32_t)(long)(p))
 #define XCALLOC(nmemb, size) xcalloc((nmemb), (size), __FILE__, __LINE__, __func__)
 #define XREALLOC(ptr, size) xrealloc((ptr), (size), __FILE__, __LINE__, __func__)
 #define XFREE(ptr) do { free(ptr); ptr = NULL; } while(0)

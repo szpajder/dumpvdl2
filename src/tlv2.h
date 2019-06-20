@@ -68,4 +68,5 @@ TLV2_PARSER(tlv2_uint8_parse);
 TLV2_PARSER(tlv2_uint16_msbfirst_parse);
 TLV2_PARSER(tlv2_uint32_msbfirst_parse);
 TLV2_FORMATTER(tlv2_uint_format_text);
+TLV2_DESTRUCTOR(tlv2_destroy_noop);
 #endif // !_TLV2_H
