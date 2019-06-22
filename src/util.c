@@ -296,7 +296,7 @@ void append_hexstring_with_indent(la_vstring *vstr, uint8_t *data, size_t len, i
 	ASSERT(vstr != NULL);
 	ASSERT(indent >= 0);
 	char *h = fmt_hexstring(data, len);
-	la_isprintf_multiline_text(vstr, indent, h);
+	LA_ISPRINTF(vstr, indent, "%s", h);
 	XFREE(h);
 }
 
@@ -304,7 +304,7 @@ void append_hexstring_ascii_with_indent(la_vstring *vstr, uint8_t *data, size_t 
 	ASSERT(vstr != NULL);
 	ASSERT(indent >= 0);
 	char *h = fmt_hexstring_with_ascii(data, len);
-	la_isprintf_multiline_text(vstr, indent, h);
+	LA_ISPRINTF(vstr, indent, "%s", h);
 	XFREE(h);
 }
 
@@ -324,6 +324,7 @@ void unknown_proto_format_text(la_vstring * const vstr, void const * const data,
 		return;
 	}
 	append_hexstring_with_indent(vstr, ostring->buf, ostring->len, indent);
+	EOL(vstr);
 }
 
 la_type_descriptor const proto_DEF_unknown = {

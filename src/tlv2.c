@@ -146,6 +146,7 @@ TLV2_PARSER(tlv2_octet_string_parse) {
 TLV2_FORMATTER(tlv2_octet_string_format_text) {
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
 	octet_string_format_text(ctx->vstr, data, 0);
+	EOL(ctx->vstr);
 }
 
 TLV2_PARSER(tlv2_uint8_parse) {
@@ -194,6 +195,7 @@ TLV2_FORMATTER(tlv2_unknown_tag_format_text) {
 	CAST_PTR(t, tlv2_unparsed_tag_t *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "-- Unknown TLV (code: 0x%02x): ", t->typecode);
 	octet_string_format_text(ctx->vstr, t->data, 0);
+	EOL(ctx->vstr);
 }
 
 TLV2_DESTRUCTOR(tlv2_unknown_tag_destroy) {

@@ -85,7 +85,7 @@ TLV2_FORMATTER(esis_subnet_caps_format_text) {
 	} else {
 		fmt_bitfield_vstr(ctx->vstr, c->atn_traffic_types, atn_traffic_types);
 	}
-	la_vstring_append_sprintf(ctx->vstr, "%s", "\n");
+	EOL(ctx->vstr);
 	if(c->atsc_traffic_classes_present) {
 		LA_ISPRINTF(ctx->vstr, ctx->indent+1, "%s: ", "Supported ATSC classes");
 		if((c->atsc_traffic_classes & ATSC_TRAFFIC_CLASSES_ALL) == ATSC_TRAFFIC_CLASSES_ALL) {
@@ -94,7 +94,7 @@ TLV2_FORMATTER(esis_subnet_caps_format_text) {
 			fmt_bitfield_vstr(ctx->vstr, c->atsc_traffic_classes, atsc_traffic_classes);
 		}
 	}
-	la_vstring_append_sprintf(ctx->vstr, "%s", "\n");
+	EOL(ctx->vstr);
 }
 
 static const dict esis_pdu_types[] = {
@@ -229,6 +229,7 @@ static void esis_pdu_format_text(la_vstring * const vstr, void const * const dat
 		break;
 	}
 	octet_string_with_ascii_format_text(vstr, &pdu->net_addr, 0);
+	EOL(vstr);
 	if(pdu->options != NULL) {
 		LA_ISPRINTF(vstr, indent, "%s", "Options:\n");
 		tlv2_list_format_text(vstr, pdu->options, indent+1);

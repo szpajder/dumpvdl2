@@ -191,6 +191,7 @@ typedef struct {
 #define XFREE(ptr) do { free(ptr); ptr = NULL; } while(0)
 #define NEW(type, x) type *(x) = XCALLOC(1, sizeof(type))
 #define UNUSED(x) (void)(x);
+#define EOL(x) la_vstring_append_sprintf((x), "%s", "\n")
 
 typedef struct {
 	uint8_t *buf;
