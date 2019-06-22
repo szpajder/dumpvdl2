@@ -296,7 +296,7 @@ TLV2_FORMATTER(clnp_error_code_format_text) {
 	if(e->erroneous_octet != 0) {
 		la_vstring_append_sprintf(ctx->vstr, ", erroneous octet value: 0x%02x", e->erroneous_octet);
 	}
-	la_vstring_append_sprintf(ctx->vstr, "%s", "\n");
+	EOL(ctx->vstr);
 }
 
 void clnp_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {

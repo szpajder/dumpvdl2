@@ -402,7 +402,7 @@ void x25_format_text(la_vstring * const vstr, void const * const data, int inden
 		la_vstring_append_sprintf(vstr, " sseq: %u rseq: %u more: %u",
 			pkt->hdr->type.data.sseq, pkt->hdr->type.data.rseq, pkt->hdr->type.data.more);
 	}
-	la_vstring_append_sprintf(vstr, "%s", "\n");
+	EOL(vstr);
 	indent++;
 	switch(pkt->type) {
 	case X25_CALL_REQUEST:
