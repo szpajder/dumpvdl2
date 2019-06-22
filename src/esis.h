@@ -18,8 +18,8 @@
  */
 #include <stdint.h>
 #include <stdbool.h>
+#include <libacars/list.h>	// la_list
 #include "config.h"		// IS_BIG_ENDIAN
-#include "tlv.h"
 
 #define ESIS_HDR_LEN		9
 #define ESIS_PDU_TYPE_ESH	2
@@ -45,7 +45,7 @@ typedef struct {
 typedef struct {
 	esis_hdr_t *hdr;
 	uint8_t *net_addr;	/* SA for ESH, NET for ISH */
-	tlv_list_t *options;
+	la_list *options;
 	uint16_t holdtime;
 	uint8_t net_addr_len;
 	bool err;
