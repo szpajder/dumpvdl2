@@ -156,6 +156,12 @@ TLV2_FORMATTER(tlv2_octet_string_format_text) {
 	EOL(ctx->vstr);
 }
 
+TLV2_FORMATTER(tlv2_octet_string_with_ascii_format_text) {
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
+	octet_string_with_ascii_format_text(ctx->vstr, data, 0);
+	EOL(ctx->vstr);
+}
+
 TLV2_PARSER(tlv2_uint8_parse) {
 	UNUSED(typecode);
 	if(len < sizeof(uint8_t)) {

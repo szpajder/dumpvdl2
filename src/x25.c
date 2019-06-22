@@ -96,7 +96,7 @@ static const dict x25_facilities[] = {
 		.val = &(tlv2_type_descriptor_t){
 			.label = "Called address extension",
 			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.format_text = tlv2_octet_string_with_ascii_format_text,
 			.destroy = NULL
 		}
 	},
