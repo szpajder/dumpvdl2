@@ -102,6 +102,24 @@ char *fmt_bitfield(uint8_t val, const dict *d) {
 	return buf;
 }
 
+void fmt_bitfield_vstr(la_vstring *vstr, uint8_t val, dict const *d) {
+	ASSERT(vstr != NULL);
+	ASSERT(d != NULL);
+
+	if(val == 0) {
+		la_vstring_append_sprintf(vstr, "%s", "none");
+		return;
+	}
+	bool first = true;
+	for(dict const *ptr = d; ptr->val != NULL; ptr++) {
+		if((val & ptr->id) == ptr->id) {
+			la_vstring_append_sprintf(vstr, "%s%s",
+				(first ? "" : ", "), (char *)ptr->val);
+			first = false;
+		}
+	}
+}
+
 uint32_t extract_uint32_msbfirst(uint8_t const * const data) {
 	ASSERT(data != NULL);
 	return	((uint32_t)data[0] << 24) | ((uint32_t)data[1] << 16) |

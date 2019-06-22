@@ -327,6 +327,7 @@ char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len);
 char *fmt_uint16_msbfirst(uint8_t *data, uint16_t len);
 char *fmt_uint32_msbfirst(uint8_t *data, uint16_t len);
 char *fmt_bitfield(uint8_t val, const dict *d);
+void fmt_bitfield_vstr(la_vstring *vstr, uint8_t val, dict const *d);
 octet_string_t *octet_string_new(void *buf, size_t len);
 int octet_string_parse(uint8_t *buf, size_t len, octet_string_t *result);
 void octet_string_format_text(la_vstring * const vstr, void const * const data, int indent);
