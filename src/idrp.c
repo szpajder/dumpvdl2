@@ -316,6 +316,7 @@ static void idrp_error_format_text(la_vstring *vstr, idrp_pdu_t *pdu, int indent
 print_err_payload:
 	if(pdu->data != NULL && pdu->datalen > 0) {
 		append_hexstring_with_indent(vstr, pdu->data, pdu->datalen, indent);
+		EOL(vstr);
 	}
 }
 
@@ -344,6 +345,7 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 			XFREE(fmt);
 			if(pdu->data != NULL && pdu->datalen > 0) {
 				append_hexstring_with_indent(vstr, pdu->data, pdu->datalen, indent);
+				EOL(vstr);
 			}
 		}
 		break;
