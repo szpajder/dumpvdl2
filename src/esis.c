@@ -147,21 +147,6 @@ static const dict esis_options[] = {
 	}
 };
 
-static int parse_octet_string(uint8_t *buf, uint32_t len, uint8_t **dst, uint8_t *dstlen) {
-	if(len == 0) {
-		debug_print("%s", "empty buffer\n");
-		return -1;
-	}
-	uint8_t buflen = *buf++; len--;
-	if(len < buflen) {
-		debug_print("buffer truncated: len %u < expected %u\n", len, buflen);
-		return -1;
-	}
-	*dst = buf;
-	*dstlen = buflen;
-	return 1 + buflen;	// total number of consumed octets
-}
-
 la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	esis_pdu_t *pdu = XCALLOC(1, sizeof(esis_pdu_t));
 	la_proto_node *node = la_proto_node_new();
@@ -191,7 +176,7 @@ la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	ptr += ESIS_HDR_LEN; remaining -= ESIS_HDR_LEN;
 	debug_print("skipping %u hdr octets, len is now %u\n", ESIS_HDR_LEN, remaining);
 
-	int ret = parse_octet_string(ptr, remaining, &pdu->net_addr, &pdu->net_addr_len);
+	int ret = octet_string_parse(ptr, remaining, &pdu->net_addr);
 	if(ret < 0) {
 		goto end;
 	}
@@ -235,16 +220,15 @@ static void esis_pdu_format_text(la_vstring * const vstr, void const * const dat
 	LA_ISPRINTF(vstr, indent, "ES-IS %s: Hold Time: %u sec\n", pdu_name, pdu->holdtime);
 	indent++;
 
-	char *str = fmt_hexstring_with_ascii(pdu->net_addr, pdu->net_addr_len);
 	switch(hdr->type) {
 	case ESIS_PDU_TYPE_ESH:
-		LA_ISPRINTF(vstr, indent, "SA : %s\n", str);
+		LA_ISPRINTF(vstr, indent, "%s", "SA : ");
 		break;
 	case ESIS_PDU_TYPE_ISH:
-		LA_ISPRINTF(vstr, indent, "NET: %s\n", str);
+		LA_ISPRINTF(vstr, indent, "%s", "NET: ");
 		break;
 	}
-	XFREE(str);
+	octet_string_with_ascii_format_text(vstr, &pdu->net_addr, 0);
 	if(pdu->options != NULL) {
 		LA_ISPRINTF(vstr, indent, "%s", "Options:\n");
 		tlv2_list_format_text(vstr, pdu->options, indent+1);
