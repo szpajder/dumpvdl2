@@ -65,46 +65,53 @@ la_list *tlv2_list_search(la_list *ptr, uint8_t const typecode) {
 	return ptr;
 }
 
+la_list *tlv2_single_tag_parse(uint8_t typecode, uint8_t *buf, size_t tag_len, dict const *tag_table, la_list *list) {
+	ASSERT(buf != NULL);
+	ASSERT(tag_table != NULL);
+
+	CAST_PTR(td, tlv2_type_descriptor_t *, dict_search(tag_table, (int)typecode));
+	if(td == NULL) {
+		debug_print("Unknown type code %u\n", typecode);
+		td = &tlv2_DEF_unknown_tag;
+	}
+	ASSERT(td->parse != NULL);
+	void *parsed = NULL;
+reparse:
+	parsed = td->parse(typecode, buf, tag_len);
+	if(parsed == NULL) {
+		td = &tlv2_DEF_unparseable_tag;
+// tlv2_unparseable_tag_parse() does not return NULL, so we don't expect a loop here
+		goto reparse;
+	}
+	return tlv2_list_append(list, typecode, td, parsed);
+}
+
 la_list *tlv2_parse(uint8_t *buf, size_t len, dict const *tag_table, size_t const len_octets) {
 	ASSERT(buf != NULL);
 	ASSERT(tag_table != NULL);
 	la_list *head = NULL;
 	uint8_t *ptr = buf;
-	size_t tlv_min_datalen = 1 + len_octets;	/* type code + <len_octets> length field + empty data field */
-	size_t datalen;
-	while(len >= tlv_min_datalen) {
+	size_t tlv_min_tag_len = 1 + len_octets;	/* type code + <len_octets> length field + empty data field */
+	size_t tag_len;
+	while(len >= tlv_min_tag_len) {
 		uint8_t typecode = *ptr;
 		ptr++; len--;
 
-		datalen = (size_t)(*ptr);
+		tag_len = (size_t)(*ptr);
 		if(len_octets == 2) {
-			datalen = (datalen << 8) | (size_t)ptr[1];
+			tag_len = (tag_len << 8) | (size_t)ptr[1];
 		}
 
 		ptr += len_octets; len -= len_octets;
-		if(datalen > len) {
-			debug_print("TLV param %02x truncated: datalen=%zu buflen=%zu\n", typecode, datalen, len);
+		if(tag_len > len) {
+			debug_print("TLV param %02x truncated: tag_len=%zu buflen=%zu\n", typecode, tag_len, len);
 			return NULL;
-		} else if(UNLIKELY(datalen == 0)) {
+		} else if(UNLIKELY(tag_len == 0)) {
 			debug_print("TLV param %02x: bad length 0\n", typecode);
 			return NULL;
 		}
-		CAST_PTR(td, tlv2_type_descriptor_t *, dict_search(tag_table, (int)typecode));
-		if(td == NULL) {
-			debug_print("Unknown type code %u\n", typecode);
-			td = &tlv2_DEF_unknown_tag;
-		}
-		ASSERT(td->parse != NULL);
-		void *parsed = NULL;
-reparse:
-		parsed = td->parse(typecode, ptr, datalen);
-		if(parsed == NULL) {
-			td = &tlv2_DEF_unparseable_tag;
-// tlv2_unparseable_tag_parse() does not return NULL, so we don't expect a loop here
-			goto reparse;
-		}
-		head = tlv2_list_append(head, typecode, td, parsed);
-		ptr += datalen; len -= datalen;
+		head = tlv2_single_tag_parse(typecode, ptr, tag_len, tag_table, head);
+		ptr += tag_len; len -= tag_len;
 	}
 	if(len > 0) {
 		debug_print("Warning: %zu unparsed octets left at end of TLV list\n", len);
@@ -230,6 +237,7 @@ TLV2_FORMATTER(tlv2_unparseable_tag_format_text) {
 	CAST_PTR(t, tlv2_unparsed_tag_t *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "-- Unparseable TLV (code: 0x%02x): ", t->typecode);
 	octet_string_format_text(ctx->vstr, t->data, 0);
+	EOL(ctx->vstr);
 }
 
 tlv2_type_descriptor_t tlv2_DEF_unparseable_tag = {

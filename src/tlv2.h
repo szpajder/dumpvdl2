@@ -55,6 +55,7 @@ typedef struct {
 // tlv2.c
 // Generic TLV API
 la_list *tlv2_parse(uint8_t *buf, size_t len, dict const *tag_table, size_t const len_octets);
+la_list *tlv2_single_tag_parse(uint8_t typecode, uint8_t *buf, size_t tag_len, dict const *tag_table, la_list *list);
 la_list *tlv2_list_search(la_list *ptr, uint8_t const typecode);
 la_list *tlv2_list_append(la_list *head, uint8_t typecode, tlv2_type_descriptor_t *td, uint8_t *data);
 void tlv2_list_format_text(la_vstring * const vstr, la_list *tlv_list, int indent);
