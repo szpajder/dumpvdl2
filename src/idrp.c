@@ -185,9 +185,9 @@ static const dict path_attributes[] = {
 		.id = 7,
 		.val = &(tlv2_type_descriptor_t){
 			.label = "Multi exit discriminator",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
-			.destroy = NULL
+			.parse = tlv2_uint8_parse,
+			.format_text = tlv2_uint_format_text,
+			.destroy = tlv2_destroy_noop
 		}
 	},
 	{
@@ -239,9 +239,9 @@ static const dict path_attributes[] = {
 		.id = 13,
 		.val = &(tlv2_type_descriptor_t){
 			.label = "RD hop count",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
-			.destroy = NULL
+			.parse = tlv2_uint8_parse,
+			.format_text = tlv2_uint_format_text,
+			.destroy = tlv2_destroy_noop
 		}
 	},
 	{
@@ -257,18 +257,18 @@ static const dict path_attributes[] = {
 		.id = 15,
 		.val = &(tlv2_type_descriptor_t){
 			.label = "Capacity",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
-			.destroy = NULL
+			.parse = tlv2_uint8_parse,
+			.format_text = tlv2_uint_format_text,
+			.destroy = tlv2_destroy_noop
 		}
 	},
 	{
 		.id = 16,
 		.val = &(tlv2_type_descriptor_t){
 			.label = "Priority",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
-			.destroy = NULL
+			.parse = tlv2_uint8_parse,
+			.format_text = tlv2_uint_format_text,
+			.destroy = tlv2_destroy_noop
 		}
 	},
 	{
