@@ -19,7 +19,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <libacars/libacars.h>		// la_proto_node
-#include "tlv.h"
+#include <libacars/list.h>		// la_list
+#include "dumpvdl2.h"			// octet_string_t
+#include "tlv.h"			// dict
 #define BISPDU_HDR_LEN			30U
 #define BISPDU_OPEN_VERSION		1
 
@@ -49,10 +51,9 @@ typedef struct {
 
 typedef struct {
 	idrp_hdr_t *hdr;
-	tlv_list_t *withdrawn_routes, *path_attributes;
+	la_list *withdrawn_routes, *path_attributes;
 	uint8_t *open_src_rdi;
-	uint8_t *data;
-	uint32_t datalen;
+	octet_string_t *data;
 	uint16_t open_holdtime;
 	uint16_t open_max_pdu_size;
 	uint8_t err_code, err_subcode;

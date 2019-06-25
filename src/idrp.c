@@ -23,9 +23,10 @@
 #include <arpa/inet.h>
 #include <libacars/libacars.h>		// la_proto_node
 #include <libacars/vstring.h>		// la_vstring
+#include <libacars/list.h>		// la_list
 #include "idrp.h"
 #include "dumpvdl2.h"
-#include "tlv.h"
+#include "tlv2.h"
 
 // Forward declaration
 la_type_descriptor const proto_DEF_idrp_pdu;
@@ -97,35 +98,183 @@ static const dict bispdu_errors[] = {
 	{ 0,				NULL }
 };
 
-static char *fmt_route_separator(uint8_t *data, uint16_t len) {
-	char *buf = XCALLOC(64, sizeof(char));
+typedef struct {
+	uint32_t id;
+	uint8_t localpref;
+} idrp_route_separator_t;
+
+TLV2_PARSER(idrp_route_separator_parse) {
+	UNUSED(typecode);
 	if(len != 5) {
-		sprintf(buf, "(incorrect length %u)", len);
-	} else {
-		uint32_t id = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
-		sprintf(buf, "ID: %u, Local preference: %u", id, data[4]);
+		debug_print("incorrect length: %zu != 5)", len);
+		return NULL;
 	}
-	return buf;
+	NEW(idrp_route_separator_t, ret);
+	ret->id = extract_uint32_msbfirst(buf);
+	ret->localpref = buf[4];
+	return ret;
 }
 
-static const tlv_dict path_attribute_names[] = {
-	{ 1,	&fmt_route_separator,	"Route" },
-	{ 2,	&fmt_hexstring,		"Ext. info" },
-	{ 3,	&fmt_hexstring_with_ascii,	"RD path" },
-	{ 4,	&fmt_hexstring,		"Next hop" },
-	{ 5,	&fmt_hexstring,		"Distribute list inclusions" },
-	{ 6,	&fmt_hexstring,		"Distribute list exclusions" },
-	{ 7,	&fmt_hexstring,		"Multi exit discriminator" },
-	{ 8,	&fmt_hexstring,		"Transit delay" },
-	{ 9,	&fmt_hexstring,		"Residual error" },
-	{ 10,	&fmt_hexstring,		"Expense" },
-	{ 11,	&fmt_hexstring,		"Locally defined QoS" },
-	{ 12,	&fmt_hexstring,		"Hierarchical recording" },
-	{ 13,	&fmt_hexstring,		"RD hop count" },
-	{ 14,	&fmt_hexstring,		"Security" },
-	{ 15,	&fmt_hexstring,		"Capacity" },
-	{ 16,	&fmt_hexstring,		"Priority" },
-	{ 0,    NULL,			NULL }
+TLV2_FORMATTER(idrp_route_separator_format_text) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	ASSERT(ctx->indent >= 0);
+
+	CAST_PTR(s, idrp_route_separator_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
+	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "ID: %u\n", s->id);
+	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Local preference: %u\n", s->localpref);
+}
+
+static const dict path_attributes[] = {
+	{
+		.id = 1,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Route",
+			.parse = idrp_route_separator_parse,
+			.format_text = idrp_route_separator_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 2,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Ext. info",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 3,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "RD path",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_with_ascii_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 4,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Next hop",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 5,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Distribute list inclusions",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 6,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Distribute list exclusions",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 7,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Multi exit discriminator",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 8,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Transit delay",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 9,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Residual error",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 10,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Expense",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 11,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Locally defined QoS",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 12,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Hierarchical recording",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 13,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "RD hop count",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 14,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Security",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 15,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Capacity",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 16,
+		.val = &(tlv2_type_descriptor_t){
+			.label = "Priority",
+			.parse = tlv2_octet_string_parse,
+			.format_text = tlv2_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0,
+		.val = NULL
+	}
 };
 
 static int parse_idrp_open_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
@@ -138,9 +287,9 @@ static int parse_idrp_open_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 		return -1;
 	}
 	buf++; len--;
-	pdu->open_holdtime = ((uint16_t)buf[0] << 8) | ((uint16_t)buf[1]);
+	pdu->open_holdtime = extract_uint16_msbfirst(buf);
 	buf += 2; len -= 2;
-	pdu->open_max_pdu_size = ((uint16_t)buf[0] << 8) | ((uint16_t)buf[1]);
+	pdu->open_max_pdu_size = extract_uint16_msbfirst(buf);
 	buf += 2; len -= 2;
 	pdu->open_src_rdi_len = *buf++; len--;
 	if(len < pdu->open_src_rdi_len) {
@@ -150,7 +299,7 @@ static int parse_idrp_open_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	pdu->open_src_rdi = buf;
 	buf += pdu->open_src_rdi_len; len -= pdu->open_src_rdi_len;
 // TODO: Rib-AttsSet, Auth Code, Auth Data
-	pdu->data = buf; pdu->datalen = len;
+	pdu->data = octet_string_new(buf, len);
 	return 0;
 }
 
@@ -159,15 +308,16 @@ static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 		debug_print("Truncated Update BISPDU: len %u < 4\n", len);
 		return -1;
 	}
-	uint16_t num_withdrawn = ((uint16_t)buf[0] << 8) | ((uint16_t)buf[1]);
+	uint16_t num_withdrawn = extract_uint16_msbfirst(buf);
 	buf += 2; len -= 2;
 	if(num_withdrawn > 0) {
 		if(len < num_withdrawn * 4) {
 			debug_print("Withdrawn Routes field truncated: len %u < expected %u\n", len, 4 * num_withdrawn);
 			return -1;
 		}
-		for(int i = 0; i < num_withdrawn; i++) {
-			tlv_list_append(&pdu->withdrawn_routes, 0xff, 4, buf);	// type field is irrelevant here
+		for(uint16_t i = 0; i < num_withdrawn; i++) {
+			pdu->withdrawn_routes = la_list_append(pdu->withdrawn_routes,
+				UINT_TO_PTR(extract_uint32_msbfirst(buf)));
 			buf += 4; len -= 4;
 		}
 	}
@@ -175,24 +325,25 @@ static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 		debug_print("BISPDU truncated after withdrawn routes: len %u < 2\n", len);
 		return -1;
 	}
-	uint16_t total_attrib_len = ((uint16_t)buf[0] << 8) | ((uint16_t)buf[1]);
+	uint16_t total_attrib_len = extract_uint16_msbfirst(buf);
 	buf += 2; len -= 2;
 	if(total_attrib_len > 0) {
 		if(len < total_attrib_len) {
 			debug_print("Path attributes field truncated: len %u < expected %u\n", len, total_attrib_len);
 			return -1;
 		}
-		while(total_attrib_len > 4) {			// flag + type + length
+		while(total_attrib_len > 4) {			// flag + typecode + length
 			buf++; len--; total_attrib_len--; 	// flag is not too interesting...
-			uint8_t type = *buf++; len--; total_attrib_len--;
-			uint16_t alen = ((uint16_t)buf[0] << 8) | ((uint16_t)buf[1]);
+			uint8_t typecode = *buf++; len--; total_attrib_len--;
+			uint16_t alen = extract_uint16_msbfirst(buf);
 			buf += 2; len -= 2; total_attrib_len -= 2;
 			if(len < alen) {
 				debug_print("Attribute value truncated: len %u < expected %u\n", len, alen);
 				return -1;
 			}
 // TODO: parse RD_PATH
-			tlv_list_append(&pdu->path_attributes, type, alen, buf);
+			pdu->path_attributes = tlv2_single_tag_parse(typecode, buf, alen,
+				path_attributes, pdu->path_attributes);
 			buf += alen; len -= alen; total_attrib_len -= alen;
 		}
 		if(total_attrib_len > 0) {
@@ -201,7 +352,7 @@ static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 		}
 	}
 // TODO: parse NLRI
-	pdu->data = buf; pdu->datalen = len;
+	pdu->data = octet_string_new(buf, len);
 	return 0;
 }
 
@@ -223,13 +374,12 @@ static int parse_idrp_error_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	}
 	pdu->err_code = err_code;
 	pdu->err_subcode = err_subcode;
-	pdu->data = buf;
-	pdu->datalen = len;
+	pdu->data = octet_string_new(buf, len);
 	return 0;
 }
 
 la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	idrp_pdu_t *pdu = XCALLOC(1, sizeof(idrp_pdu_t));
+	NEW(idrp_pdu_t, pdu);
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_idrp_pdu;
 	node->data = pdu;
@@ -243,7 +393,7 @@ la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	uint8_t *ptr = buf;
 	uint32_t remaining = len;
 	idrp_hdr_t *hdr = (idrp_hdr_t *)ptr;
-	uint16_t pdu_len = ((uint16_t)hdr->len[0] << 8) | ((uint16_t)hdr->len[1]);
+	uint16_t pdu_len = extract_uint16_msbfirst(hdr->len);
 	debug_print("pid: %02x len: %u type: %u seq: %u ack: %u coff: %u cavail: %u\n",
 		hdr->pid, pdu_len, hdr->type, ntohl(hdr->seq), ntohl(hdr->ack), hdr->coff, hdr->cavail);
 	debug_print_buf_hex(hdr->validation, 16, "%s", "Validation:\n");
@@ -314,8 +464,8 @@ static void idrp_error_format_text(la_vstring *vstr, idrp_pdu_t *pdu, int indent
 		LA_ISPRINTF(vstr, indent, "Subcode: %u (%s)\n", pdu->err_subcode, subcode ? subcode : "unknown");
 	}
 print_err_payload:
-	if(pdu->data != NULL && pdu->datalen > 0) {
-		append_hexstring_with_indent(vstr, pdu->data, pdu->datalen, indent);
+	if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
+		octet_string_format_text(vstr, pdu->data, indent);
 		EOL(vstr);
 	}
 }
@@ -343,8 +493,8 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 			char *fmt = fmt_hexstring_with_ascii(pdu->open_src_rdi, pdu->open_src_rdi_len);
 			LA_ISPRINTF(vstr, indent, "Source RDI: %s\n", fmt);
 			XFREE(fmt);
-			if(pdu->data != NULL && pdu->datalen > 0) {
-				append_hexstring_with_indent(vstr, pdu->data, pdu->datalen, indent);
+			if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
+				octet_string_format_text(vstr, pdu->data, indent);
 				EOL(vstr);
 			}
 		}
@@ -352,20 +502,20 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 	case BISPDU_TYPE_UPDATE:
 		if(pdu->withdrawn_routes != NULL) {
 			LA_ISPRINTF(vstr, indent, "%s", "Withdrawn Routes:\n");
-			for(tlv_list_t *p = pdu->withdrawn_routes; p != NULL; p = p->next) {
-				char *fmt = fmt_hexstring(p->val, p->len);
-				LA_ISPRINTF(vstr, indent+1, "%s\n", fmt);
-				XFREE(fmt);
+			indent++;
+			for(la_list *p = pdu->withdrawn_routes; p != NULL; p = p->next) {
+				LA_ISPRINTF(vstr, indent, "ID: %u\n", PTR_TO_UINT(p->data));
 			}
+			indent--;
 		}
 		if(pdu->path_attributes != NULL) {
-			tlv_format_as_text(vstr, pdu->path_attributes, path_attribute_names, indent);
+			tlv2_list_format_text(vstr, pdu->path_attributes, indent);
 		}
 
-		if(pdu->datalen > 0) {
-			char *fmt = fmt_hexstring_with_ascii(pdu->data, pdu->datalen);
-			LA_ISPRINTF(vstr, indent, "NLRI: %s\n", fmt);
-			XFREE(fmt);
+		if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
+			LA_ISPRINTF(vstr, indent, "%s: ", "NLRI");
+			octet_string_with_ascii_format_text(vstr, pdu->data, 0);
+			EOL(vstr);
 		}
 		break;
 	case BISPDU_TYPE_ERROR:
@@ -384,8 +534,9 @@ void idrp_pdu_destroy(void *data) {
 		return;
 	}
 	CAST_PTR(pdu, idrp_pdu_t *, data);
-	tlv_list_free(pdu->withdrawn_routes);
-	tlv_list_free(pdu->path_attributes);
+	la_list_free_full(pdu->withdrawn_routes, tlv2_destroy_noop);
+	tlv2_list_destroy(pdu->path_attributes);
+	XFREE(pdu->data);
 	XFREE(data);
 }
 
