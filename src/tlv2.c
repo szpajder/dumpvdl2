@@ -54,15 +54,17 @@ la_list *tlv2_list_append(la_list *head, uint8_t typecode, tlv2_type_descriptor_
 	return la_list_append(head, tag);
 }
 
-la_list *tlv2_list_search(la_list *ptr, uint8_t const typecode) {
+tlv2_tag_t *tlv2_list_search(la_list *ptr, uint8_t const typecode) {
 	while(ptr != NULL) {
 		if(ptr->data != NULL) {
 			CAST_PTR(tag, tlv2_tag_t *, ptr->data);
-			if(tag->typecode == typecode) break;
+			if(tag->typecode == typecode) {
+				return tag;
+			}
 		}
 		ptr = ptr->next;
 	}
-	return ptr;
+	return NULL;
 }
 
 la_list *tlv2_single_tag_parse(uint8_t typecode, uint8_t *buf, size_t tag_len, dict const *tag_table, la_list *list) {
