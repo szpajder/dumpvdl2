@@ -202,6 +202,16 @@ void octet_string_with_ascii_format_text(la_vstring * const vstr, void const * c
 	append_hexstring_ascii_with_indent(vstr, ostring->buf, ostring->len, indent);
 }
 
+void octet_string_as_ascii_format_text(la_vstring * const vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data != NULL);
+	ASSERT(indent >= 0);
+
+	CAST_PTR(ostring, octet_string_t *, data);
+	LA_ISPRINTF(vstr, indent, "%s", "");
+	la_vstring_append_buffer(vstr, ostring->buf, ostring->len);
+}
+
 size_t slurp_hexstring(char* string, uint8_t **buf) {
 	if(string == NULL)
 		return 0;
