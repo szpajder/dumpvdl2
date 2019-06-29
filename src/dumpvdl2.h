@@ -28,7 +28,6 @@
 #include <libacars/libacars.h>	// la_proto_node
 #include <libacars/vstring.h>	// la_vstring
 #include "config.h"
-#include "tlv.h"
 #ifndef HAVE_PTHREAD_BARRIERS
 #include "pthread_barrier.h"
 #endif
@@ -184,9 +183,14 @@ typedef struct {
 
 #define ONES(x) ~(~0u << (x))
 #define CAST_PTR(x, t, y) t x = (t)(y)
+#define UINT_TO_PTR(u) ((void *)(long)(u))
+#define PTR_TO_UINT(p) ((uint32_t)(long)(p))
 #define XCALLOC(nmemb, size) xcalloc((nmemb), (size), __FILE__, __LINE__, __func__)
 #define XREALLOC(ptr, size) xrealloc((ptr), (size), __FILE__, __LINE__, __func__)
 #define XFREE(ptr) do { free(ptr); ptr = NULL; } while(0)
+#define NEW(type, x) type *(x) = XCALLOC(1, sizeof(type))
+#define UNUSED(x) (void)(x);
+#define EOL(x) la_vstring_append_sprintf((x), "%s", "\n")
 
 typedef struct {
 	uint8_t *buf;
@@ -313,9 +317,15 @@ typedef struct {
 	void *buf;
 	size_t len;
 } octet_string_t;
+typedef struct {
+	uint8_t id;
+	void *val;
+} dict;
+
 extern la_type_descriptor const proto_DEF_unknown;
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func);
 void *xrealloc(void *ptr, size_t size, const char *file, const int line, const char *func);
+void *dict_search(const dict *list, uint8_t id);
 uint16_t extract_uint16_msbfirst(uint8_t const * const data);
 uint32_t extract_uint32_msbfirst(uint8_t const * const data);
 char *fmt_hexstring(uint8_t *data, uint16_t len);
@@ -323,12 +333,17 @@ char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len);
 char *fmt_uint16_msbfirst(uint8_t *data, uint16_t len);
 char *fmt_uint32_msbfirst(uint8_t *data, uint16_t len);
 char *fmt_bitfield(uint8_t val, const dict *d);
+void fmt_bitfield_vstr(la_vstring *vstr, uint8_t val, dict const *d);
 octet_string_t *octet_string_new(void *buf, size_t len);
-int octet_string_parse(uint8_t *buf, uint32_t len, octet_string_t *result);
+int octet_string_parse(uint8_t *buf, size_t len, octet_string_t *result);
+void octet_string_format_text(la_vstring * const vstr, void const * const data, int indent);
+void octet_string_as_ascii_format_text(la_vstring * const vstr, void const * const data, int indent);
+void octet_string_with_ascii_format_text(la_vstring * const vstr, void const * const data, int indent);
 size_t slurp_hexstring(char* string, uint8_t **buf);
 char *hexdump(uint8_t *data, size_t len);
 void append_hexdump_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int indent);
 void append_hexstring_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int indent);
+void append_hexstring_ascii_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int indent);
 void unknown_proto_format_text(la_vstring * const vstr, void const * const data, int indent);
 la_proto_node *unknown_proto_pdu_new(void *buf, size_t len);
 

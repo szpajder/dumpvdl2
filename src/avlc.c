@@ -278,7 +278,7 @@ void avlc_format_text(la_vstring * const vstr, void const * const data, int inde
 		la_vstring_append_sprintf(vstr, " [S:%d] [L:%u] [F:%d] [#%u]",
 			 f->q->synd_weight, f->q->datalen_octets, f->q->num_fec_corrections, f->num);
 	}
-	la_vstring_append_sprintf(vstr, "%s", "\n");
+	EOL(vstr);
 
 	if(output_raw_frames && f->q->len > 0) {
 		append_hexdump_with_indent(vstr, f->q->buf, f->q->len, indent+1);

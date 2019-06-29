@@ -26,7 +26,6 @@
 #include <libacars/libacars.h>		// la_proto_node, la_type_descriptor
 #include <libacars/vstring.h>		// la_vstring, la_isprintf_multiline_text()
 #include "dumpvdl2.h"
-#include "tlv.h"
 
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func) {
 	void *ptr = calloc(nmemb, size);
@@ -46,6 +45,15 @@ void *xrealloc(void *ptr, size_t size, const char *file, const int line, const c
 		_exit(1);
 	}
 	return ptr;
+}
+
+void *dict_search(const dict *list, uint8_t id) {
+	if(list == NULL) return NULL;
+	dict *ptr;
+	for(ptr = (dict *)list; ; ptr++) {
+		if(ptr->val == NULL) return NULL;
+		if(ptr->id == id) return ptr->val;
+	}
 }
 
 char *fmt_hexstring(uint8_t *data, uint16_t len) {
@@ -102,6 +110,24 @@ char *fmt_bitfield(uint8_t val, const dict *d) {
 	return buf;
 }
 
+void fmt_bitfield_vstr(la_vstring *vstr, uint8_t val, dict const *d) {
+	ASSERT(vstr != NULL);
+	ASSERT(d != NULL);
+
+	if(val == 0) {
+		la_vstring_append_sprintf(vstr, "%s", "none");
+		return;
+	}
+	bool first = true;
+	for(dict const *ptr = d; ptr->val != NULL; ptr++) {
+		if((val & ptr->id) == ptr->id) {
+			la_vstring_append_sprintf(vstr, "%s%s",
+				(first ? "" : ", "), (char *)ptr->val);
+			first = false;
+		}
+	}
+}
+
 uint32_t extract_uint32_msbfirst(uint8_t const * const data) {
 	ASSERT(data != NULL);
 	return	((uint32_t)data[0] << 24) | ((uint32_t)data[1] << 16) |
@@ -150,7 +176,7 @@ octet_string_t *octet_string_new(void *buf, size_t len) {
 	return ostring;
 }
 
-int octet_string_parse(uint8_t *buf, uint32_t len, octet_string_t *result) {
+int octet_string_parse(uint8_t *buf, size_t len, octet_string_t *result) {
 	ASSERT(buf != NULL);
 	if(len == 0) {
 		debug_print("%s", "empty buffer\n");
@@ -158,12 +184,40 @@ int octet_string_parse(uint8_t *buf, uint32_t len, octet_string_t *result) {
 	}
 	uint8_t buflen = *buf++; len--;
 	if(len < buflen) {
-		debug_print("buffer truncated: len %u < expected %u\n", len, buflen);
+		debug_print("buffer truncated: len %zu < expected %u\n", len, buflen);
 		return -1;
 	}
 	result->buf = buf;
 	result->len = buflen;
 	return 1 + buflen;	// total number of consumed octets
+}
+
+void octet_string_format_text(la_vstring * const vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data != NULL);
+	ASSERT(indent >= 0);
+
+	CAST_PTR(ostring, octet_string_t *, data);
+	append_hexstring_with_indent(vstr, ostring->buf, ostring->len, indent);
+}
+
+void octet_string_with_ascii_format_text(la_vstring * const vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data != NULL);
+	ASSERT(indent >= 0);
+
+	CAST_PTR(ostring, octet_string_t *, data);
+	append_hexstring_ascii_with_indent(vstr, ostring->buf, ostring->len, indent);
+}
+
+void octet_string_as_ascii_format_text(la_vstring * const vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data != NULL);
+	ASSERT(indent >= 0);
+
+	CAST_PTR(ostring, octet_string_t *, data);
+	LA_ISPRINTF(vstr, indent, "%s", "");
+	la_vstring_append_buffer(vstr, ostring->buf, ostring->len);
 }
 
 size_t slurp_hexstring(char* string, uint8_t **buf) {
@@ -260,13 +314,22 @@ void append_hexstring_with_indent(la_vstring *vstr, uint8_t *data, size_t len, i
 	ASSERT(vstr != NULL);
 	ASSERT(indent >= 0);
 	char *h = fmt_hexstring(data, len);
-	la_isprintf_multiline_text(vstr, indent, h);
+	LA_ISPRINTF(vstr, indent, "%s", h);
+	XFREE(h);
+}
+
+void append_hexstring_ascii_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(indent >= 0);
+	char *h = fmt_hexstring_with_ascii(data, len);
+	LA_ISPRINTF(vstr, indent, "%s", h);
 	XFREE(h);
 }
 
 // la_proto_node routines for unknown protocols
 // which are to be serialized as octet string (hex dump or hex string)
 
+// TODO: make this a wrapper around octet_string_format_text()
 void unknown_proto_format_text(la_vstring * const vstr, void const * const data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data != NULL);
@@ -279,6 +342,7 @@ void unknown_proto_format_text(la_vstring * const vstr, void const * const data,
 		return;
 	}
 	append_hexstring_with_indent(vstr, ostring->buf, ostring->len, indent);
+	EOL(vstr);
 }
 
 la_type_descriptor const proto_DEF_unknown = {

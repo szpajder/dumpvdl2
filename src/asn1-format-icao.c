@@ -26,8 +26,7 @@
 #include "asn1/CMGroundMessage.h"		// asn_DEF_CMGroundMessage
 #include "asn1/ProtectedAircraftPDUs.h"		// asn_DEF_ProtectedAircraftPDUs
 #include "asn1/ProtectedGroundPDUs.h"		// asn_DEF_ProtectedGroundPDUs
-#include "tlv.h"				// dict_search()
-#include "dumpvdl2.h"				// XCALLOC
+#include "dumpvdl2.h"				// XCALLOC, dict_search()
 #include "asn1-util.h"				// asn_formatter_t, asn1_output()
 #include "asn1-format-common.h"			// common formatters and helper functions
 

@@ -20,31 +20,57 @@
 #define _TLV_H 1
 #include <stdio.h>
 #include <stdint.h>
+#include <libacars/list.h>		// la_list
 #include <libacars/vstring.h>		// la_vstring
+#include "dumpvdl2.h"			// dict
 
 typedef struct {
-	void *next;
-	uint8_t *val;
-	uint16_t len;
-	uint8_t type;
-} tlv_list_t;
+	la_vstring *vstr;
+	int indent;
+} tlv_formatter_ctx_t;
+
+typedef void *(tlv_parser_f)(uint8_t typecode, uint8_t *buf, size_t len);
+typedef void(tlv_formatter_f)(tlv_formatter_ctx_t * const ctx, char const * const label, void const * const data);
+typedef void(tlv_destructor_f)(void *data);
+
+#define TLV_PARSER(x) void *(x)(uint8_t typecode, uint8_t *buf, size_t len)
+#define TLV_FORMATTER(x) void (x)(tlv_formatter_ctx_t * const ctx, char const * const label, void const * const data)
+#define TLV_DESTRUCTOR(x) void (x)(void *data)
 
 typedef struct {
-	uint8_t id;
-	void *val;
-} dict;
+	char const * const label;
+	char const * const json_key;
+	tlv_parser_f *parse;
+	tlv_formatter_f *format_text;
+	tlv_formatter_f *format_json;
+	tlv_destructor_f *destroy;
+} tlv_type_descriptor_t;
 
+// generic tag structure
 typedef struct {
-	uint8_t id;
-	char *(*stringify)(uint8_t *, uint16_t);
-	char *description;
-} tlv_dict;
+	uint8_t typecode;
+	tlv_type_descriptor_t *td;
+	void *data;
+} tlv_tag_t;
 
 // tlv.c
-void tlv_list_free(tlv_list_t *p);
-void tlv_list_append(tlv_list_t **head, uint8_t type, uint16_t len, uint8_t *value);
-void tlv_format_as_text(la_vstring *vstr, tlv_list_t *list, const tlv_dict *d, int indent);
-void *dict_search(const dict *list, uint8_t id);
-tlv_list_t *tlv_list_search(tlv_list_t *ptr, uint8_t type);
-tlv_list_t *tlv_deserialize(uint8_t *buf, uint16_t len, uint8_t len_octets);
+// Generic TLV API
+la_list *tlv_parse(uint8_t *buf, size_t len, dict const *tag_table, size_t const len_octets);
+la_list *tlv_single_tag_parse(uint8_t typecode, uint8_t *buf, size_t tag_len, dict const *tag_table, la_list *list);
+tlv_tag_t *tlv_list_search(la_list *ptr, uint8_t const typecode);
+la_list *tlv_list_append(la_list *head, uint8_t typecode, tlv_type_descriptor_t *td, uint8_t *data);
+void tlv_list_format_text(la_vstring * const vstr, la_list *tlv_list, int indent);
+void tlv_list_destroy(la_list *p);
+
+// Parsers and formatters for common data types
+TLV_PARSER(tlv_octet_string_parse);
+TLV_FORMATTER(tlv_octet_string_format_text);
+
+TLV_PARSER(tlv_uint8_parse);
+TLV_PARSER(tlv_uint16_msbfirst_parse);
+TLV_PARSER(tlv_uint32_msbfirst_parse);
+TLV_FORMATTER(tlv_uint_format_text);
+TLV_FORMATTER(tlv_octet_string_as_ascii_format_text);
+TLV_FORMATTER(tlv_octet_string_with_ascii_format_text);
+TLV_DESTRUCTOR(tlv_destroy_noop);
 #endif // !_TLV_H

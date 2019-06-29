@@ -21,8 +21,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <libacars/libacars.h>	// la_proto_node
+#include <libacars/list.h>	// la_list
 #include "config.h"		// IS_BIG_ENDIAN
-#include "tlv.h"
 
 #define X25_MIN_LEN		3
 #define GFI_X25_MOD8		1
@@ -90,7 +90,7 @@ typedef struct {
 
 typedef struct {
 	x25_hdr_t *hdr;
-	tlv_list_t *facilities;
+	la_list *facilities;
 	x25_addr_t calling, called;
 	uint8_t type;
 	uint8_t addr_block_present;

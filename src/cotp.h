@@ -20,7 +20,6 @@
 #include <stdbool.h>
 #include <glib.h>
 #include <libacars/libacars.h>		// la_proto_node
-#include "tlv.h"
 
 // These defines apply to upper nibble of the TPDU code only
 #define COTP_TPDU_CR	0xe0
@@ -35,7 +34,7 @@
 #define COTP_TPDU_ER	0x70
 
 typedef struct {
-	tlv_list_t *variable_part_params;
+	la_list *variable_part_params;
 	uint32_t tpdu_seq;	// TPDU sequence number (valid for DT, ED, AK)
 	uint16_t src_ref, dst_ref;
 	uint16_t credit;	// (credit for AK, RJ, initial credit for CR, CC)
