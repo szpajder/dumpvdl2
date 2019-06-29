@@ -18,6 +18,27 @@
  */
 #include <stdint.h>
 #include <libacars/libacars.h>		// la_proto_node
+#include <libacars/list.h>		// la_list
+
+enum xid_types {
+	XID_CMD_LCR = 1,
+	XID_CMD_HO_REQ = 2,
+	GSIF = 3,
+	XID_CMD_LE = 4,
+	XID_CMD_HO_INIT = 6,
+	XID_CMD_LPM = 7,
+	XID_RSP_LE = 12,
+	XID_RSP_LCR = 13,
+	XID_RSP_HO = 14,
+	XID_RSP_LPM = 15
+};
+
+
+typedef struct {
+	la_list *pub_params, *vdl_params;
+	enum xid_types type;
+	bool err;
+} xid_msg_t;
 
 // xid.c
 la_proto_node *xid_parse(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uint32_t *msg_type);
