@@ -26,7 +26,6 @@
 #include <libacars/libacars.h>		// la_proto_node, la_type_descriptor
 #include <libacars/vstring.h>		// la_vstring, la_isprintf_multiline_text()
 #include "dumpvdl2.h"
-#include "tlv.h"
 
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func) {
 	void *ptr = calloc(nmemb, size);
@@ -46,6 +45,15 @@ void *xrealloc(void *ptr, size_t size, const char *file, const int line, const c
 		_exit(1);
 	}
 	return ptr;
+}
+
+void *dict_search(const dict *list, uint8_t id) {
+	if(list == NULL) return NULL;
+	dict *ptr;
+	for(ptr = (dict *)list; ; ptr++) {
+		if(ptr->val == NULL) return NULL;
+		if(ptr->id == id) return ptr->val;
+	}
 }
 
 char *fmt_hexstring(uint8_t *data, uint16_t len) {

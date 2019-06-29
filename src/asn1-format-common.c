@@ -23,8 +23,7 @@
 #include "asn1/asn_SET_OF.h"		// _A_CSET_FROM_VOID()
 #include <libacars/vstring.h>		// la_vstring, LA_ISPRINTF()
 #include "asn1-util.h"			// ASN1_FORMATTER_PROTOTYPE
-#include "dumpvdl2.h"			// CAST_PTR
-#include "tlv.h"			// dict_search
+#include "dumpvdl2.h"			// CAST_PTR, dict_search()
 
 char const *value2enum(asn_TYPE_descriptor_t *td, long const value) {
 	if(td == NULL) return NULL;

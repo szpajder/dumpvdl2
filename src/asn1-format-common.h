@@ -20,6 +20,7 @@
 #include <libacars/vstring.h>		// la_vstring
 #include "asn1/asn_application.h"	// asn_TYPE_descriptor_t
 #include "asn1-util.h"			// ASN1_FORMATTER_PROTOTYPE
+#include "dumpvdl2.h"			// dict
 
 char const *value2enum(asn_TYPE_descriptor_t *td, long const value);
 void _format_INTEGER_with_unit(la_vstring *vstr, char const * const label, asn_TYPE_descriptor_t *td,

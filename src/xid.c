@@ -23,8 +23,7 @@
 #include <libacars/libacars.h>	// la_proto_node, la_proto_node_new()
 #include <libacars/vstring.h>	// la_vstring
 #include "config.h"		// IS_BIG_ENDIAN
-#include "dumpvdl2.h"
-#include "tlv.h"		// dict
+#include "dumpvdl2.h"		// dict_search()
 #include "tlv2.h"
 #include "avlc.h"		// avlc_addr_t
 #include "xid.h"

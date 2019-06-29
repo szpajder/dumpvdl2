@@ -77,15 +77,6 @@ tlv_list_t *tlv_deserialize(uint8_t *buf, uint16_t len, uint8_t len_octets) {
 	return head;
 }
 
-void *dict_search(const dict *list, uint8_t id) {
-	if(list == NULL) return NULL;
-	dict *ptr;
-	for(ptr = (dict *)list; ; ptr++) {
-		if(ptr->val == NULL) return NULL;
-		if(ptr->id == id) return ptr->val;
-	}
-}
-
 tlv_dict *tlv_dict_search(const tlv_dict *list, uint8_t id) {
 	if(list == NULL) return NULL;
 	tlv_dict *ptr;

@@ -21,7 +21,6 @@
 #include <libacars/libacars.h>		// la_proto_node
 #include <libacars/list.h>		// la_list
 #include "dumpvdl2.h"			// octet_string_t
-#include "tlv.h"			// dict
 #define BISPDU_HDR_LEN			30U
 #define BISPDU_OPEN_VERSION		1
 

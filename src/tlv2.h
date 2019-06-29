@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <libacars/list.h>		// la_list
 #include <libacars/vstring.h>		// la_vstring
+#include "dumpvdl2.h"			// dict
 
 typedef struct {
 	la_vstring *vstr;

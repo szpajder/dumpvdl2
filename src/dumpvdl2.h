@@ -28,7 +28,6 @@
 #include <libacars/libacars.h>	// la_proto_node
 #include <libacars/vstring.h>	// la_vstring
 #include "config.h"
-#include "tlv.h"
 #ifndef HAVE_PTHREAD_BARRIERS
 #include "pthread_barrier.h"
 #endif
@@ -318,9 +317,15 @@ typedef struct {
 	void *buf;
 	size_t len;
 } octet_string_t;
+typedef struct {
+	uint8_t id;
+	void *val;
+} dict;
+
 extern la_type_descriptor const proto_DEF_unknown;
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func);
 void *xrealloc(void *ptr, size_t size, const char *file, const int line, const char *func);
+void *dict_search(const dict *list, uint8_t id);
 uint16_t extract_uint16_msbfirst(uint8_t const * const data);
 uint32_t extract_uint32_msbfirst(uint8_t const * const data);
 char *fmt_hexstring(uint8_t *data, uint16_t len);
