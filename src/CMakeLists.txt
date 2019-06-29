@@ -179,7 +179,6 @@ add_library (dumpvdl2_base OBJECT
 	idrp.c
 	output.c
 	rs.c
-	tlv.c
 	tlv2.c
 	util.c
 	x25.c
