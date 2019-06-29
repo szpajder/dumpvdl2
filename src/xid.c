@@ -24,7 +24,7 @@
 #include <libacars/vstring.h>	// la_vstring
 #include "config.h"		// IS_BIG_ENDIAN
 #include "dumpvdl2.h"		// dict_search()
-#include "tlv2.h"
+#include "tlv.h"
 #include "avlc.h"		// avlc_addr_t
 #include "xid.h"
 
@@ -99,7 +99,7 @@ typedef union {
 	} bits;
 } conn_mgmt_t;
 
-TLV2_PARSER(conn_mgmt_parse) {
+TLV_PARSER(conn_mgmt_parse) {
 	UNUSED(typecode);
 	if(len < 1) {
 		return NULL;
@@ -109,7 +109,7 @@ TLV2_PARSER(conn_mgmt_parse) {
 	return ret;
 }
 
-TLV2_FORMATTER(conn_mgmt_format_text) {
+TLV_FORMATTER(conn_mgmt_format_text) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
@@ -128,7 +128,7 @@ static dict const modulations[] = {
 	{ .id = 0, .val = NULL }
 };
 
-TLV2_FORMATTER(modulation_support_format_text) {
+TLV_FORMATTER(modulation_support_format_text) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
@@ -157,7 +157,7 @@ vdl2_frequency_t parse_freq(uint8_t const * const buf) {
 	};
 }
 
-TLV2_PARSER(vdl2_frequency_parse) {
+TLV_PARSER(vdl2_frequency_parse) {
 	UNUSED(typecode);
 	if(len < 2) {
 		return NULL;
@@ -175,7 +175,7 @@ static void append_frequency_as_text(vdl2_frequency_t *f, la_vstring *vstr) {
 	la_vstring_append_sprintf(vstr, "%s", ")");
 }
 
-TLV2_FORMATTER(vdl2_frequency_format_text) {
+TLV_FORMATTER(vdl2_frequency_format_text) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
@@ -190,7 +190,7 @@ TLV2_FORMATTER(vdl2_frequency_format_text) {
  * DLC addresses
  **************************************************************************/
 
-TLV2_PARSER(dlc_addr_list_parse) {
+TLV_PARSER(dlc_addr_list_parse) {
 	UNUSED(typecode);
 	if(len % 4 != 0) {
 		return NULL;
@@ -213,7 +213,7 @@ static void append_dlc_addr_as_text(void const * const data, void *ctx) {
 	la_vstring_append_sprintf(vstr, " %06X", a->a_addr.addr);
 }
 
-TLV2_FORMATTER(dlc_addr_list_format_text) {
+TLV_FORMATTER(dlc_addr_list_format_text) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
@@ -224,7 +224,7 @@ TLV2_FORMATTER(dlc_addr_list_format_text) {
 	EOL(ctx->vstr);
 }
 
-TLV2_DESTRUCTOR(dlc_list_destroy) {
+TLV_DESTRUCTOR(dlc_list_destroy) {
 	la_list_free((la_list *)data);
 }
 
@@ -237,7 +237,7 @@ typedef struct {
 	avlc_addr_t gs_addr;
 } freq_support_t;
 
-TLV2_PARSER(freq_support_list_parse) {
+TLV_PARSER(freq_support_list_parse) {
 	UNUSED(typecode);
 	if(len % 6 != 0) {
 		return NULL;
@@ -258,7 +258,7 @@ TLV2_PARSER(freq_support_list_parse) {
 static void fs_entry_format_text(void const * const data, void *ctx_ptr) {
 	ASSERT(data != NULL);
 	ASSERT(ctx_ptr != NULL);
-	CAST_PTR(ctx, tlv2_formatter_ctx_t *, ctx_ptr);
+	CAST_PTR(ctx, tlv_formatter_ctx_t *, ctx_ptr);
 	CAST_PTR(fs, freq_support_t *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", "Ground station");
 	append_dlc_addr_as_text(&fs->gs_addr, ctx->vstr);
@@ -268,7 +268,7 @@ static void fs_entry_format_text(void const * const data, void *ctx_ptr) {
 	EOL(ctx->vstr);
 }
 
-TLV2_FORMATTER(freq_support_list_format_text) {
+TLV_FORMATTER(freq_support_list_format_text) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
@@ -280,7 +280,7 @@ TLV2_FORMATTER(freq_support_list_format_text) {
 	ctx->indent--;
 }
 
-TLV2_DESTRUCTOR(freq_support_list_destroy) {
+TLV_DESTRUCTOR(freq_support_list_destroy) {
 	la_list_free((la_list *)data);
 }
 
@@ -294,7 +294,7 @@ typedef struct {
 	uint8_t cause;
 } lcr_cause_t;
 
-TLV2_PARSER(lcr_cause_parse) {
+TLV_PARSER(lcr_cause_parse) {
 	UNUSED(typecode);
 	if(len < 3) {
 		return NULL;
@@ -310,7 +310,7 @@ TLV2_PARSER(lcr_cause_parse) {
 	return c;
 }
 
-TLV2_FORMATTER(lcr_cause_format_text) {
+TLV_FORMATTER(lcr_cause_format_text) {
 	static dict const lcr_causes[] = {
 		{ .id = 0x00, .val = "Bad local parameter" },
 		{ .id = 0x01, .val = "Out of link layer resources" },
@@ -361,7 +361,7 @@ static location_t loc_parse(uint8_t *buf) {
 	return (location_t){ .lat = latf, .lon = lonf };
 }
 
-TLV2_PARSER(location_parse) {
+TLV_PARSER(location_parse) {
 	UNUSED(typecode);
 	if(len < 3) {
 		return NULL;
@@ -386,7 +386,7 @@ static void append_location_as_text(la_vstring *vstr, location_t loc) {
 	la_vstring_append_sprintf(vstr, "%.1f%c %.1f%c", loc.lat, ns, loc.lon, we);
 }
 
-TLV2_FORMATTER(location_format_text) {
+TLV_FORMATTER(location_format_text) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
@@ -406,7 +406,7 @@ typedef struct {
 	int alt;
 } loc_alt_t;
 
-TLV2_PARSER(loc_alt_parse) {
+TLV_PARSER(loc_alt_parse) {
 	UNUSED(typecode);
 	if(len < 4) {
 		return NULL;
@@ -417,7 +417,7 @@ TLV2_PARSER(loc_alt_parse) {
 	return la;
 }
 
-TLV2_FORMATTER(loc_alt_format_text) {
+TLV_FORMATTER(loc_alt_format_text) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
@@ -435,91 +435,91 @@ TLV2_FORMATTER(loc_alt_format_text) {
 static const dict xid_pub_params[] = {
 	{
 		.id = 0x1,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Parameter set ID",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_as_ascii_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_as_ascii_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x2,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Procedure classes",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x3,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "HDLC options",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x5,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "N1-downlink",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x6,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "N1-uplink",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x7,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "k-downlink",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x8,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "k-uplink",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x9,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Timer T1_downlink",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0xA,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Counter N2",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0xB,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Timer T2",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
@@ -536,16 +536,16 @@ static const dict xid_pub_params[] = {
 static const dict xid_vdl_params[] = {
 	{
 		.id = 0x00,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Parameter set ID",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_as_ascii_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_as_ascii_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x01,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Connection management",
 			.parse = conn_mgmt_parse,
 			.format_text = conn_mgmt_format_text,
@@ -554,43 +554,43 @@ static const dict xid_vdl_params[] = {
 	},
 	{
 		.id = 0x02,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "SQP",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x03,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "XID sequencing",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x04,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "AVLC specific options",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x05,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Expedited SN connection ",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x06,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "LCR cause",
 			.parse = lcr_cause_parse,
 			.format_text = lcr_cause_format_text,
@@ -599,16 +599,16 @@ static const dict xid_vdl_params[] = {
 	},
 	{
 		.id = 0x81,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Modulation support",
-			.parse = tlv2_uint8_parse,
+			.parse = tlv_uint8_parse,
 			.format_text = modulation_support_format_text,
-			.destroy = tlv2_destroy_noop
+			.destroy = tlv_destroy_noop
 		}
 	},
 	{
 		.id = 0x82,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Alternate ground stations",
 			.parse = dlc_addr_list_parse,
 			.format_text = dlc_addr_list_format_text,
@@ -617,16 +617,16 @@ static const dict xid_vdl_params[] = {
 	},
 	{
 		.id = 0x83,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Destination airport",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_as_ascii_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_as_ascii_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x84,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Aircraft location",
 			.parse = loc_alt_parse,
 			.format_text = loc_alt_format_text,
@@ -635,7 +635,7 @@ static const dict xid_vdl_params[] = {
 	},
 	{
 		.id = 0x40,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Autotune frequency",
 			.parse = vdl2_frequency_parse,
 			.format_text = vdl2_frequency_format_text,
@@ -644,7 +644,7 @@ static const dict xid_vdl_params[] = {
 	},
 	{
 		.id = 0x41,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Replacement ground stations",
 			.parse = dlc_addr_list_parse,
 			.format_text = dlc_addr_list_format_text,
@@ -653,79 +653,79 @@ static const dict xid_vdl_params[] = {
 	},
 	{
 		.id = 0x42,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Timer T4",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x43,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "MAC persistence",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x44,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Counter M1",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x45,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Timer TM2",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x46,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Timer TG5",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x47,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Timer T3min",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x48,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Address filter",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x49,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Broadcast connection",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0xC0,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Frequency support list",
 			.parse = freq_support_list_parse,
 			.format_text = freq_support_list_format_text,
@@ -734,61 +734,61 @@ static const dict xid_vdl_params[] = {
 	},
 	{
 		.id = 0xC1,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Airport coverage",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_as_ascii_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_as_ascii_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0xC3,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Nearest airport ID",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_as_ascii_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_as_ascii_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0xC4,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "ATN router NETs",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_with_ascii_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_with_ascii_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0xC5,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "System mask",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0xC6,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "TG3",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0xC7,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "TG4",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0xC8,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Ground station location",
 			.parse = location_parse,
 			.format_text = location_format_text,
@@ -840,14 +840,14 @@ la_proto_node *xid_parse(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uin
 				debug_print("Duplicate XID group 0x%02x\n", XID_GID_PUBLIC);
 				goto end;
 			}
-			msg->pub_params = tlv2_parse(ptr, grouplen, xid_pub_params, 1);
+			msg->pub_params = tlv_parse(ptr, grouplen, xid_pub_params, 1);
 			break;
 		case XID_GID_PRIVATE:
 			if(msg->vdl_params != NULL) {
 				debug_print("Duplicate XID group 0x%02x\n", XID_GID_PRIVATE);
 				goto end;
 			}
-			msg->vdl_params = tlv2_parse(ptr, grouplen, xid_vdl_params, 1);
+			msg->vdl_params = tlv_parse(ptr, grouplen, xid_vdl_params, 1);
 			break;
 		default:
 			debug_print("Unknown XID Group ID 0x%x, ignored\n", gid);
@@ -867,7 +867,7 @@ la_proto_node *xid_parse(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uin
 	conn_mgmt_t cm = {
 		.val = 0xff		// default dummy value
 	};
-	tlv2_tag_t *tmp = tlv2_list_search(msg->vdl_params, XID_PARAM_CONN_MGMT);
+	tlv_tag_t *tmp = tlv_list_search(msg->vdl_params, XID_PARAM_CONN_MGMT);
 	if(tmp != NULL) {
 		cm = *(conn_mgmt_t *)(tmp->data);
 	}
@@ -903,10 +903,10 @@ void xid_format_text(la_vstring * const vstr, void const * const data, int inden
 // pub_params are optional, vdl_params are mandatory
 	if(msg->pub_params) {
 		LA_ISPRINTF(vstr, indent, "%s", "Public params:\n");
-		tlv2_list_format_text(vstr, msg->pub_params, indent+1);
+		tlv_list_format_text(vstr, msg->pub_params, indent+1);
 	}
 	LA_ISPRINTF(vstr, indent, "%s", "VDL params:\n");
-	tlv2_list_format_text(vstr, msg->vdl_params, indent+1);
+	tlv_list_format_text(vstr, msg->vdl_params, indent+1);
 }
 
 /***************************************************************************
@@ -918,8 +918,8 @@ void xid_destroy(void *data) {
 		return;
 	}
 	CAST_PTR(msg, xid_msg_t *, data);
-	tlv2_list_destroy(msg->pub_params);
-	tlv2_list_destroy(msg->vdl_params);
+	tlv_list_destroy(msg->pub_params);
+	tlv_list_destroy(msg->vdl_params);
 	msg->pub_params = msg->vdl_params = NULL;
 	XFREE(data);
 }

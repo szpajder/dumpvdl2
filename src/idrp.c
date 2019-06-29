@@ -26,7 +26,7 @@
 #include <libacars/list.h>		// la_list
 #include "idrp.h"
 #include "dumpvdl2.h"
-#include "tlv2.h"
+#include "tlv.h"
 
 // Forward declaration
 la_type_descriptor const proto_DEF_idrp_pdu;
@@ -103,7 +103,7 @@ typedef struct {
 	uint8_t localpref;
 } idrp_route_separator_t;
 
-TLV2_PARSER(idrp_route_separator_parse) {
+TLV_PARSER(idrp_route_separator_parse) {
 	UNUSED(typecode);
 	if(len != 5) {
 		debug_print("incorrect length: %zu != 5)", len);
@@ -115,7 +115,7 @@ TLV2_PARSER(idrp_route_separator_parse) {
 	return ret;
 }
 
-TLV2_FORMATTER(idrp_route_separator_format_text) {
+TLV_FORMATTER(idrp_route_separator_format_text) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
@@ -129,7 +129,7 @@ TLV2_FORMATTER(idrp_route_separator_format_text) {
 static const dict path_attributes[] = {
 	{
 		.id = 1,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Route",
 			.parse = idrp_route_separator_parse,
 			.format_text = idrp_route_separator_format_text,
@@ -138,137 +138,137 @@ static const dict path_attributes[] = {
 	},
 	{
 		.id = 2,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Ext. info",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 3,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "RD path",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_with_ascii_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_with_ascii_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 4,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Next hop",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 5,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Distribute list inclusions",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 6,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Distribute list exclusions",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 7,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Multi exit discriminator",
-			.parse = tlv2_uint8_parse,
-			.format_text = tlv2_uint_format_text,
-			.destroy = tlv2_destroy_noop
+			.parse = tlv_uint8_parse,
+			.format_text = tlv_uint_format_text,
+			.destroy = tlv_destroy_noop
 		}
 	},
 	{
 		.id = 8,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Transit delay",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 9,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Residual error",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 10,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Expense",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 11,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Locally defined QoS",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 12,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Hierarchical recording",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 13,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "RD hop count",
-			.parse = tlv2_uint8_parse,
-			.format_text = tlv2_uint_format_text,
-			.destroy = tlv2_destroy_noop
+			.parse = tlv_uint8_parse,
+			.format_text = tlv_uint_format_text,
+			.destroy = tlv_destroy_noop
 		}
 	},
 	{
 		.id = 14,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Security",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 15,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Capacity",
-			.parse = tlv2_uint8_parse,
-			.format_text = tlv2_uint_format_text,
-			.destroy = tlv2_destroy_noop
+			.parse = tlv_uint8_parse,
+			.format_text = tlv_uint_format_text,
+			.destroy = tlv_destroy_noop
 		}
 	},
 	{
 		.id = 16,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Priority",
-			.parse = tlv2_uint8_parse,
-			.format_text = tlv2_uint_format_text,
-			.destroy = tlv2_destroy_noop
+			.parse = tlv_uint8_parse,
+			.format_text = tlv_uint_format_text,
+			.destroy = tlv_destroy_noop
 		}
 	},
 	{
@@ -342,7 +342,7 @@ static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 				return -1;
 			}
 // TODO: parse RD_PATH
-			pdu->path_attributes = tlv2_single_tag_parse(typecode, buf, alen,
+			pdu->path_attributes = tlv_single_tag_parse(typecode, buf, alen,
 				path_attributes, pdu->path_attributes);
 			buf += alen; len -= alen; total_attrib_len -= alen;
 		}
@@ -509,7 +509,7 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 			indent--;
 		}
 		if(pdu->path_attributes != NULL) {
-			tlv2_list_format_text(vstr, pdu->path_attributes, indent);
+			tlv_list_format_text(vstr, pdu->path_attributes, indent);
 		}
 
 		if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
@@ -534,8 +534,8 @@ void idrp_pdu_destroy(void *data) {
 		return;
 	}
 	CAST_PTR(pdu, idrp_pdu_t *, data);
-	la_list_free_full(pdu->withdrawn_routes, tlv2_destroy_noop);
-	tlv2_list_destroy(pdu->path_attributes);
+	la_list_free_full(pdu->withdrawn_routes, tlv_destroy_noop);
+	tlv_list_destroy(pdu->path_attributes);
 	XFREE(pdu->data);
 	XFREE(data);
 }

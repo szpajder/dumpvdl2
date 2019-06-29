@@ -24,7 +24,7 @@
 #include <libacars/vstring.h>	// la_vstring, LA_ISPRINTF()
 #include "esis.h"
 #include "dumpvdl2.h"
-#include "tlv2.h"
+#include "tlv.h"
 
 // Forward declaration
 la_type_descriptor const proto_DEF_esis_pdu;
@@ -35,7 +35,7 @@ typedef struct {
 	bool atsc_traffic_classes_present;
 } esis_subnet_caps_t;
 
-TLV2_PARSER(esis_subnet_caps_parse) {
+TLV_PARSER(esis_subnet_caps_parse) {
 	UNUSED(typecode);
 	if(len < 1) return NULL;
 
@@ -49,7 +49,7 @@ TLV2_PARSER(esis_subnet_caps_parse) {
 	return ret;
 }
 
-TLV2_FORMATTER(esis_subnet_caps_format_text) {
+TLV_FORMATTER(esis_subnet_caps_format_text) {
 	static const dict atn_traffic_types[] = {
 		{  1, "ATS" },
 		{  2, "AOC" },
@@ -106,26 +106,26 @@ static const dict esis_pdu_types[] = {
 static const dict esis_options[] = {
 	{
 		.id = 0xc5,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Security",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0xcf,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Priority",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 /* QoS Maintenance not used in ATN (ICAO 9705 Table 5.8-2) */
 	{
 		.id = 0x81,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Mobile Subnetwork Capabilities",
 			.parse = esis_subnet_caps_parse,
 			.format_text = esis_subnet_caps_format_text,
@@ -134,10 +134,10 @@ static const dict esis_options[] = {
 	},
 	{
 		.id = 0x88,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "ATN Data Link Capabilities",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
@@ -185,9 +185,9 @@ la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	case ESIS_PDU_TYPE_ESH:
 	case ESIS_PDU_TYPE_ISH:
 		if(remaining > 0) {
-			pdu->options = tlv2_parse(ptr, remaining, esis_options, 1);
+			pdu->options = tlv_parse(ptr, remaining, esis_options, 1);
 			if(pdu->options == NULL) {
-				debug_print("%s", "tlv2_parse failed when parsing options\n");
+				debug_print("%s", "tlv_parse failed when parsing options\n");
 				goto end;
 			}
 		}
@@ -232,7 +232,7 @@ static void esis_pdu_format_text(la_vstring * const vstr, void const * const dat
 	EOL(vstr);
 	if(pdu->options != NULL) {
 		LA_ISPRINTF(vstr, indent, "%s", "Options:\n");
-		tlv2_list_format_text(vstr, pdu->options, indent+1);
+		tlv_list_format_text(vstr, pdu->options, indent+1);
 	}
 }
 
@@ -241,7 +241,7 @@ void esis_pdu_destroy(void *data) {
 		return;
 	}
 	CAST_PTR(pdu, esis_pdu_t *, data);
-	tlv2_list_destroy(pdu->options);
+	tlv_list_destroy(pdu->options);
 	pdu->options = NULL;
 	XFREE(data);
 }

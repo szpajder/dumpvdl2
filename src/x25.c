@@ -27,7 +27,7 @@
 #include "x25.h"
 #include "clnp.h"
 #include "esis.h"
-#include "tlv2.h"
+#include "tlv.h"
 
 static const dict x25_pkttype_names[] = {
 	{ X25_CALL_REQUEST,	"Call Request" },
@@ -48,55 +48,55 @@ static const dict x25_pkttype_names[] = {
 static const dict x25_facilities[] = {
 	{
 		.id = 0x00,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Marker (non-X.25 facilities follow)",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x01,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Fast Select",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x08,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Called line address modified",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x42,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Packet size",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x43,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Window size",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0xc9,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Called address extension",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_with_ascii_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_with_ascii_format_text,
 			.destroy = NULL
 		}
 	},
@@ -285,7 +285,7 @@ static int parse_x25_facility_field(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) 
 		return -1;
 	}
 	uint8_t i = fac_len;
-// Can't use tlv2_parse to parse the whole tag sequence at once, because length field
+// Can't use tlv_parse to parse the whole tag sequence at once, because length field
 // format is non-standard. We have to extract typecode and length and parse the TLV one by one.
 	while(i > 0) {
 		uint8_t code = *buf;
@@ -307,7 +307,7 @@ static int parse_x25_facility_field(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) 
 			debug_print("Facility field truncated: code=%02x param_len=%u buf len=%u\n", code, param_len, i);
 			return -1;
 		}
-		pkt->facilities = tlv2_single_tag_parse(code, buf, param_len, x25_facilities, pkt->facilities);
+		pkt->facilities = tlv_single_tag_parse(code, buf, param_len, x25_facilities, pkt->facilities);
 		buf += param_len; i -= param_len;
 	}
 	return 1 + fac_len;
@@ -460,7 +460,7 @@ void x25_format_text(la_vstring * const vstr, void const * const data, int inden
 	case X25_CALL_REQUEST:
 	case X25_CALL_ACCEPTED:
 		LA_ISPRINTF(vstr, indent, "%s", "Facilities:\n");
-		tlv2_list_format_text(vstr, pkt->facilities, indent+1);
+		tlv_list_format_text(vstr, pkt->facilities, indent+1);
 		char *comp = fmt_bitfield(pkt->compression, x25_comp_algos);
 		LA_ISPRINTF(vstr, indent, "Compression support: %s\n", comp);
 		XFREE(comp);
@@ -481,7 +481,7 @@ void x25_destroy(void *data) {
 	}
 	CAST_PTR(pkt, x25_pkt_t *, data);
 	if(pkt->facilities != NULL) {
-		tlv2_list_destroy(pkt->facilities);
+		tlv_list_destroy(pkt->facilities);
 		pkt->facilities = NULL;
 	}
 	XFREE(data);

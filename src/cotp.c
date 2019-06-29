@@ -25,7 +25,7 @@
 #include <libacars/libacars.h>		// la_proto_node
 #include <libacars/vstring.h>		// la_vstring
 #include "dumpvdl2.h"
-#include "tlv2.h"
+#include "tlv.h"
 #include "cotp.h"
 #include "icao.h"
 
@@ -36,9 +36,9 @@
 #define SPM_DISC_REASON_MAX SPM_DISC_NORMAL_REUSE_NOT_POSSIBLE
 
 // Forward declarations
-TLV2_PARSER(tpdu_size_parse);
-TLV2_PARSER(flow_control_confirmation_parse);
-TLV2_FORMATTER(flow_control_confirmation_format_text);
+TLV_PARSER(tpdu_size_parse);
+TLV_PARSER(flow_control_confirmation_parse);
+TLV_FORMATTER(flow_control_confirmation_format_text);
 la_type_descriptor const proto_DEF_cotp_concatenated_pdu;
 
 // Some rarely used parameters which are not required to be supported
@@ -48,79 +48,79 @@ la_type_descriptor const proto_DEF_cotp_concatenated_pdu;
 static dict const cotp_variable_part_params[] = {
 	{
 		.id = 0x08,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "ATN checksum",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		},
 	},
 	{
 		.id = 0x85,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Ack time (ms)",
-			.parse = tlv2_uint16_msbfirst_parse,
-			.format_text = tlv2_uint_format_text,
-			.destroy = tlv2_destroy_noop
+			.parse = tlv_uint16_msbfirst_parse,
+			.format_text = tlv_uint_format_text,
+			.destroy = tlv_destroy_noop
 		},
 	},
 	{
 		.id = 0x86,		// not required
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Residual error rate",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		},
 	},
 	{
 		.id = 0x87,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Priority",
-			.parse = tlv2_uint16_msbfirst_parse,
-			.format_text = tlv2_uint_format_text,
-			.destroy = tlv2_destroy_noop
+			.parse = tlv_uint16_msbfirst_parse,
+			.format_text = tlv_uint_format_text,
+			.destroy = tlv_destroy_noop
 		},
 	},
 	{
 		.id = 0x88,		// not required
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Transit delay",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		},
 	},
 	{
 		.id = 0x89,		// not required
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Throughput",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		},
 	},
 	{
 		.id = 0x8a,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Subsequence number",
-			.parse = tlv2_uint16_msbfirst_parse,
-			.format_text = tlv2_uint_format_text,
-			.destroy = tlv2_destroy_noop
+			.parse = tlv_uint16_msbfirst_parse,
+			.format_text = tlv_uint_format_text,
+			.destroy = tlv_destroy_noop
 		},
 	},
 	{
 		.id = 0x8b,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Reassignment time (s)",
-			.parse = tlv2_uint16_msbfirst_parse,
-			.format_text = tlv2_uint_format_text,
-			.destroy = tlv2_destroy_noop
+			.parse = tlv_uint16_msbfirst_parse,
+			.format_text = tlv_uint_format_text,
+			.destroy = tlv_destroy_noop
 		},
 	},
 	{
 		.id = 0x8c,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Flow control",
 			.parse = flow_control_confirmation_parse,
 			.format_text = flow_control_confirmation_format_text,
@@ -129,110 +129,110 @@ static dict const cotp_variable_part_params[] = {
 	},
 	{
 		.id = 0x8f,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Selective ACK",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		},
 	},
 	{
 		.id = 0xc0,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "TPDU size (bytes)",
 			.parse = tpdu_size_parse,
-			.format_text = tlv2_uint_format_text,
-			.destroy = tlv2_destroy_noop
+			.format_text = tlv_uint_format_text,
+			.destroy = tlv_destroy_noop
 		},
 	},
 	{
 		.id = 0xc1,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Calling transport selector",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		},
 	},
 	{
 		.id = 0xc2,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Called/responding transport selector",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		},
 	},
 	{
 		.id = 0xc3,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Checksum",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		},
 	},
 	{
 		.id = 0xc4,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Version",
-			.parse = tlv2_uint8_parse,
-			.format_text = tlv2_uint_format_text,
-			.destroy = tlv2_destroy_noop
+			.parse = tlv_uint8_parse,
+			.format_text = tlv_uint_format_text,
+			.destroy = tlv_destroy_noop
 		},
 	},
 	{
 		.id = 0xc5,		// not required
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Protection params",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		},
 	},
 	{
 		.id = 0xc6,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Additional options",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		},
 	},
 	{
 		.id = 0xc7,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Additional protocol class(es)",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		},
 	},
 	{
 		.id = 0xe0,		// DR
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Additional info",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		},
 	},
 	{
 		.id = 0xf0,		// not required
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Preferred max. TPDU size (bytes)",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		},
 	},
 	{
 		.id = 0xf2,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Inactivity timer (ms)",
-			.parse = tlv2_uint32_msbfirst_parse,
-			.format_text = tlv2_uint_format_text,
-			.destroy = tlv2_destroy_noop
+			.parse = tlv_uint32_msbfirst_parse,
+			.format_text = tlv_uint_format_text,
+			.destroy = tlv_destroy_noop
 		},
 	},
 	{
@@ -246,19 +246,19 @@ static dict const cotp_variable_part_params[] = {
 static dict const cotp_er_variable_part_params[] = {
 	{
 		.id = 0xc1,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Invalid TPDU header",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0xc3,
-		.val = &(tlv2_type_descriptor_t){
+		.val = &(tlv_type_descriptor_t){
 			.label = "Checksum",
-			.parse = tlv2_octet_string_parse,
-			.format_text = tlv2_octet_string_format_text,
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
 		}
 	},
@@ -268,7 +268,7 @@ static dict const cotp_er_variable_part_params[] = {
 	}
 };
 
-TLV2_PARSER(tpdu_size_parse) {
+TLV_PARSER(tpdu_size_parse) {
 	UNUSED(typecode);
 	if(len != 1) return NULL;
 	if(buf[0] < 0x7 || buf[0] >> 0xd) return NULL;
@@ -281,7 +281,7 @@ typedef struct {
 	uint16_t acked_credit;
 } cotp_flow_control_confirm_t;
 
-TLV2_PARSER(flow_control_confirmation_parse) {
+TLV_PARSER(flow_control_confirmation_parse) {
 	UNUSED(typecode);
 	if(len != 8) return NULL;
 	NEW(cotp_flow_control_confirm_t, ret);
@@ -291,7 +291,7 @@ TLV2_PARSER(flow_control_confirmation_parse) {
 	return ret;
 }
 
-TLV2_FORMATTER(flow_control_confirmation_format_text) {
+TLV_FORMATTER(flow_control_confirmation_format_text) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
@@ -449,10 +449,10 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 		goto fail;
 	}
 	if(variable_part_offset > 0 && remaining > variable_part_offset) {
-		pdu->variable_part_params = tlv2_parse(ptr + variable_part_offset,
+		pdu->variable_part_params = tlv_parse(ptr + variable_part_offset,
 			li - variable_part_offset, cotp_params, 1);
 		if(pdu->variable_part_params == NULL) {
-			debug_print("%s", "tlv2_parse failed on variable part\n");
+			debug_print("%s", "tlv_parse failed on variable part\n");
 			goto fail;
 		}
 	}
@@ -562,7 +562,7 @@ static void output_cotp_pdu_as_text(gpointer p, gpointer user_data) {
 	ASSERT(p != NULL);
 	ASSERT(user_data != NULL);
 	CAST_PTR(pdu, cotp_pdu_t *, p);
-	CAST_PTR(ctx, tlv2_formatter_ctx_t *, user_data);
+	CAST_PTR(ctx, tlv_formatter_ctx_t *, user_data);
 
 	la_vstring *vstr = ctx->vstr;
 	int indent = ctx->indent;
@@ -623,7 +623,7 @@ static void output_cotp_pdu_as_text(gpointer p, gpointer user_data) {
 	case COTP_TPDU_DC:
 		break;
 	}
-	tlv2_list_format_text(vstr, pdu->variable_part_params, indent);
+	tlv_list_format_text(vstr, pdu->variable_part_params, indent);
 
 	if(pdu->code == COTP_TPDU_DR && pdu->x225_xport_disc_reason >= 0) {
 		LA_ISPRINTF(vstr, indent,
@@ -640,12 +640,12 @@ void cotp_concatenated_pdu_format_text(la_vstring * const vstr, void const * con
 	ASSERT(indent >= 0);
 
 	CAST_PTR(pdu_list, GSList *, data);
-	g_slist_foreach(pdu_list, output_cotp_pdu_as_text, &(tlv2_formatter_ctx_t){ .vstr = vstr, .indent = indent});
+	g_slist_foreach(pdu_list, output_cotp_pdu_as_text, &(tlv_formatter_ctx_t){ .vstr = vstr, .indent = indent});
 }
 
 static void cotp_pdu_destroy(gpointer ptr) {
 	CAST_PTR(pdu, cotp_pdu_t *, ptr);
-	tlv2_list_destroy(pdu->variable_part_params);
+	tlv_list_destroy(pdu->variable_part_params);
 	XFREE(pdu);
 }
 
