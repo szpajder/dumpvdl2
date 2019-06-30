@@ -351,11 +351,10 @@ typedef struct {
 } location_t;
 
 static location_t loc_parse(uint8_t *buf) {
-// shift to the left end and then back to propagate sign bit
-	int lat = ((int)buf[0] << 24) | (int)(buf[1] << 16);
-	lat >>= 20;
-	int lon = ((int)buf[1] << 28) | ((int)(buf[2] & 0xff) << 20);
-	lon >>= 20;
+	struct { signed int coord:12; } s;
+	int lat = s.coord = (int)(extract_uint16_msbfirst(buf) >> 4);
+	int lon = s.coord = (int)(extract_uint16_msbfirst(buf + 1) & 0xfff);
+	debug_print("lat: %d lon: %d\n", lat, lon);
 	float latf = (float)lat / 10.0f;
 	float lonf = (float)lon / 10.0f;
 	return (location_t){ .lat = latf, .lon = lonf };
