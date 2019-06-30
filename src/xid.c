@@ -260,7 +260,7 @@ static void fs_entry_format_text(void const * const data, void *ctx_ptr) {
 	ASSERT(ctx_ptr != NULL);
 	CAST_PTR(ctx, tlv_formatter_ctx_t *, ctx_ptr);
 	CAST_PTR(fs, freq_support_t *, data);
-	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", "Ground station");
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:", "Ground station");
 	append_dlc_addr_as_text(&fs->gs_addr, ctx->vstr);
 	EOL(ctx->vstr);
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "%s: ", "Frequency");
