@@ -335,8 +335,7 @@ void *process_samples(void *arg) {
 }
 
 void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx) {
-// -Wunused-parameter
-	(void)ctx;
+	UNUSED(ctx)
 	if(len == 0) return;
 	pthread_barrier_wait(&demods_ready);
 	sbuf_len = len;
@@ -353,8 +352,7 @@ void process_buf_uchar_init() {
 }
 
 void process_buf_short(unsigned char *buf, uint32_t len, void *ctx) {
-// -Wunused-parameter
-	(void)ctx;
+	UNUSED(ctx)
 	if(len == 0) return;
 	int16_t *bbuf = (int16_t *)buf;
 	pthread_barrier_wait(&demods_ready);

@@ -430,8 +430,7 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCUplinkMsgElementId) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Code) {
-// -Wunused-parameter
-	(void)td;
+	UNUSED(td)
 	CAST_PTR(code, Code_t *, sptr);
 	long **cptr = code->list.array;
 	LA_ISPRINTF(vstr, indent, "%s: %ld%ld%ld%ld\n",
@@ -444,8 +443,7 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_Code) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTime) {
-// -Wunused-parameter
-	(void)td;
+	UNUSED(td)
 	CAST_PTR(dtg, DateTime_t *, sptr);
 	Date_t *d = &dtg->date;
 	Time_t *t = &dtg->time;
@@ -455,8 +453,7 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTime) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTimeGroup) {
-// -Wunused-parameter
-	(void)td;
+	UNUSED(td)
 	CAST_PTR(dtg, DateTimeGroup_t *, sptr);
 	Date_t *d = &dtg->date;
 	Timehhmmss_t *t = &dtg->timehhmmss;
@@ -466,15 +463,13 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTimeGroup) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Time) {
-// -Wunused-parameter
-	(void)td;
+	UNUSED(td)
 	CAST_PTR(t, Time_t *, sptr);
 	LA_ISPRINTF(vstr, indent, "%s: %02ld:%02ld\n", label, t->hours, t->minutes);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Latitude) {
-// -Wunused-parameter
-	(void)td;
+	UNUSED(td)
 	CAST_PTR(lat, Latitude_t *, sptr);
 	long const ldir = lat->latitudeDirection;
 	char const *ldir_name = value2enum(&asn_DEF_LatitudeDirection, ldir);
@@ -511,8 +506,7 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_Latitude) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Longitude) {
-// -Wunused-parameter
-	(void)td;
+	UNUSED(td)
 	CAST_PTR(lon, Longitude_t *, sptr);
 	long const ldir = lon->longitudeDirection;
 	char const *ldir_name = value2enum(&asn_DEF_LongitudeDirection, ldir);
@@ -645,8 +639,7 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateMetric) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_LongTsap) {
-// -Wunused-parameter
-	(void)td;
+	UNUSED(td)
 	CAST_PTR(tsap, LongTsap_t *, sptr);
 	GByteArray *tmparray = g_byte_array_new();
 	tmparray = g_byte_array_append(tmparray, tsap->rDP.buf, tsap->rDP.size);
@@ -658,8 +651,7 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_LongTsap) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ShortTsap) {
-// -Wunused-parameter
-	(void)td;
+	UNUSED(td)
 	CAST_PTR(tsap, ShortTsap_t *, sptr);
 	GByteArray *tmparray = g_byte_array_new();
 	tmparray = _stringify_ShortTsap(tmparray, tsap);
@@ -670,8 +662,7 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ShortTsap) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_UnitName) {
-// -Wunused-parameter
-	(void)td;
+	UNUSED(td)
 	CAST_PTR(un, UnitName_t *, sptr);
 	char *fdes = XCALLOC(un->facilityDesignation.size + 1, sizeof(char));
 	snprintf(fdes, un->facilityDesignation.size + 1, "%s", un->facilityDesignation.buf);

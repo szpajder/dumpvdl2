@@ -249,8 +249,7 @@ typedef struct {
 } clnp_error_t;
 
 TLV_PARSER(clnp_error_code_parse) {
-// -Wunused-parameter
-	(void)typecode;
+	UNUSED(typecode)
 	ASSERT(buf != NULL);
 
 	if(len != 2) {
