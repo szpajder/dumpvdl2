@@ -328,8 +328,6 @@ uint16_t extract_uint16_msbfirst(uint8_t const * const data);
 uint32_t extract_uint32_msbfirst(uint8_t const * const data);
 char *fmt_hexstring(uint8_t *data, uint16_t len);
 char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len);
-char *fmt_uint16_msbfirst(uint8_t *data, uint16_t len);
-char *fmt_uint32_msbfirst(uint8_t *data, uint16_t len);
 void bitfield_format_text(la_vstring *vstr, uint8_t val, dict const *d);
 octet_string_t *octet_string_new(void *buf, size_t len);
 int octet_string_parse(uint8_t *buf, size_t len, octet_string_t *result);
