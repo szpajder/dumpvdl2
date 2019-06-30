@@ -326,8 +326,6 @@ void *xrealloc(void *ptr, size_t size, const char *file, const int line, const c
 void *dict_search(const dict *list, uint8_t id);
 uint16_t extract_uint16_msbfirst(uint8_t const * const data);
 uint32_t extract_uint32_msbfirst(uint8_t const * const data);
-char *fmt_hexstring(uint8_t *data, uint16_t len);
-char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len);
 void bitfield_format_text(la_vstring *vstr, uint8_t val, dict const *d);
 octet_string_t *octet_string_new(void *buf, size_t len);
 int octet_string_parse(uint8_t *buf, size_t len, octet_string_t *result);
@@ -337,8 +335,6 @@ void octet_string_with_ascii_format_text(la_vstring * const vstr, void const * c
 size_t slurp_hexstring(char* string, uint8_t **buf);
 char *hexdump(uint8_t *data, size_t len);
 void append_hexdump_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int indent);
-void append_hexstring_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int indent);
-void append_hexstring_ascii_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int indent);
 void unknown_proto_format_text(la_vstring * const vstr, void const * const data, int indent);
 la_proto_node *unknown_proto_pdu_new(void *buf, size_t len);
 

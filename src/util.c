@@ -56,7 +56,7 @@ void *dict_search(const dict *list, uint8_t id) {
 	}
 }
 
-char *fmt_hexstring(uint8_t *data, uint16_t len) {
+static char *fmt_hexstring(uint8_t *data, uint16_t len) {
 	static const char hex[] = "0123456789abcdef";
 	char *buf = NULL;
 	if(data == NULL) return strdup("<undef>");
@@ -73,7 +73,7 @@ char *fmt_hexstring(uint8_t *data, uint16_t len) {
 	return buf;
 }
 
-char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len) {
+static char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len) {
 	if(data == NULL) return strdup("<undef>");
 	if(len == 0) return strdup("none");
 	char *buf = fmt_hexstring(data, len);
@@ -151,7 +151,9 @@ void octet_string_format_text(la_vstring * const vstr, void const * const data, 
 	ASSERT(indent >= 0);
 
 	CAST_PTR(ostring, octet_string_t *, data);
-	append_hexstring_with_indent(vstr, ostring->buf, ostring->len, indent);
+	char *h = fmt_hexstring(ostring->buf, ostring->len);
+	LA_ISPRINTF(vstr, indent, "%s", h);
+	XFREE(h);
 }
 
 void octet_string_with_ascii_format_text(la_vstring * const vstr, void const * const data, int indent) {
@@ -160,7 +162,9 @@ void octet_string_with_ascii_format_text(la_vstring * const vstr, void const * c
 	ASSERT(indent >= 0);
 
 	CAST_PTR(ostring, octet_string_t *, data);
-	append_hexstring_ascii_with_indent(vstr, ostring->buf, ostring->len, indent);
+	char *h = fmt_hexstring_with_ascii(ostring->buf, ostring->len);
+	LA_ISPRINTF(vstr, indent, "%s", h);
+	XFREE(h);
 }
 
 void octet_string_as_ascii_format_text(la_vstring * const vstr, void const * const data, int indent) {
@@ -263,26 +267,9 @@ void append_hexdump_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int
 	XFREE(h);
 }
 
-void append_hexstring_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int indent) {
-	ASSERT(vstr != NULL);
-	ASSERT(indent >= 0);
-	char *h = fmt_hexstring(data, len);
-	LA_ISPRINTF(vstr, indent, "%s", h);
-	XFREE(h);
-}
-
-void append_hexstring_ascii_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int indent) {
-	ASSERT(vstr != NULL);
-	ASSERT(indent >= 0);
-	char *h = fmt_hexstring_with_ascii(data, len);
-	LA_ISPRINTF(vstr, indent, "%s", h);
-	XFREE(h);
-}
-
 // la_proto_node routines for unknown protocols
 // which are to be serialized as octet string (hex dump or hex string)
 
-// TODO: make this a wrapper around octet_string_format_text()
 void unknown_proto_format_text(la_vstring * const vstr, void const * const data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data != NULL);
@@ -294,7 +281,7 @@ void unknown_proto_format_text(la_vstring * const vstr, void const * const data,
 	if(ostring-> buf == NULL || ostring->len == 0) {
 		return;
 	}
-	append_hexstring_with_indent(vstr, ostring->buf, ostring->len, indent);
+	octet_string_format_text(vstr, ostring, indent);
 	EOL(vstr);
 }
 
