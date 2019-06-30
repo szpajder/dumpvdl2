@@ -320,7 +320,7 @@ typedef struct {
 
 static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	cotp_pdu_parse_result r = { NULL, NULL, 0 };
-	cotp_pdu_t *pdu = XCALLOC(1, sizeof(cotp_pdu_t));
+	NEW(cotp_pdu_t, pdu);
 	r.pdu = pdu;
 
 	pdu->err = true;			// fail-safe default

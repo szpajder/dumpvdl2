@@ -806,7 +806,7 @@ static const dict xid_vdl_params[] = {
  **************************************************************************/
 
 la_proto_node *xid_parse(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	xid_msg_t *msg = XCALLOC(1, sizeof(xid_msg_t));
+	NEW(xid_msg_t, msg);
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_XID_msg;
 	node->data = msg;

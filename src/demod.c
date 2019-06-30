@@ -377,8 +377,7 @@ void sincosf_lut_init() {
 }
 
 vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample) {
-	vdl2_channel_t *v;
-	v = XCALLOC(1, sizeof(vdl2_channel_t));
+	NEW(vdl2_channel_t, v);
 	v->bs = bitstream_init(BSLEN);
 	v->frame_bs = bitstream_init(BSLEN);
 	v->mag_nf = 2.0f;

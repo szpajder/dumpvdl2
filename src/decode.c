@@ -157,7 +157,7 @@ static int deinterleave(uint8_t *in, uint32_t len, uint32_t rows, uint32_t cols,
 GAsyncQueue *frame_queue = NULL;
 
 static void enqueue_frame(vdl2_channel_t const * const v, int const frame_num, uint8_t *buf, size_t const len) {
-	avlc_frame_qentry_t *qentry = XCALLOC(1, sizeof(avlc_frame_qentry_t));
+	NEW(avlc_frame_qentry_t, qentry);
 	qentry->buf = XCALLOC(len, sizeof(uint8_t));
 	memcpy(qentry->buf, buf, len);
 	qentry->len = len;

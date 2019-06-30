@@ -130,7 +130,7 @@ typedef struct {
 } sndcf_err_rpt_t;
 
 static la_proto_node *sndcf_error_report_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	sndcf_err_rpt_t *rpt = XCALLOC(1, sizeof(sndcf_err_rpt_t));
+	NEW(sndcf_err_rpt_t, rpt);
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_X25_SNDCF_error_report;
 	node->data = rpt;
@@ -332,7 +332,7 @@ static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *
 }
 
 la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	x25_pkt_t *pkt = XCALLOC(1, sizeof(x25_pkt_t));
+	NEW(x25_pkt_t, pkt);
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_X25_pkt;
 	node->data = pkt;

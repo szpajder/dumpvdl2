@@ -313,7 +313,7 @@ fed_cleanup:
 }
 
 la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	icao_apdu_t *icao_apdu = XCALLOC(1, sizeof(icao_apdu_t));
+	NEW(icao_apdu_t, icao_apdu);
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_icao_apdu;
 	node->data = icao_apdu;

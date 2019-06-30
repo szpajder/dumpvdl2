@@ -170,7 +170,7 @@ char *fmt_uint32_msbfirst(uint8_t *data, uint16_t len) {
 }
 
 octet_string_t *octet_string_new(void *buf, size_t len) {
-	octet_string_t *ostring = XCALLOC(1, sizeof(octet_string_t));
+	NEW(octet_string_t, ostring);
 	ostring->buf = buf;
 	ostring->len = len;
 	return ostring;

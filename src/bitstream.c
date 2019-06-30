@@ -26,9 +26,8 @@
 #include "dumpvdl2.h"
 
 bitstream_t *bitstream_init(uint32_t len) {
-	bitstream_t *ret;
 	if(len == 0) return NULL;
-	ret = XCALLOC(1, sizeof(bitstream_t));
+	NEW(bitstream_t, ret);
 	ret->buf = XCALLOC(len, sizeof(uint8_t));
 	ret->start = ret->end = ret->descrambler_pos = 0;
 	ret->len = len;

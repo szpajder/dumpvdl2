@@ -184,7 +184,7 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type) {
 
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_avlc_frame;
-	avlc_frame_t *frame = XCALLOC(1, sizeof(avlc_frame_t));
+	NEW(avlc_frame_t, frame);
 	node->data = frame;
 	node->next = NULL;
 	frame->q = q;

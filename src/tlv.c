@@ -47,7 +47,7 @@ void tlv_list_destroy(la_list *p) {
 }
 
 la_list *tlv_list_append(la_list *head, uint8_t typecode, tlv_type_descriptor_t *td, uint8_t *data) {
-	tlv_tag_t *tag = XCALLOC(1, sizeof(tlv_tag_t));
+	NEW(tlv_tag_t, tag);
 	tag->typecode = typecode;
 	tag->td = td;
 	tag->data = data;
@@ -211,7 +211,7 @@ typedef struct {
 } tlv_unparsed_tag_t;
 
 TLV_PARSER(tlv_unknown_tag_parse) {
-	tlv_unparsed_tag_t *t = XCALLOC(1, sizeof(tlv_unparsed_tag_t));
+	NEW(tlv_unparsed_tag_t, t);
 	t->typecode = typecode;
 	t->data = octet_string_new(buf, len);
 	return t;

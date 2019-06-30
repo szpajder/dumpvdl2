@@ -157,7 +157,7 @@ static dict const clnp_options[] = {
 
 
 la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	clnp_pdu_t *pdu = XCALLOC(1, sizeof(clnp_pdu_t));
+	NEW(clnp_pdu_t, pdu);
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_clnp_pdu;
 	node->data = pdu;
@@ -256,7 +256,7 @@ TLV_PARSER(clnp_error_code_parse) {
 	if(len != 2) {
 		return NULL;
 	}
-	clnp_error_t *e = XCALLOC(1, sizeof(clnp_error_t));
+	NEW(clnp_error_t, e);
 	e->code = buf[0];
 	e->erroneous_octet = buf[1];
 	return e;
@@ -381,7 +381,7 @@ la_type_descriptor const proto_DEF_clnp_pdu = {
 la_type_descriptor const proto_DEF_clnp_compressed_init_data_pdu;
 
 la_proto_node *clnp_compressed_init_data_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	clnp_compressed_init_data_pdu_t *pdu = XCALLOC(1, sizeof(clnp_compressed_init_data_pdu_t));
+	NEW(clnp_compressed_init_data_pdu_t, pdu);
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_clnp_compressed_init_data_pdu;
 	node->data = pdu;

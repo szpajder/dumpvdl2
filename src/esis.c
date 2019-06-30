@@ -148,7 +148,7 @@ static const dict esis_options[] = {
 };
 
 la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	esis_pdu_t *pdu = XCALLOC(1, sizeof(esis_pdu_t));
+	NEW(esis_pdu_t, pdu);
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_esis_pdu;
 	node->data = pdu;
