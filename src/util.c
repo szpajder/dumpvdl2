@@ -93,24 +93,7 @@ char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len) {
 	return buf;
 }
 
-char *fmt_bitfield(uint8_t val, const dict *d) {
-	if(val == 0) return strdup("none");
-	char *buf = XCALLOC(256, sizeof(char));
-	for(dict *ptr = (dict *)d; ptr->val != NULL; ptr++) {
-		if((val & ptr->id) == ptr->id) {
-			strcat(buf, (char *)ptr->val);
-			strcat(buf, ", ");
-		}
-	}
-	int slen = strlen(buf);
-	if(slen == 0)
-		strcat(buf, "none");
-	else
-		buf[slen-2] = '\0';	// throw out trailing delimiter
-	return buf;
-}
-
-void fmt_bitfield_vstr(la_vstring *vstr, uint8_t val, dict const *d) {
+void bitfield_format_text(la_vstring *vstr, uint8_t val, dict const *d) {
 	ASSERT(vstr != NULL);
 	ASSERT(d != NULL);
 

@@ -134,7 +134,7 @@ TLV_FORMATTER(modulation_support_format_text) {
 	ASSERT(ctx->indent >= 0);
 	CAST_PTR(val, uint32_t *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
-	fmt_bitfield_vstr(ctx->vstr, (uint8_t)(*val & 0xff), modulations);
+	bitfield_format_text(ctx->vstr, (uint8_t)(*val & 0xff), modulations);
 	EOL(ctx->vstr);
 }
 
@@ -171,7 +171,7 @@ static void append_frequency_as_text(vdl2_frequency_t *f, la_vstring *vstr) {
 	ASSERT(vstr != NULL);
 	ASSERT(f != NULL);
 	la_vstring_append_sprintf(vstr, "%.3f MHz (", f->frequency);
-	fmt_bitfield_vstr(vstr, f->modulations, modulations);
+	bitfield_format_text(vstr, f->modulations, modulations);
 	la_vstring_append_sprintf(vstr, "%s", ")");
 }
 
