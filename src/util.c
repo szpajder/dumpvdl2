@@ -58,9 +58,11 @@ void *dict_search(const dict *list, uint8_t id) {
 
 static char *fmt_hexstring(uint8_t *data, uint16_t len) {
 	static const char hex[] = "0123456789abcdef";
+	ASSERT(data != NULL);
 	char *buf = NULL;
-	if(data == NULL) return strdup("<undef>");
-	if(len == 0) return strdup("none");
+	if(len == 0) {
+		return strdup("none");
+	}
 	buf = XCALLOC(3 * len + 1, sizeof(char));
 	char *ptr = buf;
 	for(uint16_t i = 0; i < len; i++) {
@@ -73,22 +75,20 @@ static char *fmt_hexstring(uint8_t *data, uint16_t len) {
 	return buf;
 }
 
-static char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len) {
-	if(data == NULL) return strdup("<undef>");
-	if(len == 0) return strdup("none");
-	char *buf = fmt_hexstring(data, len);
-	int buflen = strlen(buf);
-	buf = XREALLOC(buf, buflen + len + 4); // add tab, quotes, ascii dump and '\0'
-	char *ptr = buf + buflen;
-	*ptr++ = '\t';
-	*ptr++ = '"';
-	for(uint16_t i = 0; i < len; i++) {
-		if(data[i] < 32 || data[i] > 126)	// replace non-printable chars
-			*ptr++ = '.';
-		else
-			*ptr++ = data[i];
+static char *replace_nonprintable_chars(uint8_t *data, size_t len) {
+	ASSERT(data != NULL);
+	if(len == 0) {
+		return strdup("");
 	}
-	*ptr++ = '"';
+	char *buf = XCALLOC(len + 1, sizeof(char));
+	char *ptr = buf;
+	for(size_t i = 0; i < len; i++) {
+		if(data[i] < 32 || data[i] > 126) {
+			*ptr++ = '.';
+		} else {
+			*ptr++ = data[i];
+		}
+	}
 	*ptr = '\0';
 	return buf;
 }
@@ -162,9 +162,11 @@ void octet_string_with_ascii_format_text(la_vstring * const vstr, void const * c
 	ASSERT(indent >= 0);
 
 	CAST_PTR(ostring, octet_string_t *, data);
-	char *h = fmt_hexstring_with_ascii(ostring->buf, ostring->len);
-	LA_ISPRINTF(vstr, indent, "%s", h);
-	XFREE(h);
+	char *hex = fmt_hexstring(ostring->buf, ostring->len);
+	char *ascii = replace_nonprintable_chars(ostring->buf, ostring->len);
+	LA_ISPRINTF(vstr, indent, "%s\t\"%s\"", hex, ascii);
+	XFREE(hex);
+	XFREE(ascii);
 }
 
 void octet_string_as_ascii_format_text(la_vstring * const vstr, void const * const data, int indent) {
