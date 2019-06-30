@@ -461,9 +461,9 @@ void x25_format_text(la_vstring * const vstr, void const * const data, int inden
 	case X25_CALL_ACCEPTED:
 		LA_ISPRINTF(vstr, indent, "%s", "Facilities:\n");
 		tlv_list_format_text(vstr, pkt->facilities, indent+1);
-		char *comp = fmt_bitfield(pkt->compression, x25_comp_algos);
-		LA_ISPRINTF(vstr, indent, "Compression support: %s\n", comp);
-		XFREE(comp);
+		LA_ISPRINTF(vstr, indent, "%s: ", "Compression support");
+		fmt_bitfield_vstr(vstr, pkt->compression, x25_comp_algos);
+		EOL(vstr);
 		/* FALLTHROUGH */
 		/* because Fast Select is on, so there might be a data PDU in call req or accept */
 	case X25_DATA:
