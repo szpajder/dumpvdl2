@@ -72,5 +72,4 @@ TLV_PARSER(tlv_uint32_msbfirst_parse);
 TLV_FORMATTER(tlv_uint_format_text);
 TLV_FORMATTER(tlv_octet_string_as_ascii_format_text);
 TLV_FORMATTER(tlv_octet_string_with_ascii_format_text);
-TLV_DESTRUCTOR(tlv_destroy_noop);
 #endif // !_TLV_H

@@ -175,7 +175,9 @@ TLV_PARSER(tlv_uint8_parse) {
 	if(len < sizeof(uint8_t)) {
 		return NULL;
 	}
-	return UINT_TO_PTR(buf[0]);
+	NEW(uint32_t, ret);
+	*ret = (uint32_t)buf[0];
+	return ret;
 }
 
 TLV_PARSER(tlv_uint16_msbfirst_parse) {
@@ -183,7 +185,9 @@ TLV_PARSER(tlv_uint16_msbfirst_parse) {
 	if(len < sizeof(uint16_t)) {
 		return NULL;
 	}
-	return UINT_TO_PTR(extract_uint16_msbfirst(buf));
+	NEW(uint32_t, ret);
+	*ret = (uint32_t)(extract_uint16_msbfirst(buf));
+	return ret;
 }
 
 TLV_PARSER(tlv_uint32_msbfirst_parse) {
@@ -191,12 +195,14 @@ TLV_PARSER(tlv_uint32_msbfirst_parse) {
 	if(len < sizeof(uint32_t)) {
 		return NULL;
 	}
-	return UINT_TO_PTR(extract_uint32_msbfirst(buf));
+	NEW(uint32_t, ret);
+	*ret = extract_uint32_msbfirst(buf);
+	return ret;
 }
 
 TLV_FORMATTER(tlv_uint_format_text) {
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %lu\n",
-		label, PTR_TO_UINT(data));
+		label, *(uint32_t *)data);
 }
 
 typedef struct {
@@ -226,15 +232,6 @@ TLV_DESTRUCTOR(tlv_unknown_tag_destroy) {
 	CAST_PTR(t, tlv_unparsed_tag_t *, data);
 	XFREE(t->data);
 	XFREE(t);
-}
-
-// A no-op destructor
-// Used for uints stored in pointers to prevent the default
-// destructor from running (it performs free() which would
-// cause a segfault on a fake pointer value)
-TLV_DESTRUCTOR(tlv_destroy_noop) {
-	UNUSED(data);
-	// no-op
 }
 
 tlv_type_descriptor_t tlv_DEF_unknown_tag = {

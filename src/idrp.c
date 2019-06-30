@@ -187,7 +187,7 @@ static const dict path_attributes[] = {
 			.label = "Multi exit discriminator",
 			.parse = tlv_uint8_parse,
 			.format_text = tlv_uint_format_text,
-			.destroy = tlv_destroy_noop
+			.destroy = NULL
 		}
 	},
 	{
@@ -241,7 +241,7 @@ static const dict path_attributes[] = {
 			.label = "RD hop count",
 			.parse = tlv_uint8_parse,
 			.format_text = tlv_uint_format_text,
-			.destroy = tlv_destroy_noop
+			.destroy = NULL
 		}
 	},
 	{
@@ -259,7 +259,7 @@ static const dict path_attributes[] = {
 			.label = "Capacity",
 			.parse = tlv_uint8_parse,
 			.format_text = tlv_uint_format_text,
-			.destroy = tlv_destroy_noop
+			.destroy = NULL
 		}
 	},
 	{
@@ -268,7 +268,7 @@ static const dict path_attributes[] = {
 			.label = "Priority",
 			.parse = tlv_uint8_parse,
 			.format_text = tlv_uint_format_text,
-			.destroy = tlv_destroy_noop
+			.destroy = NULL
 		}
 	},
 	{
@@ -316,8 +316,9 @@ static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 			return -1;
 		}
 		for(uint16_t i = 0; i < num_withdrawn; i++) {
-			pdu->withdrawn_routes = la_list_append(pdu->withdrawn_routes,
-				UINT_TO_PTR(extract_uint32_msbfirst(buf)));
+			NEW(uint32_t, u);
+			*u = extract_uint32_msbfirst(buf);
+			pdu->withdrawn_routes = la_list_append(pdu->withdrawn_routes, u);
 			buf += 4; len -= 4;
 		}
 	}
@@ -504,7 +505,7 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 			LA_ISPRINTF(vstr, indent, "%s", "Withdrawn Routes:\n");
 			indent++;
 			for(la_list *p = pdu->withdrawn_routes; p != NULL; p = p->next) {
-				LA_ISPRINTF(vstr, indent, "ID: %u\n", PTR_TO_UINT(p->data));
+				LA_ISPRINTF(vstr, indent, "ID: %lu\n", *(uint32_t *)(p->data));
 			}
 			indent--;
 		}
@@ -534,7 +535,7 @@ void idrp_pdu_destroy(void *data) {
 		return;
 	}
 	CAST_PTR(pdu, idrp_pdu_t *, data);
-	la_list_free_full(pdu->withdrawn_routes, tlv_destroy_noop);
+	la_list_free(pdu->withdrawn_routes);
 	tlv_list_destroy(pdu->path_attributes);
 	XFREE(pdu->data);
 	XFREE(data);

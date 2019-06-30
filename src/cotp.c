@@ -61,7 +61,7 @@ static dict const cotp_variable_part_params[] = {
 			.label = "Ack time (ms)",
 			.parse = tlv_uint16_msbfirst_parse,
 			.format_text = tlv_uint_format_text,
-			.destroy = tlv_destroy_noop
+			.destroy = NULL
 		},
 	},
 	{
@@ -79,7 +79,7 @@ static dict const cotp_variable_part_params[] = {
 			.label = "Priority",
 			.parse = tlv_uint16_msbfirst_parse,
 			.format_text = tlv_uint_format_text,
-			.destroy = tlv_destroy_noop
+			.destroy = NULL
 		},
 	},
 	{
@@ -106,7 +106,7 @@ static dict const cotp_variable_part_params[] = {
 			.label = "Subsequence number",
 			.parse = tlv_uint16_msbfirst_parse,
 			.format_text = tlv_uint_format_text,
-			.destroy = tlv_destroy_noop
+			.destroy = NULL
 		},
 	},
 	{
@@ -115,7 +115,7 @@ static dict const cotp_variable_part_params[] = {
 			.label = "Reassignment time (s)",
 			.parse = tlv_uint16_msbfirst_parse,
 			.format_text = tlv_uint_format_text,
-			.destroy = tlv_destroy_noop
+			.destroy = NULL
 		},
 	},
 	{
@@ -142,7 +142,7 @@ static dict const cotp_variable_part_params[] = {
 			.label = "TPDU size (bytes)",
 			.parse = tpdu_size_parse,
 			.format_text = tlv_uint_format_text,
-			.destroy = tlv_destroy_noop
+			.destroy = NULL
 		},
 	},
 	{
@@ -178,7 +178,7 @@ static dict const cotp_variable_part_params[] = {
 			.label = "Version",
 			.parse = tlv_uint8_parse,
 			.format_text = tlv_uint_format_text,
-			.destroy = tlv_destroy_noop
+			.destroy = NULL
 		},
 	},
 	{
@@ -232,7 +232,7 @@ static dict const cotp_variable_part_params[] = {
 			.label = "Inactivity timer (ms)",
 			.parse = tlv_uint32_msbfirst_parse,
 			.format_text = tlv_uint_format_text,
-			.destroy = tlv_destroy_noop
+			.destroy = NULL
 		},
 	},
 	{
@@ -272,7 +272,9 @@ TLV_PARSER(tpdu_size_parse) {
 	UNUSED(typecode);
 	if(len != 1) return NULL;
 	if(buf[0] < 0x7 || buf[0] >> 0xd) return NULL;
-	return UINT_TO_PTR(1 << buf[0]);
+	NEW(uint32_t, ret);
+	*ret = 1 << buf[0];
+	return ret;
 }
 
 typedef struct {

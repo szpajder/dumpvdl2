@@ -132,9 +132,9 @@ TLV_FORMATTER(modulation_support_format_text) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
-	uint8_t val = (uint8_t)(PTR_TO_UINT(data) & 0xff);
+	CAST_PTR(val, uint32_t *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
-	fmt_bitfield_vstr(ctx->vstr, val, modulations);
+	fmt_bitfield_vstr(ctx->vstr, (uint8_t)(*val & 0xff), modulations);
 	EOL(ctx->vstr);
 }
 
@@ -603,7 +603,7 @@ static const dict xid_vdl_params[] = {
 			.label = "Modulation support",
 			.parse = tlv_uint8_parse,
 			.format_text = modulation_support_format_text,
-			.destroy = tlv_destroy_noop
+			.destroy = NULL
 		}
 	},
 	{
