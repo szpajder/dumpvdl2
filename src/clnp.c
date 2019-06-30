@@ -325,12 +325,13 @@ void clnp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 	}
 	indent++;
 
-	char *str = fmt_hexstring_with_ascii(pdu->src_nsap.buf, pdu->src_nsap.len);
-	LA_ISPRINTF(vstr, indent, "Src NSAP: %s\n", str);
-	XFREE(str);
-	str = fmt_hexstring_with_ascii(pdu->dst_nsap.buf, pdu->dst_nsap.len);
-	LA_ISPRINTF(vstr, indent, "Dst NSAP: %s\n", str);
-	XFREE(str);
+	LA_ISPRINTF(vstr, indent, "%s: ", "Src NSAP");
+	octet_string_with_ascii_format_text(vstr, &pdu->src_nsap, 0);
+	EOL(vstr);
+
+	LA_ISPRINTF(vstr, indent, "%s: ", "Dst NSAP");
+	octet_string_with_ascii_format_text(vstr, &pdu->dst_nsap, 0);
+	EOL(vstr);
 
 	LA_ISPRINTF(vstr, indent, "Lifetime: %.1f sec\n", pdu->lifetime_sec);
 	LA_ISPRINTF(vstr, indent, "Flags:%s%s%s\n",

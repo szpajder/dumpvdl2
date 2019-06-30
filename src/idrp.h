@@ -51,13 +51,12 @@ typedef struct {
 typedef struct {
 	idrp_hdr_t *hdr;
 	la_list *withdrawn_routes, *path_attributes;
-	uint8_t *open_src_rdi;
+	octet_string_t open_src_rdi;
 	octet_string_t *data;
 	uint16_t open_holdtime;
 	uint16_t open_max_pdu_size;
 	uint8_t err_code, err_subcode;
 	uint8_t err_fsm_bispdu_type, err_fsm_state;
-	uint8_t open_src_rdi_len;
 	bool err;
 } idrp_pdu_t;
 

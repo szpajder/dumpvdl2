@@ -644,9 +644,12 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_LongTsap) {
 	GByteArray *tmparray = g_byte_array_new();
 	tmparray = g_byte_array_append(tmparray, tsap->rDP.buf, tsap->rDP.size);
 	tmparray = _stringify_ShortTsap(tmparray, &tsap->shortTsap);
-	char *str = fmt_hexstring_with_ascii(tmparray->data, tmparray->len);
-	LA_ISPRINTF(vstr, indent, "%s: %s\n", label, str);
-	XFREE(str);
+
+	LA_ISPRINTF(vstr, indent, "%s: ", label);
+	octet_string_with_ascii_format_text(vstr,
+		&(octet_string_t){ .buf = tmparray->data, .len = tmparray->len },
+		0);
+	EOL(vstr);
 	g_byte_array_free(tmparray, TRUE);
 }
 
@@ -655,9 +658,11 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ShortTsap) {
 	CAST_PTR(tsap, ShortTsap_t *, sptr);
 	GByteArray *tmparray = g_byte_array_new();
 	tmparray = _stringify_ShortTsap(tmparray, tsap);
-	char *str = fmt_hexstring_with_ascii(tmparray->data, tmparray->len);
-	LA_ISPRINTF(vstr, indent, "%s: %s\n", label, str);
-	XFREE(str);
+	LA_ISPRINTF(vstr, indent, "%s: ", label);
+	octet_string_with_ascii_format_text(vstr,
+		&(octet_string_t){ .buf = tmparray->data, .len = tmparray->len },
+		0);
+	EOL(vstr);
 	g_byte_array_free(tmparray, TRUE);
 }
 

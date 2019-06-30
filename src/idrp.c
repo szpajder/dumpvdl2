@@ -291,13 +291,13 @@ static int parse_idrp_open_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	buf += 2; len -= 2;
 	pdu->open_max_pdu_size = extract_uint16_msbfirst(buf);
 	buf += 2; len -= 2;
-	pdu->open_src_rdi_len = *buf++; len--;
-	if(len < pdu->open_src_rdi_len) {
-		debug_print("Truncated source RDI: len %u < rdi_len %u\n", len, pdu->open_src_rdi_len);
+	pdu->open_src_rdi.len = *buf++; len--;
+	if(len < pdu->open_src_rdi.len) {
+		debug_print("Truncated source RDI: len %u < rdi_len %zu\n", len, pdu->open_src_rdi.len);
 		return -1;
 	}
-	pdu->open_src_rdi = buf;
-	buf += pdu->open_src_rdi_len; len -= pdu->open_src_rdi_len;
+	pdu->open_src_rdi.buf = buf;
+	buf += pdu->open_src_rdi.len; len -= pdu->open_src_rdi.len;
 // TODO: Rib-AttsSet, Auth Code, Auth Data
 	pdu->data = octet_string_new(buf, len);
 	return 0;
@@ -491,9 +491,9 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 		LA_ISPRINTF(vstr, indent, "Hold Time: %u seconds\n", pdu->open_holdtime);
 		LA_ISPRINTF(vstr, indent, "Max. PDU size: %u octets\n", pdu->open_max_pdu_size);
 		{
-			char *fmt = fmt_hexstring_with_ascii(pdu->open_src_rdi, pdu->open_src_rdi_len);
-			LA_ISPRINTF(vstr, indent, "Source RDI: %s\n", fmt);
-			XFREE(fmt);
+			LA_ISPRINTF(vstr, indent, "%s: ", "Source RDI");
+			octet_string_with_ascii_format_text(vstr, &pdu->open_src_rdi, 0);
+			EOL(vstr);
 			if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
 				octet_string_format_text(vstr, pdu->data, indent);
 				EOL(vstr);
