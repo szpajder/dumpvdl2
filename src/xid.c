@@ -762,9 +762,9 @@ static const dict xid_vdl_params[] = {
 		.id = 0xC5,
 		.val = &(tlv_type_descriptor_t){
 			.label = "System mask",
-			.parse = tlv_octet_string_parse,
-			.format_text = tlv_octet_string_format_text,
-			.destroy = NULL
+			.parse = dlc_addr_list_parse,
+			.format_text = dlc_addr_list_format_text,
+			.destroy = dlc_list_destroy
 		}
 	},
 	{
