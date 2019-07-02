@@ -119,6 +119,20 @@ TLV_FORMATTER(conn_mgmt_format_text) {
 }
 
 /***************************************************************************
+ * XID sequencing
+ **************************************************************************/
+
+TLV_FORMATTER(xid_seq_format_text) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	ASSERT(ctx->indent >= 0);
+
+	CAST_PTR(xidseq, uint8_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: seq: %u retry: %u\n",
+		label, *xidseq & 0x7, *xidseq >> 4);
+}
+
+/***************************************************************************
  * Frequency, modulation
  **************************************************************************/
 
@@ -564,8 +578,8 @@ static const dict xid_vdl_params[] = {
 		.id = 0x03,
 		.val = &(tlv_type_descriptor_t){
 			.label = "XID sequencing",
-			.parse = tlv_octet_string_parse,
-			.format_text = tlv_octet_string_format_text,
+			.parse = tlv_uint8_parse,
+			.format_text = xid_seq_format_text,
 			.destroy = NULL
 		}
 	},
