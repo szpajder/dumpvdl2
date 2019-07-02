@@ -721,10 +721,10 @@ static const dict xid_vdl_params[] = {
 	{
 		.id = 0x48,
 		.val = &(tlv_type_descriptor_t){
-			.label = "Address filter",
-			.parse = tlv_octet_string_parse,
-			.format_text = tlv_octet_string_format_text,
-			.destroy = NULL
+			.label = "Ground station address filter",
+			.parse = dlc_addr_list_parse,
+			.format_text = dlc_addr_list_format_text,
+			.destroy = dlc_list_destroy
 		}
 	},
 	{
@@ -784,7 +784,7 @@ static const dict xid_vdl_params[] = {
 	{
 		.id = 0xC6,
 		.val = &(tlv_type_descriptor_t){
-			.label = "TG3",
+			.label = "Timer TG3",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
@@ -793,7 +793,7 @@ static const dict xid_vdl_params[] = {
 	{
 		.id = 0xC7,
 		.val = &(tlv_type_descriptor_t){
-			.label = "TG4",
+			.label = "Timer TG4",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
