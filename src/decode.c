@@ -359,7 +359,7 @@ cleanup:
 }
 
 void *avlc_decoder_thread(void *arg) {
-	UNUSED(arg)
+	UNUSED(arg);
 	avlc_frame_qentry_t *q = NULL;
 	la_proto_node *root = NULL;
 	uint32_t msg_type = 0;

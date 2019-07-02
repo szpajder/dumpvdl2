@@ -34,7 +34,7 @@ char const *value2enum(asn_TYPE_descriptor_t *td, long const value) {
 
 void _format_INTEGER_with_unit(la_vstring *vstr, char const * const label, asn_TYPE_descriptor_t *td,
 	void const *sptr, int indent, char const * const unit, double multiplier, int decimal_places) {
-	UNUSED(td)
+	UNUSED(td);
 	CAST_PTR(val, long *, sptr);
 	LA_ISPRINTF(vstr, indent, "%s: %.*f%s\n", label, decimal_places, (double)(*val) * multiplier, unit);
 }
@@ -126,11 +126,11 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_any) {
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_NULL) {
-	UNUSED(td)
-	UNUSED(label)
-	UNUSED(vstr)
-	UNUSED(sptr)
-	UNUSED(indent)
+	UNUSED(td);
+	UNUSED(label);
+	UNUSED(vstr);
+	UNUSED(sptr);
+	UNUSED(indent);
 	// NOOP
 }
 

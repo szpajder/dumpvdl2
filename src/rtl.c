@@ -117,7 +117,7 @@ static int rtl_verbose_device_search(char *s) {
 }
 
 void rtl_init(vdl2_state_t *ctx, char *dev, int freq, float gain, int correction) {
-	UNUSED(ctx)
+	UNUSED(ctx);
 	int r;
 
 	int device = rtl_verbose_device_search(dev);

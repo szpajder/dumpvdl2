@@ -113,7 +113,7 @@ static int mirisdr_verbose_device_search(char *s) {
 }
 
 void mirisdr_init(vdl2_state_t *ctx, char *dev, int flavour, uint32_t freq, float gain, int freq_offset, int usb_xfer_mode) {
-	UNUSED(ctx)
+	UNUSED(ctx);
 	int r;
 
 	mirisdr_hw_flavour_t hw_flavour;
