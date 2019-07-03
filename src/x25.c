@@ -45,6 +45,14 @@ static const dict x25_pkttype_names[] = {
 	{ 0,			NULL }
 };
 
+/***************************************************************************
+ * Parsers and formatters for X.25 facilities
+ **************************************************************************/
+
+/***************************************************************************
+ * Max. packet size
+ **************************************************************************/
+
 typedef struct {
 	uint16_t from_calling_dte, from_called_dte;
 } x25_pkt_size_t;
@@ -76,6 +84,10 @@ TLV_FORMATTER(x25_pkt_size_format_text) {
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "From called  DTE: %u bytes\n", pkt_size->from_called_dte);
 	ctx->indent--;
 }
+
+/***************************************************************************
+ * Window size
+ **************************************************************************/
 
 typedef struct {
 	uint8_t from_calling_dte, from_called_dte;
@@ -109,6 +121,36 @@ TLV_FORMATTER(x25_win_size_format_text) {
 	ctx->indent--;
 }
 
+/***************************************************************************
+ * Fast select
+ **************************************************************************/
+
+typedef struct {
+	bool requested, response_restriction;
+} x25_fast_select_t;
+
+TLV_PARSER(x25_fast_select_parse) {
+	UNUSED(typecode);
+
+	if(len < 1) {
+		return NULL;
+	}
+	NEW(x25_fast_select_t, fs);
+	fs->requested = buf[0] & 0x80;
+	fs->response_restriction = buf[0] & 0x40;
+	return fs;
+}
+
+TLV_FORMATTER(x25_fast_select_format_text) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	ASSERT(ctx->indent >= 0);
+
+	CAST_PTR(fs, x25_fast_select_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %srequested\n", label,
+		fs->requested ? "" : "not ");
+}
+
 static const dict x25_facilities[] = {
 	{
 		.id = 0x00,
@@ -123,8 +165,8 @@ static const dict x25_facilities[] = {
 		.id = 0x01,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Fast Select",
-			.parse = tlv_octet_string_parse,
-			.format_text = tlv_octet_string_format_text,
+			.parse = x25_fast_select_parse,
+			.format_text = x25_fast_select_format_text,
 			.destroy = NULL
 		}
 	},
