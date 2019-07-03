@@ -155,9 +155,10 @@ static const dict x25_facilities[] = {
 	{
 		.id = 0x00,
 		.val = &(tlv_type_descriptor_t){
-			.label = "Marker (non-X.25 facilities follow)",
-			.parse = tlv_octet_string_parse,
-			.format_text = tlv_octet_string_format_text,
+// This is just a separator - don't parse nor print it
+//			.label = "Marker (X.25 facilities follow)",
+			.parse = tlv_parser_noop,
+			.format_text = tlv_format_text_noop,
 			.destroy = NULL
 		}
 	},

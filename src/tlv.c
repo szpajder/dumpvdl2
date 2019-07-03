@@ -205,6 +205,22 @@ TLV_FORMATTER(tlv_uint_format_text) {
 		label, *(uint32_t *)data);
 }
 
+// No-op parser and formatter
+// Can be used to skip over a TLV without outputting it
+TLV_PARSER(tlv_parser_noop) {
+	UNUSED(typecode);
+	UNUSED(buf);
+	UNUSED(len);
+// Have to return something free()'able to indicate a success
+	return XCALLOC(1, 1);
+}
+
+TLV_FORMATTER(tlv_format_text_noop) {
+	UNUSED(ctx);
+	UNUSED(label);
+	UNUSED(data);
+}
+
 typedef struct {
 	uint8_t typecode;
 	octet_string_t *data;

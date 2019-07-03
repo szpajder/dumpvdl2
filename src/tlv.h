@@ -69,7 +69,9 @@ TLV_FORMATTER(tlv_octet_string_format_text);
 TLV_PARSER(tlv_uint8_parse);
 TLV_PARSER(tlv_uint16_msbfirst_parse);
 TLV_PARSER(tlv_uint32_msbfirst_parse);
+TLV_PARSER(tlv_parser_noop);
 TLV_FORMATTER(tlv_uint_format_text);
 TLV_FORMATTER(tlv_octet_string_as_ascii_format_text);
 TLV_FORMATTER(tlv_octet_string_with_ascii_format_text);
+TLV_FORMATTER(tlv_format_text_noop);
 #endif // !_TLV_H
