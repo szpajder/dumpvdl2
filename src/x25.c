@@ -45,6 +45,70 @@ static const dict x25_pkttype_names[] = {
 	{ 0,			NULL }
 };
 
+typedef struct {
+	uint16_t from_calling_dte, from_called_dte;
+} x25_pkt_size_t;
+
+TLV_PARSER(x25_pkt_size_parse) {
+	UNUSED(typecode);
+
+	if(len < 2) {
+		return NULL;
+	}
+	if(buf[0] > 0xf || buf[1] > 0xf) {
+		return NULL;
+	}
+	NEW(x25_pkt_size_t, pkt_size);
+	pkt_size->from_called_dte = 1 << buf[0];
+	pkt_size->from_calling_dte = 1 << buf[1];
+	return pkt_size;
+}
+
+TLV_FORMATTER(x25_pkt_size_format_text) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	ASSERT(ctx->indent >= 0);
+
+	CAST_PTR(pkt_size, x25_pkt_size_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
+	ctx->indent++;
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "From calling DTE: %u bytes\n", pkt_size->from_calling_dte);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "From called  DTE: %u bytes\n", pkt_size->from_called_dte);
+	ctx->indent--;
+}
+
+typedef struct {
+	uint8_t from_calling_dte, from_called_dte;
+} x25_win_size_t;
+
+TLV_PARSER(x25_win_size_parse) {
+	UNUSED(typecode);
+
+	if(len < 2) {
+		return NULL;
+	}
+	if(buf[0] < 1 || buf[0] > 127 || buf[0] < 1 || buf[1] > 127) {
+		return NULL;
+	}
+	NEW(x25_win_size_t, win_size);
+	win_size->from_called_dte = buf[0];
+	win_size->from_calling_dte = buf[1];
+	return win_size;
+}
+
+TLV_FORMATTER(x25_win_size_format_text) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	ASSERT(ctx->indent >= 0);
+
+	CAST_PTR(win_size, x25_win_size_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
+	ctx->indent++;
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "From calling DTE: %u packets\n", win_size->from_calling_dte);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "From called  DTE: %u packets\n", win_size->from_called_dte);
+	ctx->indent--;
+}
+
 static const dict x25_facilities[] = {
 	{
 		.id = 0x00,
@@ -76,9 +140,9 @@ static const dict x25_facilities[] = {
 	{
 		.id = 0x42,
 		.val = &(tlv_type_descriptor_t){
-			.label = "Packet size",
-			.parse = tlv_octet_string_parse,
-			.format_text = tlv_octet_string_format_text,
+			.label = "Max. packet size",
+			.parse = x25_pkt_size_parse,
+			.format_text = x25_pkt_size_format_text,
 			.destroy = NULL
 		}
 	},
@@ -86,8 +150,8 @@ static const dict x25_facilities[] = {
 		.id = 0x43,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Window size",
-			.parse = tlv_octet_string_parse,
-			.format_text = tlv_octet_string_format_text,
+			.parse = x25_win_size_parse,
+			.format_text = x25_win_size_format_text,
 			.destroy = NULL
 		}
 	},
