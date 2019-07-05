@@ -91,6 +91,7 @@ typedef struct {
 typedef struct {
 	x25_hdr_t *hdr;
 	la_list *facilities;
+	octet_string_t diag_data;	// Explanation field in DIAG packet
 	x25_addr_t calling, called;
 	uint8_t type;
 	uint8_t addr_block_present;
@@ -99,6 +100,7 @@ typedef struct {
 	uint8_t diag_code;
 	uint8_t more_data;
 	uint8_t rseq, sseq;
+	bool diag_code_present;
 	bool err;
 } x25_pkt_t;
 

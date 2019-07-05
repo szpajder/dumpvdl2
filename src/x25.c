@@ -524,7 +524,20 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		}
 		if(remaining > 0) {
 			pkt->diag_code = *ptr++;
+			pkt->diag_code_present = true;
 			remaining--;
+		}
+		break;
+	case X25_DIAG:
+		if(remaining < 1) {
+			goto fail;
+		}
+		pkt->diag_code = *ptr++;
+		pkt->diag_code_present = true;
+		remaining--;
+		if(remaining > 0) {
+			pkt->diag_data.buf = ptr;
+			pkt->diag_data.len = remaining;
 		}
 		break;
 	case X25_CLEAR_CONFIRM:
@@ -532,7 +545,6 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	case X25_REJ:
 	case X25_RESET_CONFIRM:
 	case X25_RESTART_CONFIRM:
-	case X25_DIAG:
 		break;
 	default:
 		debug_print("Unsupported packet identifier 0x%02x\n", pkt->type);
@@ -744,11 +756,18 @@ void x25_format_text(la_vstring * const vstr, void const * const data, int inden
 	}
 	if(cause_dict != NULL) {
 		CAST_PTR(clr_cause, char *, dict_search(cause_dict, pkt->clr_cause));
-		CAST_PTR(diag_code, char *, dict_search(x25_diag_codes, pkt->diag_code));
 		LA_ISPRINTF(vstr, indent, "Cause: 0x%02x (%s)\n", pkt->clr_cause,
 			clr_cause ? clr_cause : "unknown");
+	}
+	if(pkt->diag_code_present) {
+		CAST_PTR(diag_code, char *, dict_search(x25_diag_codes, pkt->diag_code));
 		LA_ISPRINTF(vstr, indent, "Diagnostic code: 0x%02x (%s)\n", pkt->diag_code,
 			diag_code ? diag_code : "unknown");
+	}
+	if(pkt->type == X25_DIAG && pkt->diag_data.buf != NULL) {
+		LA_ISPRINTF(vstr, indent, "%s: ", "Erroneous packet header");
+		octet_string_format_text(vstr, &pkt->diag_data, 0);
+		EOL(vstr);
 	}
 }
 
