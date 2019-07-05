@@ -511,16 +511,17 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	case X25_CLEAR_REQUEST:
 	case X25_RESET_REQUEST:
 	case X25_RESTART_REQUEST:
-		if(remaining > 0) {
-			pkt->clr_cause = *ptr++;
-			remaining--;
+		if(remaining < 1) {
+			goto fail;
+		}
+		pkt->clr_cause = *ptr++;
+		remaining--;
 // When bit 8 is set to 1, the lower bits are those included by the remote DTE in the
 // clearing or restarting cause field of the Clear or Restart Request packet, respectively
 // (X.25, Table 5-7). We don't print the lower bits, so we force the cause code to 0 to have
 // a common value to search for in the dictionary.
-			if(pkt->clr_cause & 0x80) {
-				pkt->clr_cause = 0;
-			}
+		if(pkt->clr_cause & 0x80) {
+			pkt->clr_cause = 0;
 		}
 		if(remaining > 0) {
 			pkt->diag_code = *ptr++;
