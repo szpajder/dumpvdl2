@@ -512,6 +512,13 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		if(remaining > 0) {
 			pkt->clr_cause = *ptr++;
 			remaining--;
+// When bit 8 is set to 1, the lower bits are those included by the remote DTE in the
+// clearing or restarting cause field of the Clear or Restart Request packet, respectively
+// (X.25, Table 5-7). We don't print the lower bits, so we force the cause code to 0 to have
+// a common value to search for in the dictionary.
+			if(pkt->clr_cause & 0x80) {
+				pkt->clr_cause = 0;
+			}
 		}
 		if(remaining > 0) {
 			pkt->diag_code = *ptr++;
@@ -538,6 +545,132 @@ fail:
 	node->next = unknown_proto_pdu_new(buf, len);
 	return node;
 }
+
+static dict const x25_clr_causes[] = {
+	{ .id = 0x00, .val = "DTE originated" },
+	{ .id = 0x01, .val = "Number busy" },
+	{ .id = 0x03, .val = "Invalid facility request" },
+	{ .id = 0x05, .val = "Network congestion" },
+	{ .id = 0x09, .val = "Remote procedure error" },
+	{ .id = 0x0d, .val = "Not obtainable" },
+	{ .id = 0x13, .val = "Local procedure error" },
+	{ .id = 0x15, .val = "ROA out of order" },
+	{ .id = 0x19, .val = "Reverse charging acceptance not subscribed" },
+	{ .id = 0x21, .val = "Incompatible destination" },
+	{ .id = 0x29, .val = "Fast select acceptance not subscribed" },
+	{ .id = 0x39, .val = "Ship absent" },
+	{ .id = 0x00, .val = NULL }
+};
+
+// Sources:
+// X.25 Annex E
+// Doc 9705, Table 5.7-4
+// Doc 9880, 3.7.4.2.1.6.1.5
+// http://ps-2.kev009.com/tl/techlib/manuals/adoclib/aixlnk25/x25usrgd/diagcode.htm
+static dict const x25_diag_codes[] = {
+	{ .id = 0x00, .val = "Cleared by system management" },
+	{ .id = 0x01, .val = "Invalid P(S)" },
+	{ .id = 0x02, .val = "Invalid P(R)" },
+	{ .id = 0x10, .val = "Packet type invalid" },
+	{ .id = 0x11, .val = "Packet type invalid for state r1" },
+	{ .id = 0x12, .val = "Packet type invalid for state r2" },
+	{ .id = 0x13, .val = "Packet type invalid for state r3" },
+	{ .id = 0x14, .val = "Packet type invalid for state p1" },
+	{ .id = 0x15, .val = "Packet type invalid for state p2" },
+	{ .id = 0x16, .val = "Packet type invalid for state p3" },
+	{ .id = 0x17, .val = "Packet type invalid for state p4" },
+	{ .id = 0x18, .val = "Packet type invalid for state p5" },
+	{ .id = 0x19, .val = "Packet type invalid for state p6" },
+	{ .id = 0x1a, .val = "Packet type invalid for state p7" },
+	{ .id = 0x1b, .val = "Packet type invalid for state d1" },
+	{ .id = 0x1c, .val = "Packet type invalid for state d2" },
+	{ .id = 0x1d, .val = "Packet type invalid for state d3" },
+	{ .id = 0x20, .val = "Packet not allowed" },
+	{ .id = 0x21, .val = "Unidentifiable packet" },
+	{ .id = 0x22, .val = "Call on one-way logical channel" },
+	{ .id = 0x23, .val = "Invalid packet type on a PVC" },
+	{ .id = 0x24, .val = "Packet on unassigned logical channel" },
+	{ .id = 0x25, .val = "Reject not subscribed to" },
+	{ .id = 0x26, .val = "Packet too short" },
+	{ .id = 0x27, .val = "Packet too long" },
+	{ .id = 0x28, .val = "Invalid general format identifier" },
+	{ .id = 0x29, .val = "Restart packet with non-zero reserved bits" },
+	{ .id = 0x2a, .val = "Packet type not compatible with facility" },
+	{ .id = 0x2b, .val = "Unauthorized interrupt confirmation" },
+	{ .id = 0x2c, .val = "Unauthorized interrupt" },
+	{ .id = 0x2d, .val = "Unauthorized reject" },
+	{ .id = 0x2e, .val = "TOA/NPI address subscription facility not subscribed to" },
+	{ .id = 0x30, .val = "Time expired" },
+	{ .id = 0x31, .val = "Time expired for incoming call" },
+	{ .id = 0x32, .val = "Time expired for clear indication" },
+	{ .id = 0x33, .val = "Time expired for reset indication" },
+	{ .id = 0x34, .val = "Time expired for restart indication" },
+	{ .id = 0x35, .val = "Time expired for call deflection" },
+	{ .id = 0x40, .val = "Call setup or call clearing problem" },
+	{ .id = 0x41, .val = "Facility code not allowed" },
+	{ .id = 0x42, .val = "Facility parameter not allowed" },
+	{ .id = 0x43, .val = "Invalid called DTE address" },
+	{ .id = 0x44, .val = "Invalid calling DTE address" },
+	{ .id = 0x45, .val = "Invalid facility length" },
+	{ .id = 0x46, .val = "Incoming call barred" },
+	{ .id = 0x47, .val = "No logical channel available" },
+	{ .id = 0x48, .val = "Call collision" },
+	{ .id = 0x49, .val = "Duplicate facility requested" },
+	{ .id = 0x4a, .val = "Non-zero address length" },
+	{ .id = 0x4b, .val = "Non-zero facility length" },
+	{ .id = 0x4c, .val = "Facility not provided when expected" },
+	{ .id = 0x4d, .val = "Invalid ITU-T specified DTE facility" },
+	{ .id = 0x4e, .val = "Max number of call redirections or deflections exceeded" },
+	{ .id = 0x50, .val = "Miscellaneous" },
+	{ .id = 0x51, .val = "Improper cause code from DTE" },
+	{ .id = 0x52, .val = "Not aligned octet" },
+	{ .id = 0x53, .val = "Inconsistent Q-bit setting" },
+	{ .id = 0x54, .val = "NUI problem" },
+	{ .id = 0x55, .val = "ICRD problem" },
+	{ .id = 0x70, .val = "International problem" },
+	{ .id = 0x71, .val = "Remote network problem" },
+	{ .id = 0x72, .val = "International protocol problem" },
+	{ .id = 0x73, .val = "International link out of order" },
+	{ .id = 0x74, .val = "International link busy" },
+	{ .id = 0x75, .val = "Transit network facility problem" },
+	{ .id = 0x76, .val = "Remote network facility problem" },
+	{ .id = 0x77, .val = "International routing problem" },
+	{ .id = 0x78, .val = "Temporary routing problem" },
+	{ .id = 0x79, .val = "Unknown called DNIC" },
+	{ .id = 0x7a, .val = "Maintenance action" },
+	{ .id = 0x80, .val = "Version number not supported" },
+	{ .id = 0x81, .val = "Invalid length field" },
+	{ .id = 0x82, .val = "Call collision resolution" },
+	{ .id = 0x83, .val = "Proposed directory size too large" },
+	{ .id = 0x84, .val = "LREF cancellation not supported" },
+	{ .id = 0x85, .val = "Received DTE refused, received NET refused or invalid NET selector" },
+	{ .id = 0x86, .val = "Invalid SNCR field" },
+	{ .id = 0x87, .val = "ACA compression not supported" },
+	{ .id = 0x88, .val = "LREF compression not supported" },
+	{ .id = 0x8f, .val = "Deflate compression not supported" },
+	{ .id = 0x90, .val = "Idle timer expired" },
+	{ .id = 0x91, .val = "Need to reuse the circuit" },
+	{ .id = 0x92, .val = "System local error" },
+	{ .id = 0x93, .val = "Invalid SEL field value in received NET" },
+//	{ .id = 0xd2, .val = "210" },
+	{ .id = 0xe1, .val = "Disconnected (transient condition)" },
+	{ .id = 0xe2, .val = "Disconnected (permanent condition)" },
+	{ .id = 0xe3, .val = "Rejected - reason unspecified (transient condition)" },
+	{ .id = 0xe4, .val = "Rejected - reason unspecified (permanent condition)" },
+	{ .id = 0xe5, .val = "Rejected - QoS not available (transient condition)" },
+	{ .id = 0xe6, .val = "Rejected - QoS not available (permanent condition)" },
+	{ .id = 0xe7, .val = "Rejected - NSAP unreachable (transient condition)" },
+	{ .id = 0xe8, .val = "Rejected - NSAP unreachable (permanent condition)" },
+	{ .id = 0xe9, .val = "Reset - reason unspecified" },
+	{ .id = 0xea, .val = "Reset - congestion" },
+	{ .id = 0xeb, .val = "Rejected - NSAP address unknown (permanent condition)" },
+	{ .id = 0xf0, .val = "System lack of resources" },
+//	{ .id = 0xf1, .val = "241" },
+	{ .id = 0xf2, .val = "Incompatible information in user data" },
+//	{ .id = 0xf5, .val = "245" },
+	{ .id = 0xf9, .val = "Unrecognized protocol ID in user data" },
+	{ .id = 0x00, .val = NULL }
+};
 
 void x25_format_text(la_vstring * const vstr, void const * const data, int indent) {
 	ASSERT(vstr != NULL);
@@ -576,9 +709,15 @@ void x25_format_text(la_vstring * const vstr, void const * const data, int inden
 	case X25_DATA:
 		break;
 	case X25_CLEAR_REQUEST:
-		LA_ISPRINTF(vstr, indent, "Cause: %02x\n", pkt->clr_cause);
-		LA_ISPRINTF(vstr, indent, "Diagnostic code: %02x\n", pkt->diag_code);
+	{
+		CAST_PTR(clr_cause, char *, dict_search(x25_clr_causes, pkt->clr_cause));
+		CAST_PTR(diag_code, char *, dict_search(x25_diag_codes, pkt->diag_code));
+		LA_ISPRINTF(vstr, indent, "Cause: 0x%02x (%s)\n", pkt->clr_cause,
+			clr_cause ? clr_cause : "unknown");
+		LA_ISPRINTF(vstr, indent, "Diagnostic code: 0x%02x (%s)\n", pkt->diag_code,
+			diag_code ? diag_code : "unknown");
 		break;
+	}
 	}
 }
 
