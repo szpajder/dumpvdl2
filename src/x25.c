@@ -509,6 +509,8 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		node->next = parse_x25_user_data(ptr, remaining, msg_type);
 		break;
 	case X25_CLEAR_REQUEST:
+	case X25_RESET_REQUEST:
+	case X25_RESTART_REQUEST:
 		if(remaining > 0) {
 			pkt->clr_cause = *ptr++;
 			remaining--;
@@ -528,9 +530,7 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	case X25_CLEAR_CONFIRM:
 	case X25_RR:
 	case X25_REJ:
-	case X25_RESET_REQUEST:
 	case X25_RESET_CONFIRM:
-	case X25_RESTART_REQUEST:
 	case X25_RESTART_CONFIRM:
 	case X25_DIAG:
 		break;
@@ -559,6 +559,26 @@ static dict const x25_clr_causes[] = {
 	{ .id = 0x21, .val = "Incompatible destination" },
 	{ .id = 0x29, .val = "Fast select acceptance not subscribed" },
 	{ .id = 0x39, .val = "Ship absent" },
+	{ .id = 0x00, .val = NULL }
+};
+
+static dict const x25_reset_causes[] = {
+	{ .id = 0x00, .val = "DTE originated" },
+	{ .id = 0x01, .val = "Out of order" },
+	{ .id = 0x03, .val = "Remote procedure error" },
+	{ .id = 0x05, .val = "Local procedure error" },
+	{ .id = 0x07, .val = "Network congestion" },
+	{ .id = 0x09, .val = "Remote DTE operational" },
+	{ .id = 0x0f, .val = "Network operational" },
+	{ .id = 0x11, .val = "Incompatible destination" },
+	{ .id = 0x1d, .val = "Network out of order" },
+	{ .id = 0x00, .val = NULL }
+};
+
+static dict const x25_restart_causes[] = {
+	{ .id = 0x01, .val = "Local procedure error" },
+	{ .id = 0x03, .val = "Network congestion" },
+	{ .id = 0x07, .val = "Network operational" },
 	{ .id = 0x00, .val = NULL }
 };
 
@@ -696,6 +716,8 @@ void x25_format_text(la_vstring * const vstr, void const * const data, int inden
 	}
 	EOL(vstr);
 	indent++;
+
+	dict const *cause_dict = NULL;
 	switch(pkt->type) {
 	case X25_CALL_REQUEST:
 	case X25_CALL_ACCEPTED:
@@ -709,15 +731,22 @@ void x25_format_text(la_vstring * const vstr, void const * const data, int inden
 	case X25_DATA:
 		break;
 	case X25_CLEAR_REQUEST:
-	{
-		CAST_PTR(clr_cause, char *, dict_search(x25_clr_causes, pkt->clr_cause));
+		cause_dict = x25_clr_causes;
+		break;
+	case X25_RESET_REQUEST:
+		cause_dict = x25_reset_causes;
+		break;
+	case X25_RESTART_REQUEST:
+		cause_dict = x25_restart_causes;
+		break;
+	}
+	if(cause_dict != NULL) {
+		CAST_PTR(clr_cause, char *, dict_search(cause_dict, pkt->clr_cause));
 		CAST_PTR(diag_code, char *, dict_search(x25_diag_codes, pkt->diag_code));
 		LA_ISPRINTF(vstr, indent, "Cause: 0x%02x (%s)\n", pkt->clr_cause,
 			clr_cause ? clr_cause : "unknown");
 		LA_ISPRINTF(vstr, indent, "Diagnostic code: 0x%02x (%s)\n", pkt->diag_code,
 			diag_code ? diag_code : "unknown");
-		break;
-	}
 	}
 }
 

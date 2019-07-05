@@ -95,7 +95,7 @@ typedef struct {
 	uint8_t type;
 	uint8_t addr_block_present;
 	uint8_t compression;
-	uint8_t clr_cause;
+	uint8_t clr_cause;	// clearing cause or reset cause or restart cause
 	uint8_t diag_code;
 	uint8_t more_data;
 	uint8_t rseq, sseq;
