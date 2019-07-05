@@ -713,6 +713,8 @@ void x25_format_text(la_vstring * const vstr, void const * const data, int inden
 	} else if(pkt->type == X25_DATA) {
 		la_vstring_append_sprintf(vstr, " sseq: %u rseq: %u more: %u",
 			pkt->hdr->type.data.sseq, pkt->hdr->type.data.rseq, pkt->hdr->type.data.more);
+	} else if(pkt->type == X25_RR || pkt->type == X25_REJ) {
+		la_vstring_append_sprintf(vstr, " rseq: %u", pkt->hdr->type.data.rseq);
 	}
 	EOL(vstr);
 	indent++;
