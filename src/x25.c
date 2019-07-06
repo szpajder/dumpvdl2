@@ -595,12 +595,8 @@ static dict const x25_restart_causes[] = {
 	{ .id = 0x00, .val = NULL }
 };
 
-// Sources:
-// X.25 Annex E
-// Doc 9705, Table 5.7-4
-// Doc 9880, 3.7.4.2.1.6.1.5
-// http://ps-2.kev009.com/tl/techlib/manuals/adoclib/aixlnk25/x25usrgd/diagcode.htm
 static dict const x25_diag_codes[] = {
+// X.25 Annex E
 	{ .id = 0x00, .val = "Cleared by system management" },
 	{ .id = 0x01, .val = "Invalid P(S)" },
 	{ .id = 0x02, .val = "Invalid P(R)" },
@@ -671,6 +667,7 @@ static dict const x25_diag_codes[] = {
 	{ .id = 0x78, .val = "Temporary routing problem" },
 	{ .id = 0x79, .val = "Unknown called DNIC" },
 	{ .id = 0x7a, .val = "Maintenance action" },
+// Doc 9705, Table 5.7-3
 	{ .id = 0x80, .val = "Version number not supported" },
 	{ .id = 0x81, .val = "Invalid length field" },
 	{ .id = 0x82, .val = "Call collision resolution" },
@@ -686,22 +683,33 @@ static dict const x25_diag_codes[] = {
 	{ .id = 0x92, .val = "System local error" },
 	{ .id = 0x93, .val = "Invalid SEL field value in received NET" },
 //	{ .id = 0xd2, .val = "210" },
-	{ .id = 0xe1, .val = "Disconnected (transient condition)" },
-	{ .id = 0xe2, .val = "Disconnected (permanent condition)" },
-	{ .id = 0xe3, .val = "Rejected - reason unspecified (transient condition)" },
-	{ .id = 0xe4, .val = "Rejected - reason unspecified (permanent condition)" },
-	{ .id = 0xe5, .val = "Rejected - QoS not available (transient condition)" },
-	{ .id = 0xe6, .val = "Rejected - QoS not available (permanent condition)" },
-	{ .id = 0xe7, .val = "Rejected - NSAP unreachable (transient condition)" },
-	{ .id = 0xe8, .val = "Rejected - NSAP unreachable (permanent condition)" },
-	{ .id = 0xe9, .val = "Reset - reason unspecified" },
-	{ .id = 0xea, .val = "Reset - congestion" },
-	{ .id = 0xeb, .val = "Rejected - NSAP address unknown (permanent condition)" },
+// ISO 8208
+	{ .id = 0xe1, .val = "OSI network disconnect (transient)" },
+	{ .id = 0xe2, .val = "OSI network disconnect (permanent)" },
+	{ .id = 0xe3, .val = "OSI network reject - reason unspecified (transient)" },
+	{ .id = 0xe4, .val = "OSI network reject - reason unspecified (permanent)" },
+	{ .id = 0xe5, .val = "OSI network reject - QoS not available (transient)" },
+	{ .id = 0xe6, .val = "OSI network reject - QoS not available (permanent)" },
+	{ .id = 0xe7, .val = "OSI network reject - NSAP unreachable (transient)" },
+	{ .id = 0xe8, .val = "OSI network reject - NSAP unreachable (permanent)" },
+	{ .id = 0xe9, .val = "OSI network reset - no reason given" },
+	{ .id = 0xea, .val = "OSI network reset - congestion" },
+	{ .id = 0xeb, .val = "OSI network reject - NSAP address unknown (permanent)" },
+// Doc 9705, Table 5.7-3
 	{ .id = 0xf0, .val = "System lack of resources" },
-//	{ .id = 0xf1, .val = "241" },
+// ISO 8208
+	{ .id = 0xf1, .val = "Higher level initiated disconnect (normal)" },
+// Doc 9880, 3.7.4.2.1.6.1.5
 	{ .id = 0xf2, .val = "Incompatible information in user data" },
-//	{ .id = 0xf5, .val = "245" },
-	{ .id = 0xf9, .val = "Unrecognized protocol ID in user data" },
+// ISO 8208
+	{ .id = 0xf3, .val = "Higher level initiated disconnect - incompatible data" },
+	{ .id = 0xf4, .val = "Higher level initiated reject - no reason given (transient)" },
+	{ .id = 0xf5, .val = "Higher level initiated reject - no reason given (permanent)" },
+	{ .id = 0xf6, .val = "Higher level initiated reject - QoS not available (transient)" },
+	{ .id = 0xf7, .val = "Higher level initiated reject - QoS not available (permanent)" },
+	{ .id = 0xf8, .val = "Higher level initiated reject - incompatible data"  },
+	{ .id = 0xf9, .val = "Unrecognized protocol ID" },
+	{ .id = 0xfa, .val = "Higher level initiated reset - user resync" },
 	{ .id = 0x00, .val = NULL }
 };
 
