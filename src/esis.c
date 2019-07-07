@@ -22,6 +22,7 @@
 #include <string.h>
 #include <libacars/libacars.h>	// la_type_descriptor, la_proto_node
 #include <libacars/vstring.h>	// la_vstring, LA_ISPRINTF()
+#include "atn.h"		// atn_traffic_types, atsc_traffic_classes
 #include "esis.h"
 #include "dumpvdl2.h"
 #include "tlv.h"
@@ -50,29 +51,6 @@ TLV_PARSER(esis_subnet_caps_parse) {
 }
 
 TLV_FORMATTER(esis_subnet_caps_format_text) {
-	static const dict atn_traffic_types[] = {
-		{  1, "ATS" },
-		{  2, "AOC" },
-		{  4, "ATN Administrative" },
-		{  8, "General Comms" },
-		{ 16, "ATN System Mgmt" },
-		{  0, NULL }
-	};
-#define ATN_TRAFFIC_TYPES_ALL 0x1f
-
-	static const dict atsc_traffic_classes[] = {
-		{   1, "A" },
-		{   2, "B" },
-		{   4, "C" },
-		{   8, "D" },
-		{  16, "E" },
-		{  32, "F" },
-		{  64, "G" },
-		{ 128, "H" },
-		{  0, NULL }
-	};
-#define ATSC_TRAFFIC_CLASSES_ALL 0xff
-
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);

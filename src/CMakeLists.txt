@@ -165,6 +165,7 @@ add_library (dumpvdl2_base OBJECT
 	asn1-format-common.c
 	asn1-format-icao.c
 	asn1-util.c
+	atn.c
 	avlc.c
 	bitstream.c
 	chebyshev.c
