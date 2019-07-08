@@ -27,6 +27,7 @@
 #include "idrp.h"
 #include "dumpvdl2.h"
 #include "tlv.h"
+#include "atn.h"			// atn_sec_label_parse, atn_sec_label_format_text
 
 // Forward declaration
 la_type_descriptor const proto_DEF_idrp_pdu;
@@ -248,9 +249,9 @@ static const dict path_attributes[] = {
 		.id = 14,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Security",
-			.parse = tlv_octet_string_parse,
-			.format_text = tlv_octet_string_format_text,
-			.destroy = NULL
+			.parse = atn_sec_label_parse,
+			.format_text = atn_sec_label_format_text,
+			.destroy = atn_sec_label_destroy
 		}
 	},
 	{

@@ -27,6 +27,7 @@
 #include "esis.h"			// esis_pdu_parse()
 #include "idrp.h"			// idrp_pdu_parse()
 #include "cotp.h"			// cotp_concatenated_pdu_parse()
+#include "atn.h"			// atn_sec_label_parse, atn_sec_label_format_text
 
 static la_proto_node *parse_clnp_pdu_payload(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	if(len == 0) {
@@ -54,6 +55,7 @@ static la_proto_node *parse_clnp_pdu_payload(uint8_t *buf, uint32_t len, uint32_
 // Forward declarations
 la_type_descriptor const proto_DEF_clnp_pdu;
 TLV_PARSER(clnp_error_code_parse);
+TLV_PARSER(clnp_security_parse);
 TLV_FORMATTER(clnp_error_code_format_text);
 
 static dict const clnp_options[] = {
@@ -99,9 +101,9 @@ static dict const clnp_options[] = {
 		.id = 0xc5,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Security",
-			.parse = tlv_octet_string_parse,
-			.format_text = tlv_octet_string_format_text,
-			.destroy = NULL
+			.parse = clnp_security_parse,
+			.format_text = atn_sec_label_format_text,
+			.destroy = atn_sec_label_destroy
 		 },
 	},
 	{
@@ -296,6 +298,18 @@ TLV_FORMATTER(clnp_error_code_format_text) {
 		la_vstring_append_sprintf(ctx->vstr, ", erroneous octet value: 0x%02x", e->erroneous_octet);
 	}
 	EOL(ctx->vstr);
+}
+
+TLV_PARSER(clnp_security_parse) {
+	ASSERT(buf != NULL);
+
+	if(len < 1) {
+		return NULL;
+	}
+// The first octet contains security format code (X.233, 7.5.3).
+// In ATN its value is always 0xC0 (= globally unique security field).
+// ATN Security Label goes after that.
+	return atn_sec_label_parse(typecode, buf + 1, len - 1);
 }
 
 void clnp_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
