@@ -46,7 +46,7 @@ void tlv_list_destroy(la_list *p) {
 	p = NULL;
 }
 
-la_list *tlv_list_append(la_list *head, uint8_t typecode, tlv_type_descriptor_t *td, uint8_t *data) {
+la_list *tlv_list_append(la_list *head, uint8_t typecode, tlv_type_descriptor_t *td, void *data) {
 	NEW(tlv_tag_t, tag);
 	tag->typecode = typecode;
 	tag->td = td;
