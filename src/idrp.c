@@ -29,8 +29,10 @@
 #include "tlv.h"
 #include "atn.h"			// atn_sec_label_parse, atn_sec_label_format_text
 
-// Forward declaration
+// Forward declarations
 la_type_descriptor const proto_DEF_idrp_pdu;
+static tlv_type_descriptor_t tlv_DEF_idrp_attr_no_value;
+static tlv_type_descriptor_t tlv_DEF_idrp_ribatt;
 
 static const dict bispdu_types[] = {
 	{ BISPDU_TYPE_OPEN,		"Open" },
@@ -278,6 +280,141 @@ static const dict path_attributes[] = {
 	}
 };
 
+TLV_FORMATTER(idrp_attr_no_value_format_text) {
+	UNUSED(label);
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	ASSERT(ctx->indent >= 0);
+
+// Find the attribute label and print it to indicate its presence in RIB-Att)
+	CAST_PTR(typecode, uint8_t *, data);
+	CAST_PTR(td, tlv_type_descriptor_t *, dict_search(path_attributes, *typecode));
+	if(td != NULL) {
+		LA_ISPRINTF(ctx->vstr, ctx->indent, "%s\n", td->label);
+	} else {
+		LA_ISPRINTF(ctx->vstr, ctx->indent, "Unknown attribute %u\n", *typecode);
+	}
+}
+
+typedef struct {
+	la_list *list;
+	int consumed;
+} attr_parse_result_t;
+
+static attr_parse_result_t parse_idrp_ribatt(uint8_t *buf, uint32_t len) {
+	la_list *attr_list = NULL;
+	if(len < 1) {
+		goto fail;
+	}
+	int consumed = 0;
+	uint8_t attrs_cnt = buf[0];
+	buf++; consumed++; len--;
+
+	uint8_t i = 0;
+	while(i < attrs_cnt && len > 0) {
+		uint8_t typecode = buf[0];
+		buf++; consumed++; len--;
+		if(typecode == 11 || typecode == 14) {
+// Locally Defined Qos and Security are encoded as full TLVs. Extract the length
+// field and run the standard tag parser for them.
+			if(len < 2) {
+				goto fail;
+			}
+			size_t tag_len = extract_uint16_msbfirst(buf);
+			buf += 2; consumed += 2; len -= 2;
+			if(tag_len > len) {
+				debug_print("Tag %d: parameter truncated: tag_len=%zu buflen=%u\n",
+					typecode, tag_len, len);
+				goto fail;
+			}
+			attr_list = tlv_single_tag_parse(typecode, buf, tag_len,
+				path_attributes, attr_list);
+			buf += tag_len; consumed += tag_len; len -= tag_len;
+		} else {
+// Other attributes are encoded as value only.
+// Can't store a NULL value in tlv_tag_t, so just store the typecode as value
+			NEW(uint8_t, u);
+			*u = typecode;
+			attr_list = tlv_list_append(attr_list, typecode,
+				&tlv_DEF_idrp_attr_no_value, u);
+		}
+		i++;
+	}
+	return (attr_parse_result_t){ .list = attr_list, .consumed = consumed };
+fail:
+	tlv_list_destroy(attr_list);
+	return (attr_parse_result_t){ .list = NULL, .consumed = -1 };
+}
+
+typedef struct {
+	uint8_t num;		// RIBAtt index number
+	la_list *attr_list;	// Attributes
+} idrp_ribatt_t;
+
+static attr_parse_result_t parse_idrp_ribatts_set(uint8_t *buf, uint32_t len) {
+	la_list *ribatt_list = NULL;
+	if(len < 1) {
+		goto fail;
+	}
+	int consumed = 0;
+	uint8_t ribatts_cnt = buf[0];
+	buf++; consumed++; len--;
+
+	uint8_t i = 0;
+	while(i < ribatts_cnt && len > 0) {
+		attr_parse_result_t result = parse_idrp_ribatt(buf, len);
+		debug_print("RibAtt #%u: parse_idrp_ribatt consumed %d octets\n", i, result.consumed);
+		if(result.consumed < 0) {
+			goto fail;
+		}
+		buf += result.consumed; consumed += result.consumed; len -= result.consumed;
+		NEW(idrp_ribatt_t, ribatt);
+		ribatt->num = i;
+		ribatt->attr_list = result.list;
+		ribatt_list = tlv_list_append(ribatt_list, i, &tlv_DEF_idrp_ribatt, ribatt);
+		i++;
+	}
+	return (attr_parse_result_t){ .list = ribatt_list, .consumed = consumed };
+fail:
+	tlv_list_destroy(ribatt_list);
+	return (attr_parse_result_t){ .list = NULL, .consumed = -1 };
+}
+
+TLV_FORMATTER(idrp_ribatt_format_text) {
+	UNUSED(label);
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	ASSERT(ctx->indent >= 0);
+
+	CAST_PTR(r, idrp_ribatt_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "RibAtt #%u:\n", r->num);
+	tlv_list_format_text(ctx->vstr, r->attr_list, ctx->indent+1);
+}
+
+TLV_DESTRUCTOR(idrp_ribatt_destroy) {
+	if(data == NULL) {
+		return;
+	}
+	CAST_PTR(ribatt, idrp_ribatt_t *, data);
+	tlv_list_destroy(ribatt->attr_list);
+	XFREE(data);
+}
+
+// A pseudo-type which only prints its label
+static tlv_type_descriptor_t tlv_DEF_idrp_attr_no_value = {
+	.label = "",
+	.parse = NULL,
+	.format_text = idrp_attr_no_value_format_text,
+	.destroy = NULL
+};
+
+static tlv_type_descriptor_t tlv_DEF_idrp_ribatt = {
+	.label = "",
+	.parse = NULL,
+	.format_text = idrp_ribatt_format_text,
+	.destroy = idrp_ribatt_destroy
+};
+
 static int parse_idrp_open_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	if(len < 6) {
 		debug_print("Truncated Open BISPDU: len %u < 6\n", len);
@@ -299,7 +436,15 @@ static int parse_idrp_open_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	}
 	pdu->open_src_rdi.buf = buf;
 	buf += pdu->open_src_rdi.len; len -= pdu->open_src_rdi.len;
-// TODO: Rib-AttsSet, Auth Code, Auth Data
+	attr_parse_result_t result = parse_idrp_ribatts_set(buf, len);
+// FIXME: don't fail catastrophically on unparseable RibAttsSet.
+// We can still print most of the dissected packet in this case.
+	if(result.consumed < 0) {
+		return -1;
+	}
+	pdu->ribatts_set = result.list;
+	buf += result.consumed; len -= result.consumed;
+// TODO: Confed-IDs, Auth Code, Auth Data
 	pdu->data = octet_string_new(buf, len);
 	return 0;
 }
@@ -495,6 +640,12 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 			LA_ISPRINTF(vstr, indent, "%s: ", "Source RDI");
 			octet_string_with_ascii_format_text(vstr, &pdu->open_src_rdi, 0);
 			EOL(vstr);
+			LA_ISPRINTF(vstr, indent, "%s:\n", "RIB Attribute Set");
+			if(pdu->ribatts_set != NULL) {
+				tlv_list_format_text(vstr, pdu->ribatts_set, indent+1);
+			} else {
+				LA_ISPRINTF(vstr, indent, "%s\n", "-- Unparseable RibAttsSet field\n");
+			}
 			if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
 				octet_string_format_text(vstr, pdu->data, indent);
 				EOL(vstr);
@@ -538,6 +689,7 @@ void idrp_pdu_destroy(void *data) {
 	CAST_PTR(pdu, idrp_pdu_t *, data);
 	la_list_free(pdu->withdrawn_routes);
 	tlv_list_destroy(pdu->path_attributes);
+	tlv_list_destroy(pdu->ribatts_set);
 	XFREE(pdu->data);
 	XFREE(data);
 }
