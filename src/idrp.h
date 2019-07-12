@@ -50,8 +50,10 @@ typedef struct {
 
 typedef struct {
 	idrp_hdr_t *hdr;
-	la_list *withdrawn_routes, *path_attributes;
+	la_list *withdrawn_routes;
+	la_list *path_attributes;
 	la_list *ribatts_set;
+	la_list *confed_ids;
 	octet_string_t open_src_rdi;
 	octet_string_t *data;
 	uint16_t open_holdtime;

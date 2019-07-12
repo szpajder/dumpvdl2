@@ -415,6 +415,34 @@ static tlv_type_descriptor_t tlv_DEF_idrp_ribatt = {
 	.destroy = idrp_ribatt_destroy
 };
 
+static attr_parse_result_t parse_idrp_confed_ids(uint8_t *buf, uint32_t len) {
+	la_list *confed_id_list = NULL;
+	if(len < 1) {
+		goto fail;
+	}
+	int consumed = 0;
+	uint8_t confed_id_cnt = buf[0];
+	buf++; consumed++; len--;
+
+	uint8_t i = 0;
+	while(i < confed_id_cnt && len > 0) {
+		uint8_t confed_id_len = buf[0];
+		buf++; consumed++; len--;
+		if(len < confed_id_len) {
+			debug_print("Truncated Confed ID #%d: len %u < confed_id_len %u\n",
+				i, len, confed_id_len);
+			goto fail;
+		}
+		confed_id_list = la_list_append(confed_id_list, octet_string_new(buf, confed_id_len));
+		buf += confed_id_len; consumed += confed_id_len; len -= confed_id_len;
+		i++;
+	}
+	return (attr_parse_result_t){ .list = confed_id_list, .consumed = consumed };
+fail:
+	la_list_free(confed_id_list);
+	return (attr_parse_result_t){ .list = NULL, .consumed = -1 };
+}
+
 static int parse_idrp_open_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	if(len < 6) {
 		debug_print("Truncated Open BISPDU: len %u < 6\n", len);
@@ -444,7 +472,14 @@ static int parse_idrp_open_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	}
 	pdu->ribatts_set = result.list;
 	buf += result.consumed; len -= result.consumed;
-// TODO: Confed-IDs, Auth Code, Auth Data
+
+	result = parse_idrp_confed_ids(buf, len);
+	if(result.consumed < 0) {
+		return -1;
+	}
+	pdu->confed_ids = result.list;
+	buf += result.consumed; len -= result.consumed;
+// TODO: Auth Code, Auth Data
 	pdu->data = octet_string_new(buf, len);
 	return 0;
 }
@@ -646,6 +681,15 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 			} else {
 				LA_ISPRINTF(vstr, indent, "%s\n", "-- Unparseable RibAttsSet field\n");
 			}
+			if(pdu->confed_ids != NULL) {
+				LA_ISPRINTF(vstr, indent, "%s:\n", "Confederation IDs");
+				indent++;
+				for(la_list *p = pdu->confed_ids; p != NULL; p = p->next) {
+					octet_string_with_ascii_format_text(vstr, p->data, indent);
+					EOL(vstr);
+				}
+				indent--;
+			}
 			if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
 				octet_string_format_text(vstr, pdu->data, indent);
 				EOL(vstr);
@@ -690,6 +734,7 @@ void idrp_pdu_destroy(void *data) {
 	la_list_free(pdu->withdrawn_routes);
 	tlv_list_destroy(pdu->path_attributes);
 	tlv_list_destroy(pdu->ribatts_set);
+	la_list_free(pdu->confed_ids);
 	XFREE(pdu->data);
 	XFREE(data);
 }
