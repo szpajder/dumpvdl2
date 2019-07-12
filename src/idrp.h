@@ -55,9 +55,11 @@ typedef struct {
 	la_list *ribatts_set;
 	la_list *confed_ids;
 	octet_string_t open_src_rdi;
+	octet_string_t auth_data;
 	octet_string_t *data;
 	uint16_t open_holdtime;
 	uint16_t open_max_pdu_size;
+	uint8_t auth_mech;
 	uint8_t err_code, err_subcode;
 	uint8_t err_fsm_bispdu_type, err_fsm_state;
 	bool err;

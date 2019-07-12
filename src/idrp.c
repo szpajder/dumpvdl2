@@ -92,6 +92,13 @@ static const dict RIB_refresh_errors[] = {
 	{ 0,	NULL }
 };
 
+static const dict auth_mechs[] = {
+	{ 1,	"simple checksum" },
+	{ 2,	"auth + data integrity check" },
+	{ 3,	"password" },
+	{ 0,	NULL }
+};
+
 static const dict bispdu_errors[] = {
 	{ BISPDU_ERR_OPEN_PDU,		&(bispdu_err_t){ "Open PDU error",	(dict *)&open_pdu_errors } },
 	{ BISPDU_ERR_UPDATE_PDU,	&(bispdu_err_t){ "Update PDU error",	(dict *)&update_pdu_errors } },
@@ -479,8 +486,16 @@ static int parse_idrp_open_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	}
 	pdu->confed_ids = result.list;
 	buf += result.consumed; len -= result.consumed;
-// TODO: Auth Code, Auth Data
-	pdu->data = octet_string_new(buf, len);
+
+	if(len < 1) {
+		return -1;
+	}
+	pdu->auth_mech = buf[0];
+	buf++; len--;
+	if(len > 0) {
+		pdu->auth_data.buf = buf;
+		pdu->auth_data.len = len;
+	}
 	return 0;
 }
 
@@ -678,8 +693,6 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 			LA_ISPRINTF(vstr, indent, "%s:\n", "RIB Attribute Set");
 			if(pdu->ribatts_set != NULL) {
 				tlv_list_format_text(vstr, pdu->ribatts_set, indent+1);
-			} else {
-				LA_ISPRINTF(vstr, indent, "%s\n", "-- Unparseable RibAttsSet field\n");
 			}
 			if(pdu->confed_ids != NULL) {
 				LA_ISPRINTF(vstr, indent, "%s:\n", "Confederation IDs");
@@ -690,8 +703,12 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 				}
 				indent--;
 			}
-			if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
-				octet_string_format_text(vstr, pdu->data, indent);
+			CAST_PTR(auth_mech_name, char *, dict_search(auth_mechs, pdu->auth_mech));
+			LA_ISPRINTF(vstr, indent, "Auth mechanism: %s\n",
+				auth_mech_name ? auth_mech_name : "unknown");
+			if(pdu->auth_data.buf != NULL && pdu->auth_data.len > 0) {
+				LA_ISPRINTF(vstr, indent, "%s: ", "Auth data");
+				octet_string_format_text(vstr, &pdu->auth_data, 0);
 				EOL(vstr);
 			}
 		}
