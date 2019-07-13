@@ -677,7 +677,8 @@ static void idrp_error_format_text(la_vstring *vstr, idrp_pdu_t *pdu, int indent
 	}
 print_err_payload:
 	if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
-		octet_string_format_text(vstr, pdu->data, indent);
+		LA_ISPRINTF(vstr, indent, "%s: ", "Error data");
+		octet_string_format_text(vstr, pdu->data, 0);
 		EOL(vstr);
 	}
 }
