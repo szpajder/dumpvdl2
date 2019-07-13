@@ -459,18 +459,19 @@ static int parse_idrp_open_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 		debug_print("Unsupported Open BISPDU version %u\n", *buf);
 		return -1;
 	}
-	buf++; len--;
+	int consumed = 0;
+	buf++; consumed++; len--;
 	pdu->open_holdtime = extract_uint16_msbfirst(buf);
-	buf += 2; len -= 2;
+	buf += 2; consumed += 2; len -= 2;
 	pdu->open_max_pdu_size = extract_uint16_msbfirst(buf);
-	buf += 2; len -= 2;
-	pdu->open_src_rdi.len = *buf++; len--;
+	buf += 2; consumed += 2; len -= 2;
+	pdu->open_src_rdi.len = *buf++; consumed++; len--;
 	if(len < pdu->open_src_rdi.len) {
 		debug_print("Truncated source RDI: len %u < rdi_len %zu\n", len, pdu->open_src_rdi.len);
 		return -1;
 	}
 	pdu->open_src_rdi.buf = buf;
-	buf += pdu->open_src_rdi.len; len -= pdu->open_src_rdi.len;
+	buf += pdu->open_src_rdi.len; consumed += pdu->open_src_rdi.len; len -= pdu->open_src_rdi.len;
 	attr_parse_result_t result = parse_idrp_ribatts_set(buf, len);
 // FIXME: don't fail catastrophically on unparseable RibAttsSet.
 // We can still print most of the dissected packet in this case.
@@ -478,25 +479,29 @@ static int parse_idrp_open_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 		return -1;
 	}
 	pdu->ribatts_set = result.list;
-	buf += result.consumed; len -= result.consumed;
+	buf += result.consumed; consumed += result.consumed; len -= result.consumed;
 
 	result = parse_idrp_confed_ids(buf, len);
 	if(result.consumed < 0) {
+		debug_print("%s\n", "Failed to parse Confed-IDs");
 		return -1;
 	}
 	pdu->confed_ids = result.list;
-	buf += result.consumed; len -= result.consumed;
+	buf += result.consumed; consumed += result.consumed; len -= result.consumed;
 
 	if(len < 1) {
+		debug_print("%s\n", "PDU truncated before auth mech");
 		return -1;
 	}
 	pdu->auth_mech = buf[0];
-	buf++; len--;
+	buf++; consumed++; len--;
 	if(len > 0) {
+		debug_print("Auth data: len %u\n", len);
 		pdu->auth_data.buf = buf;
 		pdu->auth_data.len = len;
+		consumed += len;
 	}
-	return 0;
+	return consumed;
 }
 
 static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
@@ -504,8 +509,9 @@ static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 		debug_print("Truncated Update BISPDU: len %u < 4\n", len);
 		return -1;
 	}
+	int consumed = 0;
 	uint16_t num_withdrawn = extract_uint16_msbfirst(buf);
-	buf += 2; len -= 2;
+	buf += 2; consumed += 2; len -= 2;
 	if(num_withdrawn > 0) {
 		if(len < num_withdrawn * 4) {
 			debug_print("Withdrawn Routes field truncated: len %u < expected %u\n", len, 4 * num_withdrawn);
@@ -515,7 +521,7 @@ static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 			NEW(uint32_t, u);
 			*u = extract_uint32_msbfirst(buf);
 			pdu->withdrawn_routes = la_list_append(pdu->withdrawn_routes, u);
-			buf += 4; len -= 4;
+			buf += 4; consumed += 4; len -= 4;
 		}
 	}
 	if(len < 2) {
@@ -523,17 +529,18 @@ static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 		return -1;
 	}
 	uint16_t total_attrib_len = extract_uint16_msbfirst(buf);
-	buf += 2; len -= 2;
+	buf += 2; consumed += 2; len -= 2;
 	if(total_attrib_len > 0) {
 		if(len < total_attrib_len) {
 			debug_print("Path attributes field truncated: len %u < expected %u\n", len, total_attrib_len);
 			return -1;
 		}
-		while(total_attrib_len > 4) {			// flag + typecode + length
-			buf++; len--; total_attrib_len--; 	// flag is not too interesting...
-			uint8_t typecode = *buf++; len--; total_attrib_len--;
+		while(total_attrib_len > 4) {				// flag + typecode + length
+// buf[0] is flag - not too interesting, so skip it
+			uint8_t typecode = buf[1];
+			buf += 2; consumed += 2; len -= 2; total_attrib_len -= 2;
 			uint16_t alen = extract_uint16_msbfirst(buf);
-			buf += 2; len -= 2; total_attrib_len -= 2;
+			buf += 2; consumed += 2; len -= 2; total_attrib_len -= 2;
 			if(len < alen) {
 				debug_print("Attribute value truncated: len %u < expected %u\n", len, alen);
 				return -1;
@@ -541,16 +548,18 @@ static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 // TODO: parse RD_PATH
 			pdu->path_attributes = tlv_single_tag_parse(typecode, buf, alen,
 				path_attributes, pdu->path_attributes);
-			buf += alen; len -= alen; total_attrib_len -= alen;
+			buf += alen; consumed += alen; len -= alen; total_attrib_len -= alen;
 		}
 		if(total_attrib_len > 0) {
-			debug_print("total_attrib_len disagrees with length of the attributes: (%u octets left)\n", total_attrib_len);
+			debug_print("total_attrib_len disagrees with length of the attributes: (%u octets left)\n",
+				total_attrib_len);
 			return -1;
 		}
 	}
 // TODO: parse NLRI
 	pdu->data = octet_string_new(buf, len);
-	return 0;
+	consumed += len;
+	return consumed;
 }
 
 static int parse_idrp_error_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
@@ -558,9 +567,10 @@ static int parse_idrp_error_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 		debug_print("Truncated Error BISPDU: len %u < 2\n", len);
 		return -1;
 	}
+	int consumed = 0;
 	uint8_t err_code = *buf++;
 	uint8_t err_subcode = *buf++;
-	len -= 2;
+	consumed += 2; len -= 2;
 
 	debug_print("code=%u subcode=%u\n", err_code, err_subcode);
 	if(err_code == BISPDU_ERR_FSM) {
@@ -572,7 +582,8 @@ static int parse_idrp_error_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	pdu->err_code = err_code;
 	pdu->err_subcode = err_subcode;
 	pdu->data = octet_string_new(buf, len);
-	return 0;
+	consumed += len;
+	return consumed;
 }
 
 la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
@@ -598,18 +609,18 @@ la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		debug_print("Too short (len %u < PDU len %u)\n", remaining, pdu_len);
 		goto end;
 	}
-	ptr += BISPDU_HDR_LEN; remaining -= BISPDU_HDR_LEN;
+	ptr += BISPDU_HDR_LEN; remaining -= BISPDU_HDR_LEN; pdu_len -= BISPDU_HDR_LEN;
 	debug_print("skipping %u hdr octets, %u octets remaining\n", BISPDU_HDR_LEN, remaining);
 	int result = 0;
 	switch(hdr->type) {
 	case BISPDU_TYPE_OPEN:
-		result = parse_idrp_open_pdu(pdu, ptr, remaining);
+		result = parse_idrp_open_pdu(pdu, ptr, pdu_len);
 		break;
 	case BISPDU_TYPE_UPDATE:
-		result = parse_idrp_update_pdu(pdu, ptr, remaining);
+		result = parse_idrp_update_pdu(pdu, ptr, pdu_len);
 		break;
 	case BISPDU_TYPE_ERROR:
-		result = parse_idrp_error_pdu(pdu, ptr, remaining);
+		result = parse_idrp_error_pdu(pdu, ptr, pdu_len);
 		break;
 	case BISPDU_TYPE_KEEPALIVE:
 	case BISPDU_TYPE_CEASE:
@@ -622,6 +633,10 @@ la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	}
 	if(result < 0) {		// unparseable PDU
 		goto end;
+	}
+	ptr += result; remaining -= result;
+	if(remaining > 0) {
+		node->next= unknown_proto_pdu_new(ptr, remaining);
 	}
 
 	if(hdr->type == BISPDU_TYPE_KEEPALIVE) {
