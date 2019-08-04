@@ -345,7 +345,7 @@ TLV_FORMATTER(lcr_cause_format_text) {
 	ASSERT(ctx->indent >= 0);
 
 	CAST_PTR(c, lcr_cause_t *, data);
-	char *cause_descr = (char *)dict_search(lcr_causes, c->cause);
+	CAST_PTR(cause_descr, char *, dict_search(lcr_causes, c->cause));
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: 0x%02x (%s)\n",
 		label, c->cause, cause_descr ? cause_descr : "unknown");
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Delay: %u\n", c->delay);

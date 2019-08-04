@@ -453,7 +453,7 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		goto fail;
 	}
 
-	x25_hdr_t *hdr = (x25_hdr_t *)ptr;
+	CAST_PTR(hdr, x25_hdr_t *, ptr);
 	debug_print("gfi=0x%02x group=0x%02x chan=0x%02x type=0x%02x\n", hdr->gfi,
 		hdr->chan_group, hdr->chan_num, hdr->type.val);
 	if(hdr->gfi != GFI_X25_MOD8) {
@@ -723,7 +723,7 @@ void x25_format_text(la_vstring * const vstr, void const * const data, int inden
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable X.25 packet\n");
 		return;
 	}
-	char *name = (char *)dict_search(x25_pkttype_names, pkt->type);
+	CAST_PTR(name, char *, dict_search(x25_pkttype_names, pkt->type));
 	LA_ISPRINTF(vstr, indent, "X.25 %s: grp: %u chan: %u", name, pkt->hdr->chan_group, pkt->hdr->chan_num);
 	if(pkt->addr_block_present) {
 		char *calling = fmt_x25_addr(pkt->calling.addr, pkt->calling.len);

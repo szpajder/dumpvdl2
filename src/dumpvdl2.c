@@ -265,7 +265,7 @@ static void msg_filter_usage() {
 	fprintf(stderr, "(ie. to indicate that a particular message type shall not be displayed).\n");
 	fprintf(stderr, "\nSupported message types:\n\n");
 
-	msg_filterspec_t *ptr = (msg_filterspec_t *)filters;
+	CAST_PTR(ptr, msg_filterspec_t *, filters);
 	while(ptr->token != NULL) {
 		fprintf(stderr, "\t%s\t%s%s%s\n",
 			ptr->token,
@@ -284,7 +284,7 @@ static void msg_filter_usage() {
 }
 
 static void update_filtermask(char *token, uint32_t *fmask) {
-	msg_filterspec_t *ptr = (msg_filterspec_t *)filters;
+	CAST_PTR(ptr, msg_filterspec_t *, filters);
 	int negate = 0;
 	if(token[0] == '-') {
 		negate = 1;

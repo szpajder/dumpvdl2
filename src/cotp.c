@@ -574,7 +574,7 @@ static void output_cotp_pdu_as_text(gpointer p, gpointer user_data) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable X.224 COTP TPDU\n");
 		return;
 	}
-	char *tpdu_name = (char *)dict_search(cotp_tpdu_codes, pdu->code);
+	CAST_PTR(tpdu_name, char *, dict_search(cotp_tpdu_codes, pdu->code));
 	ASSERT(tpdu_name != NULL);
 
 	LA_ISPRINTF(vstr, indent, "X.224 COTP %s%s:\n", tpdu_name,

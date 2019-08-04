@@ -139,7 +139,7 @@ la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		debug_print("Too short (len %u < min len %u)\n", remaining, ESIS_HDR_LEN);
 		goto end;
 	}
-	esis_hdr_t *hdr = (esis_hdr_t *)ptr;
+	CAST_PTR(hdr, esis_hdr_t *, ptr);
 	if(hdr->version != 1) {
 		debug_print("Unsupported PDU version %u\n", hdr->version);
 		goto end;
@@ -194,7 +194,7 @@ static void esis_pdu_format_text(la_vstring * const vstr, void const * const dat
 		return;
 	}
 	esis_hdr_t *hdr = pdu->hdr;
-	char *pdu_name = (char *)dict_search(esis_pdu_types, hdr->type);
+	CAST_PTR(pdu_name, char *, dict_search(esis_pdu_types, hdr->type));
 	LA_ISPRINTF(vstr, indent, "ES-IS %s: Hold Time: %u sec\n", pdu_name, pdu->holdtime);
 	indent++;
 

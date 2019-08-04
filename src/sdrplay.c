@@ -57,7 +57,7 @@ int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, unsig
 	UNUSED(hwRemoved);
 	int i, j, count1, count2, new_buf_flag;
 	int end, input_index;
-	sdrplay_ctx_t *SDRPlay = (sdrplay_ctx_t*)cbContext;
+	CAST_PTR(SDRPlay, sdrplay_ctx_t *, cbContext);
 	if(numSamples == 0) {
 		return;
 	}

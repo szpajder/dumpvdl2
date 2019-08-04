@@ -25,7 +25,7 @@
 #include "asn1-util.h"			// asn_formatter_table
 
 static int compare_fmtr(const void *k, const void *m) {
-	asn_formatter_t *memb = (asn_formatter_t *)m;
+	CAST_PTR(memb, asn_formatter_t *, m);
 	return(k == memb->type ? 0 : 1);
 }
 

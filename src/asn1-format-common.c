@@ -42,7 +42,7 @@ void _format_INTEGER_with_unit(la_vstring *vstr, char const * const label, asn_T
 void _format_CHOICE(la_vstring *vstr, char const * const label, dict const * const choice_labels,
 	asn1_output_fun_t cb, asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
 
-	asn_CHOICE_specifics_t *specs = (asn_CHOICE_specifics_t *)td->specifics;
+	CAST_PTR(specs, asn_CHOICE_specifics_t *, td->specifics);
 	int present = _fetch_present_idx(sptr, specs->pres_offset, specs->pres_size);
 	if(label != NULL) {
 		LA_ISPRINTF(vstr, indent, "%s:\n", label);

@@ -37,7 +37,7 @@ static void update_msg_type(uint32_t *msg_type, la_proto_node *root) {
 		debug_print("%s", "proto tree contains no ACARS message");
 		return;
 	}
-	la_acars_msg *amsg = (la_acars_msg *)node->data;
+	CAST_PTR(amsg, la_acars_msg *, node->data);
 	if(strlen(amsg->txt) > 0) {
 		debug_print("%s\n", "MSGFLT_ACARS_DATA");
 		*msg_type |= MSGFLT_ACARS_DATA;

@@ -288,7 +288,7 @@ void *process_samples(void *arg) {
 	float cwf, swf;
 	float re[INP_LPF_NPOLES+1], im[INP_LPF_NPOLES+1];
 	float lp_re[INP_LPF_NPOLES+1], lp_im[INP_LPF_NPOLES+1];
-	vdl2_channel_t *v = (vdl2_channel_t *)arg;
+	CAST_PTR(v, vdl2_channel_t *, arg);
 	v->samplenum = -1;
 	memset(lp_re, 0, sizeof(lp_re));
 	memset(lp_im, 0, sizeof(lp_im));
@@ -354,7 +354,7 @@ void process_buf_uchar_init() {
 void process_buf_short(unsigned char *buf, uint32_t len, void *ctx) {
 	UNUSED(ctx);
 	if(len == 0) return;
-	int16_t *bbuf = (int16_t *)buf;
+	CAST_PTR(bbuf, int16_t *, buf);
 	pthread_barrier_wait(&demods_ready);
 	sbuf_len = len / 2;
 	for(uint32_t i = 0; i < sbuf_len; i++)
