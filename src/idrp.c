@@ -35,78 +35,116 @@ la_type_descriptor const proto_DEF_idrp_pdu;
 static tlv_type_descriptor_t tlv_DEF_idrp_attr_no_value;
 static tlv_type_descriptor_t tlv_DEF_idrp_ribatt;
 
-static const dict bispdu_types[] = {
-	{ BISPDU_TYPE_OPEN,		"Open" },
-	{ BISPDU_TYPE_UPDATE,		"Update" },
-	{ BISPDU_TYPE_ERROR,		"Error" },
-	{ BISPDU_TYPE_KEEPALIVE,	"Keepalive" },
-	{ BISPDU_TYPE_CEASE,		"Cease" },
-	{ BISPDU_TYPE_RIBREFRESH,	"RIB Refresh" },
-	{ 0,				NULL }
+static dict const bispdu_types[] = {
+	{ .id = BISPDU_TYPE_OPEN,	.val = "Open" },
+	{ .id = BISPDU_TYPE_UPDATE,	.val = "Update" },
+	{ .id = BISPDU_TYPE_ERROR,	.val = "Error" },
+	{ .id = BISPDU_TYPE_KEEPALIVE,	.val = "Keepalive" },
+	{ .id = BISPDU_TYPE_CEASE,	.val = "Cease" },
+	{ .id = BISPDU_TYPE_RIBREFRESH,	.val = "RIB Refresh" },
+	{ .id = 0,			.val = NULL }
 };
 
-static const dict open_pdu_errors[] = {
-	{ 1,	"Unsupported version number" },
-	{ 2,	"Bad max PDU size" },
-	{ 3,	"Bad peer RD" },
-	{ 4,	"Unsupported auth code" },
-	{ 5,	"Auth failure" },
-	{ 6,	"Bad RIB-AttsSet" },
-	{ 7,	"RDC Mismatch" },
-	{ 0,	NULL }
+static dict const open_pdu_errors[] = {
+	{ .id = 1, .val = "Unsupported version number" },
+	{ .id = 2, .val = "Bad max PDU size" },
+	{ .id = 3, .val = "Bad peer RD" },
+	{ .id = 4, .val = "Unsupported auth code" },
+	{ .id = 5, .val = "Auth failure" },
+	{ .id = 6, .val = "Bad RIB-AttsSet" },
+	{ .id = 7, .val = "RDC Mismatch" },
+	{ .id = 0, .val = NULL }
 };
 
-static const dict update_pdu_errors[] = {
-	{ 1,	"Malformed attribute list" },
-	{ 2,	"Unrecognized well-known attribute" },
-	{ 3, 	"Missing well-known attribute" },
-	{ 4,	"Attribute flags error" },
-	{ 5, 	"Attribute length error" },
-	{ 6, 	"RD routing loop" },
-	{ 7,	"Invalid NEXT_HOP attribute" },
-	{ 8,	"Optional attribute error" },
-	{ 9,	"Invalid reachability information" },
-	{ 10,	"Misconfigured RDCs" },
-	{ 11,	"Malformed NLRI" },
-	{ 12,	"Duplicated attributes" },
-	{ 13,	"Illegal RD path segment" },
-	{ 0,	NULL }
+static dict const update_pdu_errors[] = {
+	{ .id =  1, .val = "Malformed attribute list" },
+	{ .id =  2, .val = "Unrecognized well-known attribute" },
+	{ .id =  3, .val = "Missing well-known attribute" },
+	{ .id =  4, .val = "Attribute flags error" },
+	{ .id =  5, .val = "Attribute length error" },
+	{ .id =  6, .val = "RD routing loop" },
+	{ .id =  7, .val = "Invalid NEXT_HOP attribute" },
+	{ .id =  8, .val = "Optional attribute error" },
+	{ .id =  9, .val = "Invalid reachability information" },
+	{ .id = 10, .val = "Misconfigured RDCs" },
+	{ .id = 11, .val = "Malformed NLRI" },
+	{ .id = 12, .val = "Duplicated attributes" },
+	{ .id = 13, .val = "Illegal RD path segment" },
+	{ .id =  0, .val = NULL }
 };
 
-static const dict timer_expired_errors[] = {
-	{ 0,	"NULL" },
-	{ 0,	NULL }
+static dict const timer_expired_errors[] = {
+	{ .id = 0, .val = "NULL" },
+	{ .id = 0, .val = NULL }
 };
 
-static const dict FSM_states[] = {
-	{ 1,	"CLOSED" },
-	{ 2,	"OPEN-RCVD" },
-	{ 3,	"OPEN-SENT" },
-	{ 4,	"CLOSE-WAIT" },
-	{ 5,	"ESTABLISHED" },
-	{ 0,	NULL }
+static dict const FSM_states[] = {
+	{ .id = 1, .val = "CLOSED" },
+	{ .id = 2, .val = "OPEN-RCVD" },
+	{ .id = 3, .val = "OPEN-SENT" },
+	{ .id = 4, .val = "CLOSE-WAIT" },
+	{ .id = 5, .val = "ESTABLISHED" },
+	{ .id = 0, .val = NULL }
 };
 
-static const dict RIB_refresh_errors[] = {
-	{ 1,	"Invalid opcode" },
-	{ 2,	"Unsupported RIB-Atts" },
-	{ 0,	NULL }
+static dict const RIB_refresh_errors[] = {
+	{ .id = 1, .val = "Invalid opcode" },
+	{ .id = 2, .val = "Unsupported RIB-Atts" },
+	{ .id = 0, .val = NULL }
 };
 
-static const dict auth_mechs[] = {
-	{ 1,	"simple checksum" },
-	{ 2,	"auth + data integrity check" },
-	{ 3,	"password" },
-	{ 0,	NULL }
+static dict const auth_mechs[] = {
+	{ .id = 1, .val = "simple checksum" },
+	{ .id = 2, .val = "auth + data integrity check" },
+	{ .id = 3, .val = "password" },
+	{ .id = 0, .val = NULL }
 };
 
-static const dict bispdu_errors[] = {
-	{ BISPDU_ERR_OPEN_PDU,		&(bispdu_err_t){ "Open PDU error",	(dict *)&open_pdu_errors } },
-	{ BISPDU_ERR_UPDATE_PDU,	&(bispdu_err_t){ "Update PDU error",	(dict *)&update_pdu_errors } },
-	{ BISPDU_ERR_TIMER_EXPIRED,	&(bispdu_err_t){ "Hold timer expired",	(dict *)&timer_expired_errors } },
-	{ BISPDU_ERR_FSM,		&(bispdu_err_t){ "FSM error",		(dict *)&FSM_states } },
-	{ BISPDU_ERR_RIB_REFRESH_PDU,	&(bispdu_err_t){ "RIB Refresh PDU error", (dict *)&RIB_refresh_errors } },
-	{ 0,				NULL }
+typedef struct {
+	char *descr;
+	dict *subcodes;
+} bispdu_err_t;
+
+static dict const bispdu_errors[] = {
+	{
+		.id = BISPDU_ERR_OPEN_PDU,
+		.val = &(bispdu_err_t){
+			"Open PDU error",
+			(dict *)&open_pdu_errors
+		}
+	},
+	{
+		.id = BISPDU_ERR_UPDATE_PDU,
+		.val = &(bispdu_err_t){
+			"Update PDU error",
+			(dict *)&update_pdu_errors
+		}
+	},
+	{
+		.id = BISPDU_ERR_TIMER_EXPIRED,
+		.val = &(bispdu_err_t){
+			"Hold timer expired",
+			(dict *)&timer_expired_errors
+		}
+	},
+	{
+		.id = BISPDU_ERR_FSM,
+		.val = &(bispdu_err_t){
+			"FSM error",
+			(dict *)&FSM_states
+		}
+	},
+	{
+		.id = BISPDU_ERR_RIB_REFRESH_PDU,
+		.val = &(bispdu_err_t){
+			"RIB Refresh PDU error",
+			(dict *)&RIB_refresh_errors
+		}
+	},
+	{
+		.id = 0,
+		.val = NULL
+	}
 };
 
 typedef struct {
@@ -185,7 +223,7 @@ TLV_DESTRUCTOR(rd_path_segment_destroy) {
 	la_list_free(data);
 }
 
-static const dict rd_path_seg_types[] = {
+static dict const rd_path_seg_types[] = {
 	{
 		.id = 1,
 		.val = &(tlv_type_descriptor_t){
@@ -247,7 +285,7 @@ TLV_DESTRUCTOR(rd_path_destroy) {
 	tlv_list_destroy(data);
 }
 
-static const dict path_attributes[] = {
+static dict const path_attributes[] = {
 	{
 		.id = 1,
 		.val = &(tlv_type_descriptor_t){
@@ -779,7 +817,7 @@ la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	}
 	uint8_t *ptr = buf;
 	uint32_t remaining = len;
-	idrp_hdr_t *hdr = (idrp_hdr_t *)ptr;
+	CAST_PTR(hdr, idrp_hdr_t *, ptr);
 	uint16_t pdu_len = extract_uint16_msbfirst(hdr->len);
 	debug_print("pid: %02x len: %u type: %u seq: %u ack: %u coff: %u cavail: %u\n",
 		hdr->pid, pdu_len, hdr->type, ntohl(hdr->seq), ntohl(hdr->ack), hdr->coff, hdr->cavail);
@@ -837,21 +875,21 @@ static void idrp_error_format_text(la_vstring *vstr, idrp_pdu_t *pdu, int indent
 	ASSERT(pdu != NULL);
 	ASSERT(indent >= 0);
 
-	bispdu_err_t *err = (bispdu_err_t *)dict_search(bispdu_errors, pdu->err_code);
+	CAST_PTR(err, bispdu_err_t *, dict_search(bispdu_errors, pdu->err_code));
 	LA_ISPRINTF(vstr, indent, "Code: %u (%s)\n", pdu->err_code, err ? err->descr : "unknown");
 	if(!err) {
 		LA_ISPRINTF(vstr, indent, "Subcode: %u (unknown)\n", pdu->err_subcode);
 		goto print_err_payload;
 	}
 	if(pdu->err_code == BISPDU_ERR_FSM) {	// special case
-		char *bispdu_name = (char *)dict_search(bispdu_types, pdu->err_fsm_bispdu_type);
-		char *fsm_state_name = (char *)dict_search(FSM_states, pdu->err_fsm_state);
+		CAST_PTR(bispdu_name, char *, dict_search(bispdu_types, pdu->err_fsm_bispdu_type));
+		CAST_PTR(fsm_state_name, char *, dict_search(FSM_states, pdu->err_fsm_state));
 		LA_ISPRINTF(vstr, indent, "Erroneous BISPDU type: %s\n",
 			bispdu_name ? bispdu_name : "unknown");
 		LA_ISPRINTF(vstr, indent, "FSM state: %s\n",
 			fsm_state_name ? fsm_state_name : "unknown");
 	} else {
-		char *subcode = (char *)dict_search(err->subcodes, pdu->err_subcode);
+		CAST_PTR(subcode, char *, dict_search(err->subcodes, pdu->err_subcode));
 		LA_ISPRINTF(vstr, indent, "Subcode: %u (%s)\n", pdu->err_subcode, subcode ? subcode : "unknown");
 	}
 print_err_payload:
@@ -873,7 +911,7 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 		return;
 	}
 	idrp_hdr_t *hdr = pdu->hdr;
-	char *bispdu_name = (char *)dict_search(bispdu_types, hdr->type);
+	CAST_PTR(bispdu_name, char *, dict_search(bispdu_types, hdr->type));
 	LA_ISPRINTF(vstr, indent, "IDRP %s: seq: %u ack: %u credit_offered: %u credit_avail: %u\n",
 		bispdu_name, ntohl(hdr->seq), ntohl(hdr->ack), hdr->coff, hdr->cavail);
 	indent++;

@@ -66,10 +66,5 @@ typedef struct {
 	bool err;
 } idrp_pdu_t;
 
-typedef struct {
-	char *descr;
-	dict *subcodes;
-} bispdu_err_t;
-
 // idrp.c
 la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type);
