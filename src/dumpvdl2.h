@@ -312,7 +312,7 @@ void statsd_timing_delta_send(uint32_t freq, char *timer, struct timeval *ts);
 
 // util.c
 typedef struct {
-	void *buf;
+	uint8_t *buf;
 	size_t len;
 } octet_string_t;
 typedef struct {
