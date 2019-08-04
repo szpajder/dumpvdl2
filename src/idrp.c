@@ -136,6 +136,116 @@ TLV_FORMATTER(idrp_route_separator_format_text) {
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Local preference: %u\n", s->localpref);
 }
 
+/*******************
+ * RD_PATH
+ *******************/
+
+TLV_PARSER(rd_path_segment_parse) {
+	UNUSED(typecode);
+	la_list *rdi_list = NULL;
+	while(len > 1) {
+		uint8_t rdi_len = buf[0];
+		buf++; len--;
+		if(rdi_len == 0) {
+			debug_print("%s\n", "RDI length 0 not allowed");
+			goto fail;
+		}
+		if(len < rdi_len) {
+			debug_print("RDI truncated: remaining: %zu < rdi_len: %u\n",
+				len, rdi_len);
+			goto fail;
+		}
+		rdi_list = la_list_append(rdi_list, octet_string_new(buf, len));
+		buf += rdi_len; len -= rdi_len;
+	}
+	return rdi_list;
+fail:
+	la_list_free(rdi_list);
+	return NULL;
+}
+
+TLV_FORMATTER(rd_path_segment_format_text) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	ASSERT(ctx->indent >= 0);
+
+	CAST_PTR(rdi_list, la_list *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
+	ctx->indent++;
+	while(rdi_list != NULL) {
+		octet_string_with_ascii_format_text(ctx->vstr, rdi_list->data, ctx->indent);
+		EOL(ctx->vstr);
+		rdi_list = la_list_next(rdi_list);
+	}
+	ctx->indent--;
+}
+
+TLV_DESTRUCTOR(rd_path_segment_destroy) {
+	la_list_free(data);
+}
+
+static const dict rd_path_seg_types[] = {
+	{
+		.id = 1,
+		.val = &(tlv_type_descriptor_t){
+			.label = "RD_SET",
+			.parse = rd_path_segment_parse,
+			.format_text = rd_path_segment_format_text,
+			.destroy = rd_path_segment_destroy
+		}
+	},
+	{
+		.id = 2,
+		.val = &(tlv_type_descriptor_t){
+			.label = "RD_SEQ",
+			.parse = rd_path_segment_parse,
+			.format_text = rd_path_segment_format_text,
+			.destroy = rd_path_segment_destroy
+		}
+	},
+	{
+		.id = 3,
+		.val = &(tlv_type_descriptor_t){
+			.label = "ENTRY_SEQ",
+			.parse = rd_path_segment_parse,
+			.format_text = rd_path_segment_format_text,
+			.destroy = rd_path_segment_destroy
+		}
+	},
+	{
+		.id = 4,
+		.val = &(tlv_type_descriptor_t){
+			.label = "ENTRY_SET",
+			.parse = rd_path_segment_parse,
+			.format_text = rd_path_segment_format_text,
+			.destroy = rd_path_segment_destroy
+		}
+	},
+	{
+		.id = 0,
+		.val = NULL
+	}
+};
+
+TLV_PARSER(rd_path_parse) {
+	UNUSED(typecode);
+	return tlv_parse(buf, len, rd_path_seg_types, 2);
+}
+
+TLV_FORMATTER(rd_path_format_text) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	ASSERT(ctx->indent >= 0);
+
+	CAST_PTR(rd_path, la_list *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
+	tlv_list_format_text(ctx->vstr, rd_path, ctx->indent+1);
+}
+
+TLV_DESTRUCTOR(rd_path_destroy) {
+	tlv_list_destroy(data);
+}
+
 static const dict path_attributes[] = {
 	{
 		.id = 1,
@@ -159,9 +269,9 @@ static const dict path_attributes[] = {
 		.id = 3,
 		.val = &(tlv_type_descriptor_t){
 			.label = "RD path",
-			.parse = tlv_octet_string_parse,
-			.format_text = tlv_octet_string_with_ascii_format_text,
-			.destroy = NULL
+			.parse = rd_path_parse,
+			.format_text = rd_path_format_text,
+			.destroy = rd_path_destroy
 		}
 	},
 	{
@@ -545,7 +655,6 @@ static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 				debug_print("Attribute value truncated: len %u < expected %u\n", len, alen);
 				return -1;
 			}
-// TODO: parse RD_PATH
 			pdu->path_attributes = tlv_single_tag_parse(typecode, buf, alen,
 				path_attributes, pdu->path_attributes);
 			buf += alen; consumed += alen; len -= alen; total_attrib_len -= alen;
