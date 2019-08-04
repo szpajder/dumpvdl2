@@ -54,6 +54,7 @@ typedef struct {
 	la_list *path_attributes;
 	la_list *ribatts_set;
 	la_list *confed_ids;
+	la_list *nlri_list;
 	octet_string_t open_src_rdi;
 	octet_string_t auth_data;
 	octet_string_t *data;

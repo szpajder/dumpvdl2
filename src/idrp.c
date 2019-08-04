@@ -28,6 +28,7 @@
 #include "dumpvdl2.h"
 #include "tlv.h"
 #include "atn.h"			// atn_sec_label_parse, atn_sec_label_format_text
+#include "x25.h"			// SN_PROTO_CLNP
 
 // Forward declarations
 la_type_descriptor const proto_DEF_idrp_pdu;
@@ -614,6 +615,69 @@ static int parse_idrp_open_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	return consumed;
 }
 
+typedef struct {
+	bool is_clnp;
+	uint8_t proto_type;
+	uint8_t prefix_len;
+	octet_string_t prefix;
+	octet_string_t proto;
+} idrp_nlri_t;
+
+static attr_parse_result_t parse_nlri_list(uint8_t *buf, uint32_t len) {
+	la_list *nlri_list = NULL;
+	int consumed = 0;
+
+	while(len > 0) {
+		if(len < 6) {
+			debug_print("NLRI truncated: len %u < 7\n", len);
+			goto fail;
+		}
+		NEW(idrp_nlri_t, nlri);
+		nlri_list = la_list_append(nlri_list, nlri);
+
+		nlri->proto_type = buf[0];
+		uint8_t proto_len = buf[1];
+		buf += 2; consumed += 2; len -= 2;
+		if(len < proto_len) {
+			debug_print("Protocol field truncated: len %u < proto_len %u\n",
+				len, proto_len);
+			goto fail;
+		}
+		nlri->proto.buf = buf;
+		nlri->proto.len = proto_len;
+		buf += proto_len; consumed += proto_len; len -= proto_len;
+
+		nlri->is_clnp = (nlri->proto_type == 1
+			&& nlri->proto.len == 1
+			&& nlri->proto.buf[0] == SN_PROTO_CLNP);
+
+		uint16_t addr_len = extract_uint16_msbfirst(buf);
+		buf += 2; consumed += 2; len -= 2;
+		if(addr_len < 1) {
+			debug_print("Addr_length %u too short\n", addr_len);
+			goto fail;
+		}
+		if(len < addr_len) {
+			debug_print("Addr_info field truncated: len %u < addr_len %u\n",
+				len, addr_len);
+			goto fail;
+		}
+		if(nlri->is_clnp) {
+			nlri->prefix_len = buf[0];
+			nlri->prefix.buf = buf + 1;
+			nlri->prefix.len = addr_len - 1;
+		} else {
+			nlri->prefix.buf = buf;
+			nlri->prefix.len = addr_len;
+		}
+		buf += addr_len; consumed += addr_len; len -= addr_len;
+	}
+	return (attr_parse_result_t){ .list = nlri_list, .consumed = consumed };
+fail:
+	la_list_free(nlri_list);
+	return (attr_parse_result_t){ .list = NULL, .consumed = -1 };
+}
+
 static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	if(len < 4) {
 		debug_print("Truncated Update BISPDU: len %u < 4\n", len);
@@ -665,9 +729,15 @@ static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 			return -1;
 		}
 	}
-// TODO: parse NLRI
-	pdu->data = octet_string_new(buf, len);
-	consumed += len;
+	attr_parse_result_t result = parse_nlri_list(buf, len);
+	if(result.consumed >= 0) {
+		pdu->nlri_list = result.list;	// may be NULL for empty NLRI list - this is harmless
+		consumed += result.consumed;
+	} else {
+// NLRI parser failed - store NLRI field as octet_string to be printed in raw
+		pdu->data = octet_string_new(buf, len);
+		consumed += len;
+	}
 	return consumed;
 }
 
@@ -851,9 +921,29 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 			tlv_list_format_text(vstr, pdu->path_attributes, indent);
 		}
 
-		if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
-			LA_ISPRINTF(vstr, indent, "%s: ", "NLRI");
-			octet_string_with_ascii_format_text(vstr, pdu->data, 0);
+		if(pdu->nlri_list != NULL) {
+			la_list *n = pdu->nlri_list;
+			while(n != NULL) {
+				LA_ISPRINTF(vstr, indent, "%s:\n", "Reachability info");
+				indent++;
+				CAST_PTR(dest, idrp_nlri_t *, n->data);
+				if(dest->is_clnp) {
+					LA_ISPRINTF(vstr, indent, "%s\n", "Protocol: CLNP");
+					LA_ISPRINTF(vstr, indent, "Prefix length: %u\n", dest->prefix_len);
+				} else {
+					LA_ISPRINTF(vstr, indent, "%s", "Protocol: ");
+					octet_string_format_text(vstr, &dest->proto, 0);
+					EOL(vstr);
+				}
+				LA_ISPRINTF(vstr, indent, "%s: ", "Dest. address prefix");
+				octet_string_with_ascii_format_text(vstr, &dest->prefix, 0);
+				EOL(vstr);
+				indent--;
+				n = la_list_next(n);
+			}
+		} else if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
+			LA_ISPRINTF(vstr, indent, "%s\n", "-- Unparseable NLRI");
+			octet_string_with_ascii_format_text(vstr, pdu->data, indent+1);
 			EOL(vstr);
 		}
 		break;
@@ -877,6 +967,7 @@ void idrp_pdu_destroy(void *data) {
 	tlv_list_destroy(pdu->path_attributes);
 	tlv_list_destroy(pdu->ribatts_set);
 	la_list_free(pdu->confed_ids);
+	la_list_free(pdu->nlri_list);
 	XFREE(pdu->data);
 	XFREE(data);
 }
