@@ -827,13 +827,13 @@ la_proto_node *xid_parse(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uin
 
 	msg->err = true;		// fail-safe default
 	if(len < XID_MIN_LEN) {
-		debug_print("%s", "XID too short\n");
+		debug_print("XID too short\n");
 		goto end;
 	}
 	uint8_t *ptr = buf;
 	uint32_t remaining = len;
 	if(ptr[0] != XID_FMT_ID) {
-		debug_print("%s", "Unknown XID format\n");
+		debug_print("Unknown XID format\n");
 		goto end;
 	}
 	ptr++; remaining--;
@@ -869,7 +869,7 @@ la_proto_node *xid_parse(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uin
 	}
 // pub_params are optional, vdl_params are mandatory
 	if(msg->vdl_params == NULL) {
-		debug_print("%s", "Incomplete XID message\n");
+		debug_print("Incomplete XID message\n");
 		goto end;
 	}
 	if(remaining > 0) {

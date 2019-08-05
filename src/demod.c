@@ -270,7 +270,7 @@ static void demod(vdl2_channel_t *v, float re, float im) {
 
 		v->prev_phi = phi;
 		if(bitstream_append_msbfirst(v->bs, &(graycode[idx]), 1, BPS) < 0) {
-			debug_print("%s", "bitstream_append_msbfirst failed\n");
+			debug_print("bitstream_append_msbfirst failed\n");
 			demod_reset(v);
 			return;
 		}

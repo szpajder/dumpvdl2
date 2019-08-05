@@ -454,7 +454,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 		pdu->variable_part_params = tlv_parse(ptr + variable_part_offset,
 			li - variable_part_offset, cotp_params, 1);
 		if(pdu->variable_part_params == NULL) {
-			debug_print("%s", "tlv_parse failed on variable part\n");
+			debug_print("tlv_parse failed on variable part\n");
 			goto fail;
 		}
 	}

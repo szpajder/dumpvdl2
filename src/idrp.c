@@ -186,7 +186,7 @@ TLV_PARSER(rd_path_segment_parse) {
 		uint8_t rdi_len = buf[0];
 		buf++; len--;
 		if(rdi_len == 0) {
-			debug_print("%s\n", "RDI length 0 not allowed");
+			debug_print("RDI length 0 not allowed\n");
 			goto fail;
 		}
 		if(len < rdi_len) {
@@ -632,14 +632,14 @@ static int parse_idrp_open_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 
 	result = parse_idrp_confed_ids(buf, len);
 	if(result.consumed < 0) {
-		debug_print("%s\n", "Failed to parse Confed-IDs");
+		debug_print("Failed to parse Confed-IDs\n");
 		return -1;
 	}
 	pdu->confed_ids = result.list;
 	buf += result.consumed; consumed += result.consumed; len -= result.consumed;
 
 	if(len < 1) {
-		debug_print("%s\n", "PDU truncated before auth mech");
+		debug_print("PDU truncated before auth mech\n");
 		return -1;
 	}
 	pdu->auth_mech = buf[0];
@@ -821,7 +821,7 @@ la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	uint16_t pdu_len = extract_uint16_msbfirst(hdr->len);
 	debug_print("pid: %02x len: %u type: %u seq: %u ack: %u coff: %u cavail: %u\n",
 		hdr->pid, pdu_len, hdr->type, ntohl(hdr->seq), ntohl(hdr->ack), hdr->coff, hdr->cavail);
-	debug_print_buf_hex(hdr->validation, 16, "%s", "Validation:\n");
+	debug_print_buf_hex(hdr->validation, 16, "Validation:\n");
 	if(remaining < pdu_len) {
 		debug_print("Too short (len %u < PDU len %u)\n", remaining, pdu_len);
 		goto end;

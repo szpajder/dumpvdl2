@@ -132,7 +132,7 @@ octet_string_t *octet_string_new(void *buf, size_t len) {
 int octet_string_parse(uint8_t *buf, size_t len, octet_string_t *result) {
 	ASSERT(buf != NULL);
 	if(len == 0) {
-		debug_print("%s", "empty buffer\n");
+		debug_print("empty buffer\n");
 		return -1;
 	}
 	uint8_t buflen = *buf++; len--;

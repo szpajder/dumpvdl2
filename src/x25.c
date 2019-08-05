@@ -366,7 +366,7 @@ static int parse_x25_address_block(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
 static int parse_x25_callreq_sndcf(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
 	if(len < 2) return -1;
 	if(*buf != X25_SNDCF_ID) {
-		debug_print("%s", "SNDCF identifier not found\n");
+		debug_print("SNDCF identifier not found\n");
 		return -1;
 	}
 	buf++; len--;
@@ -499,7 +499,7 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 				pkt->compression = *ptr++;
 				remaining--;
 			} else {
-				debug_print("%s", "X25_CALL_ACCEPT: no payload\n");
+				debug_print("X25_CALL_ACCEPT: no payload\n");
 				goto fail;
 			}
 		}

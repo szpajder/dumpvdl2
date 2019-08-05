@@ -32,7 +32,7 @@ int rs_init() {
 int rs_verify(uint8_t *data, int fec_octets) {
 	if(fec_octets == 0)
 		return 0;
-	debug_print_buf_hex(data, RS_N, "%s", "Input data:\n");
+	debug_print_buf_hex(data, RS_N, "Input data:\n");
 	int erasure_cnt = RS_N - RS_K - fec_octets;
 	int ret;
 	debug_print("erasure_cnt=%d\n", erasure_cnt);
@@ -40,7 +40,7 @@ int rs_verify(uint8_t *data, int fec_octets) {
 		int erasures[RS_N - RS_K];
 		for(int i = 0; i < erasure_cnt; i++)
 			erasures[i] = RS_K + fec_octets + i;
-		debug_print_buf_hex(erasures, erasure_cnt, "%s", "Erasures:\n");
+		debug_print_buf_hex(erasures, erasure_cnt, "Erasures:\n");
 		ret = decode_rs_char(rs, data, erasures, erasure_cnt);
 	} else {
 		ret = decode_rs_char(rs, data, NULL, erasure_cnt);

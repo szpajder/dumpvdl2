@@ -164,11 +164,11 @@ typedef struct {
 
 #ifdef DEBUG
 #define debug_print(fmt, ...) \
-	do { fprintf(stderr, "%s(): " fmt, __func__, __VA_ARGS__); } while (0)
+	do { fprintf(stderr, "%s(): " fmt, __func__, ##__VA_ARGS__); } while (0)
 
 #define debug_print_buf_hex(buf, len, fmt, ...) \
 	do { \
-		fprintf(stderr, "%s(): " fmt, __func__, __VA_ARGS__); \
+		fprintf(stderr, "%s(): " fmt, __func__, ##__VA_ARGS__); \
 		fprintf(stderr, "%s(): ", __func__); \
 		for(int zz = 0; zz < (len); zz++) { \
 			fprintf(stderr, "%02x ", buf[zz]); \

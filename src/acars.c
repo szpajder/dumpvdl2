@@ -34,27 +34,27 @@
 static void update_msg_type(uint32_t *msg_type, la_proto_node *root) {
 	la_proto_node *node = la_proto_tree_find_acars(root);
 	if(node == NULL) {
-		debug_print("%s", "proto tree contains no ACARS message");
+		debug_print("proto tree contains no ACARS message");
 		return;
 	}
 	CAST_PTR(amsg, la_acars_msg *, node->data);
 	if(strlen(amsg->txt) > 0) {
-		debug_print("%s\n", "MSGFLT_ACARS_DATA");
+		debug_print("MSGFLT_ACARS_DATA\n");
 		*msg_type |= MSGFLT_ACARS_DATA;
 	} else {
-		debug_print("%s\n", "MSGFLT_ACARS_NODATA");
+		debug_print("MSGFLT_ACARS_NODATA\n");
 		*msg_type |= MSGFLT_ACARS_NODATA;
 	}
 
 	la_proto_node *node2 = la_proto_tree_find_cpdlc(node);
 	if(node2 != NULL) {
-		debug_print("%s\n", "MSGFLT_CPDLC");
+		debug_print("MSGFLT_CPDLC\n");
 		*msg_type |= MSGFLT_CPDLC;
 	}
 
 	node2 = la_proto_tree_find_adsc(node);
 	if(node2 != NULL) {
-		debug_print("%s\n", "MSGFLT_ADSC");
+		debug_print("MSGFLT_ADSC\n");
 		*msg_type |= MSGFLT_ADSC;
 	}
 }

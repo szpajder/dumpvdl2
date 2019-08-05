@@ -167,17 +167,17 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type) {
 		return NULL;
 	}
 	debug_print("Frame %d: len=%u\n", q->idx, len);
-	debug_print_buf_hex(buf, len, "%s", "Frame data:\n");
+	debug_print_buf_hex(buf, len, "Frame data:\n");
 
 // FCS check
 	uint16_t fcs = crc16_ccitt(buf, len, 0xFFFFu);
 	debug_print("Check FCS: %04x\n", fcs);
 	if(fcs == GOOD_FCS) {
-		debug_print("%s", "FCS check OK\n");
+		debug_print("FCS check OK\n");
 		statsd_increment(q->freq, "avlc.frames.good");
 		len -= 2;
 	} else {
-		debug_print("%s", "FCS check failed\n");
+		debug_print("FCS check failed\n");
 		statsd_increment(q->freq, "avlc.errors.bad_fcs");
 		return NULL;
 	}

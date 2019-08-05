@@ -316,13 +316,13 @@ TLV_PARSER(atn_sec_label_parse) {
 	buf += srid_len; len -= srid_len;
 
 	if(len < 1) {
-		debug_print("%s\n", "sinfo absent");
+		debug_print("sinfo absent\n");
 		goto end;
 	}
 	uint8_t sinfo_len = buf[0];
 	buf++; len--;
 	if(len < 1) {
-		debug_print("%s\n", "sinfo present but length 0");
+		debug_print("sinfo present but length 0\n");
 		goto end;
 	}
 	if(len < sinfo_len) {

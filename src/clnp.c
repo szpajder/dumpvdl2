@@ -39,7 +39,7 @@ static la_proto_node *parse_clnp_pdu_payload(uint8_t *buf, uint32_t len, uint32_
 	case SN_PROTO_IDRP:
 		return idrp_pdu_parse(buf, len, msg_type);
 	case SN_PROTO_CLNP:
-		debug_print("%s", "CLNP inside CLNP? Bailing out to avoid loop\n");
+		debug_print("CLNP inside CLNP? Bailing out to avoid loop\n");
 		break;
 	default:
 // assume X.224 COTP TPDU
@@ -176,7 +176,7 @@ la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	CAST_PTR(hdr, clnp_hdr_t *, ptr);
 	pdu->hdr = hdr;
 	if(hdr->len == 255) {
-		debug_print("%s", "invalid length indicator - value 255 is reserved\n");
+		debug_print("invalid length indicator - value 255 is reserved\n");
 		goto fail;
 	}
 	if(remaining < hdr->len) {
@@ -195,7 +195,7 @@ la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 
 	int ret = octet_string_parse(ptr, remaining, &(pdu->dst_nsap));
 	if(ret < 0) {
-		debug_print("%s", "failed to parse dst NET addr\n");
+		debug_print("failed to parse dst NET addr\n");
 		goto fail;
 	}
 	ptr += ret; remaining -= ret;
@@ -203,7 +203,7 @@ la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 
 	ret = octet_string_parse(ptr, remaining, &(pdu->src_nsap));
 	if(ret < 0) {
-		debug_print("%s", "failed to parse src NET addr\n");
+		debug_print("failed to parse src NET addr\n");
 		goto fail;
 	}
 	ptr += ret; remaining -= ret;
@@ -225,7 +225,7 @@ la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	if(options_part_len > 0) {
 		pdu->options = tlv_parse(ptr, (size_t)options_part_len, clnp_options, 1);
 		if(pdu->options == NULL) {
-			debug_print("%s", "tlv_parse failed on options part\n");
+			debug_print("tlv_parse failed on options part\n");
 			goto fail;
 		}
 	}

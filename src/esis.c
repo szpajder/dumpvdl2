@@ -165,7 +165,7 @@ la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		if(remaining > 0) {
 			pdu->options = tlv_parse(ptr, remaining, esis_options, 1);
 			if(pdu->options == NULL) {
-				debug_print("%s", "tlv_parse failed when parsing options\n");
+				debug_print("tlv_parse failed when parsing options\n");
 				goto end;
 			}
 		}

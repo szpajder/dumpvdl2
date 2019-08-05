@@ -86,7 +86,7 @@ ACSE_apdu_PR acse_apdu_type, uint8_t *buf, int size) {
 		*decoded_apdu_type = &asn_DEF_ATCDownlinkMessage;
 		goto protected_aircraft_pdu_cleanup;
 	}
-	debug_print("%s", "unable to decode ProtectedAircraftPDU as ATCDownlinkMessage\n");
+	debug_print("unable to decode ProtectedAircraftPDU as ATCDownlinkMessage\n");
 protected_aircraft_pdu_cleanup:
 	ASN_STRUCT_FREE(asn_DEF_ProtectedAircraftPDUs, pairpdu);
 	return ret;
@@ -137,7 +137,7 @@ ACSE_apdu_PR acse_apdu_type, uint8_t *buf, int size) {
 		*decoded_apdu_type = &asn_DEF_ATCUplinkMessage;
 		goto protected_ground_pdu_cleanup;
 	}
-	debug_print("%s", "unable to decode ProtectedGroundPDU as ATCUplinkMessage\n");
+	debug_print("unable to decode ProtectedGroundPDU as ATCUplinkMessage\n");
 protected_ground_pdu_cleanup:
 	ASN_STRUCT_FREE(asn_DEF_ProtectedGroundPDUs, pgndpdu);
 	return ret;
@@ -212,7 +212,7 @@ ACSE_apdu_PR acse_apdu_type, uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 		msg = NULL;
 
 	}
-	debug_print("%s", "unknown APDU type\n");
+	debug_print("unknown APDU type\n");
 }
 
 void decode_ulcs_acse(icao_apdu_t *icao_apdu, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
@@ -255,7 +255,7 @@ void decode_ulcs_acse(icao_apdu_t *icao_apdu, uint8_t *buf, uint32_t len, uint32
 	}
 	debug_print("calling-AE-qualifier: %ld\n", ae_qualifier);
 	if(user_info == NULL) {
-		debug_print("%s", "No user-information field\n");
+		debug_print("No user-information field\n");
 		goto ulcs_acse_cleanup;
 	}
 	if(user_info->data.encoding.present != EXTERNALt__encoding_PR_arbitrary) {
@@ -285,7 +285,7 @@ static void decode_fully_encoded_data(icao_apdu_t *icao_apdu, uint8_t *buf, uint
 	debug_print("%ld bytes consumed, %ld left\n", (long)rval.consumed, (long)(len) - (long)rval.consumed);
 
 	if(fed->data.presentation_data_values.present != PDV_list__presentation_data_values_PR_arbitrary) {
-		debug_print("%s", "unsupported encoding of fully-encoded-data\n");
+		debug_print("unsupported encoding of fully-encoded-data\n");
 		goto fed_cleanup;
 	}
 	switch(fed->data.presentation_context_identifier) {
