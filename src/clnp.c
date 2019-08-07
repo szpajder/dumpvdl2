@@ -404,7 +404,7 @@ la_proto_node *clnp_compressed_init_data_pdu_parse(uint8_t *buf, uint32_t len, u
 	pdu->err = true;			// fail-safe default
 	if(len < CLNP_COMPRESSED_INIT_MIN_LEN) {
 		debug_print("Too short (len %u < min len %u)\n", len, CLNP_COMPRESSED_INIT_MIN_LEN);
-		goto end;
+		goto fail;
 	}
 
 	uint32_t hdrlen = CLNP_COMPRESSED_INIT_MIN_LEN;
@@ -418,7 +418,7 @@ la_proto_node *clnp_compressed_init_data_pdu_parse(uint8_t *buf, uint32_t len, u
 
 	if(len < hdrlen) {
 		debug_print("header truncated: buf_len %u < hdr_len %u\n", len, hdrlen);
-		goto end;
+		goto fail;
 	}
 	buf += 4; len -= 4;
 	if(hdr->exp != 0) {
@@ -437,7 +437,9 @@ la_proto_node *clnp_compressed_init_data_pdu_parse(uint8_t *buf, uint32_t len, u
 	}
 	node->next = parse_clnp_pdu_payload(buf, len, msg_type);
 	pdu->err = false;
-end:
+	return node;
+fail:
+	node->next = unknown_proto_pdu_new(buf, len);
 	return node;
 }
 
