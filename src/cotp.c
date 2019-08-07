@@ -195,7 +195,7 @@ static dict const cotp_variable_part_params[] = {
 		.val = &(tlv_type_descriptor_t){
 			.label = "Additional options",
 			.parse = tlv_octet_string_parse,
-			.format_text = tlv_octet_string_format_text,
+			.format_text = tlv_single_octet_format_text,
 			.destroy = NULL
 		},
 	},
