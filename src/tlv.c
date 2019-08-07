@@ -170,6 +170,20 @@ TLV_FORMATTER(tlv_octet_string_as_ascii_format_text) {
 	EOL(ctx->vstr);
 }
 
+TLV_FORMATTER(tlv_single_octet_format_text) {
+	CAST_PTR(octet, octet_string_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
+// We expect this octet string to have a length of 1 - if this is the case,
+// print it in hex with 0x prefix. Otherwise print is as octet string
+// without the prefix, for brevity.
+	if(LIKELY(octet->len == 1)) {
+		la_vstring_append_sprintf(ctx->vstr, "0x");
+	}
+	octet_string_format_text(ctx->vstr, octet, 0);
+	EOL(ctx->vstr);
+}
+
+
 TLV_PARSER(tlv_uint8_parse) {
 	UNUSED(typecode);
 	if(len < sizeof(uint8_t)) {

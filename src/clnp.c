@@ -65,7 +65,7 @@ static dict const clnp_options[] = {
 		.val = &(tlv_type_descriptor_t){
 			.label = "LRef",
 			.parse = tlv_octet_string_parse,
-			.format_text = tlv_octet_string_format_text,
+			.format_text = tlv_single_octet_format_text,
 			.destroy = NULL
 		}
 	},
@@ -75,7 +75,7 @@ static dict const clnp_options[] = {
 		.val = &(tlv_type_descriptor_t){
 			.label = "QoS maintenance",
 			.parse = tlv_octet_string_parse,
-			.format_text = tlv_octet_string_format_text,
+			.format_text = tlv_single_octet_format_text,
 			.destroy = NULL
 		 },
 	},
@@ -147,7 +147,7 @@ static dict const clnp_options[] = {
 		.val = &(tlv_type_descriptor_t){
 			.label = "Priority",
 			.parse = tlv_octet_string_parse,
-			.format_text = tlv_octet_string_format_text,
+			.format_text = tlv_single_octet_format_text,
 			.destroy = NULL
 		 },
 	},
