@@ -52,7 +52,7 @@ Mandatory dependencies:
 - git (unless you intend to use only packaged releases of dumpvdl2 and all
   dependencies)
 - glib2
-- libacars
+- libacars 1.3.0 or later
 
 Optional dependencies:
 
