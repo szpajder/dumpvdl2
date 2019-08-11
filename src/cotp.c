@@ -21,9 +21,9 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <glib.h>
 #include <libacars/libacars.h>		// la_proto_node
 #include <libacars/vstring.h>		// la_vstring
+#include <libacars/list.h>		// la_list
 #include "dumpvdl2.h"
 #include "tlv.h"
 #include "cotp.h"
@@ -487,21 +487,21 @@ fail:
 }
 
 la_proto_node *cotp_concatenated_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	GSList *pdu_list = NULL;
+	la_list *pdu_list = NULL;
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_cotp_concatenated_pdu;
 	node->next = NULL;
 
 	while(len > 0) {
 // Concatenated PDU is, as the name says, several COTP PDUs concatenated together.
-// We therefore construct a GSList of cotp_pdu_t's. Only the last (final) PDU may
+// We therefore construct a la_list of cotp_pdu_t's. Only the last (final) PDU may
 // contain higher level protocol described by its own la_type_descriptor,
 // so we may simplify things a bit and provide only a single next node for the whole
 // concatenated PDU instead of having a separate next node for each contained PDU,
 // which (the next node) would be NULL anyway, except for the last one.
 		debug_print("Remaining length: %u\n", len);
 		cotp_pdu_parse_result r = cotp_pdu_parse(buf, len, msg_type);
-		pdu_list = g_slist_append(pdu_list, r.pdu);
+		pdu_list = la_list_append(pdu_list, r.pdu);
 		if(r.next_node != NULL) {
 // We reached final PDU and we have a next protocol node in the hierarchy.
 			node->next = r.next_node;
@@ -641,8 +641,8 @@ void cotp_concatenated_pdu_format_text(la_vstring * const vstr, void const * con
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(pdu_list, GSList *, data);
-	g_slist_foreach(pdu_list, output_cotp_pdu_as_text, &(tlv_formatter_ctx_t){ .vstr = vstr, .indent = indent});
+	CAST_PTR(pdu_list, la_list *, data);
+	la_list_foreach(pdu_list, output_cotp_pdu_as_text, &(tlv_formatter_ctx_t){ .vstr = vstr, .indent = indent});
 }
 
 static void cotp_pdu_destroy(gpointer ptr) {
@@ -655,9 +655,9 @@ void cotp_concatenated_pdu_destroy(void *data) {
 	if(data == NULL) {
 		return;
 	}
-	CAST_PTR(pdu_list, GSList *, data);
-	g_slist_free_full(pdu_list, cotp_pdu_destroy);
-// No XFREE(data) here - g_slist_free_full frees the top pointer.
+	CAST_PTR(pdu_list, la_list *, data);
+	la_list_free_full(pdu_list, cotp_pdu_destroy);
+// No XFREE(data) here - la_list_free_full frees the top pointer.
 }
 
 la_type_descriptor const proto_DEF_cotp_concatenated_pdu = {
