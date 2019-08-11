@@ -7,3 +7,7 @@ endif()
 remove_definitions(-D_XOPEN_SOURCE=600)
 
 add_library (asn1 OBJECT ${ASN_MODULE_SOURCES})
+
+target_include_directories (asn1 PUBLIC
+	${asn1_include_dirs}
+)

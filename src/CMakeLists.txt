@@ -64,6 +64,8 @@ list(APPEND link_dirs ${GLIB2_LIBRARY_DIRS})
 
 pkg_check_modules(ACARS REQUIRED libacars>=1.3.0)
 list(APPEND dumpvdl2_extra_libs ${ACARS_LIBRARIES})
+list(APPEND dumpvdl2_include_dirs ${ACARS_INCLUDE_DIRS})
+list(APPEND asn1_include_dirs ${ACARS_INCLUDE_DIRS})
 list(APPEND link_dirs ${ACARS_LIBRARY_DIRS})
 
 option(RTLSDR "Enable RTL-SDR support" ON)
