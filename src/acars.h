@@ -21,5 +21,4 @@
 
 // acars.c
 la_proto_node *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type);
-void output_acars(void const *msg);
-void destroy_acars(void *msg);
+void acars_output_pp(la_proto_node *tree);

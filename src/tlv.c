@@ -16,96 +16,276 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <stdio.h>
 #include <stdlib.h>
+#include <libacars/list.h>		// la_list
+#include <libacars/vstring.h>		// la_vstring
+#include "dumpvdl2.h"			// XCALLOC, XFREE
 #include "tlv.h"
-#include "dumpvdl2.h"
 
-void tlv_list_free(tlv_list_t *p) {
-	if(p != NULL)
-		tlv_list_free(p->next);
-	XFREE(p);
-}
+// Forward declarations
+tlv_type_descriptor_t tlv_DEF_unknown_tag;
+tlv_type_descriptor_t tlv_DEF_unparseable_tag;
 
-void tlv_list_append(tlv_list_t **head, uint8_t type, uint16_t len, uint8_t *value) {
-	tlv_list_t *ptr;
-	if(*head == NULL) {	// new list
-		*head = ptr = XCALLOC(1, sizeof(tlv_list_t));
-	} else {		// existing list
-		for(ptr = *head; ptr->next != NULL; ptr = ptr->next)
-			;
-		ptr->next = XCALLOC(1, sizeof(tlv_list_t));
-		ptr = ptr->next;
+static void tlv_tag_destroy(void *tag) {
+	if(tag == NULL) {
+		return;
 	}
-	ptr->type = type;
-	ptr->len = len;
-	ptr->val = value;
+	CAST_PTR(t, tlv_tag_t *, tag);
+	if(t->td != NULL) {
+		if(t->td->destroy != NULL) {
+			t->td->destroy(t->data);
+		} else {
+			XFREE(t->data);
+		}
+	}
+	XFREE(tag);
 }
 
-tlv_list_t *tlv_list_search(tlv_list_t *ptr, uint8_t type) {
+void tlv_list_destroy(la_list *p) {
+	la_list_free_full(p, tlv_tag_destroy);
+	p = NULL;
+}
+
+la_list *tlv_list_append(la_list *head, uint8_t typecode, tlv_type_descriptor_t *td, void *data) {
+	NEW(tlv_tag_t, tag);
+	tag->typecode = typecode;
+	tag->td = td;
+	tag->data = data;
+	return la_list_append(head, tag);
+}
+
+tlv_tag_t *tlv_list_search(la_list *ptr, uint8_t const typecode) {
 	while(ptr != NULL) {
-		if(ptr->type == type) break;
+		if(ptr->data != NULL) {
+			CAST_PTR(tag, tlv_tag_t *, ptr->data);
+			if(tag->typecode == typecode) {
+				return tag;
+			}
+		}
 		ptr = ptr->next;
 	}
-	return ptr;
+	return NULL;
 }
 
-tlv_list_t *tlv_deserialize(uint8_t *buf, uint16_t len, uint8_t len_octets) {
-	tlv_list_t *head = NULL;
+la_list *tlv_single_tag_parse(uint8_t typecode, uint8_t *buf, size_t tag_len, dict const *tag_table, la_list *list) {
+	ASSERT(buf != NULL);
+	ASSERT(tag_table != NULL);
+
+	CAST_PTR(td, tlv_type_descriptor_t *, dict_search(tag_table, (int)typecode));
+	if(td == NULL) {
+		debug_print("Unknown type code %u\n", typecode);
+		td = &tlv_DEF_unknown_tag;
+	}
+	ASSERT(td->parse != NULL);
+	void *parsed = NULL;
+reparse:
+	parsed = td->parse(typecode, buf, tag_len);
+	if(parsed == NULL) {
+		td = &tlv_DEF_unparseable_tag;
+// tlv_unparseable_tag_parse() does not return NULL, so we don't expect a loop here
+		goto reparse;
+	}
+	return tlv_list_append(list, typecode, td, parsed);
+}
+
+la_list *tlv_parse(uint8_t *buf, size_t len, dict const *tag_table, size_t const len_octets) {
+	ASSERT(buf != NULL);
+	ASSERT(tag_table != NULL);
+	la_list *head = NULL;
 	uint8_t *ptr = buf;
-	uint8_t tlv_min_paramlen = 1 + len_octets;	/* code + <len_octets> length field + empty data field */
-	uint16_t paramlen;
-	while(len >= tlv_min_paramlen) {
-		uint8_t pid = *ptr;
+	size_t tlv_min_tag_len = 1 + len_octets;	/* type code + <len_octets> length field + empty data field */
+	size_t tag_len;
+	while(len >= tlv_min_tag_len) {
+		uint8_t typecode = *ptr;
 		ptr++; len--;
 
-		paramlen = *ptr;
-		if(len_octets == 2)
-			paramlen = (paramlen << 8) | (uint16_t)ptr[1];
+		tag_len = (size_t)(*ptr);
+		if(len_octets == 2) {
+			tag_len = (tag_len << 8) | (size_t)ptr[1];
+		}
 
 		ptr += len_octets; len -= len_octets;
-		if(paramlen > len) {
-			debug_print("TLV param %02x truncated: paramlen=%u buflen=%u\n", pid, paramlen, len);
+		if(tag_len > len) {
+			debug_print("TLV param %02x truncated: tag_len=%zu buflen=%zu\n", typecode, tag_len, len);
+			return NULL;
+		} else if(UNLIKELY(tag_len == 0)) {
+			debug_print("TLV param %02x: bad length 0\n", typecode);
 			return NULL;
 		}
-		tlv_list_append(&head, pid, paramlen, ptr);
-		ptr += paramlen; len -= paramlen;
+		head = tlv_single_tag_parse(typecode, ptr, tag_len, tag_table, head);
+		ptr += tag_len; len -= tag_len;
 	}
-	if(len > 0)
-		debug_print("Warning: %u unparsed octets left at end of TLV list\n", len);
+	if(len > 0) {
+		debug_print("Warning: %zu unparsed octets left at end of TLV list\n", len);
+	}
 	return head;
 }
 
-void *dict_search(const dict *list, uint8_t id) {
-	if(list == NULL) return NULL;
-	dict *ptr;
-	for(ptr = (dict *)list; ; ptr++) {
-		if(ptr->val == NULL) return NULL;
-		if(ptr->id == id) return ptr->val;
+static void tlv_tag_output_text(void const * const p, void *ctx) {
+	ASSERT(p);
+	ASSERT(ctx);
+
+	CAST_PTR(t, tlv_tag_t *, p);
+	ASSERT(t->td != NULL);
+	if(t->td->format_text != NULL) {
+		t->td->format_text(ctx, t->td->label, t->data);
 	}
 }
 
-tlv_dict *tlv_dict_search(const tlv_dict *list, uint8_t id) {
-	if(list == NULL) return NULL;
-	tlv_dict *ptr;
-	for(ptr = (tlv_dict *)list; ; ptr++) {
-		if(ptr->description == NULL) return NULL;
-		if(ptr->id == id) return ptr;
+void tlv_list_format_text(la_vstring * const vstr, la_list *tlv_list, int indent) {
+	ASSERT(vstr);
+	ASSERT(indent >= 0);
+	if(tlv_list == NULL) {
+		return;
 	}
+	tlv_formatter_ctx_t ctx = {
+		.vstr = vstr,
+		.indent = indent
+	};
+	la_list_foreach(tlv_list, tlv_tag_output_text, &ctx);
 }
 
-void output_tlv(FILE *f, tlv_list_t *list, const tlv_dict *d) {
-	if(list == NULL || d == NULL) return;
-	for(tlv_list_t *p = list; p != NULL; p = p->next) {
-		tlv_dict *entry = tlv_dict_search(d, p->type);
-		char *str = NULL;
-		if(entry != NULL) {
-			str = (*(entry->stringify))(p->val, p->len);
-			fprintf(f, " %s: %s\n", entry->description, str);
-		} else {
-			str = fmt_hexstring(p->val, p->len);
-			fprintf(f, " (Unknown code 0x%02x): %s\n", p->type, str);
-		}
-		XFREE(str);
-	}
+// Parsers and formatters for common data types
+
+TLV_PARSER(tlv_octet_string_parse) {
+	UNUSED(typecode);
+	return octet_string_new(buf, len);
 }
+
+TLV_FORMATTER(tlv_octet_string_format_text) {
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
+	octet_string_format_text(ctx->vstr, data, 0);
+	EOL(ctx->vstr);
+}
+
+TLV_FORMATTER(tlv_octet_string_with_ascii_format_text) {
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
+	octet_string_with_ascii_format_text(ctx->vstr, data, 0);
+	EOL(ctx->vstr);
+}
+
+TLV_FORMATTER(tlv_octet_string_as_ascii_format_text) {
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
+	octet_string_as_ascii_format_text(ctx->vstr, data, 0);
+	EOL(ctx->vstr);
+}
+
+TLV_FORMATTER(tlv_single_octet_format_text) {
+	CAST_PTR(octet, octet_string_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
+// We expect this octet string to have a length of 1 - if this is the case,
+// print it in hex with 0x prefix. Otherwise print is as octet string
+// without the prefix, for brevity.
+	if(LIKELY(octet->len == 1)) {
+		la_vstring_append_sprintf(ctx->vstr, "0x");
+	}
+	octet_string_format_text(ctx->vstr, octet, 0);
+	EOL(ctx->vstr);
+}
+
+
+TLV_PARSER(tlv_uint8_parse) {
+	UNUSED(typecode);
+	if(len < sizeof(uint8_t)) {
+		return NULL;
+	}
+	NEW(uint32_t, ret);
+	*ret = (uint32_t)buf[0];
+	return ret;
+}
+
+TLV_PARSER(tlv_uint16_msbfirst_parse) {
+	UNUSED(typecode);
+	if(len < sizeof(uint16_t)) {
+		return NULL;
+	}
+	NEW(uint32_t, ret);
+	*ret = (uint32_t)(extract_uint16_msbfirst(buf));
+	return ret;
+}
+
+TLV_PARSER(tlv_uint32_msbfirst_parse) {
+	UNUSED(typecode);
+	if(len < sizeof(uint32_t)) {
+		return NULL;
+	}
+	NEW(uint32_t, ret);
+	*ret = extract_uint32_msbfirst(buf);
+	return ret;
+}
+
+TLV_FORMATTER(tlv_uint_format_text) {
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %lu\n",
+		label, *(uint32_t *)data);
+}
+
+// No-op parser and formatter
+// Can be used to skip over a TLV without outputting it
+TLV_PARSER(tlv_parser_noop) {
+	UNUSED(typecode);
+	UNUSED(buf);
+	UNUSED(len);
+// Have to return something free()'able to indicate a success
+	return XCALLOC(1, 1);
+}
+
+TLV_FORMATTER(tlv_format_text_noop) {
+	UNUSED(ctx);
+	UNUSED(label);
+	UNUSED(data);
+}
+
+typedef struct {
+	uint8_t typecode;
+	octet_string_t *data;
+} tlv_unparsed_tag_t;
+
+TLV_PARSER(tlv_unknown_tag_parse) {
+	NEW(tlv_unparsed_tag_t, t);
+	t->typecode = typecode;
+	t->data = octet_string_new(buf, len);
+	return t;
+}
+
+TLV_FORMATTER(tlv_unknown_tag_format_text) {
+	UNUSED(label);
+	CAST_PTR(t, tlv_unparsed_tag_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "-- Unknown TLV (code: 0x%02x): ", t->typecode);
+	octet_string_format_text(ctx->vstr, t->data, 0);
+	EOL(ctx->vstr);
+}
+
+TLV_DESTRUCTOR(tlv_unknown_tag_destroy) {
+	if(data == NULL) {
+		return;
+	}
+	CAST_PTR(t, tlv_unparsed_tag_t *, data);
+	XFREE(t->data);
+	XFREE(t);
+}
+
+tlv_type_descriptor_t tlv_DEF_unknown_tag = {
+	.label = "Unknown tag",
+	.json_key = NULL,
+	.parse = tlv_unknown_tag_parse,
+	.format_text = tlv_unknown_tag_format_text,
+	.format_json = NULL,
+	.destroy = tlv_unknown_tag_destroy
+};
+
+TLV_FORMATTER(tlv_unparseable_tag_format_text) {
+	UNUSED(label);
+	CAST_PTR(t, tlv_unparsed_tag_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "-- Unparseable TLV (code: 0x%02x): ", t->typecode);
+	octet_string_format_text(ctx->vstr, t->data, 0);
+	EOL(ctx->vstr);
+}
+
+tlv_type_descriptor_t tlv_DEF_unparseable_tag = {
+	.label = "Unparseable tag",
+	.json_key = NULL,
+	.parse = tlv_unknown_tag_parse,
+	.format_text = tlv_unparseable_tag_format_text,
+	.format_json = NULL,
+	.destroy = tlv_unknown_tag_destroy
+};

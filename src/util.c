@@ -23,8 +23,9 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <libacars/libacars.h>		// la_proto_node, la_type_descriptor
+#include <libacars/vstring.h>		// la_vstring, la_isprintf_multiline_text()
 #include "dumpvdl2.h"
-#include "tlv.h"
 
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func) {
 	void *ptr = calloc(nmemb, size);
@@ -46,11 +47,22 @@ void *xrealloc(void *ptr, size_t size, const char *file, const int line, const c
 	return ptr;
 }
 
-char *fmt_hexstring(uint8_t *data, uint16_t len) {
+void *dict_search(const dict *list, uint8_t id) {
+	if(list == NULL) return NULL;
+	dict *ptr;
+	for(ptr = (dict *)list; ; ptr++) {
+		if(ptr->val == NULL) return NULL;
+		if(ptr->id == id) return ptr->val;
+	}
+}
+
+static char *fmt_hexstring(uint8_t *data, uint16_t len) {
 	static const char hex[] = "0123456789abcdef";
+	ASSERT(data != NULL);
 	char *buf = NULL;
-	if(data == NULL) return strdup("<undef>");
-	if(len == 0) return strdup("none");
+	if(len == 0) {
+		return strdup("none");
+	}
 	buf = XCALLOC(3 * len + 1, sizeof(char));
 	char *ptr = buf;
 	for(uint16_t i = 0; i < len; i++) {
@@ -63,41 +75,108 @@ char *fmt_hexstring(uint8_t *data, uint16_t len) {
 	return buf;
 }
 
-char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len) {
-	if(data == NULL) return strdup("<undef>");
-	if(len == 0) return strdup("none");
-	char *buf = fmt_hexstring(data, len);
-	int buflen = strlen(buf);
-	buf = XREALLOC(buf, buflen + len + 4); // add tab, quotes, ascii dump and '\0'
-	char *ptr = buf + buflen;
-	*ptr++ = '\t';
-	*ptr++ = '"';
-	for(uint16_t i = 0; i < len; i++) {
-		if(data[i] < 32 || data[i] > 126)	// replace non-printable chars
-			*ptr++ = '.';
-		else
-			*ptr++ = data[i];
+static char *replace_nonprintable_chars(uint8_t *data, size_t len) {
+	ASSERT(data != NULL);
+	if(len == 0) {
+		return strdup("");
 	}
-	*ptr++ = '"';
+	char *buf = XCALLOC(len + 1, sizeof(char));
+	char *ptr = buf;
+	for(size_t i = 0; i < len; i++) {
+		if(data[i] < 32 || data[i] > 126) {
+			*ptr++ = '.';
+		} else {
+			*ptr++ = data[i];
+		}
+	}
 	*ptr = '\0';
 	return buf;
 }
 
-char *fmt_bitfield(uint8_t val, const dict *d) {
-	if(val == 0) return strdup("none");
-	char *buf = XCALLOC(256, sizeof(char));
-	for(dict *ptr = (dict *)d; ptr->val != NULL; ptr++) {
+void bitfield_format_text(la_vstring *vstr, uint8_t val, dict const *d) {
+	ASSERT(vstr != NULL);
+	ASSERT(d != NULL);
+
+	if(val == 0) {
+		la_vstring_append_sprintf(vstr, "%s", "none");
+		return;
+	}
+	bool first = true;
+	for(dict const *ptr = d; ptr->val != NULL; ptr++) {
 		if((val & ptr->id) == ptr->id) {
-			strcat(buf, (char *)ptr->val);
-			strcat(buf, ", ");
+			la_vstring_append_sprintf(vstr, "%s%s",
+				(first ? "" : ", "), (char *)ptr->val);
+			first = false;
 		}
 	}
-	int slen = strlen(buf);
-	if(slen == 0)
-		strcat(buf, "none");
-	else
-		buf[slen-2] = '\0';	// throw out trailing delimiter
-	return buf;
+}
+
+uint32_t extract_uint32_msbfirst(uint8_t const * const data) {
+	ASSERT(data != NULL);
+	return	((uint32_t)data[0] << 24) | ((uint32_t)data[1] << 16) |
+		((uint32_t)data[2] << 8) | (uint32_t)data[3];
+}
+
+uint16_t extract_uint16_msbfirst(uint8_t const * const data) {
+	ASSERT(data != NULL);
+	return	((uint16_t)data[0] << 8) | (uint16_t)data[1];
+}
+
+octet_string_t *octet_string_new(void *buf, size_t len) {
+	NEW(octet_string_t, ostring);
+	ostring->buf = buf;
+	ostring->len = len;
+	return ostring;
+}
+
+int octet_string_parse(uint8_t *buf, size_t len, octet_string_t *result) {
+	ASSERT(buf != NULL);
+	if(len == 0) {
+		debug_print("empty buffer\n");
+		return -1;
+	}
+	uint8_t buflen = *buf++; len--;
+	if(len < buflen) {
+		debug_print("buffer truncated: len %zu < expected %u\n", len, buflen);
+		return -1;
+	}
+	result->buf = buf;
+	result->len = buflen;
+	return 1 + buflen;	// total number of consumed octets
+}
+
+void octet_string_format_text(la_vstring * const vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data != NULL);
+	ASSERT(indent >= 0);
+
+	CAST_PTR(ostring, octet_string_t *, data);
+	char *h = fmt_hexstring(ostring->buf, ostring->len);
+	LA_ISPRINTF(vstr, indent, "%s", h);
+	XFREE(h);
+}
+
+void octet_string_with_ascii_format_text(la_vstring * const vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data != NULL);
+	ASSERT(indent >= 0);
+
+	CAST_PTR(ostring, octet_string_t *, data);
+	char *hex = fmt_hexstring(ostring->buf, ostring->len);
+	char *ascii = replace_nonprintable_chars(ostring->buf, ostring->len);
+	LA_ISPRINTF(vstr, indent, "%s\t\"%s\"", hex, ascii);
+	XFREE(hex);
+	XFREE(ascii);
+}
+
+void octet_string_as_ascii_format_text(la_vstring * const vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data != NULL);
+	ASSERT(indent >= 0);
+
+	CAST_PTR(ostring, octet_string_t *, data);
+	LA_ISPRINTF(vstr, indent, "%s", "");
+	la_vstring_append_buffer(vstr, ostring->buf, ostring->len);
 }
 
 size_t slurp_hexstring(char* string, uint8_t **buf) {
@@ -127,4 +206,97 @@ size_t slurp_hexstring(char* string, uint8_t **buf) {
 		(*buf)[(i/2)] |= value << (((i + 1) % 2) * 4);
 	}
 	return dlen;
+}
+
+char *hexdump(uint8_t *data, size_t len) {
+	static const char hex[] = "0123456789abcdef";
+	if(data == NULL) return strdup("<undef>");
+	if(len == 0) return strdup("<none>");
+
+	size_t rows = len / 16;
+	if((len & 0xf) != 0) {
+		rows++;
+	}
+	size_t rowlen = 16 * 2 + 16;		// 32 hex digits + 16 spaces per row
+	rowlen += 16;				// ASCII characters per row
+	rowlen += 10;				// extra space for separators
+	size_t alloc_size = rows * rowlen + 1;	// terminating NULL
+	char *buf = XCALLOC(alloc_size, sizeof(char));
+	char *ptr = buf;
+	size_t i = 0, j = 0;
+	while(i < len) {
+		for(j = i; j < i + 16; j++) {
+			if(j < len) {
+				*ptr++ = hex[((data[j] >> 4) & 0xf)];
+				*ptr++ = hex[data[j] & 0xf];
+			} else {
+				*ptr++ = ' ';
+				*ptr++ = ' ';
+			}
+			*ptr++ = ' ';
+			if(j == i + 7) {
+				*ptr++ = ' ';
+			}
+		}
+		*ptr++ = ' ';
+		*ptr++ = '|';
+		for(j = i; j < i + 16; j++) {
+			if(j < len) {
+				if(data[j] < 32 || data[j] > 126) {
+					*ptr++ = '.';
+				} else {
+					*ptr++ = data[j];
+				}
+			} else {
+				*ptr++ = ' ';
+			}
+			if(j == i + 7) {
+				*ptr++ = ' ';
+			}
+		}
+		*ptr++ = '|';
+		*ptr++ = '\n';
+		i += 16;
+	}
+	return buf;
+}
+
+void append_hexdump_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(indent >= 0);
+	char *h = hexdump(data, len);
+	la_isprintf_multiline_text(vstr, indent, h);
+	XFREE(h);
+}
+
+// la_proto_node routines for unknown protocols
+// which are to be serialized as octet string (hex dump or hex string)
+
+void unknown_proto_format_text(la_vstring * const vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data != NULL);
+	ASSERT(indent >= 0);
+
+	CAST_PTR(ostring, octet_string_t *, data);
+// fmt_hexstring also checks this conditon, but when it hits, it prints "empty" or "none",
+// which we want to avoid here
+	if(ostring-> buf == NULL || ostring->len == 0) {
+		return;
+	}
+	octet_string_format_text(vstr, ostring, indent);
+	EOL(vstr);
+}
+
+la_type_descriptor const proto_DEF_unknown = {
+	.format_text = unknown_proto_format_text,
+	.destroy = NULL
+};
+
+la_proto_node *unknown_proto_pdu_new(void *buf, size_t len) {
+	octet_string_t *ostring = octet_string_new(buf, len);
+	la_proto_node *node = la_proto_node_new();
+	node->td = &proto_DEF_unknown;
+	node->data = ostring;
+	node->next = NULL;
+	return node;
 }

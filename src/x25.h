@@ -19,8 +19,10 @@
 #ifndef _X25_H
 #define _X25_H
 #include <stdint.h>
+#include <stdbool.h>
+#include <libacars/libacars.h>	// la_proto_node
+#include <libacars/list.h>	// la_list
 #include "config.h"		// IS_BIG_ENDIAN
-#include "tlv.h"
 
 #define X25_MIN_LEN		3
 #define GFI_X25_MOD8		1
@@ -30,7 +32,6 @@
 #define X25_SNDCF_VERSION	1
 #define MIN_X25_SNDCF_LEN	4
 
-#define SN_PROTO_CLNP_INIT_COMPRESSED	0x01
 #define	SN_PROTO_CLNP			0x81
 #define	SN_PROTO_ESIS			0x82
 #define	SN_PROTO_IDRP			0x85
@@ -89,22 +90,20 @@ typedef struct {
 
 typedef struct {
 	x25_hdr_t *hdr;
+	la_list *facilities;
+	octet_string_t diag_data;	// Explanation field in DIAG packet
+	x25_addr_t calling, called;
 	uint8_t type;
 	uint8_t addr_block_present;
-	x25_addr_t calling, called;
-	tlv_list_t *facilities;
 	uint8_t compression;
-	uint8_t clr_cause;
+	uint8_t clr_cause;	// clearing cause or reset cause or restart cause
 	uint8_t diag_code;
 	uint8_t more_data;
 	uint8_t rseq, sseq;
-	uint8_t proto;
-	uint8_t data_valid;
-	void *data;
-	uint32_t datalen;
+	bool diag_code_present;
+	bool err;
 } x25_pkt_t;
 
 // x25.c
-x25_pkt_t *parse_x25(uint8_t *buf, uint32_t len, uint32_t *msg_type);
-void output_x25(x25_pkt_t *pkt);
+la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type);
 #endif // !_X25_H

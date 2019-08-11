@@ -17,14 +17,33 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
-#include <arpa/inet.h>
-#include "dumpvdl2.h"
+#include <libacars/libacars.h>	// la_proto_node, la_proto_node_new()
+#include <libacars/vstring.h>	// la_vstring
+#include "config.h"		// IS_BIG_ENDIAN
+#include "dumpvdl2.h"		// dict_search()
 #include "tlv.h"
-#include "xid.h"
 #include "avlc.h"		// avlc_addr_t
+#include "xid.h"
+
+/***************************************************************************
+ * Forward declarations
+ **************************************************************************/
+la_type_descriptor const proto_DEF_XID_msg;
+
+#define XID_FMT_ID		0x82
+#define XID_GID_PUBLIC		0x80
+#define XID_GID_PRIVATE		0xF0
+#define XID_MIN_GROUPLEN	3		// group_id + group_len (0)
+#define XID_MIN_LEN (1 + 2 * XID_MIN_GROUPLEN)	// XID fmt + empty pub group + empty priv group
+#define XID_PARAM_CONN_MGMT	1
+
+struct xid_descr {
+	char *name;
+	char *description;
+};
 
 // list indexed with a bitfield consisting of:
 // 4. C/R bit value
@@ -53,284 +72,876 @@ static const struct xid_descr xid_names[16] = {
 	{ "XID_RSP_LPM", "Link Parameter Modification Response" }
 };
 
-static const vdl_modulation_descr_t modulation_names[] = {
-	{ 0x2, "VDL-M2, D8PSK, 31500 bps" },
-	{ 0x4, "VDL-M3, D8PSK, 31500 bps" },
-	{ 0x0, NULL }
-};
+/***************************************************************************
+ * Parsers and formatters for XID parameters
+ **************************************************************************/
 
-static const dict lcr_causes[] = {
-	{ 0x00,	"Bad local parameter" },
-	{ 0x01, "Out of link layer resources" },
-	{ 0x02, "Out of packet layer resources" },
-	{ 0x03, "Terrestrial network not available" },
-	{ 0x04, "Terrestrial network congestion" },
-	{ 0x05, "Cannot support autotune" },
-	{ 0x06, "Station cannot support initiating handoff" },
-	{ 0x7f, "Other unspecified local reason" },
-	{ 0x80, "Bad global parameter" },
-	{ 0x81, "Protocol violation" },
-	{ 0x82, "Ground system out of resources" },
-	{ 0xff, "Other unspecified system reason" },
-	{ 0x00, NULL }
-};
+/***************************************************************************
+ * Connection management
+ **************************************************************************/
 
-static char *fmt_vdl_modulation(uint8_t *data, uint16_t len) {
-	if(len < 1) return strdup("<empty>");
-	char *buf = XCALLOC(64, sizeof(char));
-	vdl_modulation_descr_t *ptr;
-	for(ptr = (vdl_modulation_descr_t *)modulation_names; ptr->description != NULL; ptr++) {
-		if((data[0] & ptr->bit) == ptr->bit) {
-			strcat(buf, ptr->description);
-			strcat(buf, "; ");
-		}
+typedef union {
+	uint8_t val;
+	struct {
+#ifdef IS_BIG_ENDIAN
+		uint8_t pad:4;
+		uint8_t v:1;
+		uint8_t x:1;
+		uint8_t r:1;
+		uint8_t h:1;
+#else
+		uint8_t h:1;
+		uint8_t r:1;
+		uint8_t x:1;
+		uint8_t v:1;
+		uint8_t pad:4;
+#endif
+	} bits;
+} conn_mgmt_t;
+
+TLV_PARSER(conn_mgmt_parse) {
+	UNUSED(typecode);
+	if(len < 1) {
+		return NULL;
 	}
-	int slen = strlen(buf);
-	if(slen == 0)
-		strcat(buf, "<empty>");
-	else
-		buf[slen-2] = '\0';	// throw out trailing delimiter
-	return buf;
+	NEW(conn_mgmt_t, ret);
+	ret->val = buf[0];
+	return ret;
 }
 
-static char *fmt_vdl_frequency(uint8_t *data, uint16_t len) {
-	if(len < 2) return strdup("<empty>");
-	char *buf = XCALLOC(64, sizeof(char));
-	uint8_t modulation = data[0] >> 4;
-	char *modulation_descr = fmt_vdl_modulation(&modulation, 1);
-	uint16_t freq = (((uint16_t)data[0] << 8) | data[1]) & 0x0fff;
+TLV_FORMATTER(conn_mgmt_format_text) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	ASSERT(ctx->indent >= 0);
+
+	CAST_PTR(c, conn_mgmt_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %02x\n", label, c->val);
+}
+
+/***************************************************************************
+ * XID sequencing
+ **************************************************************************/
+
+TLV_FORMATTER(xid_seq_format_text) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	ASSERT(ctx->indent >= 0);
+
+	CAST_PTR(xidseq, uint8_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: seq: %u retry: %u\n",
+		label, *xidseq & 0x7, *xidseq >> 4);
+}
+
+/***************************************************************************
+ * Frequency, modulation
+ **************************************************************************/
+
+static dict const modulations[] = {
+	{ .id = 2, .val = "VDL-M2, D8PSK, 31500 bps" },
+	{ .id = 4, .val = "VDL-M3, D8PSK, 31500 bps" },
+	{ .id = 0, .val = NULL }
+};
+
+TLV_FORMATTER(modulation_support_format_text) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	ASSERT(ctx->indent >= 0);
+	CAST_PTR(val, uint32_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
+	bitfield_format_text(ctx->vstr, (uint8_t)(*val & 0xff), modulations);
+	EOL(ctx->vstr);
+}
+
+typedef struct {
+	uint8_t modulations;
+	float frequency;
+} vdl2_frequency_t;
+
+vdl2_frequency_t parse_freq(uint8_t const * const buf) {
+	uint8_t modulations = buf[0] >> 4;
+	uint16_t freq = extract_uint16_msbfirst(buf) & 0x0fff;
 	uint32_t freq_khz = (freq + 10000) * 10;
-	if(freq_khz % 25)
+	if(freq_khz % 25 != 0) {
 		freq_khz = freq_khz + 25 - freq_khz % 25;
-	sprintf(buf, "%.3f MHz (%s)", (float)freq_khz / 1000.f, modulation_descr);
-	XFREE(modulation_descr);
-	return buf;
+	}
+	float frequency = (float)freq_khz / 1000.f;
+	return (vdl2_frequency_t){
+		.modulations = modulations,
+		.frequency = frequency
+	};
 }
 
-static char *fmt_dlc_addrs(uint8_t *data, uint16_t len) {
-	if(len % 4 != 0) return strdup("<field truncated>");
-	uint8_t *ptr = data;
-// raw DLC addr is 4 bytes, turn it into 6 hex digits + space, add 1 for \0 at the end
-	uint32_t buflen = len / 4 * 7 + 1;
-	char *buf = XCALLOC(buflen, sizeof(char));
-	char addrstring[8];	// single DLC addr = 6 hex digits + space + \0
+TLV_PARSER(vdl2_frequency_parse) {
+	UNUSED(typecode);
+	if(len < 2) {
+		return NULL;
+	}
+	NEW(vdl2_frequency_t, f);
+	*f = parse_freq(buf);
+	return f;
+}
+
+static void append_frequency_as_text(vdl2_frequency_t *f, la_vstring *vstr) {
+	ASSERT(vstr != NULL);
+	ASSERT(f != NULL);
+	la_vstring_append_sprintf(vstr, "%.3f MHz (", f->frequency);
+	bitfield_format_text(vstr, f->modulations, modulations);
+	la_vstring_append_sprintf(vstr, "%s", ")");
+}
+
+TLV_FORMATTER(vdl2_frequency_format_text) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	ASSERT(ctx->indent >= 0);
+
+	CAST_PTR(f, vdl2_frequency_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
+	append_frequency_as_text(f, ctx->vstr);
+	EOL(ctx->vstr);
+}
+
+/***************************************************************************
+ * DLC addresses
+ **************************************************************************/
+
+TLV_PARSER(dlc_addr_list_parse) {
+	UNUSED(typecode);
+	if(len % 4 != 0) {
+		return NULL;
+	}
+	la_list *addr_list = NULL;
 	while(len > 0) {
-		avlc_addr_t a;
-		a.val = parse_dlc_addr(ptr);
-		sprintf(addrstring, "%06X ", a.a_addr.addr);
-		strcat(buf, addrstring);
-		ptr += 4; len -= 4;
+		NEW(avlc_addr_t, addr);
+		addr->val = parse_dlc_addr(buf);
+		addr_list = la_list_append(addr_list, addr);
+		buf += 4; len -= 4;
 	}
-	return buf;
+	return addr_list;
 }
 
-static char *fmt_freq_support_list(uint8_t *data, uint16_t len) {
-	if(len % 6 != 0) return strdup("<field truncated>");
-	uint8_t *ptr = data;
-	uint32_t buflen = len / 6 * 64;
-	char *buf = XCALLOC(buflen, sizeof(char));
-	char tmp[64];
+static void append_dlc_addr_as_text(void const * const data, void *ctx) {
+	ASSERT(data != NULL);
+	ASSERT(ctx != NULL);
+	CAST_PTR(vstr, la_vstring *, ctx);
+	CAST_PTR(a, avlc_addr_t *, data);
+	la_vstring_append_sprintf(vstr, " %06X", a->a_addr.addr);
+}
+
+TLV_FORMATTER(dlc_addr_list_format_text) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	ASSERT(ctx->indent >= 0);
+
+	CAST_PTR(addr_list, la_list *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:", label);
+	la_list_foreach(addr_list, append_dlc_addr_as_text, ctx->vstr);
+	EOL(ctx->vstr);
+}
+
+TLV_DESTRUCTOR(dlc_list_destroy) {
+	la_list_free((la_list *)data);
+}
+
+/***************************************************************************
+ * Frequency support list
+ **************************************************************************/
+
+typedef struct {
+	vdl2_frequency_t freq;
+	avlc_addr_t gs_addr;
+} freq_support_t;
+
+TLV_PARSER(freq_support_list_parse) {
+	UNUSED(typecode);
+	if(len % 6 != 0) {
+		return NULL;
+	}
+
+	la_list *fslist = NULL;
 	while(len > 0) {
-		char *freq = fmt_vdl_frequency(ptr, 2);
-		ptr += 2; len -= 2;
-		char *gs_addr = fmt_dlc_addrs(ptr, 4);
-		ptr += 4; len -= 4;
-		sprintf(tmp, "%s(%s); ", gs_addr, freq);
-		strcat(buf, tmp);
-		XFREE(freq);
-		XFREE(gs_addr);
+		NEW(freq_support_t, fs);
+		fs->freq = parse_freq(buf);
+		buf += 2; len -= 2;
+		fs->gs_addr.val = parse_dlc_addr(buf);
+		buf += 4; len -= 4;
+		fslist = la_list_append(fslist, fs);
 	}
-	int slen = strlen(buf);
-	if(slen == 0)
-		strcat(buf, "<empty>");
-	else
-		buf[slen-2] = '\0';	// throw out trailing delimiter
-	return buf;
+	return fslist;
 }
 
-static char *fmt_string(uint8_t *data, uint16_t len) {
-	char *buf = XCALLOC(len + 1, sizeof(char));
-	memcpy(buf, data, len);
-	buf[len] = '\0';
-	return buf;
+static void fs_entry_format_text(void const * const data, void *ctx_ptr) {
+	ASSERT(data != NULL);
+	ASSERT(ctx_ptr != NULL);
+	CAST_PTR(ctx, tlv_formatter_ctx_t *, ctx_ptr);
+	CAST_PTR(fs, freq_support_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:", "Ground station");
+	append_dlc_addr_as_text(&fs->gs_addr, ctx->vstr);
+	EOL(ctx->vstr);
+	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "%s: ", "Frequency");
+	append_frequency_as_text(&fs->freq, ctx->vstr);
+	EOL(ctx->vstr);
 }
 
-static char *fmt_lcr_cause(uint8_t *data, uint16_t len) {
-	if(len < 1) return strdup("<field truncated>");
-	char *buf = XCALLOC(128, sizeof(char));
-	char *cause_descr = (char *)dict_search(lcr_causes, data[0]);
-	sprintf(buf, "0x%02x (%s)", data[0], (cause_descr ? cause_descr : "unknown"));
-	data++; len--;
-	if(len >= 2) {
-		char *delaybuf = XCALLOC(32, sizeof(char));
-		sprintf(delaybuf, ", delay: %d", ntohs(*((uint16_t *)data)));
-		strcat(buf, delaybuf);
-		XFREE(delaybuf);
-		data+=2; len-=2;
+TLV_FORMATTER(freq_support_list_format_text) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	ASSERT(ctx->indent >= 0);
+
+	CAST_PTR(fslist, la_list *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
+	ctx->indent++;
+	la_list_foreach(fslist, fs_entry_format_text, ctx);
+	ctx->indent--;
+}
+
+TLV_DESTRUCTOR(freq_support_list_destroy) {
+	la_list_free((la_list *)data);
+}
+
+/***************************************************************************
+ * LCR cause
+ **************************************************************************/
+
+typedef struct {
+	octet_string_t additional_data;
+	uint16_t delay;
+	uint8_t cause;
+} lcr_cause_t;
+
+TLV_PARSER(lcr_cause_parse) {
+	UNUSED(typecode);
+	if(len < 3) {
+		return NULL;
 	}
+	NEW(lcr_cause_t, c);
+	c->cause = buf[0];
+	c->delay = extract_uint16_msbfirst(buf + 1);
+	buf += 3; len -= 3;
 	if(len > 0) {
-		char *additional = fmt_hexstring(data, len);
-		strcat(buf, ", additional data: ");
-		size_t total_len = strlen(additional) + strlen(buf);
-		if(total_len > 127)
-			buf = XREALLOC(buf, total_len + 1);
-		strcat(buf, additional);
-		XFREE(additional);
+		c->additional_data.buf = buf;
+		c->additional_data.len = len;
 	}
-	return buf;
+	return c;
 }
 
-static char *fmt_loc(uint8_t *data, uint16_t len) {
-	if(len < 3) return strdup("<field truncated>");
-	char *buf = XCALLOC(64, sizeof(char));
-// shift to the left end and then back to propagate sign bit
-	int lat = ((int)data[0] << 24) | (int)(data[1] << 16);
-	lat >>= 20;
-	int lon = ((int)data[1] << 28) | ((int)(data[2] & 0xff) << 20);
-	lon >>= 20;
-	float latf = (float)lat / 10.0f; if(latf < 0) latf = -latf;
-	float lonf = (float)lon / 10.0f; if(lonf < 0) lonf = -lonf;
-	char ns = (lat < 0 ? 'S' : 'N');
-	char we = (lon < 0 ? 'W' : 'E');
-	sprintf(buf, "%.1f%c %.1f%c", latf, ns, lonf, we);
-	return buf;
+TLV_FORMATTER(lcr_cause_format_text) {
+	static dict const lcr_causes[] = {
+		{ .id = 0x00, .val = "Bad local parameter" },
+		{ .id = 0x01, .val = "Out of link layer resources" },
+		{ .id = 0x02, .val = "Out of packet layer resources" },
+		{ .id = 0x03, .val = "Terrestrial network not available" },
+		{ .id = 0x04, .val = "Terrestrial network congestion" },
+		{ .id = 0x05, .val = "Cannot support autotune" },
+		{ .id = 0x06, .val = "Station cannot support initiating handoff" },
+		{ .id = 0x7f, .val = "Other unspecified local reason" },
+		{ .id = 0x80, .val = "Bad global parameter" },
+		{ .id = 0x81, .val = "Protocol violation" },
+		{ .id = 0x82, .val = "Ground system out of resources" },
+		{ .id = 0xff, .val = "Other unspecified system reason" },
+		{ .id = 0x00, .val = NULL }
+	};
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	ASSERT(ctx->indent >= 0);
+
+	CAST_PTR(c, lcr_cause_t *, data);
+	CAST_PTR(cause_descr, char *, dict_search(lcr_causes, c->cause));
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: 0x%02x (%s)\n",
+		label, c->cause, cause_descr ? cause_descr : "unknown");
+	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Delay: %u\n", c->delay);
+	if(c->additional_data.buf != NULL) {
+		LA_ISPRINTF(ctx->vstr, ctx->indent+1, "%s: ", "Additional data");
+		octet_string_format_text(ctx->vstr, &c->additional_data, 0);
+		EOL(ctx->vstr);
+	}
 }
 
-static char *fmt_loc_alt(uint8_t *data, uint16_t len) {
-	if(len < 4) return strdup("<field truncated>");
-	char *buf = fmt_loc(data, 3);
-	char *altbuf = XCALLOC(32, sizeof(char));
-	sprintf(altbuf, " %d ft", (int)data[3] * 1000);
-	strcat(buf, altbuf);
-	XFREE(altbuf);
-	return buf;
+/***************************************************************************
+ * Ground station location
+ **************************************************************************/
+
+typedef struct {
+	float lat, lon;
+} location_t;
+
+static location_t loc_parse(uint8_t *buf) {
+	struct { signed int coord:12; } s;
+	int lat = s.coord = (int)(extract_uint16_msbfirst(buf) >> 4);
+	int lon = s.coord = (int)(extract_uint16_msbfirst(buf + 1) & 0xfff);
+	debug_print("lat: %d lon: %d\n", lat, lon);
+	float latf = (float)lat / 10.0f;
+	float lonf = (float)lon / 10.0f;
+	return (location_t){ .lat = latf, .lon = lonf };
 }
 
-static const tlv_dict xid_pub_params[] = {
-	{ 0x1, &fmt_string, "Parameter set ID" },
-	{ 0x2, &fmt_hexstring, "Procedure classes" },
-	{ 0x3, &fmt_hexstring, "HDLC options" },
-	{ 0x5, &fmt_hexstring, "N1-downlink" },
-	{ 0x6, &fmt_hexstring, "N1-uplink" },
-	{ 0x7, &fmt_hexstring, "k-downlink" },
-	{ 0x8, &fmt_hexstring, "k-uplink" },
-	{ 0x9, &fmt_hexstring, "Timer T1_downlink" },
-	{ 0xA, &fmt_hexstring, "Counter N2" },
-	{ 0xB, &fmt_hexstring, "Timer T2" },
-	{ 0xFF, NULL, NULL }
+TLV_PARSER(location_parse) {
+	UNUSED(typecode);
+	if(len < 3) {
+		return NULL;
+	}
+	NEW(location_t, loc);
+	*loc = loc_parse(buf);
+	return loc;
+}
+
+static void append_location_as_text(la_vstring *vstr, location_t loc) {
+	ASSERT(vstr != NULL);
+	char ns = 'N';
+	char we = 'E';
+	if(loc.lat < 0.f) {
+		loc.lat = -loc.lat;
+		ns = 'S';
+	}
+	if(loc.lon < 0.f) {
+		loc.lon = -loc.lon;
+		we = 'W';
+	}
+	la_vstring_append_sprintf(vstr, "%.1f%c %.1f%c", loc.lat, ns, loc.lon, we);
+}
+
+TLV_FORMATTER(location_format_text) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	ASSERT(ctx->indent >= 0);
+
+	CAST_PTR(loc, location_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
+	append_location_as_text(ctx->vstr, *loc);
+	EOL(ctx->vstr);
+}
+
+/***************************************************************************
+ * Aicraft location
+ **************************************************************************/
+
+typedef struct {
+	location_t loc;
+	int alt;
+} loc_alt_t;
+
+TLV_PARSER(loc_alt_parse) {
+	UNUSED(typecode);
+	if(len < 4) {
+		return NULL;
+	}
+	NEW(loc_alt_t, la);
+	la->loc = loc_parse(buf);
+	la->alt = (int)buf[3] * 1000;
+	return la;
+}
+
+TLV_FORMATTER(loc_alt_format_text) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	ASSERT(ctx->indent >= 0);
+
+	CAST_PTR(la, loc_alt_t *, data);
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
+	append_location_as_text(ctx->vstr, la->loc);
+	la_vstring_append_sprintf(ctx->vstr, " %d ft\n", la->alt);
+}
+
+/***************************************************************************
+ * Public XID parameters
+ **************************************************************************/
+
+static const dict xid_pub_params[] = {
+	{
+		.id = 0x1,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Parameter set ID",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_as_ascii_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x2,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Procedure classes",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x3,
+		.val = &(tlv_type_descriptor_t){
+			.label = "HDLC options",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x5,
+		.val = &(tlv_type_descriptor_t){
+			.label = "N1-downlink",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x6,
+		.val = &(tlv_type_descriptor_t){
+			.label = "N1-uplink",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x7,
+		.val = &(tlv_type_descriptor_t){
+			.label = "k-downlink",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x8,
+		.val = &(tlv_type_descriptor_t){
+			.label = "k-uplink",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x9,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Timer T1_downlink",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0xA,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Counter N2",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0xB,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Timer T2",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0xFF,
+		.val = NULL
+	}
 };
 
-static const tlv_dict xid_vdl_params[] = {
-	{ 0x00, &fmt_string, "Parameter set ID" },
-	{ 0x01, &fmt_hexstring, "Connection management" },
-	{ 0x02, &fmt_hexstring, "SQP" },
-	{ 0x03, &fmt_hexstring, "XID sequencing" },
-	{ 0x04, &fmt_hexstring, "AVLC specific options" },
-	{ 0x05, &fmt_hexstring, "Expedited SN connection " },
-	{ 0x06, &fmt_lcr_cause, "LCR cause" },
-	{ 0x81, &fmt_vdl_modulation, "Modulation support" },
-	{ 0x82, &fmt_dlc_addrs, "Alternate ground stations" },
-	{ 0x83, &fmt_string, "Destination airport" },
-	{ 0x84, &fmt_loc_alt, "Aircraft location" },
-	{ 0x40, &fmt_vdl_frequency, "Autotune frequency" },
-	{ 0x41, &fmt_dlc_addrs, "Replacement ground stations" },
-	{ 0x42, &fmt_hexstring, "Timer T4" },
-	{ 0x43, &fmt_hexstring, "MAC persistence" },
-	{ 0x44, &fmt_hexstring, "Counter M1" },
-	{ 0x45, &fmt_hexstring, "Timer TM2" },
-	{ 0x46, &fmt_hexstring, "Timer TG5" },
-	{ 0x47, &fmt_hexstring, "Timer T3min" },
-	{ 0x48, &fmt_hexstring, "Address filter" },
-	{ 0x49, &fmt_hexstring, "Broadcast connection" },
-	{ 0xC0, &fmt_freq_support_list, "Frequency support" },
-	{ 0xC1, &fmt_string, "Airport coverage" },
-	{ 0xC3, &fmt_string, "Nearest airport ID" },
-	{ 0xC4, &fmt_hexstring_with_ascii, "ATN router NETs" },
-	{ 0xC5, &fmt_hexstring, "System mask" },
-	{ 0xC6, &fmt_hexstring, "TG3" },
-	{ 0xC7, &fmt_hexstring, "TG4" },
-	{ 0xC8, &fmt_loc, "Ground station location" },
-	{ 0x00, NULL, NULL }
+/***************************************************************************
+ * VDL2-specific XID parameters
+ **************************************************************************/
+
+static const dict xid_vdl_params[] = {
+	{
+		.id = 0x00,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Parameter set ID",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_as_ascii_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x01,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Connection management",
+			.parse = conn_mgmt_parse,
+			.format_text = conn_mgmt_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x02,
+		.val = &(tlv_type_descriptor_t){
+			.label = "SQP",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x03,
+		.val = &(tlv_type_descriptor_t){
+			.label = "XID sequencing",
+			.parse = tlv_uint8_parse,
+			.format_text = xid_seq_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x04,
+		.val = &(tlv_type_descriptor_t){
+			.label = "AVLC specific options",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x05,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Expedited SN connection ",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x06,
+		.val = &(tlv_type_descriptor_t){
+			.label = "LCR cause",
+			.parse = lcr_cause_parse,
+			.format_text = lcr_cause_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x81,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Modulation support",
+			.parse = tlv_uint8_parse,
+			.format_text = modulation_support_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x82,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Alternate ground stations",
+			.parse = dlc_addr_list_parse,
+			.format_text = dlc_addr_list_format_text,
+			.destroy = dlc_list_destroy
+		}
+	},
+	{
+		.id = 0x83,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Destination airport",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_as_ascii_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x84,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Aircraft location",
+			.parse = loc_alt_parse,
+			.format_text = loc_alt_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x40,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Autotune frequency",
+			.parse = vdl2_frequency_parse,
+			.format_text = vdl2_frequency_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x41,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Replacement ground stations",
+			.parse = dlc_addr_list_parse,
+			.format_text = dlc_addr_list_format_text,
+			.destroy = dlc_list_destroy
+		}
+	},
+	{
+		.id = 0x42,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Timer T4",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x43,
+		.val = &(tlv_type_descriptor_t){
+			.label = "MAC persistence",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x44,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Counter M1",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x45,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Timer TM2",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x46,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Timer TG5",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x47,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Timer T3min",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0x48,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Ground station address filter",
+			.parse = dlc_addr_list_parse,
+			.format_text = dlc_addr_list_format_text,
+			.destroy = dlc_list_destroy
+		}
+	},
+	{
+		.id = 0x49,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Broadcast connection",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0xC0,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Frequency support list",
+			.parse = freq_support_list_parse,
+			.format_text = freq_support_list_format_text,
+			.destroy = freq_support_list_destroy
+		}
+	},
+	{
+		.id = 0xC1,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Airport coverage",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_as_ascii_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0xC3,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Nearest airport ID",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_as_ascii_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0xC4,
+		.val = &(tlv_type_descriptor_t){
+			.label = "ATN router NETs",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_with_ascii_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0xC5,
+		.val = &(tlv_type_descriptor_t){
+			.label = "System mask",
+			.parse = dlc_addr_list_parse,
+			.format_text = dlc_addr_list_format_text,
+			.destroy = dlc_list_destroy
+		}
+	},
+	{
+		.id = 0xC6,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Timer TG3",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0xC7,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Timer TG4",
+			.parse = tlv_octet_string_parse,
+			.format_text = tlv_octet_string_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0xC8,
+		.val = &(tlv_type_descriptor_t){
+			.label = "Ground station location",
+			.parse = location_parse,
+			.format_text = location_format_text,
+			.destroy = NULL
+		}
+	},
+	{
+		.id = 0xFF,
+		.val = NULL
+	}
 };
 
-xid_msg_t *parse_xid(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	static xid_msg_t *msg = NULL;
+/***************************************************************************
+ * Main XID parsing routine
+ **************************************************************************/
 
+la_proto_node *xid_parse(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+	NEW(xid_msg_t, msg);
+	la_proto_node *node = la_proto_node_new();
+	node->td = &proto_DEF_XID_msg;
+	node->data = msg;
+	node->next = NULL;
+
+	msg->err = true;		// fail-safe default
 	if(len < XID_MIN_LEN) {
-		debug_print("%s", "XID too short\n");
-		return NULL;
-	}
-	if(buf[0] != XID_FMT_ID) {
-		debug_print("%s", "Unknown XID format\n");
-		return NULL;
-	}
-	buf++; len--;
-	if(msg == NULL) {
-		msg = XCALLOC(1, sizeof(xid_msg_t));
-	} else {
-		tlv_list_free(msg->pub_params);
-		tlv_list_free(msg->vdl_params);
-		msg->pub_params = msg->vdl_params = NULL;
+		debug_print("XID too short\n");
+		goto end;
 	}
 	uint8_t *ptr = buf;
-	while(len >= XID_MIN_GROUPLEN) {
+	uint32_t remaining = len;
+	if(ptr[0] != XID_FMT_ID) {
+		debug_print("Unknown XID format\n");
+		goto end;
+	}
+	ptr++; remaining--;
+	while(remaining >= XID_MIN_GROUPLEN) {
 		uint8_t gid = *ptr;
-		ptr++; len--;
-		uint16_t grouplen = (ptr[0] << 8) | ptr[1];
-		ptr += 2; len -= 2;
+		ptr++; remaining--;
+		uint16_t grouplen = extract_uint16_msbfirst(ptr);
+		ptr += 2; remaining -= 2;
 		if(grouplen > len) {
-			debug_print("XID group %02x truncated: grouplen=%u buflen=%u\n", gid, grouplen, len);
-			return NULL;
+			debug_print("XID group %02x truncated: grouplen=%u buflen=%u\n", gid,
+				grouplen, remaining);
+			goto end;
 		}
 		switch(gid) {
 		case XID_GID_PUBLIC:
 			if(msg->pub_params != NULL) {
 				debug_print("Duplicate XID group 0x%02x\n", XID_GID_PUBLIC);
-				return NULL;
+				goto end;
 			}
-			msg->pub_params = tlv_deserialize(ptr, grouplen, 1);
+			msg->pub_params = tlv_parse(ptr, grouplen, xid_pub_params, 1);
 			break;
 		case XID_GID_PRIVATE:
 			if(msg->vdl_params != NULL) {
 				debug_print("Duplicate XID group 0x%02x\n", XID_GID_PRIVATE);
-				return NULL;
+				goto end;
 			}
-			msg->vdl_params = tlv_deserialize(ptr, grouplen, 1);
+			msg->vdl_params = tlv_parse(ptr, grouplen, xid_vdl_params, 1);
 			break;
 		default:
 			debug_print("Unknown XID Group ID 0x%x, ignored\n", gid);
 		}
-		ptr += grouplen; len -= grouplen;
+		ptr += grouplen; remaining -= grouplen;
 	}
-	if(len > 0)
-		debug_print("Warning: %u unparsed octets left at end of XID message\n", len);
 // pub_params are optional, vdl_params are mandatory
 	if(msg->vdl_params == NULL) {
-		debug_print("%s", "Incomplete XID message\n");
-		return NULL;
+		debug_print("Incomplete XID message\n");
+		goto end;
+	}
+	if(remaining > 0) {
+		debug_print("Warning: %u unparsed octets left at end of XID message\n", remaining);
+		node->next = unknown_proto_pdu_new(ptr, remaining);
 	}
 // find connection management parameter to figure out the XID type
-	uint8_t cm;
-	tlv_list_t *tmp = tlv_list_search(msg->vdl_params, XID_PARAM_CONN_MGMT);
-	if(tmp != NULL && tmp->len > 0)
-		cm = (tmp->val)[0];
-	else
-		cm = 0xFF;
-	msg->type = ((cr & 0x1) << 3) | ((pf & 0x1) << 2) | ((cm & 0x1) << 1) | ((cm & 0x2) >> 1);
-	if(msg->type == GSIF)
+	conn_mgmt_t cm = {
+		.val = 0xff		// default dummy value
+	};
+	tlv_tag_t *tmp = tlv_list_search(msg->vdl_params, XID_PARAM_CONN_MGMT);
+	if(tmp != NULL) {
+		cm = *(conn_mgmt_t *)(tmp->data);
+	}
+	msg->type = ((cr & 0x1) << 3) | ((pf & 0x1) << 2) | (cm.bits.h << 1) | cm.bits.r;
+	if(msg->type == GSIF) {
 		*msg_type |= MSGFLT_XID_GSIF;
-	else
+	} else {
 		*msg_type |= MSGFLT_XID_NO_GSIF;
-	return msg;
+	}
+	msg->err = false;
+	return node;
+end:
+	node->next = unknown_proto_pdu_new(buf, len);
+	return node;
 }
 
-void output_xid(xid_msg_t *msg) {
-	fprintf(outf, "XID: %s\n", xid_names[msg->type].description);
+/***************************************************************************
+ * XID formatters
+ **************************************************************************/
+
+void xid_format_text(la_vstring * const vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+	ASSERT(indent >= 0);
+
+	CAST_PTR(msg, xid_msg_t *, data);
+	if(msg->err == true) {
+		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable XID\n");
+		return;
+	}
+	LA_ISPRINTF(vstr, indent, "XID: %s\n", xid_names[msg->type].description);
+	indent++;
 // pub_params are optional, vdl_params are mandatory
 	if(msg->pub_params) {
-		fprintf(outf, "Public params:\n");
-		output_tlv(outf, msg->pub_params, xid_pub_params);
+		LA_ISPRINTF(vstr, indent, "%s", "Public params:\n");
+		tlv_list_format_text(vstr, msg->pub_params, indent+1);
 	}
-	fprintf(outf, "VDL params:\n");
-	output_tlv(outf, msg->vdl_params, xid_vdl_params);
+	LA_ISPRINTF(vstr, indent, "%s", "VDL params:\n");
+	tlv_list_format_text(vstr, msg->vdl_params, indent+1);
 }
+
+/***************************************************************************
+ * Destructors
+ **************************************************************************/
+
+void xid_destroy(void *data) {
+	if(data == NULL) {
+		return;
+	}
+	CAST_PTR(msg, xid_msg_t *, data);
+	tlv_list_destroy(msg->pub_params);
+	tlv_list_destroy(msg->vdl_params);
+	msg->pub_params = msg->vdl_params = NULL;
+	XFREE(data);
+}
+
+/***************************************************************************
+ * Type descriptors
+ **************************************************************************/
+
+la_type_descriptor const proto_DEF_XID_msg = {
+	.format_text = xid_format_text,
+	.destroy = xid_destroy
+};

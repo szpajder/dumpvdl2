@@ -41,8 +41,7 @@ static void soapysdr_verbose_device_search() {
 
 void soapysdr_init(vdl2_state_t *ctx, char *dev, char *antenna, int freq, float gain,
 int ppm_error, char* settings, char* gains_param) {
-// -Wunused-parameter
-	(void)ctx;
+	UNUSED(ctx);
 	soapysdr_verbose_device_search();
 
 	SoapySDRDevice *sdr = SoapySDRDevice_makeStrArgs(dev);

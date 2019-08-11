@@ -49,16 +49,15 @@ static char *hw_descr[NUM_HW_TYPES] = {
 
 static void sdrplay_streamCallback(short *xi, short *xq, unsigned int firstSampleNum, int grChanged,
 int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, unsigned int hwRemoved, void *cbContext) {
-// -Wunused-parameter
-	(void)firstSampleNum;
-	(void)grChanged;
-	(void)rfChanged;
-	(void)fsChanged;
-	(void)reset;
-	(void)hwRemoved;
+	UNUSED(firstSampleNum);
+	UNUSED(grChanged);
+	UNUSED(rfChanged);
+	UNUSED(fsChanged);
+	UNUSED(reset);
+	UNUSED(hwRemoved);
 	int i, j, count1, count2, new_buf_flag;
 	int end, input_index;
-	sdrplay_ctx_t *SDRPlay = (sdrplay_ctx_t*)cbContext;
+	CAST_PTR(SDRPlay, sdrplay_ctx_t *, cbContext);
 	if(numSamples == 0) {
 		return;
 	}
@@ -113,10 +112,9 @@ int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, unsig
 }
 
 static void sdrplay_gainCallback(unsigned int gRdB, unsigned int lnaGRdB, void *cbContext) {
-// -Wunused-parameter
-	(void)gRdB;
-	(void)lnaGRdB;
-	(void)cbContext;
+	UNUSED(gRdB);
+	UNUSED(lnaGRdB);
+	UNUSED(cbContext);
 	debug_print("Gain change: gRdb=%u lnaGRdB=%u \n", gRdB, lnaGRdB);
 }
 
@@ -201,8 +199,7 @@ dev_found:
 void sdrplay_init(vdl2_state_t * const ctx, char * const dev, char * const antenna,
 uint32_t const freq, int const gr, int const ppm_error, int const enable_biast,
 int const enable_notch_filter, int enable_agc, int tuner) {
-// -Wunused-parameter
-	(void)ctx;
+	UNUSED(ctx);
 
 	mir_sdr_ErrT err;
 	float ver;

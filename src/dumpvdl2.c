@@ -43,7 +43,6 @@
 #include "soapysdr.h"
 #endif
 #include "dumpvdl2.h"
-#include "avlc.h"		// parse_avlc_frames
 
 int do_exit = 0;
 uint32_t msg_filter = MSGFLT_ALL;
@@ -89,7 +88,7 @@ static void setup_threads(vdl2_state_t *ctx) {
 			perror("pthread_barrier_init failed");
 			_exit(2);
 	}
-	if((ret = pthread_create(&decoder_thread, NULL, &parse_avlc_frames, NULL) != 0)) {
+	if((ret = pthread_create(&decoder_thread, NULL, &avlc_decoder_thread, NULL) != 0)) {
 		errno = ret;
 		perror("pthread_create failed");
 		_exit(2);
@@ -118,8 +117,7 @@ static uint32_t calc_centerfreq(uint32_t *freq, int cnt, uint32_t source_rate) {
 }
 
 void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
-// -Wunused-parameter
-	(void)ctx;
+	UNUSED(ctx);
 	FILE *f;
 	uint32_t len;
 	unsigned char buf[FILE_BUFSIZE];
@@ -267,7 +265,7 @@ static void msg_filter_usage() {
 	fprintf(stderr, "(ie. to indicate that a particular message type shall not be displayed).\n");
 	fprintf(stderr, "\nSupported message types:\n\n");
 
-	msg_filterspec_t *ptr = (msg_filterspec_t *)filters;
+	CAST_PTR(ptr, msg_filterspec_t *, filters);
 	while(ptr->token != NULL) {
 		fprintf(stderr, "\t%s\t%s%s%s\n",
 			ptr->token,
@@ -286,7 +284,7 @@ static void msg_filter_usage() {
 }
 
 static void update_filtermask(char *token, uint32_t *fmask) {
-	msg_filterspec_t *ptr = (msg_filterspec_t *)filters;
+	CAST_PTR(ptr, msg_filterspec_t *, filters);
 	int negate = 0;
 	if(token[0] == '-') {
 		negate = 1;

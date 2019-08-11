@@ -24,18 +24,16 @@
 
 typedef struct {
 	asn_TYPE_descriptor_t *type;
-	void (*format)(FILE *, char const * const label, asn_TYPE_descriptor_t *, const void *, int);
+	void (*format)(la_vstring *, char const * const label, asn_TYPE_descriptor_t *, const void *, int);
 	char const * const label;
 } asn_formatter_t;
-typedef void (*asn1_output_fun_t)(FILE *, asn_TYPE_descriptor_t *, const void *, int);
+typedef void (*asn1_output_fun_t)(la_vstring *, asn_TYPE_descriptor_t *, const void *, int);
 
-#define ASN1_FORMATTER_PROTOTYPE(x) void x(FILE *stream, char const * const label, asn_TYPE_descriptor_t *td, void const *sptr, int indent)
-#define CAST_PTR(x, t, y) t x = (t)(y)
-#define IFPRINTF(s, i, f, ...) fprintf(s, "%*s" f, i, "", __VA_ARGS__)
+#define ASN1_FORMATTER_PROTOTYPE(x) void x(la_vstring *vstr, char const * const label, asn_TYPE_descriptor_t *td, void const *sptr, int indent)
 
 // asn1-util.c
 int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, int size);
-void asn1_output(FILE *stream, asn_formatter_t const * const asn1_formatter_table,
+void asn1_output(la_vstring *vstr, asn_formatter_t const * const asn1_formatter_table,
 	size_t asn1_formatter_table_len, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
 
 #endif // _ASN1_UTIL_H

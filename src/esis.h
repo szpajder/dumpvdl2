@@ -17,8 +17,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdint.h>
+#include <stdbool.h>
+#include <libacars/list.h>	// la_list
 #include "config.h"		// IS_BIG_ENDIAN
-#include "tlv.h"
+#include "dumpvdl2.h"		// octet_string_t
 
 #define ESIS_HDR_LEN		9
 #define ESIS_PDU_TYPE_ESH	2
@@ -43,13 +45,11 @@ typedef struct {
 
 typedef struct {
 	esis_hdr_t *hdr;
-	uint8_t *net_addr;	/* SA for ESH, NET for ISH */
-	tlv_list_t *options;
+	octet_string_t net_addr;	/* SA for ESH, NET for ISH */
+	la_list *options;
 	uint16_t holdtime;
-	uint8_t net_addr_len;
+	bool err;
 } esis_pdu_t;
 
 // esis.c
-esis_pdu_t *parse_esis_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_type);
-void output_esis(esis_pdu_t *pdu);
-
+la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type);

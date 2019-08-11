@@ -26,9 +26,8 @@
 #include "dumpvdl2.h"
 
 bitstream_t *bitstream_init(uint32_t len) {
-	bitstream_t *ret;
 	if(len == 0) return NULL;
-	ret = XCALLOC(1, sizeof(bitstream_t));
+	NEW(bitstream_t, ret);
 	ret->buf = XCALLOC(len, sizeof(uint8_t));
 	ret->start = ret->end = ret->descrambler_pos = 0;
 	ret->len = len;
@@ -116,7 +115,7 @@ restart:
 		} else if(src->buf[i] == 0x1) {
 			ones++;
 			if(ones > 6) {				// 7 ones - invalid bit sequence
-				debug_print("%s", "Invalid bit stuffing sequence\n");
+				debug_print("Invalid bit stuffing sequence\n");
 				return -1;
 			}
 		}
@@ -125,11 +124,11 @@ restart:
 			if(ones == 6) {				// frame boundary flag (0x7e)
 				if(j == 7) {			// move past the initial flag
 					src->start++;
-					debug_print("%s", "Initial flag found, restarting\n");
+					debug_print("Initial flag found, restarting\n");
 					goto restart;
 				} else {
 					if(j < 7) {
-						debug_print("%s", "Invalid bit sequence - 6 ones at the start of the stream\n");
+						debug_print("Invalid bit sequence - 6 ones at the start of the stream\n");
 						return -1;
 					}
 					dst->end = j - 7;	// remove trailing flag from the result

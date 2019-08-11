@@ -17,7 +17,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdint.h>
-#include "tlv.h"
+#include <stdbool.h>
+#include <libacars/libacars.h>		// la_proto_node
+#include <libacars/list.h>		// la_list
+#include "dumpvdl2.h"			// octet_string_t
 #define BISPDU_HDR_LEN			30U
 #define BISPDU_OPEN_VERSION		1
 
@@ -47,22 +50,21 @@ typedef struct {
 
 typedef struct {
 	idrp_hdr_t *hdr;
-	tlv_list_t *withdrawn_routes, *path_attributes;
-	uint8_t *open_src_rdi;
-	uint8_t *data;
-	uint32_t datalen;
+	la_list *withdrawn_routes;
+	la_list *path_attributes;
+	la_list *ribatts_set;
+	la_list *confed_ids;
+	la_list *nlri_list;
+	octet_string_t open_src_rdi;
+	octet_string_t auth_data;
+	octet_string_t *data;
 	uint16_t open_holdtime;
 	uint16_t open_max_pdu_size;
+	uint8_t auth_mech;
 	uint8_t err_code, err_subcode;
 	uint8_t err_fsm_bispdu_type, err_fsm_state;
-	uint8_t open_src_rdi_len;
+	bool err;
 } idrp_pdu_t;
 
-typedef struct {
-	char *descr;
-	dict *subcodes;
-} bispdu_err_t;
-
 // idrp.c
-idrp_pdu_t *parse_idrp_pdu(uint8_t *buf, uint32_t len, uint32_t *msg_type);
-void output_idrp(idrp_pdu_t *pdu);
+la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type);

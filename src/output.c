@@ -26,6 +26,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <libacars/libacars.h>		// la_proto_node, la_proto_tree_format_text()
+#include <libacars/vstring.h>		// la_vstring
 #include "dumpvdl2.h"
 
 FILE *outf;
@@ -60,15 +62,15 @@ static int open_outfile() {
 		filename = XCALLOC(prefix_len + tlen + 2, sizeof(uint8_t));
 		sprintf(filename, "%s%s%s", filename_prefix, suffix, extension);
 	} else {
-		filename = filename_prefix;
+		filename = strdup(filename_prefix);
 	}
 
 	if((outf = fopen(filename, "a+")) == NULL) {
 		fprintf(stderr, "Could not open output file %s: %s\n", filename, strerror(errno));
+		XFREE(filename);
 		return -1;
 	}
 	XFREE(filename);
-
 	return 0;
 }
 
@@ -79,9 +81,16 @@ int init_output_file(char *file) {
 		filename_prefix = file;
 		prefix_len = strlen(filename_prefix);
 		if(hourly || daily) {
+			char *basename = strrchr(filename_prefix, '/');
+			if(basename != NULL) {
+				basename++;
+			} else {
+				basename = filename_prefix;
+			}
 			char *ext = strrchr(filename_prefix, '.');
-			if(ext != NULL && (ext == filename_prefix || ext[1] == '\0'))
+			if(ext != NULL && (ext <= basename || ext[1] == '\0')) {
 				ext = NULL;
+			}
 			if(ext) {
 				extension = strdup(ext);
 				*ext = '\0';
@@ -130,7 +139,7 @@ int init_pp(char *pp_addr) {
 	return 0;
 }
 
-int rotate_outfile() {
+static int rotate_outfile() {
 	struct tm new_tm;
 	time_t t = time(NULL);
 	if(utc)
@@ -151,4 +160,15 @@ void output_raw(uint8_t *buf, uint32_t len) {
 	for(uint32_t i = 0; i < len; i++)
 		fprintf(outf, "%02x ", buf[i]);
 	fprintf(outf, "\n");
+}
+
+void output_proto_tree(la_proto_node *root) {
+	ASSERT(root != NULL);
+	if((daily || hourly) && rotate_outfile() < 0) {
+		_exit(1);
+	}
+	la_vstring *vstr = la_proto_tree_format_text(NULL, root);
+	fprintf(outf, "%s\n", vstr->str);
+	fflush(outf);
+	la_vstring_destroy(vstr, true);
 }

@@ -1,5 +1,5 @@
 /*
- *  This file is a part of dumpvdl2
+ *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
  *
  *  Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
  *
@@ -17,8 +17,19 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <libacars/vstring.h>		// la_vstring
-#include "asn1/constr_TYPE.h"		// asn_TYPE_descriptor_t
+#ifndef _ATN_H
+#define _ATN_H 1
+#include "dumpvdl2.h"			// dict, octet_string
+#include "tlv.h"			// TLV_PARSER, TLV_FORMATTER
 
-// asn1-format-icao.c
-void asn1_output_icao_as_text(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
+#define ATN_TRAFFIC_TYPES_ALL 0x1f
+#define ATSC_TRAFFIC_CLASSES_ALL 0xff
+
+// atn.c
+extern dict const atn_traffic_types[];
+extern dict const atsc_traffic_classes[];
+TLV_PARSER(atn_sec_label_parse);
+TLV_FORMATTER(atn_sec_label_format_text);
+TLV_DESTRUCTOR(atn_sec_label_destroy);
+
+#endif // !_ATN_H

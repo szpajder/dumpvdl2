@@ -19,12 +19,13 @@
 
 #include <stdint.h>
 #include <search.h>			// lfind()
+#include <libacars/vstring.h>		// la_vstring
 #include "asn1/asn_application.h"	// asn_TYPE_descriptor_t
 #include "dumpvdl2.h"			// debug_print()
 #include "asn1-util.h"			// asn_formatter_table
 
 static int compare_fmtr(const void *k, const void *m) {
-	asn_formatter_t *memb = (asn_formatter_t *)m;
+	CAST_PTR(memb, asn_formatter_t *, m);
 	return(k == memb->type ? 0 : 1);
 }
 
@@ -45,19 +46,19 @@ int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, i
 	return 0;
 }
 
-void asn1_output(FILE *stream, asn_formatter_t const * const asn1_formatter_table,
+void asn1_output(la_vstring *vstr, asn_formatter_t const * const asn1_formatter_table,
 	size_t asn1_formatter_table_len, asn_TYPE_descriptor_t *td, const void *sptr, int indent) {
 	if(td == NULL || sptr == NULL) return;
 	asn_formatter_t *formatter = lfind(td, asn1_formatter_table, &asn1_formatter_table_len,
 		sizeof(asn_formatter_t), &compare_fmtr);
 	if(formatter != NULL) {
-		(*formatter->format)(stream, formatter->label, td, sptr, indent);
+		(*formatter->format)(vstr, formatter->label, td, sptr, indent);
 	} else {
-		IFPRINTF(stream, indent, "-- Formatter for type %s not found, ASN.1 dump follows:\n", td->name);
+		LA_ISPRINTF(vstr, indent, "-- Formatter for type %s not found, ASN.1 dump follows:\n", td->name);
 		if(indent > 0) {
-			IFPRINTF(stream, indent * 4, "%s", "");	// asn_fprint does not indent the first line
+			LA_ISPRINTF(vstr, indent * 4, "%s", "");	// asn_sprintf does not indent the first line
 		}
-		asn_fprint(stream, td, sptr, indent+1);
-		IFPRINTF(stream, indent, "%s", "-- ASN.1 dump end\n");
+		asn_sprintf(vstr, td, sptr, indent+1);
+		LA_ISPRINTF(vstr, indent, "%s", "-- ASN.1 dump end\n");
 	}
 }

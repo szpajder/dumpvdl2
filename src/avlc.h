@@ -51,7 +51,6 @@ typedef struct {
 	struct timeval burst_timestamp;
 } avlc_frame_qentry_t;
 
-extern GAsyncQueue *frame_queue;
-void *parse_avlc_frames(void *arg);
 uint32_t parse_dlc_addr(uint8_t *buf);
+la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type);
 #endif // !_AVLC_H

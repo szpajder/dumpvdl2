@@ -22,10 +22,12 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>		// abort()
 #include <sys/time.h>
 #include <pthread.h>		// pthread_t, pthread_barrier_t
+#include <libacars/libacars.h>	// la_proto_node
+#include <libacars/vstring.h>	// la_vstring
 #include "config.h"
-#include "tlv.h"
 #ifndef HAVE_PTHREAD_BARRIERS
 #include "pthread_barrier.h"
 #endif
@@ -131,13 +133,42 @@ typedef struct {
 
 #define nop() do {} while (0)
 
+#ifdef __GNUC__
+#define LIKELY(x) (__builtin_expect(!!(x),1))
+#define UNLIKELY(x) (__builtin_expect(!!(x),0))
+#else
+#define LIKELY(x) (x)
+#define UNLIKELY(x) (x)
+#endif
+
+#ifdef __GNUC__
+#define PRETTY_FUNCTION __PRETTY_FUNCTION__
+#else
+#define PRETTY_FUNCTION ""
+#endif
+
+#define ASSERT_se(expr)			\
+	do {					\
+		if (UNLIKELY(!(expr))) {	\
+			fprintf(stderr, "Assertion '%s' failed at %s:%u, function %s(). Aborting.\n", \
+				#expr , __FILE__, __LINE__, PRETTY_FUNCTION); \
+			abort();		\
+		}				\
+	} while (0)
+
+#ifdef NDEBUG
+#define ASSERT(expr) nop()
+#else
+#define ASSERT(expr) ASSERT_se(expr)
+#endif
+
 #ifdef DEBUG
 #define debug_print(fmt, ...) \
-	do { fprintf(stderr, "%s(): " fmt, __func__, __VA_ARGS__); } while (0)
+	do { fprintf(stderr, "%s(): " fmt, __func__, ##__VA_ARGS__); } while (0)
 
 #define debug_print_buf_hex(buf, len, fmt, ...) \
 	do { \
-		fprintf(stderr, "%s(): " fmt, __func__, __VA_ARGS__); \
+		fprintf(stderr, "%s(): " fmt, __func__, ##__VA_ARGS__); \
 		fprintf(stderr, "%s(): ", __func__); \
 		for(int zz = 0; zz < (len); zz++) { \
 			fprintf(stderr, "%02x ", buf[zz]); \
@@ -151,9 +182,13 @@ typedef struct {
 #endif
 
 #define ONES(x) ~(~0u << (x))
+#define CAST_PTR(x, t, y) t x = (t)(y)
 #define XCALLOC(nmemb, size) xcalloc((nmemb), (size), __FILE__, __LINE__, __func__)
 #define XREALLOC(ptr, size) xrealloc((ptr), (size), __FILE__, __LINE__, __func__)
 #define XFREE(ptr) do { free(ptr); ptr = NULL; } while(0)
+#define NEW(type, x) type *(x) = XCALLOC(1, sizeof(type))
+#define UNUSED(x) (void)(x)
+#define EOL(x) la_vstring_append_sprintf((x), "%s", "\n")
 
 typedef struct {
 	uint8_t *buf;
@@ -232,6 +267,7 @@ uint32_t reverse(uint32_t v, int numbits);
 
 // decode.c
 void decode_vdl_frame(vdl2_channel_t *v);
+void *avlc_decoder_thread(void *arg);
 
 // demod.c
 extern float *sbuf;
@@ -258,8 +294,8 @@ extern uint8_t hourly, daily, utc, output_raw_frames, dump_asn1, extended_header
 extern int pp_sockfd;
 int init_output_file(char *file);
 int init_pp(char *pp_addr);
-int rotate_outfile();
 void output_raw(uint8_t *buf, uint32_t len);
+void output_proto_tree(la_proto_node *root);
 
 // statsd.c
 #ifdef WITH_STATSD
@@ -275,12 +311,32 @@ void statsd_timing_delta_send(uint32_t freq, char *timer, struct timeval *ts);
 #endif
 
 // util.c
+typedef struct {
+	uint8_t *buf;
+	size_t len;
+} octet_string_t;
+typedef struct {
+	uint8_t id;
+	void *val;
+} dict;
+
+extern la_type_descriptor const proto_DEF_unknown;
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func);
 void *xrealloc(void *ptr, size_t size, const char *file, const int line, const char *func);
-char *fmt_hexstring(uint8_t *data, uint16_t len);
-char *fmt_hexstring_with_ascii(uint8_t *data, uint16_t len);
-char *fmt_bitfield(uint8_t val, const dict *d);
+void *dict_search(const dict *list, uint8_t id);
+uint16_t extract_uint16_msbfirst(uint8_t const * const data);
+uint32_t extract_uint32_msbfirst(uint8_t const * const data);
+void bitfield_format_text(la_vstring *vstr, uint8_t val, dict const *d);
+octet_string_t *octet_string_new(void *buf, size_t len);
+int octet_string_parse(uint8_t *buf, size_t len, octet_string_t *result);
+void octet_string_format_text(la_vstring * const vstr, void const * const data, int indent);
+void octet_string_as_ascii_format_text(la_vstring * const vstr, void const * const data, int indent);
+void octet_string_with_ascii_format_text(la_vstring * const vstr, void const * const data, int indent);
 size_t slurp_hexstring(char* string, uint8_t **buf);
+char *hexdump(uint8_t *data, size_t len);
+void append_hexdump_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int indent);
+void unknown_proto_format_text(la_vstring * const vstr, void const * const data, int indent);
+la_proto_node *unknown_proto_pdu_new(void *buf, size_t len);
 
 // dumpvdl2.c
 extern uint32_t msg_filter;

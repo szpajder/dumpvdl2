@@ -62,8 +62,10 @@ list(APPEND dumpvdl2_extra_libs ${GLIB2_LIBRARIES})
 list(APPEND dumpvdl2_include_dirs ${GLIB2_INCLUDE_DIRS})
 list(APPEND link_dirs ${GLIB2_LIBRARY_DIRS})
 
-pkg_check_modules(ACARS REQUIRED libacars)
+pkg_check_modules(ACARS REQUIRED libacars>=1.3.0)
 list(APPEND dumpvdl2_extra_libs ${ACARS_LIBRARIES})
+list(APPEND dumpvdl2_include_dirs ${ACARS_INCLUDE_DIRS})
+list(APPEND asn1_include_dirs ${ACARS_INCLUDE_DIRS})
 list(APPEND link_dirs ${ACARS_LIBRARY_DIRS})
 
 option(RTLSDR "Enable RTL-SDR support" ON)
@@ -165,6 +167,7 @@ add_library (dumpvdl2_base OBJECT
 	asn1-format-common.c
 	asn1-format-icao.c
 	asn1-util.c
+	atn.c
 	avlc.c
 	bitstream.c
 	chebyshev.c

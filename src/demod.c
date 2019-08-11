@@ -270,7 +270,7 @@ static void demod(vdl2_channel_t *v, float re, float im) {
 
 		v->prev_phi = phi;
 		if(bitstream_append_msbfirst(v->bs, &(graycode[idx]), 1, BPS) < 0) {
-			debug_print("%s", "bitstream_append_msbfirst failed\n");
+			debug_print("bitstream_append_msbfirst failed\n");
 			demod_reset(v);
 			return;
 		}
@@ -288,7 +288,7 @@ void *process_samples(void *arg) {
 	float cwf, swf;
 	float re[INP_LPF_NPOLES+1], im[INP_LPF_NPOLES+1];
 	float lp_re[INP_LPF_NPOLES+1], lp_im[INP_LPF_NPOLES+1];
-	vdl2_channel_t *v = (vdl2_channel_t *)arg;
+	CAST_PTR(v, vdl2_channel_t *, arg);
 	v->samplenum = -1;
 	memset(lp_re, 0, sizeof(lp_re));
 	memset(lp_im, 0, sizeof(lp_im));
@@ -335,8 +335,7 @@ void *process_samples(void *arg) {
 }
 
 void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx) {
-// -Wunused-parameter
-	(void)ctx;
+	UNUSED(ctx);
 	if(len == 0) return;
 	pthread_barrier_wait(&demods_ready);
 	sbuf_len = len;
@@ -353,10 +352,9 @@ void process_buf_uchar_init() {
 }
 
 void process_buf_short(unsigned char *buf, uint32_t len, void *ctx) {
-// -Wunused-parameter
-	(void)ctx;
+	UNUSED(ctx);
 	if(len == 0) return;
-	int16_t *bbuf = (int16_t *)buf;
+	CAST_PTR(bbuf, int16_t *, buf);
 	pthread_barrier_wait(&demods_ready);
 	sbuf_len = len / 2;
 	for(uint32_t i = 0; i < sbuf_len; i++)
@@ -377,8 +375,7 @@ void sincosf_lut_init() {
 }
 
 vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample) {
-	vdl2_channel_t *v;
-	v = XCALLOC(1, sizeof(vdl2_channel_t));
+	NEW(vdl2_channel_t, v);
 	v->bs = bitstream_init(BSLEN);
 	v->frame_bs = bitstream_init(BSLEN);
 	v->mag_nf = 2.0f;
