@@ -1,5 +1,25 @@
 # NEWS
 
+## Version 1.7.0 (2019-08-11):
+* Complete overhaul of output generation code. Messages are no longer printed
+  directly into the output file, but rather stored in memory in a structured
+  manner and serialized into an output string (still in memory), which is then
+  printed into an output file. This change does not bring significant benefits
+  or features yet, but is a major step towards multi-output, multi-format
+  architecture in the next release. A side effect of this is more concise
+  output formatting (indentation). The purpose of this is to better visualise
+  message hierarchy (layered structure). **Note**: libacars version 1.3.0
+  or later is now required to compile and run dumpvdl2.
+* Significant enhancements to CLNP, COTP and IDRP decoders. Most if not all
+  protocol headers are now decoded and included in the output.
+* Added a decoder for X.225 Session Protocol SPDUs.
+* Added a decoder for VDL SNDCF error reports.
+* XID: improved decoding of XID sequencing, Frequency support and System mask
+  attributes.
+* X.25: improved decoding of facility fields, call clearing causes and
+  diagnostic codes.
+* Minor bug fixes.
+
 ## Version 1.6.0 (2019-01-19):
 * New build system based on cmake. Refer to README.md for new installation
   instructions.
