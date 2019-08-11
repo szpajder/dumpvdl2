@@ -27,11 +27,9 @@ Current stable version: 1.6.0 (released Jan 19, 2019)
 - [X] AVLC - supported
 - [X] ACARS over AVLC - supported
 - [X] ISO 8208 (X.25) control packets - supported
-- [X] ISO 8473 (CLNP) - partially supported (CLNP header is skipped over without
-  decoding)
+- [X] ISO 8473 (CLNP) - supported
 - [X] ISO 9542 (ES-IS) - supported
-- [X] ISO 10747 (IDRP) - partially supported (decoding of a few unimportant
-  attributes is TODO)
+- [X] ISO 10747 (IDRP) - supported
 - [X] ISO 8073 (COTP) - supported
 - [X] ICAO ATN-B1 CM (Context Management) - supported
 - [X] ICAO ATN-B1 CPDLC (Controller-Pilot Data Link Communications) - supported
@@ -828,8 +826,12 @@ Adding new device type basically comes down to the following:
   format and converts the samples to signed float in the <-1;1> range. Refer to
   `process_buf_uchar()` and `process_buf_short()` routines for details.
 
-- `Makefile` - add new WITH_*DEVICE* compile time option and your new source
-  files, add necessary `LDLIBS`, etc.
+- `CMakeLists.txt` - copy the section containing `find_package(RTLSDR)` and
+  modify it, so that it finds all the necessary libraries and header file
+  locations and appends them to relevant build variables. Make sure that the
+  program still builds correctly when the library for your new SDR type is
+  not installed or has been disabled by the user. Add the appropriate
+  information to the configuration summary which is printed at the end.
 
 ### Can you add support for Windows?
 
