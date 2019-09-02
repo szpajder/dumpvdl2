@@ -176,7 +176,12 @@ void octet_string_as_ascii_format_text(la_vstring * const vstr, void const * con
 
 	CAST_PTR(ostring, octet_string_t *, data);
 	LA_ISPRINTF(vstr, indent, "%s", "");
-	la_vstring_append_buffer(vstr, ostring->buf, ostring->len);
+	if(ostring->len == 0) {
+		return;
+	}
+	char *replaced = replace_nonprintable_chars(ostring->buf, ostring->len);
+	la_vstring_append_buffer(vstr, replaced, ostring->len);
+	XFREE(replaced);
 }
 
 size_t slurp_hexstring(char* string, uint8_t **buf) {
