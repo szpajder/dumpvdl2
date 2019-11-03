@@ -25,6 +25,8 @@ asn_struct_print_f ANY_print;
 ber_type_decoder_f ANY_decode_ber;
 der_type_encoder_f ANY_encode_der;
 xer_type_encoder_f ANY_encode_xer;
+per_type_decoder_f ANY_decode_uper;
+per_type_encoder_f ANY_encode_uper;
 
 /******************************
  * Handy conversion routines. *
