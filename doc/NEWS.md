@@ -1,5 +1,12 @@
 # NEWS
 
+## Version 1.7.1 (2019-11-11):
+* Fixed an issue where a truncated or corrupted ICAO APDU could cause a
+  crash in ASN.1 decoder.
+* Fixed an issue where NULL characters in XID attribute values could
+  cause them do be printed partially. Any non-printable characters
+  in octet strings printed as text are now replaced with periods.
+
 ## Version 1.7.0 (2019-08-11):
 * Complete overhaul of output generation code. Messages are no longer printed
   directly into the output file, but rather stored in memory in a structured
