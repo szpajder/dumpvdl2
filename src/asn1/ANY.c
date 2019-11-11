@@ -21,7 +21,13 @@ asn_TYPE_descriptor_t asn_DEF_ANY = {
 	OCTET_STRING_encode_der,
 	OCTET_STRING_decode_xer_hex,
 	ANY_encode_xer,
-	0, 0,
+#ifdef	ASN_DISABLE_PER_SUPPORT
+	0,
+	0,
+#else
+	ANY_decode_uper,	/* Unaligned PER decoder */
+	0,
+#endif	/* ASN_DISABLE_PER_SUPPORT */
 	0, /* Use generic outmost tag fetcher */
 	0, 0, 0, 0,
 	0,	/* No PER visible constraints */
@@ -155,4 +161,75 @@ static int ANY__consume_bytes(const void *buffer, size_t size, void *key) {
 
 	return 0;
 }
+
+#ifndef ASN_DISABLE_PER_SUPPORT
+
+#undef RETURN
+#define RETURN(_code)                       \
+    do {                                    \
+        asn_dec_rval_t tmprval;             \
+        tmprval.code = _code;               \
+        tmprval.consumed = consumed_myself; \
+        return tmprval;                     \
+    } while(0)
+
+asn_dec_rval_t
+ANY_decode_uper(asn_codec_ctx_t *opt_codec_ctx,
+                asn_TYPE_descriptor_t *td,
+                asn_per_constraints_t *constraints, void **sptr,
+                asn_per_data_t *pd) {
+    const asn_OCTET_STRING_specifics_t *specs =
+        td->specifics ? (const asn_OCTET_STRING_specifics_t *)td->specifics
+                      : &asn_DEF_ANY_specs;
+    size_t consumed_myself = 0;
+    int repeat;
+    ANY_t *st = (ANY_t *)*sptr;
+
+    (void)opt_codec_ctx;
+    (void)constraints;
+
+    /*
+     * Allocate the structure.
+     */
+    if(!st) {
+        st = (ANY_t *)(*sptr = CALLOC(1, specs->struct_size));
+        if(!st) RETURN(RC_FAIL);
+    }
+
+    ASN_DEBUG("PER Decoding ANY type");
+
+
+    st->size = 0;
+    do {
+        ssize_t raw_len;
+        ssize_t len_bytes;
+        ssize_t len_bits;
+        void *p;
+        int ret;
+
+        /* Get the PER length */
+        raw_len = uper_get_length(pd, -1, &repeat);
+        if(raw_len < 0) RETURN(RC_WMORE);
+        if(raw_len == 0 && st->buf) break;
+
+        ASN_DEBUG("Got PER length len %ld, %s (%s)", raw_len,
+                  repeat ? "repeat" : "once", td->name);
+        len_bytes = raw_len;
+        len_bits = len_bytes * 8;
+
+        p = REALLOC(st->buf, st->size + len_bytes + 1);
+        if(!p) RETURN(RC_FAIL);
+        st->buf = (uint8_t *)p;
+
+        ret = per_get_many_bits(pd, &st->buf[st->size], 0, len_bits);
+        if(ret < 0) RETURN(RC_WMORE);
+        consumed_myself += len_bits;
+        st->size += len_bytes;
+    } while(repeat);
+    st->buf[st->size] = 0; /* nul-terminate */
+
+    RETURN(RC_OK);
+}
+
+#endif /* ASN_DISABLE_PER_SUPPORT */
 

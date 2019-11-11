@@ -26,3 +26,5 @@ patch -p0 < patches/CHOICE_expose__fetch_present_idx.diff
 patch -p0 < patches/quoted_includes.diff
 # support for outputting to vstring
 patch -p0 < patches/asn1_output_to_vstring.diff
+# add UPER decoder for ANY ASN.1 type
+patch -p0 < patches/add_uper_decoder_for_ANY.diff
