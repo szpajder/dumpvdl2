@@ -47,7 +47,7 @@ void *xrealloc(void *ptr, size_t size, const char *file, const int line, const c
 	return ptr;
 }
 
-void *dict_search(const dict *list, uint8_t id) {
+void *dict_search(const dict *list, int id) {
 	if(list == NULL) return NULL;
 	dict *ptr;
 	for(ptr = (dict *)list; ; ptr++) {
