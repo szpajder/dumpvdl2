@@ -135,6 +135,8 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_NULL) {
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_label_only) {
+	UNUSED(td);
+	UNUSED(sptr);
 	if(label != NULL) {
 		LA_ISPRINTF(vstr, indent, "%s\n", label);
 	}
