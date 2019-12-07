@@ -33,8 +33,9 @@
 #include "asn1/ADSAircraftPDUs.h"
 #include "asn1/ADSGroundPDUs.h"
 #include "asn1/ADSMessage.h"
-#include "asn1/ADSReport.h"
+#include "asn1/ADSAccept.h"
 #include "asn1/ADSReject.h"
+#include "asn1/ADSReport.h"
 #include "asn1/ADSNonCompliance.h"
 #include "asn1/ADSPositiveAcknowledgement.h"
 #include "asn1/ADSRequestContract.h"
@@ -49,94 +50,119 @@
 // Forward declaration
 la_type_descriptor const proto_DEF_icao_apdu;
 
-static int decode_ADSAircraftPDU(void **decoded_result, asn_TYPE_descriptor_t **decoded_apdu_type,
+static int decode_ADSAircraftPDUs(void **decoded_result, asn_TYPE_descriptor_t **decoded_apdu_type,
 uint8_t *buf, int size) {
-	ADSAircraftPDUs_t *adsairpdu = NULL;
+	ADSAircraftPDUs_t *adsairpdus = NULL;
 	int ret = -1;	// error by default
 
-	if(asn1_decode_as(&asn_DEF_ADSAircraftPDUs, (void **)&adsairpdu, buf, size) != 0)
-		goto ads_aircraft_pdu_cleanup;
+	if(asn1_decode_as(&asn_DEF_ADSAircraftPDUs, (void **)&adsairpdus, buf, size) != 0)
+		goto ads_aircraft_pdus_cleanup;
 
 	asn_TYPE_descriptor_t *next_td = NULL;
 	ADSMessage_t *next_pdu = NULL;
-	switch(adsairpdu->adsAircraftPdu.present) {
+	switch(adsairpdus->adsAircraftPdu.present) {
+// The following PDU types contain a full ADS Message (of type ADSMessage_t)
+// PER-encoded and carried as BIT STRING with an additional integrity check
+// (ATN checksum). For these types we need to perform a second decoding pass of
+// the PER-encoded part.
+// First, save the type descriptor of the inner message and the pointer to it.
 	case ADSAircraftPDU_PR_aDS_report_PDU:
-	case ADSAircraftPDU_PR_aDS_accepted_PDU:
 		next_td = &asn_DEF_ADSReport;
-		next_pdu = &adsairpdu->adsAircraftPdu.choice.aDS_report_PDU.ic_report.aDSMessage;
+		next_pdu = &adsairpdus->adsAircraftPdu.choice.aDS_report_PDU.ic_report.aDSMessage;
+		break;
+	case ADSAircraftPDU_PR_aDS_accepted_PDU:
+		next_td = &asn_DEF_ADSAccept;
+		next_pdu = &adsairpdus->adsAircraftPdu.choice.aDS_accepted_PDU.ic_report.aDSMessage;
 		break;
 	case ADSAircraftPDU_PR_aDS_rejected_PDU:
 		next_td = &asn_DEF_ADSReject;
-		next_pdu = &adsairpdu->adsAircraftPdu.choice.aDS_rejected_PDU.ic_reject.aDSMessage;
+		next_pdu = &adsairpdus->adsAircraftPdu.choice.aDS_rejected_PDU.ic_reject.aDSMessage;
 		break;
 	case ADSAircraftPDU_PR_aDS_ncn_PDU:
 		next_td = &asn_DEF_ADSNonCompliance;
-		next_pdu = &adsairpdu->adsAircraftPdu.choice.aDS_ncn_PDU.ic_ncn.aDSMessage;
+		next_pdu = &adsairpdus->adsAircraftPdu.choice.aDS_ncn_PDU.ic_ncn.aDSMessage;
 		break;
 	case ADSAircraftPDU_PR_aDS_positive_acknowledgement_PDU:
 		next_td = &asn_DEF_ADSPositiveAcknowledgement;
-		next_pdu = &adsairpdu->adsAircraftPdu.choice.aDS_positive_acknowledgement_PDU.ic_positive_ack.aDSPositiveAck;
+		next_pdu = &adsairpdus->adsAircraftPdu.choice.aDS_positive_acknowledgement_PDU.ic_positive_ack.aDSPositiveAck;
 		break;
+// The following are single-layer PDU types. They have already been decoded
+// completely during the first pass
 	case ADSAircraftPDU_PR_aDS_cancel_positive_acknowledgement_PDU:
 	case ADSAircraftPDU_PR_aDS_cancel_negative_acknowledgement_PDU:
 	case ADSAircraftPDU_PR_aDS_provider_abort_PDU:
 	case ADSAircraftPDU_PR_aDS_user_abort_PDU:
-		*decoded_result = adsairpdu;
+// Return the whole outer structure (of type ADSAircraftPDUs_t) as the result.
+		*decoded_result = adsairpdus;
 		*decoded_apdu_type = &asn_DEF_ADSAircraftPDUs;
 		return 0;
 	default:
 		break;
 	}
+// We need a second pass; do we have all the necessary data?
 	if(next_td == NULL || next_pdu == NULL) {
-		goto ads_aircraft_pdu_cleanup;
+		goto ads_aircraft_pdus_cleanup;
 	}
 	if(asn1_decode_as(next_td, decoded_result, next_pdu->buf, next_pdu->size) == 0) {
+// Second pass succeeded. Return success (but clean up the outer ADSAircraftPDU first,
+// as it's no longer needed)
 		ret = 0;
 		*decoded_apdu_type = next_td;
-		goto ads_aircraft_pdu_cleanup;
+		goto ads_aircraft_pdus_cleanup;
 	}
-	debug_print("unable to decode ADSAircraftPDU as %s\n", next_td->name);
-ads_aircraft_pdu_cleanup:
-	ASN_STRUCT_FREE(asn_DEF_ADSAircraftPDUs, adsairpdu);
+	debug_print("Unable to decode ADSAircraftPDUs as %s\n", next_td->name);
+ads_aircraft_pdus_cleanup:
+	ASN_STRUCT_FREE(asn_DEF_ADSAircraftPDUs, adsairpdus);
 	return ret;
 }
 
-static int decode_ADSGroundPDU(void **decoded_result, asn_TYPE_descriptor_t **decoded_apdu_type,
+static int decode_ADSGroundPDUs(void **decoded_result, asn_TYPE_descriptor_t **decoded_apdu_type,
 uint8_t *buf, int size) {
-	ADSGroundPDUs_t *adsgndpdu = NULL;
+	ADSGroundPDUs_t *adsgndpdus = NULL;
 	int ret = -1;	// error by default
 
-	if(asn1_decode_as(&asn_DEF_ADSGroundPDUs, (void **)&adsgndpdu, buf, size) != 0)
-		goto ads_ground_pdu_cleanup;
+	if(asn1_decode_as(&asn_DEF_ADSGroundPDUs, (void **)&adsgndpdus, buf, size) != 0)
+		goto ads_ground_pdus_cleanup;
 
 	asn_TYPE_descriptor_t *next_td = NULL;
 	ADSMessage_t *next_pdu = NULL;
-	switch(adsgndpdu->adsGroundPdu.present) {
+	switch(adsgndpdus->adsGroundPdu.present) {
+// The following PDU types contain a full ADS Message (of type ADSMessage_t)
+// PER-encoded and carried as BIT STRING with an additional integrity check
+// (ATN checksum). For these types we need to perform a second decoding pass of
+// the PER-encoded part.
+// First, save the type descriptor of the inner message and the pointer to it.
 	case ADSGroundPDU_PR_aDS_contract_PDU:
 		next_td = &asn_DEF_ADSRequestContract;
-		next_pdu = &adsgndpdu->adsGroundPdu.choice.aDS_contract_PDU.ic_contract_request.aDSMessage;
+		next_pdu = &adsgndpdus->adsGroundPdu.choice.aDS_contract_PDU.ic_contract_request.aDSMessage;
 		break;
+// The following are single-layer PDU types. They have already been decoded
+// completely during the first pass
 	case ADSGroundPDU_PR_aDS_cancel_contract_PDU:
 	case ADSGroundPDU_PR_aDS_cancel_all_contracts_PDU:
 	case ADSGroundPDU_PR_aDS_provider_abort_PDU:
 	case ADSGroundPDU_PR_aDS_user_abort_PDU:
-		*decoded_result = adsgndpdu;
+// Return the whole outer structure (of type ADSGroundPDUs_t) as the result.
+		*decoded_result = adsgndpdus;
 		*decoded_apdu_type = &asn_DEF_ADSGroundPDUs;
 		return 0;
 	default:
 		break;
 	}
+// We need a second pass; do we have all the necessary data?
 	if(next_td == NULL || next_pdu == NULL) {
-		goto ads_ground_pdu_cleanup;
+		goto ads_ground_pdus_cleanup;
 	}
 	if(asn1_decode_as(next_td, decoded_result, next_pdu->buf, next_pdu->size) == 0) {
+// Second pass succeeded. Return success (but clean up the outer ADSGroundPDUs first,
+// as it's no longer needed)
 		ret = 0;
 		*decoded_apdu_type = next_td;
-		goto ads_ground_pdu_cleanup;
+		goto ads_ground_pdus_cleanup;
 	}
-	debug_print("unable to decode ADSGroundPDU as %s\n", next_td->name);
-ads_ground_pdu_cleanup:
-	ASN_STRUCT_FREE(asn_DEF_ADSGroundPDUs, adsgndpdu);
+	debug_print("Unable to decode ADSGroundPDUs as %s\n", next_td->name);
+ads_ground_pdus_cleanup:
+	ASN_STRUCT_FREE(asn_DEF_ADSGroundPDUs, adsgndpdus);
 	return ret;
 }
 
@@ -268,7 +294,7 @@ ACSE_apdu_PR acse_apdu_type, uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 		msg = NULL;
 
 		if(APP_TYPE_MATCHES(app_type, ICAO_APP_TYPE_ADS) &&
-		   decode_ADSAircraftPDU((void **)&msg, &decoded_apdu_type, buf, size) == 0) {
+		   decode_ADSAircraftPDUs((void **)&msg, &decoded_apdu_type, buf, size) == 0) {
 			icao_apdu->type = decoded_apdu_type;
 			icao_apdu->data = msg;
 			*msg_type |= MSGFLT_ADSC;
@@ -298,7 +324,7 @@ ACSE_apdu_PR acse_apdu_type, uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 		msg = NULL;
 
 		if(APP_TYPE_MATCHES(app_type, ICAO_APP_TYPE_ADS) &&
-		   decode_ADSGroundPDU((void **)&msg, &decoded_apdu_type, buf, size) == 0) {
+		   decode_ADSGroundPDUs((void **)&msg, &decoded_apdu_type, buf, size) == 0) {
 			icao_apdu->type = decoded_apdu_type;
 			icao_apdu->data = msg;
 			*msg_type |= MSGFLT_ADSC;
