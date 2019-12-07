@@ -33,5 +33,6 @@ void _format_SEQUENCE_OF(la_vstring *vstr, char const * const label, asn1_output
 	asn_TYPE_descriptor_t *td, void const *sptr, int indent);
 ASN1_FORMATTER_PROTOTYPE(asn1_format_any);
 ASN1_FORMATTER_PROTOTYPE(asn1_format_NULL);
+ASN1_FORMATTER_PROTOTYPE(asn1_format_label_only);
 ASN1_FORMATTER_PROTOTYPE(asn1_format_ENUM);
 ASN1_FORMATTER_PROTOTYPE(asn1_format_Deg);

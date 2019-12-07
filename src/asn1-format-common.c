@@ -134,6 +134,12 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_NULL) {
 	// NOOP
 }
 
+ASN1_FORMATTER_PROTOTYPE(asn1_format_label_only) {
+	if(label != NULL) {
+		LA_ISPRINTF(vstr, indent, "%s\n", label);
+	}
+}
+
 ASN1_FORMATTER_PROTOTYPE(asn1_format_ENUM) {
 	long const value = *(long const *)sptr;
 	char const *s = value2enum(td, value);
