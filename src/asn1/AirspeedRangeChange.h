@@ -15,7 +15,7 @@
 #include "Ias.h"
 #include "asn_SEQUENCE_OF.h"
 #include "constr_SEQUENCE_OF.h"
-#include "Mach.h"
+#include "SpeedMach.h"
 #include "constr_SEQUENCE.h"
 
 #ifdef __cplusplus
@@ -31,7 +31,7 @@ typedef struct AirspeedRangeChange {
 		asn_struct_ctx_t _asn_ctx;
 	} *minMaxIAS;
 	struct AirspeedRangeChange__minMaxMach {
-		A_SEQUENCE_OF(Mach_t) list;
+		A_SEQUENCE_OF(SpeedMach_t) list;
 		
 		/* Context for parsing across buffer boundaries */
 		asn_struct_ctx_t _asn_ctx;

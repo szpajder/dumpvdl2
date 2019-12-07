@@ -12,9 +12,9 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "Mach.h"
+#include "SpeedMach.h"
 #include "Ias.h"
-#include "constr_SEQUENCE.h"
+#include "MachAndIas.h"
 #include "constr_CHOICE.h"
 
 #ifdef __cplusplus
@@ -33,15 +33,9 @@ typedef enum Airspeed_PR {
 typedef struct Airspeed {
 	Airspeed_PR present;
 	union Airspeed_u {
-		Mach_t	 mach;
+		SpeedMach_t	 mach;
 		Ias_t	 ias;
-		struct Airspeed__mach_and_ias {
-			Mach_t	 mach;
-			Ias_t	 ias;
-			
-			/* Context for parsing across buffer boundaries */
-			asn_struct_ctx_t _asn_ctx;
-		} mach_and_ias;
+		MachAndIas_t	 mach_and_ias;
 	} choice;
 	
 	/* Context for parsing across buffer boundaries */

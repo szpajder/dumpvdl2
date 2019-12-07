@@ -12,8 +12,9 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "ADSv2Level.h"
+#include "QNEAltitude.h"
 #include "QNHAltitude.h"
+#include "MSLAltitude.h"
 #include "constr_CHOICE.h"
 
 #ifdef __cplusplus
@@ -32,9 +33,9 @@ typedef enum EPPLevel_PR {
 typedef struct EPPLevel {
 	EPPLevel_PR present;
 	union EPPLevel_u {
-		ADSv2Level_t	 qNEAltitude;
+		QNEAltitude_t	 qNEAltitude;
 		QNHAltitude_t	 qNHAltitude;
-		ADSv2Level_t	 mSLAltitude;
+		MSLAltitude_t	 mSLAltitude;
 	} choice;
 	
 	/* Context for parsing across buffer boundaries */

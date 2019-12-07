@@ -11,7 +11,7 @@ static asn_TYPE_member_t asn_MBR_LateralType_1[] = {
 	{ ATF_POINTER, 10, offsetof(struct LateralType, flyby),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_TurnRadiusO,
+		&asn_DEF_LateralTypeFlyby,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -20,7 +20,7 @@ static asn_TYPE_member_t asn_MBR_LateralType_1[] = {
 	{ ATF_POINTER, 9, offsetof(struct LateralType, fixedRadiusTransition),
 		(ASN_TAG_CLASS_CONTEXT | (1 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_TurnRadiusO,
+		&asn_DEF_LateralTypeFixedRadiusTransition,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -29,7 +29,7 @@ static asn_TYPE_member_t asn_MBR_LateralType_1[] = {
 	{ ATF_POINTER, 8, offsetof(struct LateralType, offsetStart),
 		(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_LateralTypeOffsetStart,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -38,7 +38,7 @@ static asn_TYPE_member_t asn_MBR_LateralType_1[] = {
 	{ ATF_POINTER, 7, offsetof(struct LateralType, offsetReached),
 		(ASN_TAG_CLASS_CONTEXT | (3 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_LateralTypeOffsetReached,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -47,7 +47,7 @@ static asn_TYPE_member_t asn_MBR_LateralType_1[] = {
 	{ ATF_POINTER, 6, offsetof(struct LateralType, returnToParentPathInitiation),
 		(ASN_TAG_CLASS_CONTEXT | (4 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_LateralTypeReturnToParentPathInitiation,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -56,7 +56,7 @@ static asn_TYPE_member_t asn_MBR_LateralType_1[] = {
 	{ ATF_POINTER, 5, offsetof(struct LateralType, offsetEnd),
 		(ASN_TAG_CLASS_CONTEXT | (5 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_LateralTypeOffsetEnd,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -65,7 +65,7 @@ static asn_TYPE_member_t asn_MBR_LateralType_1[] = {
 	{ ATF_POINTER, 4, offsetof(struct LateralType, offset),
 		(ASN_TAG_CLASS_CONTEXT | (6 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_LateralTypeOffset,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -74,7 +74,7 @@ static asn_TYPE_member_t asn_MBR_LateralType_1[] = {
 	{ ATF_POINTER, 3, offsetof(struct LateralType, overfly),
 		(ASN_TAG_CLASS_CONTEXT | (7 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_LateralTypeOverfly,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -83,7 +83,7 @@ static asn_TYPE_member_t asn_MBR_LateralType_1[] = {
 	{ ATF_POINTER, 2, offsetof(struct LateralType, flightPlanWayPoint),
 		(ASN_TAG_CLASS_CONTEXT | (8 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_LateralTypeFlightPlanWayPoint,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -92,7 +92,7 @@ static asn_TYPE_member_t asn_MBR_LateralType_1[] = {
 	{ ATF_POINTER, 1, offsetof(struct LateralType, followedByDisco),
 		(ASN_TAG_CLASS_CONTEXT | (9 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_LateralTypeFollowedByDisco,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

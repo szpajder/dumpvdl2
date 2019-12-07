@@ -13,39 +13,17 @@
 
 /* Including external dependencies */
 #include "ADSv2DateTimeGroup.h"
-#include "asn_SEQUENCE_OF.h"
-#include "ThreeDPosition.h"
-#include "WaypointName.h"
+#include "WayPointSequence.h"
 #include "constr_SEQUENCE.h"
-#include "constr_SEQUENCE_OF.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Forward declarations */
-struct Timesec;
-
 /* ProjectedProfile */
 typedef struct ProjectedProfile {
 	ADSv2DateTimeGroup_t	 computation_time;
-	struct ProjectedProfile__way_point_sequence {
-		A_SEQUENCE_OF(struct ProjectedProfile__way_point_sequence__Member {
-			ThreeDPosition_t	 position;
-			WaypointName_t	*name	/* OPTIONAL */;
-			struct Timesec	*estimated_time	/* OPTIONAL */;
-			/*
-			 * This type is extensible,
-			 * possible extensions are below.
-			 */
-			
-			/* Context for parsing across buffer boundaries */
-			asn_struct_ctx_t _asn_ctx;
-		} ) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} way_point_sequence;
+	WayPointSequence_t	 way_point_sequence;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
@@ -57,9 +35,6 @@ extern asn_TYPE_descriptor_t asn_DEF_ProjectedProfile;
 #ifdef __cplusplus
 }
 #endif
-
-/* Referred external types */
-#include "ETA.h"
 
 #endif	/* _ProjectedProfile_H_ */
 #include "asn_internal.h"

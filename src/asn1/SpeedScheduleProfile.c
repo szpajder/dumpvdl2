@@ -11,7 +11,7 @@ static asn_TYPE_member_t asn_MBR_SpeedScheduleProfile_1[] = {
 	{ ATF_POINTER, 4, offsetof(struct SpeedScheduleProfile, predicted_gross_mass_at_tod),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_GrossMass,
+		&asn_DEF_PredictedGrossMassAtToD,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -20,7 +20,7 @@ static asn_TYPE_member_t asn_MBR_SpeedScheduleProfile_1[] = {
 	{ ATF_POINTER, 3, offsetof(struct SpeedScheduleProfile, climbSpeed),
 		(ASN_TAG_CLASS_CONTEXT | (1 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_SpeedScheduleBlock,
+		&asn_DEF_ClimbSpeed,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -29,25 +29,25 @@ static asn_TYPE_member_t asn_MBR_SpeedScheduleProfile_1[] = {
 	{ ATF_POINTER, 2, offsetof(struct SpeedScheduleProfile, initialCruiseSpeedAtTOC),
 		(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_SpeedScheduleSingle,
+		&asn_DEF_InitialCruiseSpeedAtToC,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
 		"initialCruiseSpeedAtTOC"
 		},
-	{ ATF_POINTER, 1, offsetof(struct SpeedScheduleProfile, finalCruiseSpeedAtTOD),
+	{ ATF_POINTER, 1, offsetof(struct SpeedScheduleProfile, finalCruiseSpeedAtToD),
 		(ASN_TAG_CLASS_CONTEXT | (3 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_SpeedScheduleSingle,
+		&asn_DEF_FinalCruiseSpeedAtToD,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
-		"finalCruiseSpeedAtTOD"
+		"finalCruiseSpeedAtToD"
 		},
 	{ ATF_NOFLAGS, 0, offsetof(struct SpeedScheduleProfile, descentSpeed),
 		(ASN_TAG_CLASS_CONTEXT | (4 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_SpeedScheduleBlock,
+		&asn_DEF_DescentSpeed,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -62,7 +62,7 @@ static const asn_TYPE_tag2member_t asn_MAP_SpeedScheduleProfile_tag2el_1[] = {
     { (ASN_TAG_CLASS_CONTEXT | (0 << 2)), 0, 0, 0 }, /* predicted-gross-mass-at-tod */
     { (ASN_TAG_CLASS_CONTEXT | (1 << 2)), 1, 0, 0 }, /* climbSpeed */
     { (ASN_TAG_CLASS_CONTEXT | (2 << 2)), 2, 0, 0 }, /* initialCruiseSpeedAtTOC */
-    { (ASN_TAG_CLASS_CONTEXT | (3 << 2)), 3, 0, 0 }, /* finalCruiseSpeedAtTOD */
+    { (ASN_TAG_CLASS_CONTEXT | (3 << 2)), 3, 0, 0 }, /* finalCruiseSpeedAtToD */
     { (ASN_TAG_CLASS_CONTEXT | (4 << 2)), 4, 0, 0 } /* descentSpeed */
 };
 static asn_SEQUENCE_specifics_t asn_SPC_SpeedScheduleProfile_specs_1 = {

@@ -7,93 +7,11 @@
 
 #include "ConnectedATSUList.h"
 
-static int
-memb_lowPriority_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
-			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	size_t size;
-	
-	if(!sptr) {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: value not given (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-	
-	/* Determine the number of elements */
-	size = _A_CSEQUENCE_FROM_VOID(sptr)->count;
-	
-	if((size >= 1 && size <= 4)) {
-		/* Perform validation of the inner elements */
-		return td->check_constraints(td, sptr, ctfailcb, app_key);
-	} else {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: constraint failed (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-}
-
-static asn_per_constraints_t asn_PER_type_lowPriority_constr_4 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 2,  2,  1,  4 }	/* (SIZE(1..4)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_memb_lowPriority_constr_4 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 2,  2,  1,  4 }	/* (SIZE(1..4)) */,
-	0, 0	/* No PER value map */
-};
-static asn_TYPE_member_t asn_MBR_lowPriority_4[] = {
-	{ ATF_POINTER, 0, 0,
-		(ASN_TAG_CLASS_UNIVERSAL | (22 << 2)),
-		0,
-		&asn_DEF_FacilityDesignation,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		""
-		},
-};
-static const ber_tlv_tag_t asn_DEF_lowPriority_tags_4[] = {
-	(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
-	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
-};
-static asn_SET_OF_specifics_t asn_SPC_lowPriority_specs_4 = {
-	sizeof(struct ConnectedATSUList__lowPriority),
-	offsetof(struct ConnectedATSUList__lowPriority, _asn_ctx),
-	0,	/* XER encoding is XMLDelimitedItemList */
-};
-static /* Use -fall-defs-global to expose */
-asn_TYPE_descriptor_t asn_DEF_lowPriority_4 = {
-	"lowPriority",
-	"lowPriority",
-	SEQUENCE_OF_free,
-	SEQUENCE_OF_print,
-	SEQUENCE_OF_constraint,
-	SEQUENCE_OF_decode_ber,
-	SEQUENCE_OF_encode_der,
-	SEQUENCE_OF_decode_xer,
-	SEQUENCE_OF_encode_xer,
-	SEQUENCE_OF_decode_uper,
-	SEQUENCE_OF_encode_uper,
-	0,	/* Use generic outmost tag fetcher */
-	asn_DEF_lowPriority_tags_4,
-	sizeof(asn_DEF_lowPriority_tags_4)
-		/sizeof(asn_DEF_lowPriority_tags_4[0]), /* 2 */
-	asn_DEF_lowPriority_tags_4,	/* Same as above */
-	sizeof(asn_DEF_lowPriority_tags_4)
-		/sizeof(asn_DEF_lowPriority_tags_4[0]), /* 2 */
-	&asn_PER_type_lowPriority_constr_4,
-	asn_MBR_lowPriority_4,
-	1,	/* Single element */
-	&asn_SPC_lowPriority_specs_4	/* Additional specs */
-};
-
 static asn_TYPE_member_t asn_MBR_ConnectedATSUList_1[] = {
 	{ ATF_POINTER, 3, offsetof(struct ConnectedATSUList, highPriority),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_FacilityDesignation,
+		&asn_DEF_ATSUListHiPrio,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -102,7 +20,7 @@ static asn_TYPE_member_t asn_MBR_ConnectedATSUList_1[] = {
 	{ ATF_POINTER, 2, offsetof(struct ConnectedATSUList, mediumPriority),
 		(ASN_TAG_CLASS_CONTEXT | (1 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_FacilityDesignation,
+		&asn_DEF_ATSUListMedPrio,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -110,10 +28,10 @@ static asn_TYPE_member_t asn_MBR_ConnectedATSUList_1[] = {
 		},
 	{ ATF_POINTER, 1, offsetof(struct ConnectedATSUList, lowPriority),
 		(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
-		0,
-		&asn_DEF_lowPriority_4,
-		memb_lowPriority_constraint_1,
-		&asn_PER_memb_lowPriority_constr_4,
+		+1,	/* EXPLICIT tag at current level */
+		&asn_DEF_ATSUListLoPrio,
+		0,	/* Defer constraints checking to the member type */
+		0,	/* No PER visible constraints */
 		0,
 		"lowPriority"
 		},

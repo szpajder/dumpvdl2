@@ -12,10 +12,9 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "asn_SEQUENCE_OF.h"
-#include "LevelConstraintQualifier.h"
+#include "SingleLevelSequence.h"
 #include "ADSv2Level.h"
-#include "constr_SEQUENCE.h"
+#include "asn_SEQUENCE_OF.h"
 #include "constr_SEQUENCE_OF.h"
 #include "constr_CHOICE.h"
 
@@ -34,18 +33,7 @@ typedef enum LevelConstraint_PR {
 typedef struct LevelConstraint {
 	LevelConstraint_PR present;
 	union LevelConstraint_u {
-		struct LevelConstraint__single_level {
-			A_SEQUENCE_OF(struct LevelConstraint__single_level__Member {
-				LevelConstraintQualifier_t	 constraintQualifier;
-				ADSv2Level_t	 level;
-				
-				/* Context for parsing across buffer boundaries */
-				asn_struct_ctx_t _asn_ctx;
-			} ) list;
-			
-			/* Context for parsing across buffer boundaries */
-			asn_struct_ctx_t _asn_ctx;
-		} single_level;
+		SingleLevelSequence_t	 single_level;
 		struct LevelConstraint__block_level {
 			A_SEQUENCE_OF(ADSv2Level_t) list;
 			

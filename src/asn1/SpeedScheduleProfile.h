@@ -12,8 +12,8 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "GrossMass.h"
-#include "SpeedScheduleBlock.h"
+#include "PredictedGrossMassAtToD.h"
+#include "DescentSpeed.h"
 #include "constr_SEQUENCE.h"
 
 #ifdef __cplusplus
@@ -26,11 +26,11 @@ struct SpeedScheduleSingle;
 
 /* SpeedScheduleProfile */
 typedef struct SpeedScheduleProfile {
-	GrossMass_t	*predicted_gross_mass_at_tod	/* OPTIONAL */;
+	PredictedGrossMassAtToD_t	*predicted_gross_mass_at_tod	/* OPTIONAL */;
 	struct SpeedScheduleBlock	*climbSpeed	/* OPTIONAL */;
 	struct SpeedScheduleSingle	*initialCruiseSpeedAtTOC	/* OPTIONAL */;
-	struct SpeedScheduleSingle	*finalCruiseSpeedAtTOD	/* OPTIONAL */;
-	SpeedScheduleBlock_t	 descentSpeed;
+	struct SpeedScheduleSingle	*finalCruiseSpeedAtToD	/* OPTIONAL */;
+	DescentSpeed_t	 descentSpeed;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
@@ -44,8 +44,9 @@ extern asn_TYPE_descriptor_t asn_DEF_SpeedScheduleProfile;
 #endif
 
 /* Referred external types */
-#include "SpeedScheduleBlock.h"
-#include "SpeedScheduleSingle.h"
+#include "ClimbSpeed.h"
+#include "InitialCruiseSpeedAtToC.h"
+#include "FinalCruiseSpeedAtToD.h"
 
 #endif	/* _SpeedScheduleProfile_H_ */
 #include "asn_internal.h"

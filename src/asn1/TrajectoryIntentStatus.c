@@ -11,7 +11,7 @@ static asn_TYPE_member_t asn_MBR_TrajectoryIntentStatus_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct TrajectoryIntentStatus, lateralFlightManaged),
 		(ASN_TAG_CLASS_UNIVERSAL | (1 << 2)),
 		0,
-		&asn_DEF_BOOLEAN,
+		&asn_DEF_LateralFlightManaged,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -20,7 +20,7 @@ static asn_TYPE_member_t asn_MBR_TrajectoryIntentStatus_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct TrajectoryIntentStatus, verticalFlightManaged),
 		(ASN_TAG_CLASS_UNIVERSAL | (1 << 2)),
 		0,
-		&asn_DEF_BOOLEAN,
+		&asn_DEF_VerticalFlightManaged,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -29,7 +29,7 @@ static asn_TYPE_member_t asn_MBR_TrajectoryIntentStatus_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct TrajectoryIntentStatus, speedManaged),
 		(ASN_TAG_CLASS_UNIVERSAL | (1 << 2)),
 		0,
-		&asn_DEF_BOOLEAN,
+		&asn_DEF_SpeedManaged,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -38,7 +38,7 @@ static asn_TYPE_member_t asn_MBR_TrajectoryIntentStatus_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct TrajectoryIntentStatus, timeManaged),
 		(ASN_TAG_CLASS_UNIVERSAL | (1 << 2)),
 		0,
-		&asn_DEF_BOOLEAN,
+		&asn_DEF_TimeManaged,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

@@ -61,7 +61,7 @@ static asn_TYPE_member_t asn_MBR_ADSAircraftPDU_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct ADSAircraftPDU, choice.aDS_cancel_positive_acknowledgement_PDU),
 		(ASN_TAG_CLASS_CONTEXT | (5 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_RequestType,
+		&asn_DEF_CancelPositiveAcknowledgement,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

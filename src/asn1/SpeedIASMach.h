@@ -12,7 +12,7 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "Mach.h"
+#include "SpeedMach.h"
 #include "Ias.h"
 #include "constr_CHOICE.h"
 
@@ -31,7 +31,7 @@ typedef enum SpeedIASMach_PR {
 typedef struct SpeedIASMach {
 	SpeedIASMach_PR present;
 	union SpeedIASMach_u {
-		Mach_t	 mach;
+		SpeedMach_t	 mach;
 		Ias_t	 ias;
 	} choice;
 	

@@ -7,66 +7,6 @@
 
 #include "ADSv2WindSpeed.h"
 
-static int
-memb_kt_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
-			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	long value;
-	
-	if(!sptr) {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: value not given (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-	
-	value = *(const long *)sptr;
-	
-	if((value >= 0 && value <= 300)) {
-		/* Constraint check succeeded */
-		return 0;
-	} else {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: constraint failed (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-}
-
-static int
-memb_kmh_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
-			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	long value;
-	
-	if(!sptr) {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: value not given (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-	
-	value = *(const long *)sptr;
-	
-	if((value >= 0 && value <= 250)) {
-		/* Constraint check succeeded */
-		return 0;
-	} else {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: constraint failed (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-}
-
-static asn_per_constraints_t asn_PER_memb_kt_constr_2 GCC_NOTUSED = {
-	{ APC_CONSTRAINED,	 9,  9,  0,  300 }	/* (0..300) */,
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_memb_kmh_constr_3 GCC_NOTUSED = {
-	{ APC_CONSTRAINED,	 8,  8,  0,  250 }	/* (0..250) */,
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	0, 0	/* No PER value map */
-};
 static asn_per_constraints_t asn_PER_type_ADSv2WindSpeed_constr_1 GCC_NOTUSED = {
 	{ APC_CONSTRAINED,	 1,  1,  0,  1 }	/* (0..1) */,
 	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
@@ -76,18 +16,18 @@ static asn_TYPE_member_t asn_MBR_ADSv2WindSpeed_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct ADSv2WindSpeed, choice.kt),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NativeInteger,
-		memb_kt_constraint_1,
-		&asn_PER_memb_kt_constr_2,
+		&asn_DEF_ADSv2WindSpeedKts,
+		0,	/* Defer constraints checking to the member type */
+		0,	/* No PER visible constraints */
 		0,
 		"kt"
 		},
 	{ ATF_NOFLAGS, 0, offsetof(struct ADSv2WindSpeed, choice.kmh),
 		(ASN_TAG_CLASS_CONTEXT | (1 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NativeInteger,
-		memb_kmh_constraint_1,
-		&asn_PER_memb_kmh_constr_3,
+		&asn_DEF_ADSv2WindSpeedKmh,
+		0,	/* Defer constraints checking to the member type */
+		0,	/* No PER visible constraints */
 		0,
 		"kmh"
 		},

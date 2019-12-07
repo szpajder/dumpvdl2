@@ -16,7 +16,7 @@ static asn_TYPE_member_t asn_MBR_EPPLevel_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct EPPLevel, choice.qNEAltitude),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_ADSv2Level,
+		&asn_DEF_QNEAltitude,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -34,7 +34,7 @@ static asn_TYPE_member_t asn_MBR_EPPLevel_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct EPPLevel, choice.mSLAltitude),
 		(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_ADSv2Level,
+		&asn_DEF_MSLAltitude,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

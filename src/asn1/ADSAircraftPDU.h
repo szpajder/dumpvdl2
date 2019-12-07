@@ -16,7 +16,7 @@
 #include "Reject.h"
 #include "NonCompliance.h"
 #include "PositiveAcknowledgement.h"
-#include "RequestType.h"
+#include "CancelPositiveAcknowledgement.h"
 #include "CancelRejectReason.h"
 #include "ProviderAbortReason.h"
 #include "UserAbortReason.h"
@@ -51,7 +51,7 @@ typedef struct ADSAircraftPDU {
 		Reject_t	 aDS_rejected_PDU;
 		NonCompliance_t	 aDS_ncn_PDU;
 		PositiveAcknowledgement_t	 aDS_positive_acknowledgement_PDU;
-		RequestType_t	 aDS_cancel_positive_acknowledgement_PDU;
+		CancelPositiveAcknowledgement_t	 aDS_cancel_positive_acknowledgement_PDU;
 		CancelRejectReason_t	 aDS_cancel_negative_acknowledgement_PDU;
 		ProviderAbortReason_t	 aDS_provider_abort_PDU;
 		UserAbortReason_t	 aDS_user_abort_PDU;

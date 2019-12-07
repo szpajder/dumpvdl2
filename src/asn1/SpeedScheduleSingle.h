@@ -12,9 +12,7 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "SpeedIASMach.h"
-#include "asn_SEQUENCE_OF.h"
-#include "constr_SEQUENCE_OF.h"
+#include "NominalSpeed.h"
 #include "constr_SEQUENCE.h"
 
 #ifdef __cplusplus
@@ -22,17 +20,12 @@ extern "C" {
 #endif
 
 /* Forward declarations */
-struct SpeedIASMach;
+struct MinMaxSpeed;
 
 /* SpeedScheduleSingle */
 typedef struct SpeedScheduleSingle {
-	SpeedIASMach_t	 nominalSpeed;
-	struct SpeedScheduleSingle__minMaxSpeed {
-		A_SEQUENCE_OF(struct SpeedIASMach) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *minMaxSpeed;
+	NominalSpeed_t	 nominalSpeed;
+	struct MinMaxSpeed	*minMaxSpeed	/* OPTIONAL */;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
@@ -46,7 +39,7 @@ extern asn_TYPE_descriptor_t asn_DEF_SpeedScheduleSingle;
 #endif
 
 /* Referred external types */
-#include "SpeedIASMach.h"
+#include "MinMaxSpeed.h"
 
 #endif	/* _SpeedScheduleSingle_H_ */
 #include "asn_internal.h"

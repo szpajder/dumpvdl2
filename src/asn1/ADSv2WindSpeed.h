@@ -12,7 +12,8 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "NativeInteger.h"
+#include "ADSv2WindSpeedKts.h"
+#include "ADSv2WindSpeedKmh.h"
 #include "constr_CHOICE.h"
 
 #ifdef __cplusplus
@@ -30,8 +31,8 @@ typedef enum ADSv2WindSpeed_PR {
 typedef struct ADSv2WindSpeed {
 	ADSv2WindSpeed_PR present;
 	union ADSv2WindSpeed_u {
-		long	 kt;
-		long	 kmh;
+		ADSv2WindSpeedKts_t	 kt;
+		ADSv2WindSpeedKmh_t	 kmh;
 	} choice;
 	
 	/* Context for parsing across buffer boundaries */

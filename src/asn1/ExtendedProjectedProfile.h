@@ -13,14 +13,9 @@
 
 /* Including external dependencies */
 #include "ADSv2DateTimeGroup.h"
+#include "ExtendedWayPointSequence.h"
 #include "GrossMass.h"
-#include "asn_SEQUENCE_OF.h"
-#include "ADSv2Latitude.h"
-#include "ADSv2Longitude.h"
-#include "WaypointName.h"
-#include "VerticalType.h"
 #include "constr_SEQUENCE.h"
-#include "constr_SEQUENCE_OF.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,42 +23,11 @@ extern "C" {
 
 /* Forward declarations */
 struct TrajectoryIntentStatus;
-struct EPPLevel;
-struct Timesec;
-struct SpeedIASMach;
-struct LateralType;
-struct LevelConstraint;
-struct SpeedConstraint;
-struct RTA;
 
 /* ExtendedProjectedProfile */
 typedef struct ExtendedProjectedProfile {
 	ADSv2DateTimeGroup_t	 computation_time;
-	struct ExtendedProjectedProfile__way_point_sequence {
-		A_SEQUENCE_OF(struct ExtendedProjectedProfile__way_point_sequence__Member {
-			ADSv2Latitude_t	 latitude;
-			ADSv2Longitude_t	 longitude;
-			struct EPPLevel	*level	/* OPTIONAL */;
-			WaypointName_t	*name	/* OPTIONAL */;
-			struct Timesec	*estimated_time	/* OPTIONAL */;
-			struct SpeedIASMach	*estimated_speed	/* OPTIONAL */;
-			VerticalType_t	*vertical_type	/* OPTIONAL */;
-			struct LateralType	*lateral_type	/* OPTIONAL */;
-			struct LevelConstraint	*level_constraint	/* OPTIONAL */;
-			struct SpeedConstraint	*speed_contraint	/* OPTIONAL */;
-			struct RTA	*time_constraint	/* OPTIONAL */;
-			/*
-			 * This type is extensible,
-			 * possible extensions are below.
-			 */
-			
-			/* Context for parsing across buffer boundaries */
-			asn_struct_ctx_t _asn_ctx;
-		} ) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} way_point_sequence;
+	ExtendedWayPointSequence_t	 way_point_sequence;
 	GrossMass_t	*current_gross_mass	/* OPTIONAL */;
 	struct TrajectoryIntentStatus	*trajectory_intent_status	/* OPTIONAL */;
 	/*
@@ -84,13 +48,6 @@ extern asn_TYPE_descriptor_t asn_DEF_ExtendedProjectedProfile;
 
 /* Referred external types */
 #include "TrajectoryIntentStatus.h"
-#include "EPPLevel.h"
-#include "ETA.h"
-#include "SpeedIASMach.h"
-#include "LateralType.h"
-#include "LevelConstraint.h"
-#include "SpeedConstraint.h"
-#include "RTA.h"
 
 #endif	/* _ExtendedProjectedProfile_H_ */
 #include "asn_internal.h"

@@ -12,7 +12,14 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "NULL.h"
+#include "LateralTypeOffsetStart.h"
+#include "LateralTypeOffsetReached.h"
+#include "LateralTypeReturnToParentPathInitiation.h"
+#include "LateralTypeOffsetEnd.h"
+#include "LateralTypeOffset.h"
+#include "LateralTypeOverfly.h"
+#include "LateralTypeFlightPlanWayPoint.h"
+#include "LateralTypeFollowedByDisco.h"
 #include "constr_SEQUENCE.h"
 
 #ifdef __cplusplus
@@ -26,14 +33,14 @@ struct TurnRadiusO;
 typedef struct LateralType {
 	struct TurnRadiusO	*flyby	/* OPTIONAL */;
 	struct TurnRadiusO	*fixedRadiusTransition	/* OPTIONAL */;
-	NULL_t	*offsetStart	/* OPTIONAL */;
-	NULL_t	*offsetReached	/* OPTIONAL */;
-	NULL_t	*returnToParentPathInitiation	/* OPTIONAL */;
-	NULL_t	*offsetEnd	/* OPTIONAL */;
-	NULL_t	*offset	/* OPTIONAL */;
-	NULL_t	*overfly	/* OPTIONAL */;
-	NULL_t	*flightPlanWayPoint	/* OPTIONAL */;
-	NULL_t	*followedByDisco	/* OPTIONAL */;
+	LateralTypeOffsetStart_t	*offsetStart	/* OPTIONAL */;
+	LateralTypeOffsetReached_t	*offsetReached	/* OPTIONAL */;
+	LateralTypeReturnToParentPathInitiation_t	*returnToParentPathInitiation	/* OPTIONAL */;
+	LateralTypeOffsetEnd_t	*offsetEnd	/* OPTIONAL */;
+	LateralTypeOffset_t	*offset	/* OPTIONAL */;
+	LateralTypeOverfly_t	*overfly	/* OPTIONAL */;
+	LateralTypeFlightPlanWayPoint_t	*flightPlanWayPoint	/* OPTIONAL */;
+	LateralTypeFollowedByDisco_t	*followedByDisco	/* OPTIONAL */;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
@@ -47,7 +54,8 @@ extern asn_TYPE_descriptor_t asn_DEF_LateralType;
 #endif
 
 /* Referred external types */
-#include "TurnRadiusO.h"
+#include "LateralTypeFlyby.h"
+#include "LateralTypeFixedRadiusTransition.h"
 
 #endif	/* _LateralType_H_ */
 #include "asn_internal.h"

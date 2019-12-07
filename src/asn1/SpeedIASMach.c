@@ -16,7 +16,7 @@ static asn_TYPE_member_t asn_MBR_SpeedIASMach_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct SpeedIASMach, choice.mach),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Mach,
+		&asn_DEF_SpeedMach,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

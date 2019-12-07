@@ -16,7 +16,7 @@ static asn_TYPE_member_t asn_MBR_TurnRadiusO_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct TurnRadiusO, choice.turnRadiusNotAvailable),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_TurnRadiusNotAvailable,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

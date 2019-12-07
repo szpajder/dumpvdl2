@@ -13,7 +13,8 @@
 
 /* Including external dependencies */
 #include "EstimatedPositionUncertainty.h"
-#include "BOOLEAN.h"
+#include "MultipleNavigationalUnitsOperating.h"
+#include "AAISAvailability.h"
 #include "constr_SEQUENCE.h"
 
 #ifdef __cplusplus
@@ -23,8 +24,8 @@ extern "C" {
 /* FigureOfMerit */
 typedef struct FigureOfMerit {
 	EstimatedPositionUncertainty_t	 estimated_position_uncertainty;
-	BOOLEAN_t	 multiple_navigational_units_operating;
-	BOOLEAN_t	 aais_availability;
+	MultipleNavigationalUnitsOperating_t	 multiple_navigational_units_operating;
+	AAISAvailability_t	 aais_availability;
 	/*
 	 * This type is extensible,
 	 * possible extensions are below.

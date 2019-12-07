@@ -12,7 +12,7 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "NULL.h"
+#include "TurnRadiusNotAvailable.h"
 #include "TurnRadius.h"
 #include "constr_CHOICE.h"
 
@@ -31,7 +31,7 @@ typedef enum TurnRadiusO_PR {
 typedef struct TurnRadiusO {
 	TurnRadiusO_PR present;
 	union TurnRadiusO_u {
-		NULL_t	 turnRadiusNotAvailable;
+		TurnRadiusNotAvailable_t	 turnRadiusNotAvailable;
 		TurnRadius_t	 turnRadius;
 	} choice;
 	

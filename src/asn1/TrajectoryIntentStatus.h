@@ -12,7 +12,10 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "BOOLEAN.h"
+#include "LateralFlightManaged.h"
+#include "VerticalFlightManaged.h"
+#include "SpeedManaged.h"
+#include "TimeManaged.h"
 #include "constr_SEQUENCE.h"
 
 #ifdef __cplusplus
@@ -21,10 +24,10 @@ extern "C" {
 
 /* TrajectoryIntentStatus */
 typedef struct TrajectoryIntentStatus {
-	BOOLEAN_t	 lateralFlightManaged;
-	BOOLEAN_t	 verticalFlightManaged;
-	BOOLEAN_t	 speedManaged;
-	BOOLEAN_t	 timeManaged;
+	LateralFlightManaged_t	 lateralFlightManaged;
+	VerticalFlightManaged_t	 verticalFlightManaged;
+	SpeedManaged_t	 speedManaged;
+	TimeManaged_t	 timeManaged;
 	/*
 	 * This type is extensible,
 	 * possible extensions are below.

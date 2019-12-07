@@ -325,6 +325,7 @@ set(ASN_MODULE_SOURCES
 	CancelContract.c
 	ADSMessage.c
 	RequestType.c
+	CancelPositiveAcknowledgement.c
 	CancelRejectReason.c
 	RejectReason.c
 	ContractType.c
@@ -340,6 +341,7 @@ set(ASN_MODULE_SOURCES
 	EPPEventChange.c
 	PeriodicContractRequest.c
 	ADSReport.c
+	ADSAccept.c
 	DemandReport.c
 	EventReport.c
 	PeriodicReport.c
@@ -354,6 +356,9 @@ set(ASN_MODULE_SOURCES
 	AirspeedRangeChange.c
 	AirVector.c
 	ConnectedATSUList.c
+	ATSUListHiPrio.c
+	ATSUListMedPrio.c
+	ATSUListLoPrio.c
 	ContractNumber.c
 	ADSv2DateTimeGroup.c
 	EstimatedPositionUncertainty.c
@@ -361,6 +366,10 @@ set(ASN_MODULE_SOURCES
 	EventTypeReported.c
 	ExtendedProjectedProfile.c
 	ExtendedProjectedProfileModulus.c
+	ExtendedWayPointSequence.c
+	ExtendedWayPointSequenceElement.c
+	QNEAltitude.c
+	MSLAltitude.c
 	EPPLevel.c
 	EPPLimitations.c
 	EPPToleranceChange.c
@@ -368,6 +377,8 @@ set(ASN_MODULE_SOURCES
 	EPPWindow.c
 	EPUChangeTolerance.c
 	ETA.c
+	AAISAvailability.c
+	MultipleNavigationalUnitsOperating.c
 	FigureOfMerit.c
 	FinalApproachSpeedChange.c
 	GrossMass.c
@@ -380,6 +391,16 @@ set(ASN_MODULE_SOURCES
 	LateralDeviationChange.c
 	LateralDeviationThreshold.c
 	LateralType.c
+	LateralTypeFlyby.c
+	LateralTypeFixedRadiusTransition.c
+	LateralTypeOffsetStart.c
+	LateralTypeOffsetReached.c
+	LateralTypeReturnToParentPathInitiation.c
+	LateralTypeOffsetEnd.c
+	LateralTypeOffset.c
+	LateralTypeOverfly.c
+	LateralTypeFlightPlanWayPoint.c
+	LateralTypeFollowedByDisco.c
 	ADSv2Latitude.c
 	ADSv2LatitudeLongitude.c
 	ADSv2Level.c
@@ -388,12 +409,14 @@ set(ASN_MODULE_SOURCES
 	LevelConstraintQualifier.c
 	LevelRangeDeviation.c
 	ADSv2Longitude.c
-	Mach.c
+	MachAndIas.c
 	MetInfo.c
 	MetInfoRequest.c
 	MetInfoModulus.c
 	Modulus.c
 	ProjectedProfile.c
+	WayPointSequence.c
+	WayPointSequenceElement.c
 	QNHAltitude.c
 	ReportingRate.c
 	ReportTypeNotSupported.c
@@ -408,15 +431,28 @@ set(ASN_MODULE_SOURCES
 	RTAStatus.c
 	RTAStatusData.c
 	RTAType.c
+	SingleLevel.c
+	SingleLevelSequence.c
 	SpeedConstraint.c
 	SpeedIASMach.c
 	SpeedQualifier.c
 	SpeedScheduleBlock.c
 	SpeedScheduleProfile.c
+	PredictedGrossMassAtToD.c
+	ClimbSpeed.c
+	InitialCruiseSpeedAtToC.c
+	FinalCruiseSpeedAtToD.c
+	DescentSpeed.c
 	SpeedScheduleSingle.c
+	MinMaxSpeed.c
+	NominalSpeed.c
 	ADSv2Temperature.c
 	ThreeDPosition.c
 	Timesec.c
+	LateralFlightManaged.c
+	VerticalFlightManaged.c
+	SpeedManaged.c
+	TimeManaged.c
 	TrajectoryIntentStatus.c
 	ADSv2Turbulence.c
 	TurbulenceDeviation.c
@@ -425,6 +461,7 @@ set(ASN_MODULE_SOURCES
 	TurbulenceMinutesInPast.c
 	TurbulenceObservationWindow.c
 	TurnRadiusO.c
+	TurnRadiusNotAvailable.c
 	TurnRadius.c
 	TOARange.c
 	TOARangeRequest.c
@@ -437,6 +474,8 @@ set(ASN_MODULE_SOURCES
 	WaypointName.c
 	WindErrorModelUsed.c
 	WindQualityFlag.c
+	ADSv2WindSpeedKts.c
+	ADSv2WindSpeedKmh.c
 	ADSv2WindSpeed.c
 	ANY.c
 	BOOLEAN.c

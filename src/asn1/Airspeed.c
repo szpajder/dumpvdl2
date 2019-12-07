@@ -12,74 +12,11 @@ static asn_per_constraints_t asn_PER_type_Airspeed_constr_1 GCC_NOTUSED = {
 	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
 	0, 0	/* No PER value map */
 };
-static asn_TYPE_member_t asn_MBR_mach_and_ias_4[] = {
-	{ ATF_NOFLAGS, 0, offsetof(struct Airspeed__mach_and_ias, mach),
-		(ASN_TAG_CLASS_UNIVERSAL | (2 << 2)),
-		0,
-		&asn_DEF_Mach,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		"mach"
-		},
-	{ ATF_NOFLAGS, 0, offsetof(struct Airspeed__mach_and_ias, ias),
-		(ASN_TAG_CLASS_UNIVERSAL | (2 << 2)),
-		0,
-		&asn_DEF_Ias,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		"ias"
-		},
-};
-static const ber_tlv_tag_t asn_DEF_mach_and_ias_tags_4[] = {
-	(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
-	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
-};
-static const asn_TYPE_tag2member_t asn_MAP_mach_and_ias_tag2el_4[] = {
-    { (ASN_TAG_CLASS_UNIVERSAL | (2 << 2)), 0, 0, 1 }, /* mach */
-    { (ASN_TAG_CLASS_UNIVERSAL | (2 << 2)), 1, -1, 0 } /* ias */
-};
-static asn_SEQUENCE_specifics_t asn_SPC_mach_and_ias_specs_4 = {
-	sizeof(struct Airspeed__mach_and_ias),
-	offsetof(struct Airspeed__mach_and_ias, _asn_ctx),
-	asn_MAP_mach_and_ias_tag2el_4,
-	2,	/* Count of tags in the map */
-	0, 0, 0,	/* Optional elements (not needed) */
-	-1,	/* Start extensions */
-	-1	/* Stop extensions */
-};
-static /* Use -fall-defs-global to expose */
-asn_TYPE_descriptor_t asn_DEF_mach_and_ias_4 = {
-	"mach-and-ias",
-	"mach-and-ias",
-	SEQUENCE_free,
-	SEQUENCE_print,
-	SEQUENCE_constraint,
-	SEQUENCE_decode_ber,
-	SEQUENCE_encode_der,
-	SEQUENCE_decode_xer,
-	SEQUENCE_encode_xer,
-	SEQUENCE_decode_uper,
-	SEQUENCE_encode_uper,
-	0,	/* Use generic outmost tag fetcher */
-	asn_DEF_mach_and_ias_tags_4,
-	sizeof(asn_DEF_mach_and_ias_tags_4)
-		/sizeof(asn_DEF_mach_and_ias_tags_4[0]), /* 2 */
-	asn_DEF_mach_and_ias_tags_4,	/* Same as above */
-	sizeof(asn_DEF_mach_and_ias_tags_4)
-		/sizeof(asn_DEF_mach_and_ias_tags_4[0]), /* 2 */
-	0,	/* No PER visible constraints */
-	asn_MBR_mach_and_ias_4,
-	2,	/* Elements count */
-	&asn_SPC_mach_and_ias_specs_4	/* Additional specs */
-};
-
 static asn_TYPE_member_t asn_MBR_Airspeed_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct Airspeed, choice.mach),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Mach,
+		&asn_DEF_SpeedMach,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -96,8 +33,8 @@ static asn_TYPE_member_t asn_MBR_Airspeed_1[] = {
 		},
 	{ ATF_NOFLAGS, 0, offsetof(struct Airspeed, choice.mach_and_ias),
 		(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
-		0,
-		&asn_DEF_mach_and_ias_4,
+		+1,	/* EXPLICIT tag at current level */
+		&asn_DEF_MachAndIas,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

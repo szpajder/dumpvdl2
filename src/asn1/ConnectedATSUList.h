@@ -12,25 +12,22 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "FacilityDesignation.h"
-#include "asn_SEQUENCE_OF.h"
-#include "constr_SEQUENCE_OF.h"
+#include "ATSUListHiPrio.h"
+#include "ATSUListMedPrio.h"
 #include "constr_SEQUENCE.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* Forward declarations */
+struct ATSUListLoPrio;
+
 /* ConnectedATSUList */
 typedef struct ConnectedATSUList {
-	FacilityDesignation_t	*highPriority	/* OPTIONAL */;
-	FacilityDesignation_t	*mediumPriority	/* OPTIONAL */;
-	struct ConnectedATSUList__lowPriority {
-		A_SEQUENCE_OF(FacilityDesignation_t) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *lowPriority;
+	ATSUListHiPrio_t	*highPriority	/* OPTIONAL */;
+	ATSUListMedPrio_t	*mediumPriority	/* OPTIONAL */;
+	struct ATSUListLoPrio	*lowPriority	/* OPTIONAL */;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
@@ -42,6 +39,9 @@ extern asn_TYPE_descriptor_t asn_DEF_ConnectedATSUList;
 #ifdef __cplusplus
 }
 #endif
+
+/* Referred external types */
+#include "ATSUListLoPrio.h"
 
 #endif	/* _ConnectedATSUList_H_ */
 #include "asn_internal.h"

@@ -129,7 +129,7 @@ static asn_TYPE_member_t asn_MBR_minMaxMach_4[] = {
 	{ ATF_POINTER, 0, 0,
 		(ASN_TAG_CLASS_UNIVERSAL | (2 << 2)),
 		0,
-		&asn_DEF_Mach,
+		&asn_DEF_SpeedMach,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
