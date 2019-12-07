@@ -26,6 +26,11 @@
 #include "asn1/CMGroundMessage.h"		// asn_DEF_CMGroundMessage
 #include "asn1/ProtectedAircraftPDUs.h"		// asn_DEF_ProtectedAircraftPDUs
 #include "asn1/ProtectedGroundPDUs.h"		// asn_DEF_ProtectedGroundPDUs
+#include "asn1/ADSAircraftPDU.h"		// asn_DEF_ADSAircraftPDU
+#include "asn1/ADSAircraftPDUs.h"		// asn_DEF_ADSAircraftPDUs
+#include "asn1/ADSAccept.h"			// asn_DEF_ADSAccept
+#include "asn1/ADSPositiveAcknowledgement.h"	// asn_DEF_ADSPositiveAcknowledgement
+#include "asn1/ADSReport.h"			// asn_DEF_ADSReport
 #include "dumpvdl2.h"				// XCALLOC, dict_search()
 #include "asn1-util.h"				// asn_formatter_t, asn1_output()
 #include "asn1-format-common.h"			// common formatters and helper functions
@@ -623,7 +628,7 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedIndicated) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedMach) {
-	_format_INTEGER_with_unit(vstr, label, td, sptr, indent, "", 0.001, 2);
+	_format_INTEGER_with_unit(vstr, label, td, sptr, indent, "", 0.001, 3);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Temperature) {
@@ -684,8 +689,97 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_UnitName) {
 	XFREE(fname);
 }
 
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2DateTimeGroup) {
+	UNUSED(td);
+	CAST_PTR(dtg, ADSv2DateTimeGroup_t *, sptr);
+	Date_t *d = &dtg->date;
+	Timesec_t *t = &dtg->time;
+	LA_ISPRINTF(vstr, indent, "%s: %04ld-%02ld-%02ld %02ld:%02ld:%02ld\n", label,
+		d->year, d->month, d->day,
+		t->hours, t->minutes, t->seconds);
+}
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_EstimatedPositionUncertainty) {
+	CAST_PTR(epu, EstimatedPositionUncertainty_t *, sptr);
+	if(*epu == 9900) {
+		LA_ISPRINTF(vstr, indent, "%s: complete-loss\n", label);
+	} else {
+		_format_INTEGER_with_unit(vstr, label, td, sptr, indent, " nm", 0.01, 2);
+	}
+}
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Latitude) {
+	UNUSED(td);
+	CAST_PTR(lat, ADSv2Latitude_t *, sptr);
+	long const ldir = lat->direction;
+	char const *ldir_name = value2enum(&asn_DEF_LatitudeDirection, ldir);
+	LA_ISPRINTF(vstr, indent, "%s:  %02ld %02ld'%03.1f\" %s\n",
+		label,
+		lat->degrees,
+		lat->minutes,
+		lat->seconds / 10.0,
+		ldir_name
+	);
+}
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Longitude) {
+	UNUSED(td);
+	CAST_PTR(lon, ADSv2Longitude_t *, sptr);
+	long const ldir = lon->direction;
+	char const *ldir_name = value2enum(&asn_DEF_LongitudeDirection, ldir);
+	LA_ISPRINTF(vstr, indent, "%s: %03ld %02ld'%03.1f\" %s\n",
+		label,
+		lon->degrees,
+		lon->minutes,
+		lon->seconds / 10.0,
+		ldir_name
+	);
+}
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSAircraftPDUs) {
+	UNUSED(td);
+	UNUSED(label);
+	CAST_PTR(apdus, ADSAircraftPDUs_t *, sptr);
+// Omit the timestamp for brevity, print the PDU only
+	asn1_output_icao_as_text(vstr, &asn_DEF_ADSAircraftPDU, &apdus->adsAircraftPdu, indent);
+}
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Temperature) {
+	_format_INTEGER_with_unit(vstr, label, td, sptr, indent, " C", 0.25, 2);
+}
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2WindSpeedKts) {
+	_format_INTEGER_with_unit(vstr, label, td, sptr, indent, " kts", 1, 0);
+}
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2WindSpeedKmh) {
+	_format_INTEGER_with_unit(vstr, label, td, sptr, indent, " km/h", 2, 0);
+}
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_GrossMass) {
+	_format_INTEGER_with_unit(vstr, label, td, sptr, indent, " kg", 10, 0);
+}
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_GroundSpeed) {
+	_format_INTEGER_with_unit(vstr, label, td, sptr, indent, " kts", 0.5, 1);
+}
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_GroundTrack) {
+	_format_INTEGER_with_unit(vstr, label, td, sptr, indent, " deg", 0.05, 2);
+}
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_TurnRadius) {
+	_format_INTEGER_with_unit(vstr, label, td, sptr, indent, " nm", 0.1, 1);
+}
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_Timesec) {
+	UNUSED(td);
+	CAST_PTR(t, Timesec_t *, sptr);
+	LA_ISPRINTF(vstr, indent, "%s: %02ld:%02ld:%02ld\n", label, t->hours, t->minutes, t->seconds);
+}
+
 static asn_formatter_t const asn1_icao_formatter_table[] = {
-// atn-cpdlc.asn1
+// atn-b1_cpdlc-v1.asn1
 	{ .type = &asn_DEF_AircraftAddress, .format = &asn1_format_any, .label = "Aircraft address" },
 	{ .type = &asn_DEF_AirInitiatedApplications, .format = &asn1_format_SEQUENCE_OF_icao, .label = "Air-initiated applications" },
 	{ .type = &asn_DEF_AirOnlyInitiatedApplications, .format = &asn1_format_SEQUENCE_OF_icao, .label = "Air-only-initiated applications" },
@@ -857,7 +951,7 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_SpeedGroundMetric, .format = &asn1_format_SpeedMetric, .label = "Ground speed" },
 	{ .type = &asn_DEF_SpeedIndicated, .format = &asn1_format_SpeedIndicated, .label = "Indicated airspeed" },
 	{ .type = &asn_DEF_SpeedIndicatedMetric, .format = &asn1_format_SpeedMetric, .label = "Indicated airspeed" },
-	{ .type = &asn_DEF_SpeedMach, .format = &asn1_format_SpeedMach, .label = "Mach number" },
+	{ .type = &asn_DEF_SpeedMach, .format = &asn1_format_SpeedMach, .label = "Mach" },
 	{ .type = &asn_DEF_SpeedSpeed, .format = &asn1_format_SEQUENCE_OF_icao, .label = NULL },
 	{ .type = &asn_DEF_SpeedTime, .format = &asn1_format_SEQUENCE_icao, .label = NULL },
 	{ .type = &asn_DEF_SpeedTrue, .format = &asn1_format_SpeedEnglish, .label = "True airspeed" },
@@ -899,7 +993,7 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_WindSpeed, .format = &asn1_format_CHOICE_icao, .label = NULL },
 	{ .type = &asn_DEF_WindSpeedEnglish, .format = &asn1_format_SpeedEnglish, .label = "Wind speed" },
 	{ .type = &asn_DEF_WindSpeedMetric, .format = &asn1_format_SpeedMetric, .label = "Wind speed" },
-// atn-cm.asn1
+// atn-b1_cm.asn1
 	{ .type = &asn_DEF_APAddress, .format = &asn1_format_CHOICE_icao, .label = "AP Address" },
 	{ .type = &asn_DEF_AEQualifier, .format = &asn1_format_any, .label = "Application Entity Qualifier" },
 	{ .type = &asn_DEF_AEQualifierVersion, .format = &asn1_format_SEQUENCE_icao, .label = NULL },
@@ -921,7 +1015,161 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_OCTET_STRING, .format = &asn1_format_any, .label = NULL },
 	{ .type = &asn_DEF_RDP, .format = &asn1_format_any, .label = "RDP" },
 	{ .type = &asn_DEF_ShortTsap, .format = &asn1_format_ShortTsap, .label = "Short TSAP" },
-	{ .type = &asn_DEF_VersionNumber, .format = &asn1_format_any, .label = "Version number" }
+	{ .type = &asn_DEF_VersionNumber, .format = &asn1_format_any, .label = "Version number" },
+// atn-b1_pmadsc.asn1
+	{ .type = &asn_DEF_ADSAircraftPDU, .format = &asn1_format_CHOICE_icao, .label = NULL },
+	{ .type = &asn_DEF_ADSAircraftPDUs, .format = &asn1_format_ADSAircraftPDUs, .label = NULL },
+//	{ .type = &asn_DEF_ADSGroundPDU, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_ADSGroundPDUs, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_CancelContract, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_CancelPositiveAcknowledgement, .format = &asn1_format_ENUM, .label = "ADS-C v2 Cancel ACK" },
+	{ .type = &asn_DEF_CancelRejectReason, .format = &asn1_format_SEQUENCE_icao, .label = "ADS-C v2 Cancel NAK" },
+	{ .type = &asn_DEF_ProviderAbortReason, .format = &asn1_format_ENUM, .label = "ADS-C v2 Provider Abort" },
+//	{ .type = &asn_DEF_RejectReason, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_RequestType, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_UserAbortReason, .format = &asn1_format_ENUM, .label = "ADS-C v2 User Abort" },
+// atn-b2_adsc_v2.asn1
+	{ .type = &asn_DEF_AAISAvailability, .format = &asn1_format_any, .label = "AAIS available" },
+	{ .type = &asn_DEF_ADSAccept, .format = &asn1_format_CHOICE_icao, .label = "ADS-C v2 Contract Request Accept" },
+	{ .type = &asn_DEF_ADSDataReport, .format = &asn1_format_SEQUENCE_icao, .label = "Report data" },
+//	{ .type = &asn_DEF_ADSEmergencyUrgencyStatus, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_ADSNonCompliance, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_ADSPositiveAcknowledgement, .format = &asn1_format_SEQUENCE_icao, .label = "ADS-C v2 ACK" },
+//	{ .type = &asn_DEF_ADSReject, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_ADSReport, .format = &asn1_format_CHOICE_icao, .label = "ADS-C v2 Report" },
+//	{ .type = &asn_DEF_ADSRequestContract, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_ADSv2DateTimeGroup, .format = &asn1_format_ADSv2DateTimeGroup, .label = "Timestamp" },
+	{ .type = &asn_DEF_ADSv2Latitude, .format = &asn1_format_ADSv2Latitude, .label = "Lat" },
+//	{ .type = &asn_DEF_ADSv2LatitudeLongitude, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_ADSv2Level, .format = &asn1_format_LevelFeet, .label = "Alt" },
+	{ .type = &asn_DEF_ADSv2Longitude, .format = &asn1_format_ADSv2Longitude, .label = "Lon" },
+	{ .type = &asn_DEF_ADSv2RequestType, .format = &asn1_format_ENUM, .label = "Request type" },
+	{ .type = &asn_DEF_ADSv2Temperature, .format = &asn1_format_ADSv2Temperature, .label = "Temperature" },
+//	{ .type = &asn_DEF_ADSv2Turbulence, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_ADSv2VerticalRate, .format = &asn1_format_VerticalRateEnglish, .label = "Vertical rate" },
+	{ .type = &asn_DEF_ADSv2WindSpeed, .format = &asn1_format_CHOICE_icao, .label = NULL },
+	{ .type = &asn_DEF_ADSv2WindSpeedKmh, .format = &asn1_format_ADSv2WindSpeedKmh, .label = "Wind Speed" },
+	{ .type = &asn_DEF_ADSv2WindSpeedKts, .format = &asn1_format_ADSv2WindSpeedKts, .label = "Wind Speed" },
+	{ .type = &asn_DEF_ATSUListHiPrio, .format = &asn1_format_any, .label = "High priority" },
+	{ .type = &asn_DEF_ATSUListMedPrio, .format = &asn1_format_any, .label = "Medium priority" },
+	{ .type = &asn_DEF_ATSUListLoPrio, .format = &asn1_format_SEQUENCE_OF_icao, .label = "Low priority" },
+	{ .type = &asn_DEF_AirVector, .format = &asn1_format_SEQUENCE_icao, .label = "Air vector" },
+	{ .type = &asn_DEF_Airspeed, .format = &asn1_format_CHOICE_icao, .label = "Airspeed" },
+//	{ .type = &asn_DEF_AirspeedChange, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_AirspeedChangeTolerance, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_AirspeedRangeChange, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_ClimbSpeed, .format = &asn1_format_SEQUENCE_OF_icao, .label = "Climb speed" },
+	{ .type = &asn_DEF_ConnectedATSUList, .format = &asn1_format_SEQUENCE_icao, .label = "Connected ATSU list" },
+	{ .type = &asn_DEF_ContractNumber, .format = &asn1_format_any, .label = "Contract number" },
+//	{ .type = &asn_DEF_DemandContractRequest, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_DemandReport, .format = &asn1_format_SEQUENCE_icao, .label = "On-demand Report" },
+	{ .type = &asn_DEF_DescentSpeed, .format = &asn1_format_SEQUENCE_OF_icao, .label = "Descent speed" },
+//	{ .type = &asn_DEF_EPPEventChange, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_EPPLevel, .format = &asn1_format_CHOICE_icao, .label = NULL },
+//	{ .type = &asn_DEF_EPPLimitations, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_EPPToleranceChange, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_EPPTolerancesValues, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_EPPWindow, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_EPUChangeTolerance, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_ETA, .format = &asn1_format_Timesec, .label = "ETA" },
+	{ .type = &asn_DEF_EstimatedPositionUncertainty, .format = &asn1_format_EstimatedPositionUncertainty, .label = "Estimated position uncertainty" },
+//	{ .type = &asn_DEF_EventContractRequest, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_EventReport, .format = &asn1_format_SEQUENCE_icao, .label = "Event Report" },
+//	{ .type = &asn_DEF_EventTypeNotSupported, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_EventTypeReported, .format = &asn1_format_ENUM, .label = "Reported event" },
+	{ .type = &asn_DEF_ExtendedProjectedProfile, .format = &asn1_format_SEQUENCE_icao, .label = "Extended projected profile" },
+//	{ .type = &asn_DEF_ExtendedProjectedProfileModulus, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_ExtendedWayPointSequence, .format = &asn1_format_SEQUENCE_OF_icao, .label = "Waypoint sequence" },
+	{ .type = &asn_DEF_ExtendedWayPointSequenceElement, .format = &asn1_format_SEQUENCE_icao, .label = "Waypoint data" },
+	{ .type = &asn_DEF_FigureOfMerit, .format = &asn1_format_SEQUENCE_icao, .label = "Figure of merit" },
+//	{ .type = &asn_DEF_FinalApproachSpeedChange, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_FinalCruiseSpeedAtToD, .format = &asn1_format_SEQUENCE_icao, .label = "Final cruise speed at top of descent" },
+	{ .type = &asn_DEF_GrossMass, .format = &asn1_format_GrossMass, .label = "Gross mass" },
+	{ .type = &asn_DEF_GroundSpeed, .format = &asn1_format_GroundSpeed, .label = "Ground speed" },
+//	{ .type = &asn_DEF_GroundSpeedChange, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_GroundTrack, .format = &asn1_format_GroundTrack, .label = "Ground track" },
+	{ .type = &asn_DEF_GroundVector, .format = &asn1_format_SEQUENCE_icao, .label = "Ground vector" },
+	{ .type = &asn_DEF_Heading, .format = &asn1_format_GroundTrack, .label = "Heading" },
+	{ .type = &asn_DEF_Ias, .format = &asn1_format_SpeedIndicated, .label = "IAS" },
+	{ .type = &asn_DEF_InitialCruiseSpeedAtToC, .format = &asn1_format_SEQUENCE_icao, .label = "Initial cruise speed at top of climb" },
+	{ .type = &asn_DEF_LateralFlightManaged, .format = &asn1_format_any, .label = "Lateral flight managed" },
+//	{ .type = &asn_DEF_LateralDeviationChange, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_LateralDeviationThreshold, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_LateralType, .format = &asn1_format_SEQUENCE_icao, .label = "Lateral type" },
+	{ .type = &asn_DEF_LateralTypeFlyby, .format = &asn1_format_CHOICE_icao, .label = "Fly-by" },
+	{ .type = &asn_DEF_LateralTypeFixedRadiusTransition, .format = &asn1_format_CHOICE_icao, .label = "Fixed radius transition" },
+	{ .type = &asn_DEF_LateralTypeOffsetStart, .format = &asn1_format_label_only, .label = "Offset start" },
+	{ .type = &asn_DEF_LateralTypeOffsetReached, .format = &asn1_format_label_only, .label = "Offset reached" },
+	{ .type = &asn_DEF_LateralTypeReturnToParentPathInitiation, .format = &asn1_format_label_only, .label = "Return to parent path initiation" },
+	{ .type = &asn_DEF_LateralTypeOffsetEnd, .format = &asn1_format_label_only, .label = "Offset end" },
+	{ .type = &asn_DEF_LateralTypeOffset, .format = &asn1_format_label_only, .label = "Offset" },
+	{ .type = &asn_DEF_LateralTypeOverfly, .format = &asn1_format_label_only, .label = "Overfly" },
+	{ .type = &asn_DEF_LateralTypeFlightPlanWayPoint, .format = &asn1_format_label_only, .label = "Flight plan waypoint" },
+	{ .type = &asn_DEF_LateralTypeFollowedByDisco, .format = &asn1_format_label_only, .label = "Followed by discontinuity" },
+//	{ .type = &asn_DEF_LevelChange, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_LevelConstraint, .format = &asn1_format_CHOICE_icao, .label = "Level constraint" },
+	{ .type = &asn_DEF_LevelConstraintQualifier, .format = &asn1_format_ENUM, .label = "Level constraint type" },
+//	{ .type = &asn_DEF_LevelRangeDeviation, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_MachAndIas, .format = &asn1_format_SEQUENCE_icao, .label = NULL },
+	{ .type = &asn_DEF_MetInfo, .format = &asn1_format_SEQUENCE_icao, .label = "Meteo data" },
+	{ .type = &asn_DEF_MinMaxSpeed, .format = &asn1_format_SEQUENCE_OF_icao, .label = "Min/max speed" },
+//	{ .type = &asn_DEF_MetInfoModulus, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_MetInfoRequest, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_Modulus, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_MSLAltitude, .format = &asn1_format_LevelFeet, .label = "Alt (MSL)" },
+	{ .type = &asn_DEF_MultipleNavigationalUnitsOperating, .format = &asn1_format_any, .label = "Multiple NAV units operating" },
+	{ .type = &asn_DEF_NominalSpeed, .format = &asn1_format_CHOICE_icao, .label = "Nominal speed" },
+//	{ .type = &asn_DEF_PeriodicContractRequest, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_PeriodicReport, .format = &asn1_format_SEQUENCE_icao, .label = "Periodic Report" },
+	{ .type = &asn_DEF_PredictedGrossMassAtToD, .format = &asn1_format_GrossMass, .label = "Predicted gross mass at top of descent" },
+	{ .type = &asn_DEF_ProjectedProfile, .format = &asn1_format_SEQUENCE_icao, .label = "Projected profile" },
+	{ .type = &asn_DEF_QNEAltitude, .format = &asn1_format_LevelFeet, .label = "Alt (QNE)" },
+	{ .type = &asn_DEF_QNHAltitude, .format = &asn1_format_SEQUENCE_icao, .label = "Alt (QNH)" },
+//	{ .type = &asn_DEF_RNPProfile, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_RNPSegment, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_RNPSegmentPoint, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_RNPValue, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_RTA, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_RTASecTolerance, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_RTAStatus, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_RTAStatusData, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_RTAType, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_ReportTypeAndPeriodNotSupported, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_ReportTypeNotSupported, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_ReportingRate, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_SingleLevel, .format = &asn1_format_SEQUENCE_icao, .label = "Single level" },
+	{ .type = &asn_DEF_SingleLevelSequence, .format = &asn1_format_SEQUENCE_OF_icao, .label = "Single level sequence" },
+	{ .type = &asn_DEF_SpeedConstraint, .format = &asn1_format_SEQUENCE_icao, .label = "Speed constraint" },
+	{ .type = &asn_DEF_SpeedIASMach, .format = &asn1_format_CHOICE_icao, .label = NULL },
+	{ .type = &asn_DEF_SpeedManaged, .format = &asn1_format_any, .label = "Speed managed" },
+	{ .type = &asn_DEF_SpeedQualifier, .format = &asn1_format_ENUM, .label = "Type" },
+	{ .type = &asn_DEF_SpeedScheduleBlock, .format = &asn1_format_SEQUENCE_OF_icao, .label = "Block speed schedule" },
+	{ .type = &asn_DEF_SpeedScheduleProfile, .format = &asn1_format_SEQUENCE_icao, .label = "Speed schedule profile" },
+	{ .type = &asn_DEF_SpeedScheduleSingle, .format = &asn1_format_SEQUENCE_icao, .label = "Single speed schedule" },
+	{ .type = &asn_DEF_TimeManaged, .format = &asn1_format_any, .label = "Time managed" },
+//	{ .type = &asn_DEF_TOARange, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_TOARangeRequest, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_TOARangeRequestModulus, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_ThreeDPosition, .format = &asn1_format_SEQUENCE_icao, .label = "Position" },
+	{ .type = &asn_DEF_Timesec, .format = &asn1_format_Timesec, .label = "Time" },
+	{ .type = &asn_DEF_TrajectoryIntentStatus, .format = &asn1_format_SEQUENCE_icao, .label = "Trajectory intent status" },
+//	{ .type = &asn_DEF_TurbulenceDeviation, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_TurbulenceEDRPeak, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_TurbulenceEDRValue, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_TurbulenceMinutesInPast, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_TurbulenceObservationWindow, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_TurnRadius, .format = &asn1_format_TurnRadius, .label = "Turn radius" },
+	{ .type = &asn_DEF_TurnRadiusNotAvailable, .format = &asn1_format_label_only, .label = "Turn radius not available" },
+//	{ .type = &asn_DEF_VerticalClearanceDeviation, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_VerticalFlightManaged, .format = &asn1_format_any, .label = "Vertical flight managed" },
+//	{ .type = &asn_DEF_VerticalRateDeviation, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_VerticalType, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_Waypoint, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_WaypointName, .format = &asn1_format_any, .label = "Fix" },
+	{ .type = &asn_DEF_WayPointSequence, .format = &asn1_format_SEQUENCE_OF_icao, .label = "Waypoint sequence" },
+	{ .type = &asn_DEF_WayPointSequenceElement, .format = &asn1_format_SEQUENCE_icao, .label = "Waypoint data" },
+//	{ .type = &asn_DEF_WindErrorModelUsed, .format = &asn1_format_*, .label = "" },
+//	{ .type = &asn_DEF_WindQualityFlag, .format = &asn1_format_*, .label = "" },
 };
 
 static size_t asn1_icao_formatter_table_len = sizeof(asn1_icao_formatter_table) / sizeof(asn_formatter_t);
