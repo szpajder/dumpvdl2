@@ -93,17 +93,21 @@ static char *replace_nonprintable_chars(uint8_t *data, size_t len) {
 	return buf;
 }
 
-void bitfield_format_text(la_vstring *vstr, uint8_t val, dict const *d) {
+void bitfield_format_text(la_vstring *vstr, uint8_t *buf, size_t len, dict const *d) {
 	ASSERT(vstr != NULL);
 	ASSERT(d != NULL);
+	ASSERT(len <= sizeof(uint32_t));
 
+	uint32_t val = 0;
+	for(size_t i = 0; i < len; val = (val << 8) | buf[i++])
+		;
 	if(val == 0) {
 		la_vstring_append_sprintf(vstr, "%s", "none");
 		return;
 	}
 	bool first = true;
 	for(dict const *ptr = d; ptr->val != NULL; ptr++) {
-		if((val & ptr->id) == ptr->id) {
+		if((val & (uint32_t)ptr->id) == (uint32_t)ptr->id) {
 			la_vstring_append_sprintf(vstr, "%s%s",
 				(first ? "" : ", "), (char *)ptr->val);
 			first = false;

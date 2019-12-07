@@ -169,7 +169,7 @@ TLV_FORMATTER(atn_subnet_type_format_text) {
 	if((t->permitted_traffic_types & ATN_TRAFFIC_TYPES_ALL) == ATN_TRAFFIC_TYPES_ALL) {
 		la_vstring_append_sprintf(ctx->vstr, "%s", "all");
 	} else {
-		bitfield_format_text(ctx->vstr, t->permitted_traffic_types, atn_traffic_types);
+		bitfield_format_text(ctx->vstr, &t->permitted_traffic_types, 1, atn_traffic_types);
 	}
 	EOL(ctx->vstr);
 	ctx->indent--;
@@ -185,7 +185,7 @@ TLV_FORMATTER(atn_supported_traffic_classes_format_text) {
 	if((*t & ATSC_TRAFFIC_CLASSES_ALL) == ATSC_TRAFFIC_CLASSES_ALL) {
 		la_vstring_append_sprintf(ctx->vstr, "%s", "all");
 	} else {
-		bitfield_format_text(ctx->vstr, *t, atsc_traffic_classes);
+		bitfield_format_text(ctx->vstr, t, 1, atsc_traffic_classes);
 	}
 	EOL(ctx->vstr);
 }
