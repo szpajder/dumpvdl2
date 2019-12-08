@@ -21,6 +21,7 @@
 #include "asn1/INTEGER.h"		// asn_INTEGER_enum_map_t
 #include "asn1/constr_CHOICE.h"		// _fetch_present_idx()
 #include "asn1/asn_SET_OF.h"		// _A_CSET_FROM_VOID()
+#include "asn1/BIT_STRING.h"		// BIT_STRING_t;
 #include <libacars/vstring.h>		// la_vstring, LA_ISPRINTF()
 #include "asn1-util.h"			// ASN1_FORMATTER_PROTOTYPE
 #include "dumpvdl2.h"			// CAST_PTR, dict_search()
@@ -113,6 +114,55 @@ void _format_SEQUENCE_OF(la_vstring *vstr, char const * const label, asn1_output
 			continue;
 		}
 		cb(vstr, elm->type, memb_ptr, indent);
+	}
+}
+
+// Handles bit string up to 32 bits long.
+// dict indices are bit numbers from 0 to bit_stream_len-1
+// Bit 0 is the MSB of the first octet in the buffer.
+void _format_BIT_STRING(la_vstring *vstr, char const * const label, dict const * const bit_labels,
+void const *sptr, int indent) {
+	CAST_PTR(bs, BIT_STRING_t *, sptr);
+	debug_print("buf len: %d bits_unused: %d\n", bs->size, bs->bits_unused);
+	uint32_t val = 0;
+	int truncated = 0;
+	int len = bs->size;
+	int bits_unused = bs->bits_unused;
+
+	if(len > (int)sizeof(val)) {
+		debug_print("bit stream too long (%d octets), truncating to %zu octets\n",
+			len, sizeof(val));
+		truncated = len - sizeof(val);
+		len = sizeof(val);
+		bits_unused = 0;
+	}
+	if(label != NULL) {
+		LA_ISPRINTF(vstr, indent, "%s: ", label);
+	}
+	for(int i = 0; i < len; val = (val << 8) | bs->buf[i++])
+		;
+	debug_print("val: 0x%08x\n", val);
+	val &= (~0u << bits_unused);	// zeroize unused bits
+	if(val == 0) {
+		la_vstring_append_sprintf(vstr, "none\n");
+		goto end;
+	}
+	val = reverse(val, len * 8);
+	bool first = true;
+	for(dict const *ptr = bit_labels; ptr->val != NULL; ptr++) {
+		uint32_t shift = (uint32_t)ptr->id;
+		if((val >> shift) & 1) {
+			la_vstring_append_sprintf(vstr, "%s%s",
+				(first ? "" : ", "), (char *)ptr->val);
+			first = false;
+		}
+	}
+	EOL(vstr);
+end:
+	if(truncated > 0) {
+		LA_ISPRINTF(vstr, indent,
+		"-- Warning: bit string too long (%d bits), truncated to %d bits\n",
+		bs->size * 8 - bs->bits_unused, len * 8);
 	}
 }
 
