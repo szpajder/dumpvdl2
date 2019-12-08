@@ -280,6 +280,19 @@ static dict const ATCUplinkMsgElementId_labels[] = {
 	{ 0, NULL }
 };
 
+static dict const VerticalType_bit_labels[] = {
+	{ 0, "top of climb" },
+	{ 1, "top of descent" },
+	{ 2, "start of climb" },
+	{ 3, "start of descent" },
+	{ 4, "start of level" },
+	{ 5, "start of speed change" },
+	{ 6, "end of speed change" },
+	{ 7, "speed limit" },
+	{ 8, "cross over" },
+	{ 0, NULL }
+};
+
 static dict const ATCDownlinkMsgElementId_labels[] = {
 	{ ATCDownlinkMsgElementId_PR_dM0NULL, "WILCO" },
 	{ ATCDownlinkMsgElementId_PR_dM1NULL, "UNABLE" },
@@ -778,6 +791,11 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_Timesec) {
 	LA_ISPRINTF(vstr, indent, "%s: %02ld:%02ld:%02ld\n", label, t->hours, t->minutes, t->seconds);
 }
 
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalType) {
+	UNUSED(td);
+	_format_BIT_STRING(vstr, label, VerticalType_bit_labels, sptr, indent);
+}
+
 static asn_formatter_t const asn1_icao_formatter_table[] = {
 // atn-b1_cpdlc-v1.asn1
 	{ .type = &asn_DEF_AircraftAddress, .format = &asn1_format_any, .label = "Aircraft address" },
@@ -1163,7 +1181,7 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 //	{ .type = &asn_DEF_VerticalClearanceDeviation, .format = &asn1_format_*, .label = "" },
 	{ .type = &asn_DEF_VerticalFlightManaged, .format = &asn1_format_any, .label = "Vertical flight managed" },
 //	{ .type = &asn_DEF_VerticalRateDeviation, .format = &asn1_format_*, .label = "" },
-//	{ .type = &asn_DEF_VerticalType, .format = &asn1_format_*, .label = "" },
+	{ .type = &asn_DEF_VerticalType, .format = &asn1_format_VerticalType, .label = "Vertical type" },
 //	{ .type = &asn_DEF_Waypoint, .format = &asn1_format_*, .label = "" },
 	{ .type = &asn_DEF_WaypointName, .format = &asn1_format_any, .label = "Fix" },
 	{ .type = &asn_DEF_WayPointSequence, .format = &asn1_format_SEQUENCE_OF_icao, .label = "Waypoint sequence" },
