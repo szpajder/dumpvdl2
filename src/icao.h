@@ -30,6 +30,7 @@ typedef struct {
 } icao_apdu_t;
 
 // app-type values for ATN applications
+#define ICAO_APP_TYPE_ADS	0
 #define ICAO_APP_TYPE_CMA	1
 #define ICAO_APP_TYPE_CPC	22
 #define ICAO_APP_TYPE_UNKNOWN	-1

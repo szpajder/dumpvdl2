@@ -316,17 +316,17 @@ typedef struct {
 	size_t len;
 } octet_string_t;
 typedef struct {
-	uint8_t id;
+	int id;
 	void *val;
 } dict;
 
 extern la_type_descriptor const proto_DEF_unknown;
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func);
 void *xrealloc(void *ptr, size_t size, const char *file, const int line, const char *func);
-void *dict_search(const dict *list, uint8_t id);
+void *dict_search(const dict *list, int id);
 uint16_t extract_uint16_msbfirst(uint8_t const * const data);
 uint32_t extract_uint32_msbfirst(uint8_t const * const data);
-void bitfield_format_text(la_vstring *vstr, uint8_t val, dict const *d);
+void bitfield_format_text(la_vstring *vstr, uint8_t *buf, size_t len, dict const *d);
 octet_string_t *octet_string_new(void *buf, size_t len);
 int octet_string_parse(uint8_t *buf, size_t len, octet_string_t *result);
 void octet_string_format_text(la_vstring * const vstr, void const * const data, int indent);

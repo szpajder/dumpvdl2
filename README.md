@@ -31,10 +31,13 @@ Current stable version: 1.7.1 (released Nov 11, 2019)
 - [X] ISO 9542 (ES-IS) - supported
 - [X] ISO 10747 (IDRP) - supported
 - [X] ISO 8073 (COTP) - supported
-- [X] ICAO ATN-B1 CM (Context Management) - supported
-- [X] ICAO ATN-B1 CPDLC (Controller-Pilot Data Link Communications) - supported
-- [ ] ICAO ATN-B1 ADS-C (Automatic Dependent Surveillance - Contract) - not
+- [X] ATN-B1 CM (Context Management) - supported
+- [X] ATN-B1 CPDLC (Controller-Pilot Data Link Communications) ver. 1 -
   supported
+- [X] ATN-B2 ADS-C (Automatic Dependent Surveillance - Contract) ver. 2 -
+  supported
+- [X] ATN-B2 CPDLC (Controller-Pilot Data Link Communications) ver. 2/3
+  - not supported
 - [X] All applications and protocols handled by libacars library (full list [here](https://github.com/szpajder/libacars/blob/master/README.md#supported-message-types))
 
 ## Installation
@@ -50,7 +53,7 @@ Mandatory dependencies:
 - git (unless you intend to use only packaged releases of dumpvdl2 and all
   dependencies)
 - glib2
-- libacars 1.3.0 or later
+- libacars 2.0.0 or later
 
 Optional dependencies:
 

@@ -61,7 +61,7 @@ TLV_FORMATTER(esis_subnet_caps_format_text) {
 	if((c->atn_traffic_types & ATN_TRAFFIC_TYPES_ALL) == ATN_TRAFFIC_TYPES_ALL) {
 		la_vstring_append_sprintf(ctx->vstr, "%s", "all");
 	} else {
-		bitfield_format_text(ctx->vstr, c->atn_traffic_types, atn_traffic_types);
+		bitfield_format_text(ctx->vstr, &c->atn_traffic_types, 1, atn_traffic_types);
 	}
 	EOL(ctx->vstr);
 	if(c->atsc_traffic_classes_present) {
@@ -69,7 +69,7 @@ TLV_FORMATTER(esis_subnet_caps_format_text) {
 		if((c->atsc_traffic_classes & ATSC_TRAFFIC_CLASSES_ALL) == ATSC_TRAFFIC_CLASSES_ALL) {
 			la_vstring_append_sprintf(ctx->vstr, "%s", "all");
 		} else {
-			bitfield_format_text(ctx->vstr, c->atsc_traffic_classes, atsc_traffic_classes);
+			bitfield_format_text(ctx->vstr, &c->atsc_traffic_classes, 1, atsc_traffic_classes);
 		}
 	}
 	EOL(ctx->vstr);
