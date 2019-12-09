@@ -11,7 +11,7 @@ static asn_TYPE_member_t asn_MBR_LateralDeviationChange_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct LateralDeviationChange, leftThreshold),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_LateralDeviationThreshold,
+		&asn_DEF_LateralDeviationThresholdLeft,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -20,7 +20,7 @@ static asn_TYPE_member_t asn_MBR_LateralDeviationChange_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct LateralDeviationChange, rightThreshold),
 		(ASN_TAG_CLASS_CONTEXT | (1 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_LateralDeviationThreshold,
+		&asn_DEF_LateralDeviationThresholdRight,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -29,7 +29,7 @@ static asn_TYPE_member_t asn_MBR_LateralDeviationChange_1[] = {
 	{ ATF_POINTER, 1, offsetof(struct LateralDeviationChange, offsetTag),
 		(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_LateralDeviationOffsetTag,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

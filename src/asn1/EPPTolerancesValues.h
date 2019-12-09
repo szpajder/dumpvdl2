@@ -12,7 +12,9 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "NativeInteger.h"
+#include "EPPTolGCDistance.h"
+#include "EPPTolLevel.h"
+#include "EPPTolETA.h"
 #include "constr_SEQUENCE.h"
 
 #ifdef __cplusplus
@@ -24,9 +26,9 @@ struct AirspeedChangeTolerance;
 
 /* EPPTolerancesValues */
 typedef struct EPPTolerancesValues {
-	long	*greatdistancecircle	/* OPTIONAL */;
-	long	*level	/* OPTIONAL */;
-	long	*eta	/* OPTIONAL */;
+	EPPTolGCDistance_t	*greatdistancecircle	/* OPTIONAL */;
+	EPPTolLevel_t	*level	/* OPTIONAL */;
+	EPPTolETA_t	*eta	/* OPTIONAL */;
 	struct AirspeedChangeTolerance	*air_speed	/* OPTIONAL */;
 	/*
 	 * This type is extensible,

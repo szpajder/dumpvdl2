@@ -12,7 +12,8 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "RNPSegmentPoint.h"
+#include "RNPSegmentStartPoint.h"
+#include "RNPSegmentEndPoint.h"
 #include "RNPValue.h"
 #include "constr_SEQUENCE.h"
 
@@ -22,8 +23,8 @@ extern "C" {
 
 /* RNPSegment */
 typedef struct RNPSegment {
-	RNPSegmentPoint_t	 startRNPSegment;
-	RNPSegmentPoint_t	 endRNPSegment;
+	RNPSegmentStartPoint_t	 startRNPSegment;
+	RNPSegmentEndPoint_t	 endRNPSegment;
 	RNPValue_t	 value;
 	
 	/* Context for parsing across buffer boundaries */

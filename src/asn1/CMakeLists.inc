@@ -323,6 +323,7 @@ set(ASN_MODULE_SOURCES
 	NonCompliance.c
 	ICNonCompliance.c
 	CancelContract.c
+	CancelAllContracts.c
 	ADSMessage.c
 	RequestType.c
 	CancelPositiveAcknowledgement.c
@@ -337,9 +338,27 @@ set(ASN_MODULE_SOURCES
 	TimeMinutes.c
 	ADSRequestContract.c
 	DemandContractRequest.c
+	DCRProjectedProfile.c
+	DCRGroundVector.c
+	DCRAirVector.c
+	EPPRequest.c
+	DCRSpeedScheduleProfile.c
+	DCRRNPProfile.c
+	DCRPlannedFinalApproachSpeed.c
 	EventContractRequest.c
+	ECRWaypointChange.c
+	ECRRTAStatusChange.c
+	ECRRNPNotMet.c
 	EPPEventChange.c
+	EPPFlightPlanChangeRequest.c
+	EPPNextWptInHorizonRequest.c
 	PeriodicContractRequest.c
+	ProjectedProfileModulus.c
+	GroundVectorModulus.c
+	AirVectorModulus.c
+	SpeedScheduleProfileModulus.c
+	RNPProfileModulus.c
+	PlannedFinalAppSpeedModulus.c
 	ADSReport.c
 	ADSAccept.c
 	DemandReport.c
@@ -347,13 +366,21 @@ set(ASN_MODULE_SOURCES
 	PeriodicReport.c
 	ADSPositiveAcknowledgement.c
 	ADSNonCompliance.c
+	ContractDetailsNotSupporting.c
 	ADSReject.c
+	RejectDetails.c
 	ADSDataReport.c
 	ADSEmergencyUrgencyStatus.c
 	Airspeed.c
 	AirspeedChange.c
+	MachNumberChange.c
+	IasChange.c
 	AirspeedChangeTolerance.c
+	IasTolerance.c
+	MachNumberTolerance.c
 	AirspeedRangeChange.c
+	MinMaxIAS.c
+	MinMaxMach.c
 	AirVector.c
 	ConnectedATSUList.c
 	ATSUListHiPrio.c
@@ -374,7 +401,12 @@ set(ASN_MODULE_SOURCES
 	EPPLimitations.c
 	EPPToleranceChange.c
 	EPPTolerancesValues.c
+	EPPTolGCDistance.c
+	EPPTolLevel.c
+	EPPTolETA.c
 	EPPWindow.c
+	EPPTimeInterval.c
+	EPPNumWaypoints.c
 	EPUChangeTolerance.c
 	ETA.c
 	AAISAvailability.c
@@ -389,6 +421,9 @@ set(ASN_MODULE_SOURCES
 	Heading.c
 	Ias.c
 	LateralDeviationChange.c
+	LateralDeviationThresholdLeft.c
+	LateralDeviationThresholdRight.c
+	LateralDeviationOffsetTag.c
 	LateralDeviationThreshold.c
 	LateralType.c
 	LateralTypeFlyby.c
@@ -408,6 +443,9 @@ set(ASN_MODULE_SOURCES
 	LevelConstraint.c
 	LevelConstraintQualifier.c
 	LevelRangeDeviation.c
+	LevelRangeDeviationCeiling.c
+	LevelRangeDeviationFloor.c
+	LevelRangeDeviationBoth.c
 	ADSv2Longitude.c
 	MachAndIas.c
 	MetInfo.c
@@ -424,6 +462,8 @@ set(ASN_MODULE_SOURCES
 	ADSv2RequestType.c
 	RNPProfile.c
 	RNPSegment.c
+	RNPSegmentStartPoint.c
+	RNPSegmentEndPoint.c
 	RNPSegmentPoint.c
 	RNPValue.c
 	RTA.c
@@ -455,7 +495,9 @@ set(ASN_MODULE_SOURCES
 	TimeManaged.c
 	TrajectoryIntentStatus.c
 	ADSv2Turbulence.c
+	TurbulenceEDRAverage.c
 	TurbulenceDeviation.c
+	TurbulencePeakThreshold.c
 	TurbulenceEDRPeak.c
 	TurbulenceEDRValue.c
 	TurbulenceMinutesInPast.c
@@ -464,11 +506,16 @@ set(ASN_MODULE_SOURCES
 	TurnRadiusNotAvailable.c
 	TurnRadius.c
 	TOARange.c
+	TOAComputationTime.c
+	TOARangeEarliestETA.c
+	TOARangeLatestETA.c
 	TOARangeRequest.c
 	TOARangeRequestModulus.c
 	VerticalClearanceDeviation.c
 	ADSv2VerticalRate.c
 	VerticalRateDeviation.c
+	VerticalRateDeviationUpper.c
+	VerticalRateDeviationLower.c
 	VerticalType.c
 	Waypoint.c
 	WaypointName.c

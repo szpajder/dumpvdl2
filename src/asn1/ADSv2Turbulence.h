@@ -12,7 +12,7 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "TurbulenceEDRValue.h"
+#include "TurbulenceEDRAverage.h"
 #include "TurbulenceEDRPeak.h"
 #include "constr_SEQUENCE.h"
 
@@ -22,7 +22,7 @@ extern "C" {
 
 /* ADSv2Turbulence */
 typedef struct ADSv2Turbulence {
-	TurbulenceEDRValue_t	 average;
+	TurbulenceEDRAverage_t	 average;
 	TurbulenceEDRPeak_t	 peak;
 	
 	/* Context for parsing across buffer boundaries */

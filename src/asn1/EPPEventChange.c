@@ -20,7 +20,7 @@ static asn_TYPE_member_t asn_MBR_EPPEventChange_1[] = {
 	{ ATF_POINTER, 3, offsetof(struct EPPEventChange, epp_flight_plan_change),
 		(ASN_TAG_CLASS_CONTEXT | (1 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_EPPFlightPlanChangeRequest,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -29,7 +29,7 @@ static asn_TYPE_member_t asn_MBR_EPPEventChange_1[] = {
 	{ ATF_POINTER, 2, offsetof(struct EPPEventChange, epp_next_waypoint_in_horizon),
 		(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_EPPNextWptInHorizonRequest,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

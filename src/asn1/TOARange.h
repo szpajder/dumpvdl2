@@ -12,7 +12,7 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "Timesec.h"
+#include "TOAComputationTime.h"
 #include "ETA.h"
 #include "ADSv2LatitudeLongitude.h"
 #include "WaypointName.h"
@@ -28,7 +28,7 @@ struct Timesec;
 
 /* TOARange */
 typedef struct TOARange {
-	Timesec_t	 computation_time;
+	TOAComputationTime_t	 computation_time;
 	ETA_t	 eta;
 	ADSv2LatitudeLongitude_t	 latitudeLongitude;
 	WaypointName_t	*name	/* OPTIONAL */;
@@ -48,7 +48,8 @@ extern asn_TYPE_descriptor_t asn_DEF_TOARange;
 #endif
 
 /* Referred external types */
-#include "ETA.h"
+#include "TOARangeEarliestETA.h"
+#include "TOARangeLatestETA.h"
 
 #endif	/* _TOARange_H_ */
 #include "asn_internal.h"

@@ -29,7 +29,7 @@ static asn_TYPE_member_t asn_MBR_PeriodicContractRequest_1[] = {
 	{ ATF_POINTER, 9, offsetof(struct PeriodicContractRequest, projected_profile_modulus),
 		(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Modulus,
+		&asn_DEF_ProjectedProfileModulus,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -38,7 +38,7 @@ static asn_TYPE_member_t asn_MBR_PeriodicContractRequest_1[] = {
 	{ ATF_POINTER, 8, offsetof(struct PeriodicContractRequest, ground_vector_modulus),
 		(ASN_TAG_CLASS_CONTEXT | (3 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Modulus,
+		&asn_DEF_GroundVectorModulus,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -47,7 +47,7 @@ static asn_TYPE_member_t asn_MBR_PeriodicContractRequest_1[] = {
 	{ ATF_POINTER, 7, offsetof(struct PeriodicContractRequest, air_vector_modulus),
 		(ASN_TAG_CLASS_CONTEXT | (4 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Modulus,
+		&asn_DEF_AirVectorModulus,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -83,7 +83,7 @@ static asn_TYPE_member_t asn_MBR_PeriodicContractRequest_1[] = {
 	{ ATF_POINTER, 3, offsetof(struct PeriodicContractRequest, speed_schedule_profile_modulus),
 		(ASN_TAG_CLASS_CONTEXT | (8 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Modulus,
+		&asn_DEF_SpeedScheduleProfileModulus,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -92,7 +92,7 @@ static asn_TYPE_member_t asn_MBR_PeriodicContractRequest_1[] = {
 	{ ATF_POINTER, 2, offsetof(struct PeriodicContractRequest, rnp_profile_modulus),
 		(ASN_TAG_CLASS_CONTEXT | (9 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Modulus,
+		&asn_DEF_RNPProfileModulus,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -101,7 +101,7 @@ static asn_TYPE_member_t asn_MBR_PeriodicContractRequest_1[] = {
 	{ ATF_POINTER, 1, offsetof(struct PeriodicContractRequest, planned_final_approach_speed_modulus),
 		(ASN_TAG_CLASS_CONTEXT | (10 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Modulus,
+		&asn_DEF_PlannedFinalAppSpeedModulus,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

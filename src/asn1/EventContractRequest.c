@@ -47,7 +47,7 @@ static asn_TYPE_member_t asn_MBR_EventContractRequest_1[] = {
 	{ ATF_POINTER, 12, offsetof(struct EventContractRequest, way_point_change),
 		(ASN_TAG_CLASS_CONTEXT | (4 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_ECRWaypointChange,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -83,7 +83,7 @@ static asn_TYPE_member_t asn_MBR_EventContractRequest_1[] = {
 	{ ATF_POINTER, 8, offsetof(struct EventContractRequest, rta_status_change),
 		(ASN_TAG_CLASS_CONTEXT | (8 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_ECRRTAStatusChange,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -137,7 +137,7 @@ static asn_TYPE_member_t asn_MBR_EventContractRequest_1[] = {
 	{ ATF_POINTER, 2, offsetof(struct EventContractRequest, rnp_not_met),
 		(ASN_TAG_CLASS_CONTEXT | (14 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_ECRRNPNotMet,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

@@ -12,74 +12,11 @@ static asn_per_constraints_t asn_PER_type_LevelRangeDeviation_constr_1 GCC_NOTUS
 	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
 	0, 0	/* No PER value map */
 };
-static asn_TYPE_member_t asn_MBR_both_4[] = {
-	{ ATF_NOFLAGS, 0, offsetof(struct LevelRangeDeviation__both, ceiling),
-		(ASN_TAG_CLASS_UNIVERSAL | (2 << 2)),
-		0,
-		&asn_DEF_ADSv2Level,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		"ceiling"
-		},
-	{ ATF_NOFLAGS, 0, offsetof(struct LevelRangeDeviation__both, floor),
-		(ASN_TAG_CLASS_UNIVERSAL | (2 << 2)),
-		0,
-		&asn_DEF_ADSv2Level,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		"floor"
-		},
-};
-static const ber_tlv_tag_t asn_DEF_both_tags_4[] = {
-	(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
-	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
-};
-static const asn_TYPE_tag2member_t asn_MAP_both_tag2el_4[] = {
-    { (ASN_TAG_CLASS_UNIVERSAL | (2 << 2)), 0, 0, 1 }, /* ceiling */
-    { (ASN_TAG_CLASS_UNIVERSAL | (2 << 2)), 1, -1, 0 } /* floor */
-};
-static asn_SEQUENCE_specifics_t asn_SPC_both_specs_4 = {
-	sizeof(struct LevelRangeDeviation__both),
-	offsetof(struct LevelRangeDeviation__both, _asn_ctx),
-	asn_MAP_both_tag2el_4,
-	2,	/* Count of tags in the map */
-	0, 0, 0,	/* Optional elements (not needed) */
-	-1,	/* Start extensions */
-	-1	/* Stop extensions */
-};
-static /* Use -fall-defs-global to expose */
-asn_TYPE_descriptor_t asn_DEF_both_4 = {
-	"both",
-	"both",
-	SEQUENCE_free,
-	SEQUENCE_print,
-	SEQUENCE_constraint,
-	SEQUENCE_decode_ber,
-	SEQUENCE_encode_der,
-	SEQUENCE_decode_xer,
-	SEQUENCE_encode_xer,
-	SEQUENCE_decode_uper,
-	SEQUENCE_encode_uper,
-	0,	/* Use generic outmost tag fetcher */
-	asn_DEF_both_tags_4,
-	sizeof(asn_DEF_both_tags_4)
-		/sizeof(asn_DEF_both_tags_4[0]), /* 2 */
-	asn_DEF_both_tags_4,	/* Same as above */
-	sizeof(asn_DEF_both_tags_4)
-		/sizeof(asn_DEF_both_tags_4[0]), /* 2 */
-	0,	/* No PER visible constraints */
-	asn_MBR_both_4,
-	2,	/* Elements count */
-	&asn_SPC_both_specs_4	/* Additional specs */
-};
-
 static asn_TYPE_member_t asn_MBR_LevelRangeDeviation_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct LevelRangeDeviation, choice.ceiling),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_ADSv2Level,
+		&asn_DEF_LevelRangeDeviationCeiling,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -88,7 +25,7 @@ static asn_TYPE_member_t asn_MBR_LevelRangeDeviation_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct LevelRangeDeviation, choice.floor),
 		(ASN_TAG_CLASS_CONTEXT | (1 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_ADSv2Level,
+		&asn_DEF_LevelRangeDeviationFloor,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -96,8 +33,8 @@ static asn_TYPE_member_t asn_MBR_LevelRangeDeviation_1[] = {
 		},
 	{ ATF_NOFLAGS, 0, offsetof(struct LevelRangeDeviation, choice.both),
 		(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
-		0,
-		&asn_DEF_both_4,
+		+1,	/* EXPLICIT tag at current level */
+		&asn_DEF_LevelRangeDeviationBoth,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

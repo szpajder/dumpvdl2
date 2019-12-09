@@ -13,7 +13,7 @@
 
 /* Including external dependencies */
 #include "TurbulenceObservationWindow.h"
-#include "TurbulenceEDRValue.h"
+#include "TurbulencePeakThreshold.h"
 #include "constr_SEQUENCE.h"
 
 #ifdef __cplusplus
@@ -23,7 +23,7 @@ extern "C" {
 /* TurbulenceDeviation */
 typedef struct TurbulenceDeviation {
 	TurbulenceObservationWindow_t	*observation_window	/* DEFAULT 15 */;
-	TurbulenceEDRValue_t	*peak_threshold	/* DEFAULT 40 */;
+	TurbulencePeakThreshold_t	*peak_threshold	/* DEFAULT 40 */;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;

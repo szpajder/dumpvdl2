@@ -16,25 +16,14 @@
 #include "ConnectedATSUList.h"
 #include "ADSEmergencyUrgencyStatus.h"
 #include "EPPLimitations.h"
-#include "ReportTypeNotSupported.h"
-#include "EventTypeNotSupported.h"
-#include "ReportTypeAndPeriodNotSupported.h"
-#include "constr_CHOICE.h"
 #include "constr_SEQUENCE.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Dependencies */
-typedef enum ADSNonCompliance__contractDetailsNotSupporting_PR {
-	ADSNonCompliance__contractDetailsNotSupporting_PR_NOTHING,	/* No components present */
-	ADSNonCompliance__contractDetailsNotSupporting_PR_demand_ncn,
-	ADSNonCompliance__contractDetailsNotSupporting_PR_event_ncn,
-	ADSNonCompliance__contractDetailsNotSupporting_PR_periodic_ncn,
-	/* Extensions may appear below */
-	
-} ADSNonCompliance__contractDetailsNotSupporting_PR;
+/* Forward declarations */
+struct ContractDetailsNotSupporting;
 
 /* ADSNonCompliance */
 typedef struct ADSNonCompliance {
@@ -42,21 +31,7 @@ typedef struct ADSNonCompliance {
 	ConnectedATSUList_t	 connectedATSUList;
 	ADSEmergencyUrgencyStatus_t	*emergencyUrgency	/* OPTIONAL */;
 	EPPLimitations_t	*eppLimitations	/* OPTIONAL */;
-	struct ADSNonCompliance__contractDetailsNotSupporting {
-		ADSNonCompliance__contractDetailsNotSupporting_PR present;
-		union ADSNonCompliance__contractDetailsNotSupporting_u {
-			ReportTypeNotSupported_t	 demand_ncn;
-			EventTypeNotSupported_t	 event_ncn;
-			ReportTypeAndPeriodNotSupported_t	 periodic_ncn;
-			/*
-			 * This type is extensible,
-			 * possible extensions are below.
-			 */
-		} choice;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *contractDetailsNotSupporting;
+	struct ContractDetailsNotSupporting	*contractDetailsNotSupporting	/* OPTIONAL */;
 	/*
 	 * This type is extensible,
 	 * possible extensions are below.
@@ -72,6 +47,9 @@ extern asn_TYPE_descriptor_t asn_DEF_ADSNonCompliance;
 #ifdef __cplusplus
 }
 #endif
+
+/* Referred external types */
+#include "ContractDetailsNotSupporting.h"
 
 #endif	/* _ADSNonCompliance_H_ */
 #include "asn_internal.h"

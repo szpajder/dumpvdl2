@@ -11,7 +11,7 @@ static asn_TYPE_member_t asn_MBR_RNPSegment_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct RNPSegment, startRNPSegment),
 		(ASN_TAG_CLASS_UNIVERSAL | (16 << 2)),
 		0,
-		&asn_DEF_RNPSegmentPoint,
+		&asn_DEF_RNPSegmentStartPoint,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -20,7 +20,7 @@ static asn_TYPE_member_t asn_MBR_RNPSegment_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct RNPSegment, endRNPSegment),
 		(ASN_TAG_CLASS_UNIVERSAL | (16 << 2)),
 		0,
-		&asn_DEF_RNPSegmentPoint,
+		&asn_DEF_RNPSegmentEndPoint,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

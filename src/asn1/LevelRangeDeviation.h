@@ -12,8 +12,9 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "ADSv2Level.h"
-#include "constr_SEQUENCE.h"
+#include "LevelRangeDeviationCeiling.h"
+#include "LevelRangeDeviationFloor.h"
+#include "LevelRangeDeviationBoth.h"
 #include "constr_CHOICE.h"
 
 #ifdef __cplusplus
@@ -32,15 +33,9 @@ typedef enum LevelRangeDeviation_PR {
 typedef struct LevelRangeDeviation {
 	LevelRangeDeviation_PR present;
 	union LevelRangeDeviation_u {
-		ADSv2Level_t	 ceiling;
-		ADSv2Level_t	 floor;
-		struct LevelRangeDeviation__both {
-			ADSv2Level_t	 ceiling;
-			ADSv2Level_t	 floor;
-			
-			/* Context for parsing across buffer boundaries */
-			asn_struct_ctx_t _asn_ctx;
-		} both;
+		LevelRangeDeviationCeiling_t	 ceiling;
+		LevelRangeDeviationFloor_t	 floor;
+		LevelRangeDeviationBoth_t	 both;
 	} choice;
 	
 	/* Context for parsing across buffer boundaries */

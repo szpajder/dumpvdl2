@@ -26,7 +26,7 @@ static int asn_DFL_2_set_15(int set_value, void **sptr) {
 	}
 }
 static int asn_DFL_3_set_40(int set_value, void **sptr) {
-	TurbulenceEDRValue_t *st = *sptr;
+	TurbulencePeakThreshold_t *st = *sptr;
 	
 	if(!st) {
 		if(!set_value) return -1;	/* Not a default value */
@@ -56,7 +56,7 @@ static asn_TYPE_member_t asn_MBR_TurbulenceDeviation_1[] = {
 	{ ATF_POINTER, 1, offsetof(struct TurbulenceDeviation, peak_threshold),
 		(ASN_TAG_CLASS_CONTEXT | (1 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_TurbulenceEDRValue,
+		&asn_DEF_TurbulencePeakThreshold,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		asn_DFL_3_set_40,	/* DEFAULT 40 */

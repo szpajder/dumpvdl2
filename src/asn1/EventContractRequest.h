@@ -13,11 +13,13 @@
 
 /* Including external dependencies */
 #include "ContractNumber.h"
-#include "NULL.h"
+#include "ECRWaypointChange.h"
 #include "GroundSpeedChange.h"
+#include "ECRRTAStatusChange.h"
 #include "EPUChangeTolerance.h"
 #include "LevelChange.h"
 #include "VerticalClearanceDeviation.h"
+#include "ECRRNPNotMet.h"
 #include "FinalApproachSpeedChange.h"
 #include "constr_SEQUENCE.h"
 
@@ -40,11 +42,11 @@ typedef struct EventContractRequest {
 	struct LateralDeviationChange	*lateral_deviation	/* OPTIONAL */;
 	struct VerticalRateDeviation	*vertical_rate_deviation	/* OPTIONAL */;
 	struct LevelRangeDeviation	*level_range_deviation	/* OPTIONAL */;
-	NULL_t	*way_point_change	/* OPTIONAL */;
+	ECRWaypointChange_t	*way_point_change	/* OPTIONAL */;
 	struct AirspeedChange	*airspeed_change	/* OPTIONAL */;
 	GroundSpeedChange_t	*ground_speed_change	/* OPTIONAL */;
 	struct EPPEventChange	*epp_change	/* OPTIONAL */;
-	NULL_t	*rta_status_change	/* OPTIONAL */;
+	ECRRTAStatusChange_t	*rta_status_change	/* OPTIONAL */;
 	EPUChangeTolerance_t	*fom_change	/* OPTIONAL */;
 	LevelChange_t	*level_change	/* OPTIONAL */;
 	VerticalClearanceDeviation_t	*vertical_clearance_deviation	/* OPTIONAL */;
@@ -54,7 +56,7 @@ typedef struct EventContractRequest {
 	 * This type is extensible,
 	 * possible extensions are below.
 	 */
-	NULL_t	*rnp_not_met	/* OPTIONAL */;
+	ECRRNPNotMet_t	*rnp_not_met	/* OPTIONAL */;
 	FinalApproachSpeedChange_t	*planned_final_approach_speed_change	/* OPTIONAL */;
 	
 	/* Context for parsing across buffer boundaries */

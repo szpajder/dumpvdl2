@@ -12,7 +12,8 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "NativeInteger.h"
+#include "EPPTimeInterval.h"
+#include "EPPNumWaypoints.h"
 #include "constr_CHOICE.h"
 
 #ifdef __cplusplus
@@ -30,8 +31,8 @@ typedef enum EPPWindow_PR {
 typedef struct EPPWindow {
 	EPPWindow_PR present;
 	union EPPWindow_u {
-		long	 time_interval;
-		long	 number_of_way_points;
+		EPPTimeInterval_t	 time_interval;
+		EPPNumWaypoints_t	 number_of_way_points;
 	} choice;
 	
 	/* Context for parsing across buffer boundaries */

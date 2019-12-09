@@ -11,7 +11,7 @@ static asn_TYPE_member_t asn_MBR_TOARange_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct TOARange, computation_time),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Timesec,
+		&asn_DEF_TOAComputationTime,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -56,7 +56,7 @@ static asn_TYPE_member_t asn_MBR_TOARange_1[] = {
 	{ ATF_POINTER, 2, offsetof(struct TOARange, earliest),
 		(ASN_TAG_CLASS_CONTEXT | (5 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_ETA,
+		&asn_DEF_TOARangeEarliestETA,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -65,7 +65,7 @@ static asn_TYPE_member_t asn_MBR_TOARange_1[] = {
 	{ ATF_POINTER, 1, offsetof(struct TOARange, latest),
 		(ASN_TAG_CLASS_CONTEXT | (6 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_ETA,
+		&asn_DEF_TOARangeLatestETA,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

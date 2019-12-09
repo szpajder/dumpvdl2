@@ -12,7 +12,8 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "NativeInteger.h"
+#include "IasTolerance.h"
+#include "MachNumberTolerance.h"
 #include "constr_SEQUENCE.h"
 
 #ifdef __cplusplus
@@ -21,8 +22,8 @@ extern "C" {
 
 /* AirspeedChangeTolerance */
 typedef struct AirspeedChangeTolerance {
-	long	*ias	/* OPTIONAL */;
-	long	*mach_number	/* OPTIONAL */;
+	IasTolerance_t	*ias	/* OPTIONAL */;
+	MachNumberTolerance_t	*mach_number	/* OPTIONAL */;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;

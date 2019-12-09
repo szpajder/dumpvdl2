@@ -7,186 +7,22 @@
 
 #include "AirspeedRangeChange.h"
 
-static int
-memb_minMaxIAS_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
-			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	size_t size;
-	
-	if(!sptr) {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: value not given (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-	
-	/* Determine the number of elements */
-	size = _A_CSEQUENCE_FROM_VOID(sptr)->count;
-	
-	if((size == 2)) {
-		/* Perform validation of the inner elements */
-		return td->check_constraints(td, sptr, ctfailcb, app_key);
-	} else {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: constraint failed (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-}
-
-static int
-memb_minMaxMach_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
-			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
-	size_t size;
-	
-	if(!sptr) {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: value not given (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-	
-	/* Determine the number of elements */
-	size = _A_CSEQUENCE_FROM_VOID(sptr)->count;
-	
-	if((size == 2)) {
-		/* Perform validation of the inner elements */
-		return td->check_constraints(td, sptr, ctfailcb, app_key);
-	} else {
-		ASN__CTFAIL(app_key, td, sptr,
-			"%s: constraint failed (%s:%d)",
-			td->name, __FILE__, __LINE__);
-		return -1;
-	}
-}
-
-static asn_per_constraints_t asn_PER_type_minMaxIAS_constr_2 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 0,  0,  2,  2 }	/* (SIZE(2..2)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_type_minMaxMach_constr_4 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 0,  0,  2,  2 }	/* (SIZE(2..2)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_memb_minMaxIAS_constr_2 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 0,  0,  2,  2 }	/* (SIZE(2..2)) */,
-	0, 0	/* No PER value map */
-};
-static asn_per_constraints_t asn_PER_memb_minMaxMach_constr_4 GCC_NOTUSED = {
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	{ APC_CONSTRAINED,	 0,  0,  2,  2 }	/* (SIZE(2..2)) */,
-	0, 0	/* No PER value map */
-};
-static asn_TYPE_member_t asn_MBR_minMaxIAS_2[] = {
-	{ ATF_POINTER, 0, 0,
-		(ASN_TAG_CLASS_UNIVERSAL | (2 << 2)),
-		0,
-		&asn_DEF_Ias,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		""
-		},
-};
-static const ber_tlv_tag_t asn_DEF_minMaxIAS_tags_2[] = {
-	(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
-	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
-};
-static asn_SET_OF_specifics_t asn_SPC_minMaxIAS_specs_2 = {
-	sizeof(struct AirspeedRangeChange__minMaxIAS),
-	offsetof(struct AirspeedRangeChange__minMaxIAS, _asn_ctx),
-	0,	/* XER encoding is XMLDelimitedItemList */
-};
-static /* Use -fall-defs-global to expose */
-asn_TYPE_descriptor_t asn_DEF_minMaxIAS_2 = {
-	"minMaxIAS",
-	"minMaxIAS",
-	SEQUENCE_OF_free,
-	SEQUENCE_OF_print,
-	SEQUENCE_OF_constraint,
-	SEQUENCE_OF_decode_ber,
-	SEQUENCE_OF_encode_der,
-	SEQUENCE_OF_decode_xer,
-	SEQUENCE_OF_encode_xer,
-	SEQUENCE_OF_decode_uper,
-	SEQUENCE_OF_encode_uper,
-	0,	/* Use generic outmost tag fetcher */
-	asn_DEF_minMaxIAS_tags_2,
-	sizeof(asn_DEF_minMaxIAS_tags_2)
-		/sizeof(asn_DEF_minMaxIAS_tags_2[0]), /* 2 */
-	asn_DEF_minMaxIAS_tags_2,	/* Same as above */
-	sizeof(asn_DEF_minMaxIAS_tags_2)
-		/sizeof(asn_DEF_minMaxIAS_tags_2[0]), /* 2 */
-	&asn_PER_type_minMaxIAS_constr_2,
-	asn_MBR_minMaxIAS_2,
-	1,	/* Single element */
-	&asn_SPC_minMaxIAS_specs_2	/* Additional specs */
-};
-
-static asn_TYPE_member_t asn_MBR_minMaxMach_4[] = {
-	{ ATF_POINTER, 0, 0,
-		(ASN_TAG_CLASS_UNIVERSAL | (2 << 2)),
-		0,
-		&asn_DEF_SpeedMach,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		""
-		},
-};
-static const ber_tlv_tag_t asn_DEF_minMaxMach_tags_4[] = {
-	(ASN_TAG_CLASS_CONTEXT | (1 << 2)),
-	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
-};
-static asn_SET_OF_specifics_t asn_SPC_minMaxMach_specs_4 = {
-	sizeof(struct AirspeedRangeChange__minMaxMach),
-	offsetof(struct AirspeedRangeChange__minMaxMach, _asn_ctx),
-	0,	/* XER encoding is XMLDelimitedItemList */
-};
-static /* Use -fall-defs-global to expose */
-asn_TYPE_descriptor_t asn_DEF_minMaxMach_4 = {
-	"minMaxMach",
-	"minMaxMach",
-	SEQUENCE_OF_free,
-	SEQUENCE_OF_print,
-	SEQUENCE_OF_constraint,
-	SEQUENCE_OF_decode_ber,
-	SEQUENCE_OF_encode_der,
-	SEQUENCE_OF_decode_xer,
-	SEQUENCE_OF_encode_xer,
-	SEQUENCE_OF_decode_uper,
-	SEQUENCE_OF_encode_uper,
-	0,	/* Use generic outmost tag fetcher */
-	asn_DEF_minMaxMach_tags_4,
-	sizeof(asn_DEF_minMaxMach_tags_4)
-		/sizeof(asn_DEF_minMaxMach_tags_4[0]), /* 2 */
-	asn_DEF_minMaxMach_tags_4,	/* Same as above */
-	sizeof(asn_DEF_minMaxMach_tags_4)
-		/sizeof(asn_DEF_minMaxMach_tags_4[0]), /* 2 */
-	&asn_PER_type_minMaxMach_constr_4,
-	asn_MBR_minMaxMach_4,
-	1,	/* Single element */
-	&asn_SPC_minMaxMach_specs_4	/* Additional specs */
-};
-
 static asn_TYPE_member_t asn_MBR_AirspeedRangeChange_1[] = {
 	{ ATF_POINTER, 2, offsetof(struct AirspeedRangeChange, minMaxIAS),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
-		0,
-		&asn_DEF_minMaxIAS_2,
-		memb_minMaxIAS_constraint_1,
-		&asn_PER_memb_minMaxIAS_constr_2,
+		+1,	/* EXPLICIT tag at current level */
+		&asn_DEF_MinMaxIAS,
+		0,	/* Defer constraints checking to the member type */
+		0,	/* No PER visible constraints */
 		0,
 		"minMaxIAS"
 		},
 	{ ATF_POINTER, 1, offsetof(struct AirspeedRangeChange, minMaxMach),
 		(ASN_TAG_CLASS_CONTEXT | (1 << 2)),
-		0,
-		&asn_DEF_minMaxMach_4,
-		memb_minMaxMach_constraint_1,
-		&asn_PER_memb_minMaxMach_constr_4,
+		+1,	/* EXPLICIT tag at current level */
+		&asn_DEF_MinMaxMach,
+		0,	/* Defer constraints checking to the member type */
+		0,	/* No PER visible constraints */
 		0,
 		"minMaxMach"
 		},

@@ -15,54 +15,19 @@
 #include "ContractNumber.h"
 #include "ConnectedATSUList.h"
 #include "ADSEmergencyUrgencyStatus.h"
-#include "NULL.h"
-#include "constr_CHOICE.h"
+#include "RejectDetails.h"
 #include "constr_SEQUENCE.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Dependencies */
-typedef enum ADSReject__rejectDetails_PR {
-	ADSReject__rejectDetails_PR_NOTHING,	/* No components present */
-	ADSReject__rejectDetails_PR_aDS_service_unavailable,
-	ADSReject__rejectDetails_PR_undefined_reason,
-	ADSReject__rejectDetails_PR_maximum_capacity_exceeded,
-	ADSReject__rejectDetails_PR_reserved,
-	ADSReject__rejectDetails_PR_waypoint_in_request_not_on_the_route,
-	ADSReject__rejectDetails_PR_aDS_contract_not_supported,
-	ADSReject__rejectDetails_PR_noneOfReportTypesSupported,
-	ADSReject__rejectDetails_PR_noneOfEventTypesSupported,
-	/* Extensions may appear below */
-	
-} ADSReject__rejectDetails_PR;
-
 /* ADSReject */
 typedef struct ADSReject {
 	ContractNumber_t	*contractNumber	/* OPTIONAL */;
 	ConnectedATSUList_t	 connectedATSUList;
 	ADSEmergencyUrgencyStatus_t	*emergencyUrgency	/* OPTIONAL */;
-	struct ADSReject__rejectDetails {
-		ADSReject__rejectDetails_PR present;
-		union ADSReject__rejectDetails_u {
-			NULL_t	 aDS_service_unavailable;
-			NULL_t	 undefined_reason;
-			NULL_t	 maximum_capacity_exceeded;
-			NULL_t	 reserved;
-			NULL_t	 waypoint_in_request_not_on_the_route;
-			NULL_t	 aDS_contract_not_supported;
-			NULL_t	 noneOfReportTypesSupported;
-			NULL_t	 noneOfEventTypesSupported;
-			/*
-			 * This type is extensible,
-			 * possible extensions are below.
-			 */
-		} choice;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} rejectDetails;
+	RejectDetails_t	 rejectDetails;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;

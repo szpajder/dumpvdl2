@@ -12,7 +12,8 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "ADSv2VerticalRate.h"
+#include "VerticalRateDeviationUpper.h"
+#include "VerticalRateDeviationLower.h"
 #include "constr_SEQUENCE.h"
 
 #ifdef __cplusplus
@@ -21,8 +22,8 @@ extern "C" {
 
 /* VerticalRateDeviation */
 typedef struct VerticalRateDeviation {
-	ADSv2VerticalRate_t	 high;
-	ADSv2VerticalRate_t	 low;
+	VerticalRateDeviationUpper_t	 high;
+	VerticalRateDeviationLower_t	 low;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;

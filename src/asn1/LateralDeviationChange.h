@@ -12,8 +12,9 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "LateralDeviationThreshold.h"
-#include "NULL.h"
+#include "LateralDeviationThresholdLeft.h"
+#include "LateralDeviationThresholdRight.h"
+#include "LateralDeviationOffsetTag.h"
 #include "constr_SEQUENCE.h"
 
 #ifdef __cplusplus
@@ -22,9 +23,9 @@ extern "C" {
 
 /* LateralDeviationChange */
 typedef struct LateralDeviationChange {
-	LateralDeviationThreshold_t	 leftThreshold;
-	LateralDeviationThreshold_t	 rightThreshold;
-	NULL_t	*offsetTag	/* OPTIONAL */;
+	LateralDeviationThresholdLeft_t	 leftThreshold;
+	LateralDeviationThresholdRight_t	 rightThreshold;
+	LateralDeviationOffsetTag_t	*offsetTag	/* OPTIONAL */;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;

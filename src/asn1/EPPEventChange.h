@@ -13,7 +13,8 @@
 
 /* Including external dependencies */
 #include "EPPWindow.h"
-#include "NULL.h"
+#include "EPPFlightPlanChangeRequest.h"
+#include "EPPNextWptInHorizonRequest.h"
 #include "constr_SEQUENCE.h"
 
 #ifdef __cplusplus
@@ -26,8 +27,8 @@ struct EPPToleranceChange;
 /* EPPEventChange */
 typedef struct EPPEventChange {
 	EPPWindow_t	 epp_event_window;
-	NULL_t	*epp_flight_plan_change	/* OPTIONAL */;
-	NULL_t	*epp_next_waypoint_in_horizon	/* OPTIONAL */;
+	EPPFlightPlanChangeRequest_t	*epp_flight_plan_change	/* OPTIONAL */;
+	EPPNextWptInHorizonRequest_t	*epp_next_waypoint_in_horizon	/* OPTIONAL */;
 	struct EPPToleranceChange	*epp_tolerance	/* OPTIONAL */;
 	
 	/* Context for parsing across buffer boundaries */

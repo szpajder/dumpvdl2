@@ -20,7 +20,7 @@ static asn_TYPE_member_t asn_MBR_DemandContractRequest_1[] = {
 	{ ATF_POINTER, 9, offsetof(struct DemandContractRequest, projected_profile),
 		(ASN_TAG_CLASS_CONTEXT | (1 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_DCRProjectedProfile,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -29,7 +29,7 @@ static asn_TYPE_member_t asn_MBR_DemandContractRequest_1[] = {
 	{ ATF_POINTER, 8, offsetof(struct DemandContractRequest, ground_vector),
 		(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_DCRGroundVector,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -38,7 +38,7 @@ static asn_TYPE_member_t asn_MBR_DemandContractRequest_1[] = {
 	{ ATF_POINTER, 7, offsetof(struct DemandContractRequest, air_vector),
 		(ASN_TAG_CLASS_CONTEXT | (3 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_DCRAirVector,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -56,7 +56,7 @@ static asn_TYPE_member_t asn_MBR_DemandContractRequest_1[] = {
 	{ ATF_POINTER, 5, offsetof(struct DemandContractRequest, extended_projected_profile),
 		(ASN_TAG_CLASS_CONTEXT | (5 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_EPPWindow,
+		&asn_DEF_EPPRequest,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -74,7 +74,7 @@ static asn_TYPE_member_t asn_MBR_DemandContractRequest_1[] = {
 	{ ATF_POINTER, 3, offsetof(struct DemandContractRequest, speed_schedule_profile),
 		(ASN_TAG_CLASS_CONTEXT | (7 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_DCRSpeedScheduleProfile,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -83,7 +83,7 @@ static asn_TYPE_member_t asn_MBR_DemandContractRequest_1[] = {
 	{ ATF_POINTER, 2, offsetof(struct DemandContractRequest, rnp_profile),
 		(ASN_TAG_CLASS_CONTEXT | (8 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_DCRRNPProfile,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -92,7 +92,7 @@ static asn_TYPE_member_t asn_MBR_DemandContractRequest_1[] = {
 	{ ATF_POINTER, 1, offsetof(struct DemandContractRequest, planned_final_approach_speed),
 		(ASN_TAG_CLASS_CONTEXT | (9 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_NULL,
+		&asn_DEF_DCRPlannedFinalApproachSpeed,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

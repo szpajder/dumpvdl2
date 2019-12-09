@@ -13,7 +13,12 @@
 
 /* Including external dependencies */
 #include "ContractNumber.h"
-#include "NULL.h"
+#include "DCRProjectedProfile.h"
+#include "DCRGroundVector.h"
+#include "DCRAirVector.h"
+#include "DCRSpeedScheduleProfile.h"
+#include "DCRRNPProfile.h"
+#include "DCRPlannedFinalApproachSpeed.h"
 #include "constr_SEQUENCE.h"
 
 #ifdef __cplusplus
@@ -28,19 +33,19 @@ struct TOARangeRequest;
 /* DemandContractRequest */
 typedef struct DemandContractRequest {
 	ContractNumber_t	 contract_number;
-	NULL_t	*projected_profile	/* OPTIONAL */;
-	NULL_t	*ground_vector	/* OPTIONAL */;
-	NULL_t	*air_vector	/* OPTIONAL */;
+	DCRProjectedProfile_t	*projected_profile	/* OPTIONAL */;
+	DCRGroundVector_t	*ground_vector	/* OPTIONAL */;
+	DCRAirVector_t	*air_vector	/* OPTIONAL */;
 	struct MetInfoRequest	*met_info	/* OPTIONAL */;
 	struct EPPWindow	*extended_projected_profile	/* OPTIONAL */;
 	struct TOARangeRequest	*toa_range	/* OPTIONAL */;
-	NULL_t	*speed_schedule_profile	/* OPTIONAL */;
+	DCRSpeedScheduleProfile_t	*speed_schedule_profile	/* OPTIONAL */;
 	/*
 	 * This type is extensible,
 	 * possible extensions are below.
 	 */
-	NULL_t	*rnp_profile	/* OPTIONAL */;
-	NULL_t	*planned_final_approach_speed	/* OPTIONAL */;
+	DCRRNPProfile_t	*rnp_profile	/* OPTIONAL */;
+	DCRPlannedFinalApproachSpeed_t	*planned_final_approach_speed	/* OPTIONAL */;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
@@ -55,7 +60,7 @@ extern asn_TYPE_descriptor_t asn_DEF_DemandContractRequest;
 
 /* Referred external types */
 #include "MetInfoRequest.h"
-#include "EPPWindow.h"
+#include "EPPRequest.h"
 #include "TOARangeRequest.h"
 
 #endif	/* _DemandContractRequest_H_ */

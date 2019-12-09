@@ -12,7 +12,7 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "NULL.h"
+#include "CancelAllContracts.h"
 #include "CancelContract.h"
 #include "ContractRequest.h"
 #include "ProviderAbortReason.h"
@@ -39,7 +39,7 @@ typedef enum ADSGroundPDU_PR {
 typedef struct ADSGroundPDU {
 	ADSGroundPDU_PR present;
 	union ADSGroundPDU_u {
-		NULL_t	 aDS_cancel_all_contracts_PDU;
+		CancelAllContracts_t	 aDS_cancel_all_contracts_PDU;
 		CancelContract_t	 aDS_cancel_contract_PDU;
 		ContractRequest_t	 aDS_contract_PDU;
 		ProviderAbortReason_t	 aDS_provider_abort_PDU;

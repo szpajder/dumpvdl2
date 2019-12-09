@@ -7,79 +7,6 @@
 
 #include "ADSNonCompliance.h"
 
-static asn_per_constraints_t asn_PER_type_contractDetailsNotSupporting_constr_6 GCC_NOTUSED = {
-	{ APC_CONSTRAINED | APC_EXTENSIBLE,  2,  2,  0,  2 }	/* (0..2,...) */,
-	{ APC_UNCONSTRAINED,	-1, -1,  0,  0 },
-	0, 0	/* No PER value map */
-};
-static asn_TYPE_member_t asn_MBR_contractDetailsNotSupporting_6[] = {
-	{ ATF_NOFLAGS, 0, offsetof(struct ADSNonCompliance__contractDetailsNotSupporting, choice.demand_ncn),
-		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
-		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_ReportTypeNotSupported,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		"demand-ncn"
-		},
-	{ ATF_NOFLAGS, 0, offsetof(struct ADSNonCompliance__contractDetailsNotSupporting, choice.event_ncn),
-		(ASN_TAG_CLASS_CONTEXT | (1 << 2)),
-		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_EventTypeNotSupported,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		"event-ncn"
-		},
-	{ ATF_NOFLAGS, 0, offsetof(struct ADSNonCompliance__contractDetailsNotSupporting, choice.periodic_ncn),
-		(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
-		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_ReportTypeAndPeriodNotSupported,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		"periodic-ncn"
-		},
-};
-static const asn_TYPE_tag2member_t asn_MAP_contractDetailsNotSupporting_tag2el_6[] = {
-    { (ASN_TAG_CLASS_CONTEXT | (0 << 2)), 0, 0, 0 }, /* demand-ncn */
-    { (ASN_TAG_CLASS_CONTEXT | (1 << 2)), 1, 0, 0 }, /* event-ncn */
-    { (ASN_TAG_CLASS_CONTEXT | (2 << 2)), 2, 0, 0 } /* periodic-ncn */
-};
-static asn_CHOICE_specifics_t asn_SPC_contractDetailsNotSupporting_specs_6 = {
-	sizeof(struct ADSNonCompliance__contractDetailsNotSupporting),
-	offsetof(struct ADSNonCompliance__contractDetailsNotSupporting, _asn_ctx),
-	offsetof(struct ADSNonCompliance__contractDetailsNotSupporting, present),
-	sizeof(((struct ADSNonCompliance__contractDetailsNotSupporting *)0)->present),
-	asn_MAP_contractDetailsNotSupporting_tag2el_6,
-	3,	/* Count of tags in the map */
-	0,
-	3	/* Extensions start */
-};
-static /* Use -fall-defs-global to expose */
-asn_TYPE_descriptor_t asn_DEF_contractDetailsNotSupporting_6 = {
-	"contractDetailsNotSupporting",
-	"contractDetailsNotSupporting",
-	CHOICE_free,
-	CHOICE_print,
-	CHOICE_constraint,
-	CHOICE_decode_ber,
-	CHOICE_encode_der,
-	CHOICE_decode_xer,
-	CHOICE_encode_xer,
-	CHOICE_decode_uper,
-	CHOICE_encode_uper,
-	CHOICE_outmost_tag,
-	0,	/* No effective tags (pointer) */
-	0,	/* No effective tags (count) */
-	0,	/* No tags (pointer) */
-	0,	/* No tags (count) */
-	&asn_PER_type_contractDetailsNotSupporting_constr_6,
-	asn_MBR_contractDetailsNotSupporting_6,
-	3,	/* Elements count */
-	&asn_SPC_contractDetailsNotSupporting_specs_6	/* Additional specs */
-};
-
 static asn_TYPE_member_t asn_MBR_ADSNonCompliance_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct ADSNonCompliance, contractNumber),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
@@ -120,7 +47,7 @@ static asn_TYPE_member_t asn_MBR_ADSNonCompliance_1[] = {
 	{ ATF_POINTER, 1, offsetof(struct ADSNonCompliance, contractDetailsNotSupporting),
 		(ASN_TAG_CLASS_CONTEXT | (4 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_contractDetailsNotSupporting_6,
+		&asn_DEF_ContractDetailsNotSupporting,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

@@ -12,30 +12,20 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "Ias.h"
-#include "asn_SEQUENCE_OF.h"
-#include "constr_SEQUENCE_OF.h"
-#include "SpeedMach.h"
 #include "constr_SEQUENCE.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* Forward declarations */
+struct MinMaxIAS;
+struct MinMaxMach;
+
 /* AirspeedRangeChange */
 typedef struct AirspeedRangeChange {
-	struct AirspeedRangeChange__minMaxIAS {
-		A_SEQUENCE_OF(Ias_t) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *minMaxIAS;
-	struct AirspeedRangeChange__minMaxMach {
-		A_SEQUENCE_OF(SpeedMach_t) list;
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *minMaxMach;
+	struct MinMaxIAS	*minMaxIAS	/* OPTIONAL */;
+	struct MinMaxMach	*minMaxMach	/* OPTIONAL */;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
@@ -47,6 +37,10 @@ extern asn_TYPE_descriptor_t asn_DEF_AirspeedRangeChange;
 #ifdef __cplusplus
 }
 #endif
+
+/* Referred external types */
+#include "MinMaxIAS.h"
+#include "MinMaxMach.h"
 
 #endif	/* _AirspeedRangeChange_H_ */
 #include "asn_internal.h"

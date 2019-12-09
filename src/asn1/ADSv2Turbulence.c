@@ -11,7 +11,7 @@ static asn_TYPE_member_t asn_MBR_ADSv2Turbulence_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct ADSv2Turbulence, average),
 		(ASN_TAG_CLASS_UNIVERSAL | (2 << 2)),
 		0,
-		&asn_DEF_TurbulenceEDRValue,
+		&asn_DEF_TurbulenceEDRAverage,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

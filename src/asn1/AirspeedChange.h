@@ -12,7 +12,8 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "NativeInteger.h"
+#include "MachNumberChange.h"
+#include "IasChange.h"
 #include "constr_SEQUENCE.h"
 
 #ifdef __cplusplus
@@ -21,8 +22,8 @@ extern "C" {
 
 /* AirspeedChange */
 typedef struct AirspeedChange {
-	long	*mach_number_change	/* OPTIONAL */;
-	long	*ias_change	/* OPTIONAL */;
+	MachNumberChange_t	*mach_number_change	/* OPTIONAL */;
+	IasChange_t	*ias_change	/* OPTIONAL */;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
