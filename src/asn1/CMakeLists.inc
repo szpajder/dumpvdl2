@@ -334,8 +334,6 @@ set(ASN_MODULE_SOURCES
 	UserAbortReason.c
 	PMADSCDateTimeGroup.c
 	PMADSCTime.c
-	TimeHours.c
-	TimeMinutes.c
 	ADSRequestContract.c
 	DemandContractRequest.c
 	DCRProjectedProfile.c

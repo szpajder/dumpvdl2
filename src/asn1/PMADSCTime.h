@@ -12,8 +12,8 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "TimeHours.h"
-#include "TimeMinutes.h"
+#include "Timehours.h"
+#include "Timeminutes.h"
 #include "TimeSeconds.h"
 #include "constr_SEQUENCE.h"
 
@@ -23,8 +23,8 @@ extern "C" {
 
 /* PMADSCTime */
 typedef struct PMADSCTime {
-	TimeHours_t	 timeHours;
-	TimeMinutes_t	 timeMinutes;
+	Timehours_t	 timeHours;
+	Timeminutes_t	 timeMinutes;
 	TimeSeconds_t	*timeSeconds	/* OPTIONAL */;
 	
 	/* Context for parsing across buffer boundaries */

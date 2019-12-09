@@ -12,8 +12,8 @@
 #include "asn_application.h"
 
 /* Including external dependencies */
-#include "TimeHours.h"
-#include "TimeMinutes.h"
+#include "Timehours.h"
+#include "Timeminutes.h"
 #include "TimeSeconds.h"
 #include "constr_SEQUENCE.h"
 
@@ -23,8 +23,8 @@ extern "C" {
 
 /* Timesec */
 typedef struct Timesec {
-	TimeHours_t	 hours;
-	TimeMinutes_t	 minutes;
+	Timehours_t	 hours;
+	Timeminutes_t	 minutes;
 	TimeSeconds_t	 seconds;
 	
 	/* Context for parsing across buffer boundaries */

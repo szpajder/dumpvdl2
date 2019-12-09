@@ -11,7 +11,7 @@ static asn_TYPE_member_t asn_MBR_Timesec_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct Timesec, hours),
 		(ASN_TAG_CLASS_UNIVERSAL | (2 << 2)),
 		0,
-		&asn_DEF_TimeHours,
+		&asn_DEF_Timehours,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -20,7 +20,7 @@ static asn_TYPE_member_t asn_MBR_Timesec_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct Timesec, minutes),
 		(ASN_TAG_CLASS_UNIVERSAL | (2 << 2)),
 		0,
-		&asn_DEF_TimeMinutes,
+		&asn_DEF_Timeminutes,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

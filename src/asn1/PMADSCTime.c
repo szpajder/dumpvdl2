@@ -11,7 +11,7 @@ static asn_TYPE_member_t asn_MBR_PMADSCTime_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct PMADSCTime, timeHours),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_TimeHours,
+		&asn_DEF_Timehours,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -20,7 +20,7 @@ static asn_TYPE_member_t asn_MBR_PMADSCTime_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct PMADSCTime, timeMinutes),
 		(ASN_TAG_CLASS_CONTEXT | (1 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_TimeMinutes,
+		&asn_DEF_Timeminutes,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
