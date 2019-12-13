@@ -38,14 +38,6 @@ set(ASN_MODULE_SOURCES
 	Timeminutes.c
 	VersionNumber.c
 	Year.c
-	GroundPDUs.c
-	UplinkMessage.c
-	AircraftPDUs.c
-	StartDownMessage.c
-	Mode.c
-	DownlinkMessage.c
-	CPDLCUserAbortReason.c
-	CPDLCProviderAbortReason.c
 	ProtectedGroundPDUs.c
 	ProtectedUplinkMessage.c
 	ATCForwardMessage.c
