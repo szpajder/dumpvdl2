@@ -23,11 +23,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/time.h>			// struct timeval
 #include <libacars/libacars.h>		// la_proto_node, la_proto_tree_destroy, la_proto_tree_format_text
 #include <libacars/acars.h>		// la_acars_parse, la_proto_tree_find_acars
 #include <libacars/adsc.h>		// la_proto_tree_find_adsc
 #include <libacars/cpdlc.h>		// la_proto_tree_find_cpdlc
 #include <libacars/vstring.h>		// la_vstring, la_vstring_append_sprintf
+#include <libacars/reassembly.h>	// la_reasm_ctx
 #include "dumpvdl2.h"
 #include "acars.h"
 
@@ -59,14 +61,15 @@ static void update_msg_type(uint32_t *msg_type, la_proto_node *root) {
 	}
 }
 
-la_proto_node *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+la_proto_node *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type,
+la_reasm_ctx *reasm_ctx, struct timeval rx_time) {
 	la_msg_dir msg_dir = LA_MSG_DIR_UNKNOWN;
 	if(*msg_type & MSGFLT_SRC_AIR) {
 		msg_dir = LA_MSG_DIR_AIR2GND;
 	} else if(*msg_type & MSGFLT_SRC_GND) {
 		msg_dir = LA_MSG_DIR_GND2AIR;
 	}
-	la_proto_node *node = la_acars_parse(buf, len, msg_dir);
+	la_proto_node *node = la_acars_parse_and_reassemble(buf, len, msg_dir, reasm_ctx, rx_time);
 	update_msg_type(msg_type, node);
 	return node;
 }
@@ -88,7 +91,7 @@ void acars_output_pp(la_proto_node *tree) {
 	}
 	la_vstring *vstr = la_vstring_new();
 	la_vstring_append_sprintf(vstr, "AC%1c %7s %1c %2s %1c %4s %6s %s",
-		msg->mode, msg->reg, msg->ack, msg->label, msg->block_id, msg->no, msg->flight_id, txt);
+		msg->mode, msg->reg, msg->ack, msg->label, msg->block_id, msg->msg_num, msg->flight_id, txt);
 
 	if(write(pp_sockfd, vstr->str, vstr->len) < 0) {
 		debug_print("write(pp_sockfd) error: %s", strerror(errno));

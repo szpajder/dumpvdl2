@@ -19,9 +19,10 @@
 #ifndef _AVLC_H
 #define _AVLC_H 1
 #include <stdint.h>
-#include <sys/time.h>		// struct timeval
-#include <glib.h>		// GAsyncQueue
-#include "config.h"		// IS_BIG_ENDIAN
+#include <sys/time.h>			// struct timeval
+#include <glib.h>			// GAsyncQueue
+#include <libacars/reassembly.h>	// la_reasm_ctx
+#include "config.h"			// IS_BIG_ENDIAN
 
 typedef union {
 	uint32_t val;
@@ -52,5 +53,5 @@ typedef struct {
 } avlc_frame_qentry_t;
 
 uint32_t parse_dlc_addr(uint8_t *buf);
-la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type);
+la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_ctx *reasm_ctx);
 #endif // !_AVLC_H

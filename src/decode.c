@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <glib.h>
 #include <libacars/libacars.h>	// la_proto_node, la_proto_tree_destroy()
+#include <libacars/reassembly.h>	// la_reasm_ctx, la_reasm_ctx_new()
 #include "config.h"
 #ifdef WITH_STATSD
 #include <sys/time.h>
@@ -365,11 +366,12 @@ void *avlc_decoder_thread(void *arg) {
 	uint32_t msg_type = 0;
 
 	frame_queue = g_async_queue_new();
+	la_reasm_ctx *reasm_ctx = la_reasm_ctx_new();
 	while(1) {
 		q = (avlc_frame_qentry_t *)g_async_queue_pop(frame_queue);
 		statsd_increment(q->freq, "avlc.frames.processed");
 		msg_type = 0;
-		root = avlc_parse(q, &msg_type);
+		root = avlc_parse(q, &msg_type, reasm_ctx);
 		if(root == NULL) {
 			goto cleanup;
 		}
