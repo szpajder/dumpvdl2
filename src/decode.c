@@ -347,7 +347,7 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 			statsd_increment_per_channel(v->freq, "decoder.errors.unstuff");
 			goto cleanup;
 		}
-		statsd_timing_delta_per_channel(v->freq, "decoder.msg.processing_time", &v->tstart);
+		statsd_timing_delta_per_channel(v->freq, "decoder.msg.processing_time", v->tstart);
 cleanup:
 		XFREE(data);
 		XFREE(fec);

@@ -29,7 +29,7 @@
 #define STATSD_NAMESPACE "dumpvdl2"
 static statsd_link *statsd = NULL;
 
-static const char *counters_per_channel[] = {
+static char const *counters_per_channel[] = {
 	"avlc.errors.bad_fcs",
 	"avlc.errors.too_short",
 	"avlc.frames.good",
@@ -145,20 +145,20 @@ void statsd_counter_per_msgdir_increment(la_msg_dir const msg_dir, char *counter
 	statsd_inc(statsd, metric, 1.0);
 }
 
-void statsd_timing_delta_per_channel_send(uint32_t const freq, char *timer, struct timeval *ts) {
-	if(statsd == NULL || ts == NULL) {
+void statsd_timing_delta_per_channel_send(uint32_t const freq, char *timer, struct timeval const ts) {
+	if(statsd == NULL) {
 		return;
 	}
 	char metric[256];
 	struct timeval te;
 	uint32_t tdiff;
 	gettimeofday(&te, NULL);
-	if(te.tv_sec < ts->tv_sec || (te.tv_sec == ts->tv_sec && te.tv_usec < ts->tv_usec)) {
+	if(te.tv_sec < ts.tv_sec || (te.tv_sec == ts.tv_sec && te.tv_usec < ts.tv_usec)) {
 		debug_print("timediff is negative: ts.tv_sec=%lu ts.tv_usec=%lu te.tv_sec=%lu te.tv_usec=%lu\n",
-			ts->tv_sec, ts->tv_usec, te.tv_sec, te.tv_usec);
+			ts.tv_sec, ts.tv_usec, te.tv_sec, te.tv_usec);
 		return;
 	}
-	tdiff = ((te.tv_sec - ts->tv_sec) * 1000000UL + te.tv_usec - ts->tv_usec) / 1000;
+	tdiff = ((te.tv_sec - ts.tv_sec) * 1000000UL + te.tv_usec - ts.tv_usec) / 1000;
 	debug_print("tdiff: %u ms\n", tdiff);
 	snprintf(metric, sizeof(metric), "%d.%s", freq, timer);
 	statsd_timing(statsd, metric, tdiff);

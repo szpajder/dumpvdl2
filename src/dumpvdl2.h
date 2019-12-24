@@ -303,7 +303,7 @@ int statsd_initialize(char *statsd_addr);
 void statsd_initialize_counters_per_channel(uint32_t const freq);
 void statsd_initialize_counters_per_msgdir();
 void statsd_counter_per_channel_increment(uint32_t const freq, char *counter);
-void statsd_timing_delta_per_channel_send(uint32_t const freq, char *timer, struct timeval *ts);
+void statsd_timing_delta_per_channel_send(uint32_t const freq, char *timer, struct timeval const ts);
 void statsd_counter_per_msgdir_increment(la_msg_dir const msg_dir, char *counter);
 #define statsd_increment_per_channel(freq, counter) statsd_counter_per_channel_increment(freq, counter)
 #define statsd_timing_delta_per_channel(freq, timer, start) statsd_timing_delta_per_channel_send(freq, timer, start)
