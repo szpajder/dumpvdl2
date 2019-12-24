@@ -61,6 +61,34 @@ static void update_msg_type(uint32_t *msg_type, la_proto_node *root) {
 	}
 }
 
+#ifdef WITH_STATSD
+static void update_statsd_acars_metrics(la_msg_dir msg_dir, la_proto_node *root) {
+	static dict const reasm_status_counter_names[] = {
+		{ .id = LA_REASM_UNKNOWN, .val = "acars.reasm.unknown" },
+		{ .id = LA_REASM_COMPLETE, .val = "acars.reasm.complete" },
+//		{ .id = LA_REASM_IN_PROGRESS, .val = "acars.reasm.in_progress" },  // report final states only
+		{ .id = LA_REASM_SKIPPED, .val = "acars.reasm.skipped" },
+		{ .id = LA_REASM_FIRST_FRAG_MISSING, .val = "acars.reasm.first_frag_missing" },
+		{ .id = LA_REASM_TIMED_OUT, .val = "acars.reasm.timeout" },
+		{ .id = LA_REASM_DUPLICATE, .val = "acars.reasm.duplicate" },
+		{ .id = LA_REASM_FRAG_OUT_OF_SEQUENCE, .val = "acars.reasm.out_of_seq" },
+		{ .id = LA_REASM_ARGS_INVALID, .val = "acars.reasm.invalid_args" },
+		{ .id = 0, .val = NULL }
+	};
+	la_proto_node *node = la_proto_tree_find_acars(root);
+	if(node == NULL) {
+		debug_print("proto tree contains no ACARS message");
+		return;
+	}
+	CAST_PTR(amsg, la_acars_msg *, node->data);
+	CAST_PTR(metric, char *, dict_search(reasm_status_counter_names, amsg->reasm_status));
+	if(metric == NULL) {
+		return;
+	}
+	statsd_increment_per_msgdir(msg_dir, metric);
+}
+#endif
+
 la_proto_node *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type,
 la_reasm_ctx *reasm_ctx, struct timeval rx_time) {
 	la_msg_dir msg_dir = LA_MSG_DIR_UNKNOWN;
@@ -71,6 +99,9 @@ la_reasm_ctx *reasm_ctx, struct timeval rx_time) {
 	}
 	la_proto_node *node = la_acars_parse_and_reassemble(buf, len, msg_dir, reasm_ctx, rx_time);
 	update_msg_type(msg_type, node);
+#ifdef WITH_STATSD
+	update_statsd_acars_metrics(msg_dir, node);
+#endif
 	return node;
 }
 

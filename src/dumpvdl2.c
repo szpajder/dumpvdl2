@@ -605,8 +605,10 @@ int main(int argc, char **argv) {
 				XFREE(statsd_addr);
 				statsd_enabled = 0;
 		} else {
-			for(int i = 0; i < num_channels; i++)
+			for(int i = 0; i < num_channels; i++) {
 				statsd_initialize_counters_per_channel(freqs[i]);
+			}
+			statsd_initialize_counters_per_msgdir();
 		}
 	} else {
 		XFREE(statsd_addr);

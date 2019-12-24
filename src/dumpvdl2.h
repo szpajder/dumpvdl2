@@ -301,17 +301,23 @@ void output_proto_tree(la_proto_node *root);
 #ifdef WITH_STATSD
 int statsd_initialize(char *statsd_addr);
 void statsd_initialize_counters_per_channel(uint32_t freq);
+void statsd_initialize_counters_per_msgdir();
 void statsd_counter_per_channel_increment(uint32_t freq, char *counter);
 void statsd_timing_delta_per_channel_send(uint32_t freq, char *timer, struct timeval *ts);
+void statsd_counter_per_msgdir_increment(la_msg_dir const msg_dir, char *counter);
 #define statsd_increment_per_channel(freq, counter) do { \
 	statsd_counter_per_channel_increment(freq, counter); \
 	} while(0)
 #define statsd_timing_delta_per_channel(freq, timer, start) do { \
 	statsd_timing_delta_per_channel_send(freq, timer, start); \
 	} while(0)
+#define statsd_increment_per_msgdir(counter, msgdir) do { \
+	statsd_counter_per_msgdir_increment(counter, msgdir); \
+	} while(0)
 #else
 #define statsd_increment_per_channel(freq, counter) nop()
 #define statsd_timing_delta_per_channel(freq, timer, start) nop()
+#define statsd_increment_per_msgdir(counter, msgdir) nop()
 #endif
 
 // util.c

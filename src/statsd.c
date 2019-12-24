@@ -23,6 +23,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <statsd/statsd-client.h>
+#include <libacars/libacars.h>		// la_msg_dir
 #include "dumpvdl2.h"
 
 #define STATSD_NAMESPACE "dumpvdl2"
@@ -61,6 +62,25 @@ static const char *counters_per_channel[] = {
 	NULL
 };
 
+static char const *counters_per_msgdir[] = {
+	"acars.reasm.unknown",
+	"acars.reasm.complete",
+//	"acars.reasm.in_progress",	// we report final reasm states only
+	"acars.reasm.skipped",
+	"acars.reasm.first_frag_missing",
+	"acars.reasm.timeout",
+	"acars.reasm.duplicate",
+	"acars.reasm.out_of_seq",
+	"acars.reasm.invalid_args",
+	NULL
+};
+
+static char const *msg_dir_labels[] = {
+	[LA_MSG_DIR_UNKNOWN] = "unknown",
+	[LA_MSG_DIR_AIR2GND] = "air2gnd",
+	[LA_MSG_DIR_GND2AIR] = "gnd2air"
+};
+
 int statsd_initialize(char *statsd_addr) {
 	char *addr;
 	char *port;
@@ -85,10 +105,31 @@ void statsd_initialize_counters_per_channel(uint32_t freq) {
 	}
 }
 
+static void _statsd_initialize_counters_for_msg_dir(char const *counters[], la_msg_dir const msg_dir) {
+	char metric[256];
+	for(int n = 0; counters[n] != NULL; n++) {
+		snprintf(metric, sizeof(metric), "%s.%s", counters[n], msg_dir_labels[msg_dir]);
+		statsd_count(statsd, metric, 0, 1.0);
+	}
+}
+
+void statsd_initialize_counters_per_msgdir() {
+	if(!statsd) return;
+	_statsd_initialize_counters_for_msg_dir(counters_per_msgdir, LA_MSG_DIR_AIR2GND);
+	_statsd_initialize_counters_for_msg_dir(counters_per_msgdir, LA_MSG_DIR_GND2AIR);
+}
+
 void statsd_counter_per_channel_increment(uint32_t freq, char *counter) {
 	if(!statsd) return;
 	char metric[256];
 	snprintf(metric, sizeof(metric), "%d.%s", freq, counter);
+	statsd_inc(statsd, metric, 1.0);
+}
+
+void statsd_counter_per_msgdir_increment(la_msg_dir const msg_dir, char *counter) {
+	if(!statsd) return;
+	char metric[256];
+	snprintf(metric, sizeof(metric), "%s.%s", counter, msg_dir_labels[msg_dir]);
 	statsd_inc(statsd, metric, 1.0);
 }
 
