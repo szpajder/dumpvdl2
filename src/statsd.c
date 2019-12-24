@@ -85,19 +85,25 @@ int statsd_initialize(char *statsd_addr) {
 	char *addr;
 	char *port;
 
-	if(statsd_addr == NULL)
+	if(statsd_addr == NULL) {
 		return -1;
-	if((addr = strtok(statsd_addr, ":")) == NULL)
+	}
+	if((addr = strtok(statsd_addr, ":")) == NULL) {
 		return -1;
-	if((port = strtok(NULL, ":")) == NULL)
+	}
+	if((port = strtok(NULL, ":")) == NULL) {
 		return -1;
-	if((statsd = statsd_init_with_namespace(addr, atoi(port), STATSD_NAMESPACE)) == NULL)
+	}
+	if((statsd = statsd_init_with_namespace(addr, atoi(port), STATSD_NAMESPACE)) == NULL) {
 		return -2;
+	}
 	return 0;
 }
 
-void statsd_initialize_counters_per_channel(uint32_t freq) {
-	if(!statsd) return;
+void statsd_initialize_counters_per_channel(uint32_t const freq) {
+	if(statsd == NULL) {
+		return;
+	}
 	char metric[256];
 	for(int n = 0; counters_per_channel[n] != NULL; n++) {
 		snprintf(metric, sizeof(metric), "%u.%s", freq, counters_per_channel[n]);
@@ -114,27 +120,35 @@ static void _statsd_initialize_counters_for_msg_dir(char const *counters[], la_m
 }
 
 void statsd_initialize_counters_per_msgdir() {
-	if(!statsd) return;
+	if(statsd == NULL) {
+		return;
+	}
 	_statsd_initialize_counters_for_msg_dir(counters_per_msgdir, LA_MSG_DIR_AIR2GND);
 	_statsd_initialize_counters_for_msg_dir(counters_per_msgdir, LA_MSG_DIR_GND2AIR);
 }
 
-void statsd_counter_per_channel_increment(uint32_t freq, char *counter) {
-	if(!statsd) return;
+void statsd_counter_per_channel_increment(uint32_t const freq, char *counter) {
+	if(statsd == NULL) {
+		return;
+	}
 	char metric[256];
 	snprintf(metric, sizeof(metric), "%d.%s", freq, counter);
 	statsd_inc(statsd, metric, 1.0);
 }
 
 void statsd_counter_per_msgdir_increment(la_msg_dir const msg_dir, char *counter) {
-	if(!statsd) return;
+	if(statsd == NULL) {
+		return;
+	}
 	char metric[256];
 	snprintf(metric, sizeof(metric), "%s.%s", counter, msg_dir_labels[msg_dir]);
 	statsd_inc(statsd, metric, 1.0);
 }
 
-void statsd_timing_delta_per_channel_send(uint32_t freq, char *timer, struct timeval *ts) {
-	if(!statsd || !ts) return;
+void statsd_timing_delta_per_channel_send(uint32_t const freq, char *timer, struct timeval *ts) {
+	if(statsd == NULL || ts == NULL) {
+		return;
+	}
 	char metric[256];
 	struct timeval te;
 	uint32_t tdiff;
