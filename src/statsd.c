@@ -28,7 +28,7 @@
 #define STATSD_NAMESPACE "dumpvdl2"
 static statsd_link *statsd = NULL;
 
-static const char *counters[] = {
+static const char *counters_per_channel[] = {
 	"avlc.errors.bad_fcs",
 	"avlc.errors.too_short",
 	"avlc.frames.good",
@@ -76,23 +76,23 @@ int statsd_initialize(char *statsd_addr) {
 	return 0;
 }
 
-void statsd_initialize_counters(uint32_t freq) {
+void statsd_initialize_counters_per_channel(uint32_t freq) {
 	if(!statsd) return;
 	char metric[256];
-	for(int n = 0; counters[n] != NULL; n++) {
-		snprintf(metric, sizeof(metric), "%u.%s", freq, counters[n]);
+	for(int n = 0; counters_per_channel[n] != NULL; n++) {
+		snprintf(metric, sizeof(metric), "%u.%s", freq, counters_per_channel[n]);
 		statsd_count(statsd, metric, 0, 1.0);
 	}
 }
 
-void statsd_counter_increment(uint32_t freq, char *counter) {
+void statsd_counter_per_channel_increment(uint32_t freq, char *counter) {
 	if(!statsd) return;
 	char metric[256];
 	snprintf(metric, sizeof(metric), "%d.%s", freq, counter);
 	statsd_inc(statsd, metric, 1.0);
 }
 
-void statsd_timing_delta_send(uint32_t freq, char *timer, struct timeval *ts) {
+void statsd_timing_delta_per_channel_send(uint32_t freq, char *timer, struct timeval *ts) {
 	if(!statsd || !ts) return;
 	char metric[256];
 	struct timeval te;

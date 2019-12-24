@@ -185,7 +185,7 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 		uint32_t header;
 		if(bitstream_read_word_msbfirst(v->bs, &header, HEADER_LEN) < 0) {
 			debug_print("Could not read header from bitstream\n");
-			statsd_increment(v->freq, "decoder.errors.no_header");
+			statsd_increment_per_channel(v->freq, "decoder.errors.no_header");
 			v->decoder_state = DEC_IDLE;
 			return;
 		}
@@ -193,12 +193,12 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 		header &= ONES(TRLEN+HDRFECLEN);
 		v->syndrome = decode_header(&header);
 		if(v->syndrome == 0) {
-			statsd_increment(v->freq, "decoder.crc.good");
+			statsd_increment_per_channel(v->freq, "decoder.crc.good");
 		}
 // sanity check - reserved symbol bits shall still be set to 0
 		if((header & ONES(TRLEN+HDRFECLEN)) != header) {
 			debug_print("Rejecting decoded header with non-zero reserved bits\n");
-			statsd_increment(v->freq, "decoder.crc.bad");
+			statsd_increment_per_channel(v->freq, "decoder.crc.bad");
 			v->decoder_state = DEC_IDLE;
 			return;
 		}
@@ -210,7 +210,7 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 // possibly overlooking valid frames.
 		if((v->syndrome != 0 && v->datalen > MAX_FRAME_LENGTH_CORRECTED) || v->datalen > MAX_FRAME_LENGTH) {
 			debug_print("v->datalen=%u v->syndrome=%u - frame rejected\n", v->datalen, v->syndrome);
-			statsd_increment(v->freq, "decoder.errors.too_long");
+			statsd_increment_per_channel(v->freq, "decoder.errors.too_long");
 			v->decoder_state = DEC_IDLE;
 			return;
 		}
@@ -230,7 +230,7 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 
 		if(v->fec_octets == 0) {
 			debug_print("fec_octets is 0 which means the frame is unreasonably short\n");
-			statsd_increment(v->freq, "decoder.errors.no_fec");
+			statsd_increment_per_channel(v->freq, "decoder.errors.no_fec");
 			v->decoder_state = DEC_IDLE;
 			return;
 		}
@@ -246,12 +246,12 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 		uint8_t *fec = XCALLOC(v->fec_octets, sizeof(uint8_t));
 		if(bitstream_read_lsbfirst(v->bs, data, v->datalen_octets, 8) < 0) {
 			debug_print("Frame data truncated\n");
-			statsd_increment(v->freq, "decoder.errors.data_truncated");
+			statsd_increment_per_channel(v->freq, "decoder.errors.data_truncated");
 			goto cleanup;
 		}
 		if(bitstream_read_lsbfirst(v->bs, fec, v->fec_octets, 8) < 0) {
 			debug_print("FEC data truncated\n");
-			statsd_increment(v->freq, "decoder.errors.fec_truncated");
+			statsd_increment_per_channel(v->freq, "decoder.errors.fec_truncated");
 			goto cleanup;
 		}
 		debug_print_buf_hex(data, v->datalen_octets, "Data:\n");
@@ -262,7 +262,7 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 			int ret;
 			if((ret = deinterleave(data, v->datalen_octets, v->num_blocks, RS_N, rs_tab, RS_K, 0)) < 0) {
 				debug_print("Deinterleaver failed with error %d\n", ret);
-				statsd_increment(v->freq, "decoder.errors.deinterleave_data");
+				statsd_increment_per_channel(v->freq, "decoder.errors.deinterleave_data");
 				goto cleanup;
 			}
 
@@ -273,7 +273,7 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 
 			if((ret = deinterleave(fec, v->fec_octets, fec_rows, RS_N, rs_tab, RS_N - RS_K, RS_K)) < 0) {
 				debug_print("Deinterleaver failed with error %d\n", ret);
-				statsd_increment(v->freq, "decoder.errors.deinterleave_fec");
+				statsd_increment_per_channel(v->freq, "decoder.errors.deinterleave_fec");
 				goto cleanup;
 			}
 #ifdef DEBUG
@@ -284,7 +284,7 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 #endif
 			bitstream_reset(v->bs);
 			for(uint32_t r = 0; r < v->num_blocks; r++) {
-				statsd_increment(v->freq, "decoder.blocks.processed");
+				statsd_increment_per_channel(v->freq, "decoder.blocks.processed");
 				int num_fec_octets = RS_N - RS_K;	// full block
 				if(r == v->num_blocks - 1) {		// final, partial block
 					num_fec_octets = get_fec_octetcount(v->last_block_len_octets);
@@ -293,10 +293,10 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 				debug_print("Block %d FEC: %d\n", r, ret);
 				if(ret < 0) {
 					debug_print("FEC check failed\n");
-					statsd_increment(v->freq, "decoder.errors.fec_bad");
+					statsd_increment_per_channel(v->freq, "decoder.errors.fec_bad");
 					goto cleanup;
 				} else {
-					statsd_increment(v->freq, "decoder.blocks.fec_ok");
+					statsd_increment_per_channel(v->freq, "decoder.blocks.fec_ok");
 					if(ret > 0) {
 						debug_print_buf_hex(rs_tab[r], RS_N, "Corrected block %d:\n", r);
 // count corrected octets, excluding intended erasures
@@ -309,7 +309,7 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 					ret = bitstream_append_lsbfirst(v->bs, (uint8_t *)&rs_tab[r], v->last_block_len_octets, 8);
 				if(ret < 0) {
 					debug_print("bitstream_append_lsbfirst failed\n");
-					statsd_increment(v->freq, "decoder.errors.bitstream");
+					statsd_increment_per_channel(v->freq, "decoder.errors.bitstream");
 					goto cleanup;
 				}
 			}
@@ -326,7 +326,7 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 		while((ret = bitstream_copy_next_frame(v->bs, v->frame_bs)) >= 0) {
 			if((v->frame_bs->end - v->frame_bs->start) % 8 != 0) {
 				debug_print("Frame %d: Bit stream error: does not end on a byte boundary\n", frame_cnt);
-				statsd_increment(v->freq, "decoder.errors.truncated_octets");
+				statsd_increment_per_channel(v->freq, "decoder.errors.truncated_octets");
 				goto cleanup;
 			}
 			debug_print("Frame %d: Stream OK after unstuffing, length is %u octets\n",
@@ -335,19 +335,19 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 			memset(data, 0, frame_len_octets * sizeof(uint8_t));
 			if(bitstream_read_lsbfirst(v->frame_bs, data, frame_len_octets, 8) < 0) {
 				debug_print("Frame %d: bitstream_read_lsbfirst failed\n", frame_cnt);
-				statsd_increment(v->freq, "decoder.errors.bitstream");
+				statsd_increment_per_channel(v->freq, "decoder.errors.bitstream");
 				goto cleanup;
 			}
-			statsd_increment(v->freq, "decoder.msg.good");
+			statsd_increment_per_channel(v->freq, "decoder.msg.good");
 			enqueue_frame(v, frame_cnt, data, frame_len_octets);
 			frame_cnt++;
 			if(ret == 0) break;	// this was the last frame in this burst
 		}
 		if(ret < 0) {
-			statsd_increment(v->freq, "decoder.errors.unstuff");
+			statsd_increment_per_channel(v->freq, "decoder.errors.unstuff");
 			goto cleanup;
 		}
-		statsd_timing_delta(v->freq, "decoder.msg.processing_time", &v->tstart);
+		statsd_timing_delta_per_channel(v->freq, "decoder.msg.processing_time", &v->tstart);
 cleanup:
 		XFREE(data);
 		XFREE(fec);
@@ -369,7 +369,7 @@ void *avlc_decoder_thread(void *arg) {
 	la_reasm_ctx *reasm_ctx = la_reasm_ctx_new();
 	while(1) {
 		q = (avlc_frame_qentry_t *)g_async_queue_pop(frame_queue);
-		statsd_increment(q->freq, "avlc.frames.processed");
+		statsd_increment_per_channel(q->freq, "avlc.frames.processed");
 		msg_type = 0;
 		root = avlc_parse(q, &msg_type, reasm_ctx);
 		if(root == NULL) {

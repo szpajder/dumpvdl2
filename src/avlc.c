@@ -164,7 +164,7 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 	uint32_t len = q->len;
 	if(len < MIN_AVLC_LEN) {
 		debug_print("Frame %d: too short (len=%u required=%d)\n", q->idx, len, MIN_AVLC_LEN);
-		statsd_increment(q->freq, "avlc.errors.too_short");
+		statsd_increment_per_channel(q->freq, "avlc.errors.too_short");
 		return NULL;
 	}
 	debug_print("Frame %d: len=%u\n", q->idx, len);
@@ -175,11 +175,11 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 	debug_print("Check FCS: %04x\n", fcs);
 	if(fcs == GOOD_FCS) {
 		debug_print("FCS check OK\n");
-		statsd_increment(q->freq, "avlc.frames.good");
+		statsd_increment_per_channel(q->freq, "avlc.frames.good");
 		len -= 2;
 	} else {
 		debug_print("FCS check failed\n");
-		statsd_increment(q->freq, "avlc.errors.bad_fcs");
+		statsd_increment_per_channel(q->freq, "avlc.errors.bad_fcs");
 		return NULL;
 	}
 
@@ -204,13 +204,13 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 		switch(frame->dst.a_addr.type) {
 		case ADDRTYPE_GS_ADM:
 		case ADDRTYPE_GS_DEL:
-			statsd_increment(q->freq, "avlc.msg.air2gnd");
+			statsd_increment_per_channel(q->freq, "avlc.msg.air2gnd");
 			break;
 		case ADDRTYPE_AIRCRAFT:
-			statsd_increment(q->freq, "avlc.msg.air2air");
+			statsd_increment_per_channel(q->freq, "avlc.msg.air2air");
 			break;
 		case ADDRTYPE_ALL:
-			statsd_increment(q->freq, "avlc.msg.air2all");
+			statsd_increment_per_channel(q->freq, "avlc.msg.air2all");
 			break;
 		}
 #endif
@@ -221,14 +221,14 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 #ifdef WITH_STATSD
 		switch(frame->dst.a_addr.type) {
 		case ADDRTYPE_AIRCRAFT:
-			statsd_increment(q->freq, "avlc.msg.gnd2air");
+			statsd_increment_per_channel(q->freq, "avlc.msg.gnd2air");
 			break;
 		case ADDRTYPE_GS_ADM:
 		case ADDRTYPE_GS_DEL:
-			statsd_increment(q->freq, "avlc.msg.gnd2gnd");
+			statsd_increment_per_channel(q->freq, "avlc.msg.gnd2gnd");
 			break;
 		case ADDRTYPE_ALL:
-			statsd_increment(q->freq, "avlc.msg.gnd2all");
+			statsd_increment_per_channel(q->freq, "avlc.msg.gnd2all");
 			break;
 		}
 #endif

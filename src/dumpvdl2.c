@@ -606,7 +606,7 @@ int main(int argc, char **argv) {
 				statsd_enabled = 0;
 		} else {
 			for(int i = 0; i < num_channels; i++)
-				statsd_initialize_counters(freqs[i]);
+				statsd_initialize_counters_per_channel(freqs[i]);
 		}
 	} else {
 		XFREE(statsd_addr);

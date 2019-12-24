@@ -300,14 +300,18 @@ void output_proto_tree(la_proto_node *root);
 // statsd.c
 #ifdef WITH_STATSD
 int statsd_initialize(char *statsd_addr);
-void statsd_initialize_counters(uint32_t freq);
-void statsd_counter_increment(uint32_t freq, char *counter);
-void statsd_timing_delta_send(uint32_t freq, char *timer, struct timeval *ts);
-#define statsd_increment(freq, counter) do { statsd_counter_increment(freq, counter); } while(0)
-#define statsd_timing_delta(freq, timer, start) do { statsd_timing_delta_send(freq, timer, start); } while(0)
+void statsd_initialize_counters_per_channel(uint32_t freq);
+void statsd_counter_per_channel_increment(uint32_t freq, char *counter);
+void statsd_timing_delta_per_channel_send(uint32_t freq, char *timer, struct timeval *ts);
+#define statsd_increment_per_channel(freq, counter) do { \
+	statsd_counter_per_channel_increment(freq, counter); \
+	} while(0)
+#define statsd_timing_delta_per_channel(freq, timer, start) do { \
+	statsd_timing_delta_per_channel_send(freq, timer, start); \
+	} while(0)
 #else
-#define statsd_increment(freq, counter) nop()
-#define statsd_timing_delta(freq, timer, start) nop()
+#define statsd_increment_per_channel(freq, counter) nop()
+#define statsd_timing_delta_per_channel(freq, timer, start) nop()
 #endif
 
 // util.c

@@ -240,7 +240,7 @@ static void demod(vdl2_channel_t *v, float re, float im) {
 			v->mag_nf = NF_LP * v->mag_nf + (1.0f - NF_LP) * fminf(v->mag_lp, v->mag_nf) + 0.0001f;
 		}
 		if(got_sync(v)) {
-			statsd_increment(v->freq, "demod.sync.good");
+			statsd_increment_per_channel(v->freq, "demod.sync.good");
 			gettimeofday(&v->burst_timestamp, NULL);
 			v->demod_state = DM_SYNC;
 			debug_print("DM_SYNC, v->sclk=%d\n", v->sclk);
