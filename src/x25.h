@@ -20,14 +20,16 @@
 #define _X25_H
 #include <stdint.h>
 #include <stdbool.h>
-#include <libacars/libacars.h>	// la_proto_node
-#include <libacars/list.h>	// la_list
-#include "config.h"		// IS_BIG_ENDIAN
+#include <sys/time.h>				// struct timeval
+#include <libacars/libacars.h>			// la_proto_node
+#include <libacars/list.h>			// la_list
+#include <libacars/reassembly.h>		// la_reasm_ctx
+#include "config.h"				// IS_BIG_ENDIAN
 
 #define X25_MIN_LEN		3
 #define GFI_X25_MOD8		1
-#define MAX_X25_ADDR_LEN	8	// bytes
-#define MAX_X25_EXT_ADDR_LEN	20	// bytes
+#define MAX_X25_ADDR_LEN	8		// bytes
+#define MAX_X25_EXT_ADDR_LEN	20		// bytes
 #define X25_SNDCF_ID		0xc1
 #define X25_SNDCF_VERSION	1
 #define MIN_X25_SNDCF_LEN	4
@@ -55,6 +57,9 @@
 #define X25_RESTART_REQUEST	0xfb
 #define X25_RESTART_CONFIRM	0xff
 #define X25_DIAG		0xf1
+
+#define X25_REASM_TIMEOUT_SECONDS 3
+#define X25_REASM_TABLE_CLEANUP_INTERVAL 10
 
 typedef struct {
 #ifdef IS_BIG_ENDIAN
@@ -91,8 +96,10 @@ typedef struct {
 typedef struct {
 	x25_hdr_t *hdr;
 	la_list *facilities;
+	uint8_t *reasm_buf;
 	octet_string_t diag_data;	// Explanation field in DIAG packet
 	x25_addr_t calling, called;
+	la_reasm_status reasm_status;
 	uint8_t type;
 	uint8_t addr_block_present;
 	uint8_t compression;
@@ -105,5 +112,6 @@ typedef struct {
 } x25_pkt_t;
 
 // x25.c
-la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type);
+la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
+	la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr);
 #endif // !_X25_H

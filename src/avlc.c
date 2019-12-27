@@ -253,7 +253,8 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 		if(len > 3 && ptr[0] == 0xff && ptr[1] == 0xff && ptr[2] == 0x01) {
 			node->next = parse_acars(ptr + 3, len - 3, msg_type, reasm_ctx, q->burst_timestamp);
 		} else {
-			node->next = x25_parse(ptr, len, msg_type);
+			node->next = x25_parse(ptr, len, msg_type, reasm_ctx, q->burst_timestamp,
+				frame->src.a_addr.addr, frame->dst.a_addr.addr);
 		}
 	}
 	return node;

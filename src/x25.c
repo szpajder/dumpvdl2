@@ -20,8 +20,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>		// struct timeval
 #include <libacars/libacars.h>	// la_type_descriptor, la_proto_node
 #include <libacars/vstring.h>	// la_vstring, LA_ISPRINTF()
+#include <libacars/reassembly.h>
 #include "config.h"		// IS_BIG_ENDIAN
 #include "dumpvdl2.h"
 #include "x25.h"
@@ -29,20 +31,57 @@
 #include "esis.h"
 #include "tlv.h"
 
-static const dict x25_pkttype_names[] = {
-	{ X25_CALL_REQUEST,	"Call Request" },
-	{ X25_CALL_ACCEPTED,	"Call Accepted" },
-	{ X25_CLEAR_REQUEST,	"Clear Request" },
-	{ X25_CLEAR_CONFIRM,	"Clear Confirm" },
-	{ X25_DATA,		"Data" },
-	{ X25_RR,		"Receive Ready" },
-	{ X25_REJ,		"Receive Reject" },
-	{ X25_RESET_REQUEST,	"Reset Request" },
-	{ X25_RESET_CONFIRM,	"Reset Confirm" },
-	{ X25_RESTART_REQUEST,	"Restart Request" },
-	{ X25_RESTART_CONFIRM,	"Restart Confirm" },
-	{ X25_DIAG,		"Diagnostics" },
-	{ 0,			NULL }
+/***************************************************************************
+ * Packet reassembly types and callbacks
+ **************************************************************************/
+
+// Can't use X.25 header as msg_info during reassembly, because
+// it does not contain enough addressing information to discriminate
+// packes uniquely. We need AVLC addresses to do this.
+// This structure is also used as a hash key in reassembly table.
+typedef struct {
+	uint32_t src_addr, dst_addr;
+} x25_avlc_info;
+
+// Allocates X.25 persistent key for a new hash entry.
+// As there are no allocations performed for x25_avlc_info structure members,
+// it is used as a temporary key allocator as well.
+void *x25_key_get(void const *msg) {
+	ASSERT(msg != NULL);
+	CAST_PTR(avlc_info, x25_avlc_info *, msg);
+	NEW(x25_avlc_info, key);
+	key->src_addr = avlc_info->src_addr;
+	key->dst_addr = avlc_info->dst_addr;
+	debug_print("ALLOC KEY %06X %06X\n", key->src_addr, key->dst_addr);
+	return (void *)key;
+}
+
+void x25_key_destroy(void *ptr) {
+	XFREE(ptr);
+}
+
+uint32_t x25_key_hash(void const *key) {
+	CAST_PTR(k, x25_avlc_info *, key);
+	return k->src_addr * 11 + k->dst_addr * 23;
+}
+
+bool x25_key_compare(void const *key1, void const *key2) {
+	CAST_PTR(k1, x25_avlc_info *, key1);
+	CAST_PTR(k2, x25_avlc_info *, key2);
+	return k1->src_addr == k2->src_addr && k1->dst_addr == k2->dst_addr;
+}
+
+static la_reasm_table_funcs x25_reasm_funcs = {
+	.get_key = x25_key_get,
+	.get_tmp_key = x25_key_get,
+	.hash_key = x25_key_hash,
+	.compare_keys = x25_key_compare,
+	.destroy_key = x25_key_destroy
+};
+
+static struct timeval x25_reasm_timeout = {
+	.tv_sec = X25_REASM_TIMEOUT_SECONDS,
+	.tv_usec = 0
 };
 
 /***************************************************************************
@@ -421,8 +460,9 @@ static int parse_x25_facility_field(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) 
 }
 
 static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	if(buf == NULL || len == 0)
+	if(buf == NULL || len == 0) {
 		return NULL;
+	}
 	uint8_t proto = *buf;
 	if(proto == SN_PROTO_CLNP) {
 		return clnp_pdu_parse(buf, len, msg_type);
@@ -438,7 +478,8 @@ static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *
 	return unknown_proto_pdu_new(buf, len);
 }
 
-la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
+la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
 	NEW(x25_pkt_t, pkt);
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_X25_pkt;
@@ -506,7 +547,42 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	/* FALLTHROUGH */
 	/* because Fast Select is on, so there might be a data PDU in call req or accept */
 	case X25_DATA:
-		node->next = parse_x25_user_data(ptr, remaining, msg_type);
+		{
+			uint8_t *x25_data = ptr;
+			uint32_t x25_data_len = remaining;
+			pkt->reasm_status = LA_REASM_UNKNOWN;
+
+			if(rtables != NULL) {		// reassembly engine is enabled
+				la_reasm_table *x25_rtable = la_reasm_table_lookup(rtables, &proto_DEF_X25_pkt);
+				if(x25_rtable == NULL) {
+					x25_rtable = la_reasm_table_new(rtables, &proto_DEF_X25_pkt,
+						x25_reasm_funcs, X25_REASM_TABLE_CLEANUP_INTERVAL);
+				}
+				x25_avlc_info avlc_info = {
+					.src_addr = src_addr, .dst_addr = dst_addr
+				};
+				pkt->reasm_status = la_reasm_fragment_add(x25_rtable,
+				&(la_reasm_fragment_info){
+					.msg_info = &avlc_info,
+					.msg_data = ptr,
+					.msg_data_len = remaining,
+					.seq_num = hdr->type.data.sseq,
+					.seq_num_first = SEQ_FIRST_NONE,
+					.seq_num_wrap = 8,
+					.is_final_fragment = hdr->type.data.more ? 0 : 1,
+					.rx_time = rx_time,
+					.reasm_timeout = x25_reasm_timeout
+				});
+				int reassembled_len = 0;
+				if(pkt->reasm_status == LA_REASM_COMPLETE &&
+					(reassembled_len = la_reasm_payload_get(x25_rtable, &avlc_info, &x25_data)) > 0) {
+						x25_data_len = reassembled_len;
+// x25_data is a newly allocated buffer; keep the pointer for freeing it later
+						pkt->reasm_buf = x25_data;
+				}
+			}
+			node->next = parse_x25_user_data(x25_data, x25_data_len, msg_type);
+		}
 		break;
 	case X25_CLEAR_REQUEST:
 	case X25_RESET_REQUEST:
@@ -713,6 +789,34 @@ static dict const x25_diag_codes[] = {
 	{ .id = 0x00, .val = NULL }
 };
 
+static const dict x25_pkttype_names[] = {
+	{ X25_CALL_REQUEST,	"Call Request" },
+	{ X25_CALL_ACCEPTED,	"Call Accepted" },
+	{ X25_CLEAR_REQUEST,	"Clear Request" },
+	{ X25_CLEAR_CONFIRM,	"Clear Confirm" },
+	{ X25_DATA,		"Data" },
+	{ X25_RR,		"Receive Ready" },
+	{ X25_REJ,		"Receive Reject" },
+	{ X25_RESET_REQUEST,	"Reset Request" },
+	{ X25_RESET_CONFIRM,	"Reset Confirm" },
+	{ X25_RESTART_REQUEST,	"Restart Request" },
+	{ X25_RESTART_CONFIRM,	"Restart Confirm" },
+	{ X25_DIAG,		"Diagnostics" },
+	{ 0,			NULL }
+};
+
+static char *reasm_status_descr[] = {
+	[LA_REASM_UNKNOWN] = "unknown",
+	[LA_REASM_COMPLETE] = "complete",
+	[LA_REASM_IN_PROGRESS] = "in progress",
+	[LA_REASM_SKIPPED] = "skipped",
+	[LA_REASM_FIRST_FRAG_MISSING] = "first fragment missing",
+	[LA_REASM_TIMED_OUT] = "timeout",
+	[LA_REASM_DUPLICATE] = "duplicate",
+	[LA_REASM_FRAG_OUT_OF_SEQUENCE] = "out of sequence",
+	[LA_REASM_ARGS_INVALID] = "invalid args"
+};
+
 void x25_format_text(la_vstring * const vstr, void const * const data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
@@ -752,6 +856,7 @@ void x25_format_text(la_vstring * const vstr, void const * const data, int inden
 		/* FALLTHROUGH */
 		/* because Fast Select is on, so there might be a data PDU in call req or accept */
 	case X25_DATA:
+		LA_ISPRINTF(vstr, indent, "Reasm status: %s\n", reasm_status_descr[pkt->reasm_status]);
 		break;
 	case X25_CLEAR_REQUEST:
 		cause_dict = x25_clr_causes;
@@ -789,6 +894,7 @@ void x25_destroy(void *data) {
 		tlv_list_destroy(pkt->facilities);
 		pkt->facilities = NULL;
 	}
+	XFREE(pkt->reasm_buf);
 	XFREE(data);
 }
 
