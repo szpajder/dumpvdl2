@@ -562,8 +562,9 @@ la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_a
 				goto fail;
 			}
 		}
-	/* FALLTHROUGH */
-	/* because Fast Select is on, so there might be a data PDU in call req or accept */
+// Fast Select is on, so there might be a data PDU in call req or accept
+		node->next = parse_x25_user_data(ptr, remaining, msg_type);
+		break;
 	case X25_DATA:
 		{
 			uint8_t *x25_data = ptr;
@@ -870,8 +871,7 @@ void x25_format_text(la_vstring * const vstr, void const * const data, int inden
 		LA_ISPRINTF(vstr, indent, "%s: ", "Compression support");
 		bitfield_format_text(vstr, &pkt->compression, 1, x25_comp_algos);
 		EOL(vstr);
-		/* FALLTHROUGH */
-		/* because Fast Select is on, so there might be a data PDU in call req or accept */
+		break;
 	case X25_DATA:
 		LA_ISPRINTF(vstr, indent, "Reasm status: %s\n", reasm_status_descr[pkt->reasm_status]);
 		break;
