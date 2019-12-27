@@ -599,7 +599,7 @@ int main(int argc, char **argv) {
 		_exit(3);
 	}
 #ifdef WITH_STATSD
-	if(statsd_enabled && input != INPUT_FILE) {
+	if(statsd_enabled) {
 		if(statsd_initialize(statsd_addr) < 0) {
 				fprintf(stderr, "Failed to initialize statsd client - disabling\n");
 				XFREE(statsd_addr);
