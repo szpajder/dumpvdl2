@@ -70,6 +70,13 @@ static char const *counters_per_msgdir[] = {
 	"acars.reasm.duplicate",
 	"acars.reasm.out_of_seq",
 	"acars.reasm.invalid_args",
+	"x25.reasm.unknown",
+	"x25.reasm.complete",
+//	"x25.reasm.in_progress",	// we report final reasm states only
+	"x25.reasm.skipped",
+	"x25.reasm.duplicate",
+	"x25.reasm.out_of_seq",
+	"x25.reasm.invalid_args",
 	NULL
 };
 

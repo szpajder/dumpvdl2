@@ -84,6 +84,24 @@ static struct timeval x25_reasm_timeout = {
 	.tv_usec = 0
 };
 
+void update_statsd_x25_metrics(la_reasm_status const reasm_status, uint32_t const msg_type) {
+	static dict const reasm_status_counter_names[] = {
+		{ .id = LA_REASM_UNKNOWN, .val = "x25.reasm.unknown" },
+		{ .id = LA_REASM_COMPLETE, .val = "x25.reasm.complete" },
+//		{ .id = LA_REASM_IN_PROGRESS, .val = "x25.reasm.in_progress" },  // report final states only
+		{ .id = LA_REASM_SKIPPED, .val = "x25.reasm.skipped" },
+		{ .id = LA_REASM_DUPLICATE, .val = "x25.reasm.duplicate" },
+		{ .id = LA_REASM_FRAG_OUT_OF_SEQUENCE, .val = "x25.reasm.out_of_seq" },
+		{ .id = LA_REASM_ARGS_INVALID, .val = "x25.reasm.invalid_args" },
+		{ .id = 0, .val = NULL }
+	};
+	CAST_PTR(metric, char *, dict_search(reasm_status_counter_names, reasm_status));
+	if(metric == NULL) {
+		return;
+	}
+	statsd_increment_per_msgdir(msg_type & MSGFLT_SRC_AIR ? LA_MSG_DIR_AIR2GND : LA_MSG_DIR_GND2AIR, metric);
+}
+
 /***************************************************************************
  * Parsers and formatters for X.25 facilities
  **************************************************************************/
@@ -580,6 +598,7 @@ la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_a
 // x25_data is a newly allocated buffer; keep the pointer for freeing it later
 						pkt->reasm_buf = x25_data;
 				}
+				update_statsd_x25_metrics(pkt->reasm_status, *msg_type);
 			}
 			node->next = parse_x25_user_data(x25_data, x25_data_len, msg_type);
 		}
