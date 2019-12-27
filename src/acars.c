@@ -68,8 +68,6 @@ static void update_statsd_acars_metrics(la_msg_dir msg_dir, la_proto_node *root)
 		{ .id = LA_REASM_COMPLETE, .val = "acars.reasm.complete" },
 //		{ .id = LA_REASM_IN_PROGRESS, .val = "acars.reasm.in_progress" },  // report final states only
 		{ .id = LA_REASM_SKIPPED, .val = "acars.reasm.skipped" },
-		{ .id = LA_REASM_FIRST_FRAG_MISSING, .val = "acars.reasm.first_frag_missing" },
-		{ .id = LA_REASM_TIMED_OUT, .val = "acars.reasm.timeout" },
 		{ .id = LA_REASM_DUPLICATE, .val = "acars.reasm.duplicate" },
 		{ .id = LA_REASM_FRAG_OUT_OF_SEQUENCE, .val = "acars.reasm.out_of_seq" },
 		{ .id = LA_REASM_ARGS_INVALID, .val = "acars.reasm.invalid_args" },

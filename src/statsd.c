@@ -67,8 +67,6 @@ static char const *counters_per_msgdir[] = {
 	"acars.reasm.complete",
 //	"acars.reasm.in_progress",	// we report final reasm states only
 	"acars.reasm.skipped",
-	"acars.reasm.first_frag_missing",
-	"acars.reasm.timeout",
 	"acars.reasm.duplicate",
 	"acars.reasm.out_of_seq",
 	"acars.reasm.invalid_args",
