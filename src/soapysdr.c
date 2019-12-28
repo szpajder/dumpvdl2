@@ -169,7 +169,7 @@ int ppm_error, char* settings, char* gains_param) {
 		} else {
 			int counth = SOAPYSDR_BUFSIZE * SOAPYSDR_BUFCNT * sizeof(short) - ring_index;
 			int buffer_index = 0;
-			for(int i = 0; i < counth / sizeof(short); i++) {
+			for(int i = 0; i < counth / (int)sizeof(short); i++) {
 				// copy low / high part
 				ring_buffer[ring_index++] = buffer[buffer_index] & 0xff;
 				ring_buffer[ring_index++] = (buffer[buffer_index] >> 8) & 0xff;
@@ -177,7 +177,7 @@ int ppm_error, char* settings, char* gains_param) {
 			}
 			int countl = iq_count * sizeof(short) - counth;
 			ring_index = 0;
-			for(int i = 0; i< countl / sizeof(short); i++) {
+			for(int i = 0; i < countl / (int)sizeof(short); i++) {
 				// copy low / high part
 				ring_buffer[ring_index++] = buffer[buffer_index] & 0xff;
 				ring_buffer[ring_index++] = (buffer[buffer_index] >> 8) & 0xff;
@@ -194,7 +194,7 @@ int ppm_error, char* settings, char* gains_param) {
 				for(int i = 0; i< buf_elem_size; i++) {
 			// copy low / high part
 					send_buffer[send_index++] = ring_buffer[last_send_index++];
-					if(last_send_index >= SOAPYSDR_BUFSIZE * SOAPYSDR_BUFCNT * sizeof(short)) {
+					if(last_send_index >= SOAPYSDR_BUFSIZE * SOAPYSDR_BUFCNT * (long)sizeof(short)) {
 						last_send_index = 0;
 					}
 				}

@@ -100,6 +100,8 @@ void update_statsd_x25_metrics(la_reasm_status const reasm_status, uint32_t cons
 		return;
 	}
 	statsd_increment_per_msgdir(msg_type & MSGFLT_SRC_AIR ? LA_MSG_DIR_AIR2GND : LA_MSG_DIR_GND2AIR, metric);
+// In case USE_STATSD is disabled
+	UNUSED(msg_type);
 }
 
 /***************************************************************************

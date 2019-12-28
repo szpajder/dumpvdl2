@@ -951,7 +951,7 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 			LA_ISPRINTF(vstr, indent, "%s", "Withdrawn Routes:\n");
 			indent++;
 			for(la_list *p = pdu->withdrawn_routes; p != NULL; p = p->next) {
-				LA_ISPRINTF(vstr, indent, "ID: %lu\n", *(uint32_t *)(p->data));
+				LA_ISPRINTF(vstr, indent, "ID: %u\n", *(uint32_t *)(p->data));
 			}
 			indent--;
 		}

@@ -40,7 +40,7 @@ int rs_verify(uint8_t *data, int fec_octets) {
 		int erasures[RS_N - RS_K];
 		for(int i = 0; i < erasure_cnt; i++)
 			erasures[i] = RS_K + fec_octets + i;
-		debug_print_buf_hex(erasures, erasure_cnt, "Erasures:\n");
+		debug_print_buf_hex(erasures, (size_t)erasure_cnt, "Erasures:\n");
 		ret = decode_rs_char(rs, data, erasures, erasure_cnt);
 	} else {
 		ret = decode_rs_char(rs, data, NULL, erasure_cnt);

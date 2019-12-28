@@ -215,7 +215,7 @@ TLV_PARSER(tlv_uint32_msbfirst_parse) {
 }
 
 TLV_FORMATTER(tlv_uint_format_text) {
-	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %lu\n",
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %u\n",
 		label, *(uint32_t *)data);
 }
 

@@ -170,7 +170,7 @@ typedef struct {
 	do { \
 		fprintf(stderr, "%s(): " fmt, __func__, ##__VA_ARGS__); \
 		fprintf(stderr, "%s(): ", __func__); \
-		for(int zz = 0; zz < (len); zz++) { \
+		for(size_t zz = 0; zz < (len); zz++) { \
 			fprintf(stderr, "%02x ", buf[zz]); \
 			if(zz && (zz+1) % 32 == 0) fprintf(stderr, "\n%s(): ", __func__); \
 		} \
