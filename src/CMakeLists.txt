@@ -7,6 +7,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 # strdup
 add_definitions(-D_XOPEN_SOURCE=600)
 
+# silence warnings about obsolete _BSD_SOURCE in asn_system.h
+add_definitions(-D_DEFAULT_SOURCE)
+
 if(UNIX OR MINGW)
 	add_definitions(-D_FILE_OFFSET_BITS=64)
 endif()
