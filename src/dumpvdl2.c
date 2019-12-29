@@ -24,7 +24,7 @@
 #include <getopt.h>
 #include <signal.h>
 #include <errno.h>
-#include <libacars/libacars.h>	// LA_VERSION
+#include <libacars/libacars.h>		// LA_VERSION, la_config_set_bool()
 #include <pthread.h>
 #include "config.h"
 #ifndef HAVE_PTHREAD_BARRIERS
@@ -445,6 +445,7 @@ int main(int argc, char **argv) {
 			break;
 		case __OPT_DUMP_ASN1:
 			dump_asn1 = 1;
+			la_config_set_bool("dump_asn1", true);
 			break;
 		case __OPT_EXTENDED_HEADER:
 			extended_header = 1;
