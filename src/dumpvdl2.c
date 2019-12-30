@@ -179,6 +179,7 @@ void usage() {
 	fprintf(stderr, "\t--raw-frames\t\t\tOutput AVLC payload as raw bytes\n");
 	fprintf(stderr, "\t--dump-asn1\t\t\tOutput full ASN.1 structure of CM and CPDLC messages\n");
 	fprintf(stderr, "\t--extended-header\t\tOutput additional fields in message header\n");
+	fprintf(stderr, "\t--decode-fragments\t\tDecode higher level protocols in fragmented packets (default: off)\n");
 	fprintf(stderr, "\t--msg-filter <filter_spec>\tMessage types to display (default: all) (\"--msg-filter help\" for details)\n");
 	fprintf(stderr, "\t--output-acars-pp <host:port>\tSend ACARS messages to Planeplotter over UDP/IP\n");
 #ifdef WITH_STATSD
@@ -364,6 +365,7 @@ int main(int argc, char **argv) {
 		{ "raw-frames",		no_argument,		NULL,	__OPT_RAW_FRAMES },
 		{ "dump-asn1",		no_argument,		NULL,	__OPT_DUMP_ASN1 },
 		{ "extended-header",	no_argument,		NULL,	__OPT_EXTENDED_HEADER },
+		{ "decode-fragments",	no_argument,		NULL,	__OPT_DECODE_FRAGMENTS },
 		{ "output-file",	required_argument,	NULL,	__OPT_OUTPUT_FILE },
 		{ "iq-file",		required_argument,	NULL,	__OPT_IQ_FILE },
 		{ "oversample",		required_argument,	NULL,	__OPT_OVERSAMPLE },
@@ -449,6 +451,10 @@ int main(int argc, char **argv) {
 			break;
 		case __OPT_EXTENDED_HEADER:
 			extended_header = 1;
+			break;
+		case __OPT_DECODE_FRAGMENTS:
+			decode_fragments = 1;
+			la_config_set_bool("decode_fragments", true);
 			break;
 		case __OPT_CENTERFREQ:
 			centerfreq = strtoul(optarg, NULL, 10);

@@ -33,6 +33,7 @@
 FILE *outf;
 int pp_sockfd = 0;
 uint8_t hourly = 0, daily = 0, utc = 0, output_raw_frames = 0, dump_asn1 = 0, extended_header = 0;
+uint8_t decode_fragments = 0;
 static char *filename_prefix = NULL;
 static char *extension = NULL;
 static size_t prefix_len;

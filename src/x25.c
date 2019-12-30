@@ -572,6 +572,7 @@ la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_a
 			uint8_t *x25_data = ptr;
 			uint32_t x25_data_len = remaining;
 			pkt->reasm_status = LA_REASM_UNKNOWN;
+			bool decode_user_data = true;
 
 			if(rtables != NULL) {		// reassembly engine is enabled
 				la_reasm_table *x25_rtable = la_reasm_table_lookup(rtables, &proto_DEF_X25_pkt);
@@ -600,10 +601,14 @@ la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_a
 						x25_data_len = reassembled_len;
 // x25_data is a newly allocated buffer; keep the pointer for freeing it later
 						pkt->reasm_buf = x25_data;
+				} else if(pkt->reasm_status == LA_REASM_IN_PROGRESS && !decode_fragments) {
+					decode_user_data = false;
 				}
 				update_statsd_x25_metrics(pkt->reasm_status, *msg_type);
 			}
-			node->next = parse_x25_user_data(x25_data, x25_data_len, msg_type);
+			node->next = decode_user_data == true ?
+				parse_x25_user_data(x25_data, x25_data_len, msg_type) :
+				unknown_proto_pdu_new(x25_data, x25_data_len);
 		}
 		break;
 	case X25_CLEAR_REQUEST:
