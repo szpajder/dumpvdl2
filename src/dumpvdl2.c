@@ -148,7 +148,12 @@ void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
 	fclose(f);
 }
 
+void print_version() {
+	fprintf(stderr, "dumpvdl2 %s (libacars %s)\n", DUMPVDL2_VERSION, LA_VERSION);
+}
+
 void usage() {
+	print_version();
 	fprintf(stderr,
 	"Usage:\n\n"
 #ifdef WITH_RTLSDR
@@ -246,6 +251,13 @@ void usage() {
 	"    --sample-format <sample_format>             Input sample format. Supported formats:\n"
 	"                                                    U8     8-bit unsigned (eg. recorded with rtl_sdr) (default)\n"
 	"                                                    S16_LE 16-bit signed, little-endian (eg. recorded with miri_sdr)\n"
+	);
+
+	fprintf(stderr,
+	"\n"
+	"General options:\n"
+	"    --help                                      Displays this text\n"
+	"    --version                                   Displays program version number\n"
 	);
 	_exit(0);
 }
@@ -421,6 +433,7 @@ int main(int argc, char **argv) {
 #ifdef WITH_STATSD
 		{ "statsd",		required_argument,	NULL,	__OPT_STATSD },
 #endif
+		{ "version",		no_argument,		NULL,	__OPT_VERSION },
 		{ "help",		no_argument,		NULL,	__OPT_HELP },
 		{ 0,			0,			0,	0 }
 	};
@@ -431,7 +444,6 @@ int main(int argc, char **argv) {
 #endif
 	char *infile = NULL, *outfile = NULL, *pp_addr = NULL;
 
-	fprintf(stderr, "dumpvdl2 %s (libacars %s)\n", DUMPVDL2_VERSION, LA_VERSION);
 	while((opt = getopt_long(argc, argv, "", long_opts, NULL)) != -1) {
 		switch(opt) {
 		case __OPT_IQ_FILE:
@@ -565,6 +577,9 @@ int main(int argc, char **argv) {
 		case __OPT_MSG_FILTER:
 			msg_filter = parse_msg_filterspec(optarg);
 			break;
+		case __OPT_VERSION:
+			print_version();
+			_exit(0);
 		case __OPT_HELP:
 		default:
 			usage();

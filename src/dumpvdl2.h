@@ -103,6 +103,7 @@
 #define __OPT_SOAPY_GAIN		93
 #endif
 
+#define __OPT_VERSION			98
 #define __OPT_HELP			99
 
 // message filters
