@@ -25,6 +25,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <libacars/libacars.h>		// LA_VERSION, la_config_set_bool()
+#include <libacars/acars.h>		// LA_ACARS_BEARER_VHF
 #include <pthread.h>
 #include "config.h"
 #ifndef HAVE_PTHREAD_BARRIERS
@@ -662,6 +663,10 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Failed to initialize output socket to Planeplotter - disabling it\n");
 		XFREE(pp_addr);
 	}
+
+// Configure libacars
+	la_config_set_int("acars_bearer", LA_ACARS_BEARER_VHF);
+
 	setup_signals();
 	sincosf_lut_init();
 	input_lpf_init(sample_rate);
