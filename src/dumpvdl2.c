@@ -44,6 +44,7 @@
 #include "soapysdr.h"
 #endif
 #include "dumpvdl2.h"
+#include "gs_data.h"
 
 int do_exit = 0;
 uint32_t msg_filter = MSGFLT_ALL;
@@ -197,6 +198,8 @@ void usage() {
 	"    --dump-asn1                                 Output full ASN.1 structure of CM and CPDLC messages\n"
 	"    --extended-header                           Output additional fields in message header\n"
 	"    --decode-fragments                          Decode higher level protocols in fragmented packets (default: off)\n"
+	"    --gs-file <file>                            Output ground station info taken from <file> (MultiPSK format)\n"
+	"    --addrinfo terse|normal|verbose             Ground station info verbosity level (default: normal)\n"
 	"    --msg-filter <filter_spec>                  Message types to display (default: all) (\"--msg-filter help\" for details)\n"
 	"    --output-acars-pp <host:port>               Send ACARS messages to Planeplotter over UDP/IP\n"
 #ifdef WITH_STATSD
@@ -400,6 +403,8 @@ int main(int argc, char **argv) {
 		{ "dump-asn1",		no_argument,		NULL,	__OPT_DUMP_ASN1 },
 		{ "extended-header",	no_argument,		NULL,	__OPT_EXTENDED_HEADER },
 		{ "decode-fragments",	no_argument,		NULL,	__OPT_DECODE_FRAGMENTS },
+		{ "gs-file",		required_argument,	NULL,	__OPT_GS_FILE },
+		{ "addrinfo",		required_argument,	NULL,	__OPT_ADDRINFO_VERBOSITY },
 		{ "output-file",	required_argument,	NULL,	__OPT_OUTPUT_FILE },
 		{ "iq-file",		required_argument,	NULL,	__OPT_IQ_FILE },
 		{ "oversample",		required_argument,	NULL,	__OPT_OVERSAMPLE },
@@ -448,6 +453,7 @@ int main(int argc, char **argv) {
 	int statsd_enabled = 0;
 #endif
 	char *infile = NULL, *outfile = NULL, *pp_addr = NULL;
+	char *gs_file = NULL;
 
 	while((opt = getopt_long(argc, argv, "", long_opts, NULL)) != -1) {
 		switch(opt) {
@@ -489,6 +495,21 @@ int main(int argc, char **argv) {
 		case __OPT_DECODE_FRAGMENTS:
 			decode_fragments = 1;
 			la_config_set_bool("decode_fragments", true);
+			break;
+		case __OPT_GS_FILE:
+			gs_file = optarg;
+			break;
+		case __OPT_ADDRINFO_VERBOSITY:
+			if(!strcmp(optarg, "terse")) {
+				addrinfo_verbosity = ADDRINFO_TERSE;
+			} else if(!strcmp(optarg, "normal")) {
+				addrinfo_verbosity = ADDRINFO_NORMAL;
+			} else if(!strcmp(optarg, "verbose")) {
+				addrinfo_verbosity = ADDRINFO_VERBOSE;
+			} else {
+				fprintf(stderr, "Invalid value for option --addrinfo\n");
+				usage();
+			}
 			break;
 		case __OPT_CENTERFREQ:
 			centerfreq = strtoul(optarg, NULL, 10);
@@ -641,6 +662,15 @@ int main(int argc, char **argv) {
 	if(rs_init() < 0) {
 		fprintf(stderr, "Failed to initialize RS codec\n");
 		_exit(3);
+	}
+
+	if(gs_file != NULL) {
+		if(gs_data_import(gs_file) < 0) {
+			fprintf(stderr, "Failed to import ground station data file. "
+				"Extended data for ground stations will not be logged.\n");
+		} else {
+			gs_addrinfo_db_available = true;
+		}
 	}
 #ifdef WITH_STATSD
 	if(statsd_enabled) {

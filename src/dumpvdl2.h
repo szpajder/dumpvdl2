@@ -85,6 +85,8 @@
 #define __OPT_DUMP_ASN1			19
 #define __OPT_EXTENDED_HEADER		20
 #define __OPT_DECODE_FRAGMENTS		21
+#define __OPT_GS_FILE			22
+#define __OPT_ADDRINFO_VERBOSITY	24
 
 #ifdef WITH_SDRPLAY
 #define __OPT_SDRPLAY			80

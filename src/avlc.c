@@ -31,6 +31,7 @@
 #include "config.h"			// IS_BIG_ENDIAN
 #include "dumpvdl2.h"
 #include "avlc.h"
+#include "gs_data.h"
 #include "xid.h"
 #include "acars.h"
 #include "x25.h"
@@ -275,10 +276,20 @@ addrinfo_verbosity_t const verbosity) {
 		}
 	} else if(IS_GS(addr)) {
 		if(gs_addrinfo_db_available) {
+			gs_data_entry *gs = gs_data_entry_lookup(addr.a_addr.addr);
 			if(verbosity == ADDRINFO_TERSE) {
-				la_vstring_append_sprintf(vstr, " [gs_addr terse]");
-			} else {
-				LA_ISPRINTF(vstr, indent, "GS info: %d\n", verbosity);
+				la_vstring_append_sprintf(vstr, " [%s]",
+					gs && gs->airport_code ? gs->airport_code : "-"
+				);
+			} else if(verbosity == ADDRINFO_NORMAL) {
+				LA_ISPRINTF(vstr, indent, "GS info: %s, %s\n",
+					gs && gs->airport_code ? gs->airport_code : "-",
+					gs && gs->location ? gs->location : "-"
+				);
+			} else if(verbosity == ADDRINFO_VERBOSE) {
+				LA_ISPRINTF(vstr, indent, "GS info: %s\n",
+					gs && gs->details ? gs->details : "-"
+				);
 			}
 		}
 	}

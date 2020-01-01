@@ -181,6 +181,7 @@ add_library (dumpvdl2_base OBJECT
 	demod.c
 	dumpvdl2.c
 	esis.c
+	gs_data.c
 	icao.c
 	idrp.c
 	output.c
