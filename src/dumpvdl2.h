@@ -345,8 +345,16 @@ void unknown_proto_format_text(la_vstring * const vstr, void const * const data,
 la_proto_node *unknown_proto_pdu_new(void *buf, size_t len);
 
 // dumpvdl2.c
+typedef enum {
+	ADDRINFO_TERSE = 0,
+	ADDRINFO_NORMAL = 1,
+	ADDRINFO_VERBOSE = 2
+} addrinfo_verbosity_t;
+
 extern uint32_t msg_filter;
 extern int do_exit;
+extern addrinfo_verbosity_t addrinfo_verbosity;
+extern bool ac_addrinfo_db_available, gs_addrinfo_db_available;
 extern pthread_barrier_t demods_ready, samples_ready;
 
 // version.c

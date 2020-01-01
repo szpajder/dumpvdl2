@@ -103,6 +103,9 @@ typedef union {
 #define ADDRTYPE_GS_DEL		5
 #define ADDRTYPE_ALL		7
 
+#define IS_AIRCRAFT(addr) ((addr).a_addr.type == ADDRTYPE_AIRCRAFT)
+#define IS_GS(addr) ((addr).a_addr.type == ADDRTYPE_GS_ADM || (addr).a_addr.type == ADDRTYPE_GS_DEL)
+
 typedef struct {
 	uint32_t num;
 	avlc_addr_t src;
@@ -260,6 +263,27 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 	return node;
 }
 
+static void addrinfo_format_as_text(la_vstring *vstr, int indent, avlc_addr_t const addr,
+addrinfo_verbosity_t const verbosity) {
+	if(IS_AIRCRAFT(addr)) {
+		if(ac_addrinfo_db_available) {
+			if(verbosity == ADDRINFO_TERSE) {
+				la_vstring_append_sprintf(vstr, " [ac_addr terse]");
+			} else {
+				LA_ISPRINTF(vstr, indent, "AC info: %d\n", verbosity);
+			}
+		}
+	} else if(IS_GS(addr)) {
+		if(gs_addrinfo_db_available) {
+			if(verbosity == ADDRINFO_TERSE) {
+				la_vstring_append_sprintf(vstr, " [gs_addr terse]");
+			} else {
+				LA_ISPRINTF(vstr, indent, "GS info: %d\n", verbosity);
+			}
+		}
+	}
+}
+
 void avlc_format_text(la_vstring * const vstr, void const * const data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
@@ -286,14 +310,35 @@ void avlc_format_text(la_vstring * const vstr, void const * const data, int inde
 		append_hexdump_with_indent(vstr, f->q->buf, f->q->len, indent+1);
 	}
 
-	LA_ISPRINTF(vstr, indent, "%06X (%s, %s) -> %06X (%s): %s\n",
+	LA_ISPRINTF(vstr, indent, "%06X (%s, %s)",
 		f->src.a_addr.addr,
 		addrtype_descr[f->src.a_addr.type],
-		status_ag_descr[f->dst.a_addr.status],	// A/G
+		status_ag_descr[f->dst.a_addr.status]	// A/G
+	);
+// Print extra info about source and/or destination?
+// TERSE verbosity level is printed inline.
+	if(addrinfo_verbosity == ADDRINFO_TERSE) {
+		addrinfo_format_as_text(vstr, indent, f->src, addrinfo_verbosity);
+	}
+
+	la_vstring_append_sprintf(vstr, " -> %06X (%s)",
 		f->dst.a_addr.addr,
-		addrtype_descr[f->dst.a_addr.type],
+		addrtype_descr[f->dst.a_addr.type]
+	);
+	if(addrinfo_verbosity == ADDRINFO_TERSE) {
+		addrinfo_format_as_text(vstr, indent, f->dst, addrinfo_verbosity);
+	}
+	la_vstring_append_sprintf(vstr, ": %s\n",
 		status_cr_descr[f->src.a_addr.status]	// C/R
 	);
+
+// Print extra info about source and/or destination?
+// Verbosity levels above TERSE are printed as separate lines.
+	if(addrinfo_verbosity > ADDRINFO_TERSE) {
+		addrinfo_format_as_text(vstr, indent, f->src, addrinfo_verbosity);
+		addrinfo_format_as_text(vstr, indent, f->dst, addrinfo_verbosity);
+	}
+
 	if(IS_S(f->lcf)) {
 		LA_ISPRINTF(vstr, indent, "AVLC type: S (%s) P/F: %x rseq: %x\n",
 			S_cmd[f->lcf.S.sfunc], f->lcf.S.pf, f->lcf.S.recv_seq);

@@ -47,6 +47,10 @@
 
 int do_exit = 0;
 uint32_t msg_filter = MSGFLT_ALL;
+addrinfo_verbosity_t addrinfo_verbosity = ADDRINFO_NORMAL;
+bool ac_addrinfo_db_available = false;
+bool gs_addrinfo_db_available = false;
+
 pthread_barrier_t demods_ready, samples_ready;
 pthread_t decoder_thread;
 
