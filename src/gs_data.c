@@ -21,12 +21,7 @@
 #include <string.h>		// strerror
 #include <libacars/hash.h>	// la_hash_*
 #include "dumpvdl2.h"		// debug_print
-
-typedef struct {
-	char *airport_code;
-	char *details;
-	char *location;
-} gs_data_entry;
+#include "gs_data.h"		// gs_data_entry
 
 static la_hash *gs_data = NULL;
 
