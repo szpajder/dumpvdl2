@@ -152,6 +152,7 @@ ac_data_entry *ac_data_entry_lookup(uint32_t addr) {
 	if(last_gc_time + AC_DATA_CACHE_GC_INTERVAL <= now) {
 		int expired_cnt = la_hash_foreach_remove(ac_data_cache, is_cache_entry_expired, &now);
 		debug_print("last_gc: %ld, now: %ld, expired %d cache entries\n", last_gc_time, now, expired_cnt);
+		UNUSED(expired_cnt);	// don't warn if DEBUG is disabled
 		last_gc_time = now;
 	}
 
