@@ -132,6 +132,15 @@ void statsd_initialize_counters_per_msgdir() {
 	_statsd_initialize_counters_for_msg_dir(counters_per_msgdir, LA_MSG_DIR_GND2AIR);
 }
 
+void statsd_initialize_counter_set(char **counter_set) {
+	if(statsd == NULL) {
+		return;
+	}
+	for(int n = 0; counter_set[n] != NULL; n++) {
+		statsd_count(statsd, counter_set[n], 0, 1.0);
+	}
+}
+
 void statsd_counter_per_channel_increment(uint32_t const freq, char *counter) {
 	if(statsd == NULL) {
 		return;

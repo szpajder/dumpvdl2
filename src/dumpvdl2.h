@@ -309,6 +309,7 @@ void output_proto_tree(la_proto_node *root);
 int statsd_initialize(char *statsd_addr);
 void statsd_initialize_counters_per_channel(uint32_t const freq);
 void statsd_initialize_counters_per_msgdir();
+void statsd_initialize_counter_set(char **counter_set);
 void statsd_counter_per_channel_increment(uint32_t const freq, char *counter);
 void statsd_timing_delta_per_channel_send(uint32_t const freq, char *timer, struct timeval const ts);
 void statsd_counter_per_msgdir_increment(la_msg_dir const msg_dir, char *counter);
