@@ -166,6 +166,13 @@ void statsd_counter_increment(char *counter) {
 	statsd_inc(statsd, counter, 1.0);
 }
 
+void statsd_gauge_set(char *gauge, size_t value) {
+	if(statsd == NULL) {
+		return;
+	}
+	statsd_gauge(statsd, gauge, value);
+}
+
 void statsd_timing_delta_per_channel_send(uint32_t const freq, char *timer, struct timeval const ts) {
 	if(statsd == NULL) {
 		return;
