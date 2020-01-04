@@ -33,14 +33,24 @@
 
 static la_hash *ac_data_cache = NULL;
 static time_t last_gc_time = 0L;
+static size_t ac_cache_entry_count = 0;
 
 typedef struct {
 	time_t ctime;
 	ac_data_entry *ac_data;
 } ac_data_cache_entry;
 
-#define AC_DATA_CACHE_TTL 1800L
-#define AC_DATA_CACHE_GC_INTERVAL 305L
+#define AC_CACHE_TTL 1800L
+#define AC_CACHE_GC_INTERVAL 305L
+
+#define AC_CACHE_ENTRY_COUNT_ADD(x) do { \
+	if((x) < 0 && ac_cache_entry_count < (unsigned long)(-(x))) { \
+		ac_cache_entry_count = 0; \
+	} else { \
+		ac_cache_entry_count += (x); \
+	} \
+	statsd_set("ac_data.cache.entries", ac_cache_entry_count); \
+} while(0)
 
 static sqlite3 *db = NULL;
 static sqlite3_stmt *stmt = NULL;
@@ -75,6 +85,7 @@ static void ac_data_cache_entry_create(uint32_t const addr, ac_data_entry *ac_en
 	NEW(uint32_t, key);
 	*key = addr;
 	la_hash_insert(ac_data_cache, key, ce);
+	AC_CACHE_ENTRY_COUNT_ADD(1);
 }
 
 #define BS_DB_COLUMNS "Registration,ICAOTypeCode,OperatorFlagCode,Manufacturer,Type,RegisteredOwners"
@@ -144,7 +155,7 @@ bool is_cache_entry_expired(void const *key, void const *value, void const *ctx)
 	UNUSED(key);
 	CAST_PTR(cache_entry, ac_data_cache_entry *, value);
 	time_t now = *(time_t *)ctx;
-	return (cache_entry->ctime + AC_DATA_CACHE_TTL <= now);
+	return (cache_entry->ctime + AC_CACHE_TTL <= now);
 }
 
 ac_data_entry *ac_data_entry_lookup(uint32_t addr) {
@@ -154,10 +165,10 @@ ac_data_entry *ac_data_entry_lookup(uint32_t addr) {
 
 // Periodic cache expiration
 	time_t now = time(NULL);
-	if(last_gc_time + AC_DATA_CACHE_GC_INTERVAL <= now) {
+	if(last_gc_time + AC_CACHE_GC_INTERVAL <= now) {
 		int expired_cnt = la_hash_foreach_remove(ac_data_cache, is_cache_entry_expired, &now);
 		debug_print("last_gc: %ld, now: %ld, expired %d cache entries\n", last_gc_time, now, expired_cnt);
-		UNUSED(expired_cnt);	// don't warn if DEBUG is disabled
+		AC_CACHE_ENTRY_COUNT_ADD(-expired_cnt);
 		last_gc_time = now;
 	}
 
@@ -167,6 +178,7 @@ ac_data_entry *ac_data_entry_lookup(uint32_t addr) {
 		if(is_cache_entry_expired(&addr, ce, &now)) {
 			debug_print("%06X: expired cache entry (ctime %ld)\n", addr, ce->ctime);
 			la_hash_remove(ac_data_cache, &addr);
+			AC_CACHE_ENTRY_COUNT_ADD(-1);
 		} else {
 			statsd_increment("ac_data.cache.hits");
 			debug_print("%06X: %s cache hit\n", addr, ce->ac_data ? "positive" : "negative");
