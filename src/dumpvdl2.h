@@ -1,7 +1,7 @@
 /*
  *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
  *
- *  Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -86,6 +86,9 @@
 #define __OPT_EXTENDED_HEADER		20
 #define __OPT_DECODE_FRAGMENTS		21
 #define __OPT_GS_FILE			22
+#ifdef WITH_SQLITE
+#define __OPT_BS_DB			23
+#endif
 #define __OPT_ADDRINFO_VERBOSITY	24
 
 #ifdef WITH_SDRPLAY

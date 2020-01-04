@@ -86,6 +86,10 @@ set(WITH_SOAPYSDR FALSE)
 option(ETSY_STATSD "Enable Etsy StatsD support" ON)
 set(WITH_STATSD FALSE)
 
+option(SQLITE "Enable SQLite support for reading aircraft info from
+Basestation DB" ON)
+set(WITH_SQLITE FALSE)
+
 if(RTLSDR)
 	find_package(RTLSDR)
 	if(RTLSDR_FOUND)
@@ -141,6 +145,15 @@ if(ETSY_STATSD)
 	endif()
 endif()
 
+if(SQLITE)
+	find_package(SQLite3)
+	if (SQLite3_FOUND)
+		list(APPEND dumpvdl2_extra_libs ${SQLite3_LIBRARIES})
+		list(APPEND dumpvdl2_include_dirs ${SQLite3_INCLUDE_DIRS})
+		set(WITH_SQLITE TRUE)
+	endif()
+endif()
+
 message(STATUS "dumpvdl2 configuration summary:")
 message(STATUS "- SDR drivers:")
 message(STATUS "  - librtsdr:\trequested: ${RTLSDR}\tenabled: ${WITH_RTLSDR}")
@@ -149,6 +162,7 @@ message(STATUS "  - sdrplay:\t\trequested: ${SDRPLAY}\tenabled: ${WITH_SDRPLAY}"
 message(STATUS "  - soapysdr:\trequested: ${SOAPYSDR}\tenabled: ${WITH_SOAPYSDR}")
 message(STATUS "- Other options:")
 message(STATUS "  - Etsy StatsD:\trequested: ${ETSY_STATSD}\tenabled: ${WITH_STATSD}")
+message(STATUS "  - SQLite:\t\trequested: ${SQLITE}\tenabled: ${WITH_SQLITE}")
 
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
@@ -167,6 +181,7 @@ add_subdirectory (libfec)
 
 add_library (dumpvdl2_base OBJECT
 	acars.c
+	ac_data.c
 	asn1-format-common.c
 	asn1-format-icao.c
 	asn1-util.c

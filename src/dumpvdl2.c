@@ -44,6 +44,9 @@
 #include "soapysdr.h"
 #endif
 #include "dumpvdl2.h"
+#ifdef WITH_SQLITE
+#include "ac_data.h"
+#endif
 #include "gs_data.h"
 
 int do_exit = 0;
@@ -116,7 +119,7 @@ static uint32_t calc_centerfreq(uint32_t *freq, int cnt, uint32_t source_rate) {
 		if(freq[i] > freq_max) freq_max = freq[i];
 	}
 	if(freq_max - freq_min > source_rate * 0.8f) {
-		fprintf(stderr, "Error: given frequencies are too fart apart\n");
+		fprintf(stderr, "Error: given frequencies are too far apart\n");
 		return 0;
 	}
 	return freq_min + (freq_max - freq_min) / 2;
@@ -198,8 +201,11 @@ void usage() {
 	"    --dump-asn1                                 Output full ASN.1 structure of CM and CPDLC messages\n"
 	"    --extended-header                           Output additional fields in message header\n"
 	"    --decode-fragments                          Decode higher level protocols in fragmented packets (default: off)\n"
-	"    --gs-file <file>                            Output ground station info taken from <file> (MultiPSK format)\n"
-	"    --addrinfo terse|normal|verbose             Ground station info verbosity level (default: normal)\n"
+	"    --gs-file <file>                            Read ground station info from <file> (MultiPSK format)\n"
+#ifdef WITH_SQLITE
+	"    --bs-db <file>                              Read aircraft info from Basestation database <file> (SQLite)\n"
+#endif
+	"    --addrinfo terse|normal|verbose             Aircraft/ground station info verbosity level (default: normal)\n"
 	"    --msg-filter <filter_spec>                  Message types to display (default: all) (\"--msg-filter help\" for details)\n"
 	"    --output-acars-pp <host:port>               Send ACARS messages to Planeplotter over UDP/IP\n"
 #ifdef WITH_STATSD
@@ -404,6 +410,9 @@ int main(int argc, char **argv) {
 		{ "extended-header",	no_argument,		NULL,	__OPT_EXTENDED_HEADER },
 		{ "decode-fragments",	no_argument,		NULL,	__OPT_DECODE_FRAGMENTS },
 		{ "gs-file",		required_argument,	NULL,	__OPT_GS_FILE },
+#ifdef WITH_SQLITE
+		{ "bs-db",		required_argument,	NULL,	__OPT_BS_DB },
+#endif
 		{ "addrinfo",		required_argument,	NULL,	__OPT_ADDRINFO_VERBOSITY },
 		{ "output-file",	required_argument,	NULL,	__OPT_OUTPUT_FILE },
 		{ "iq-file",		required_argument,	NULL,	__OPT_IQ_FILE },
@@ -452,6 +461,9 @@ int main(int argc, char **argv) {
 	char *statsd_addr = NULL;
 	int statsd_enabled = 0;
 #endif
+#ifdef WITH_SQLITE
+	char *bs_db_file = NULL;
+#endif
 	char *infile = NULL, *outfile = NULL, *pp_addr = NULL;
 	char *gs_file = NULL;
 
@@ -499,6 +511,11 @@ int main(int argc, char **argv) {
 		case __OPT_GS_FILE:
 			gs_file = optarg;
 			break;
+#ifdef WITH_SQLITE
+		case __OPT_BS_DB:
+			bs_db_file = optarg;
+			break;
+#endif
 		case __OPT_ADDRINFO_VERBOSITY:
 			if(!strcmp(optarg, "terse")) {
 				addrinfo_verbosity = ADDRINFO_TERSE;
@@ -672,6 +689,16 @@ int main(int argc, char **argv) {
 			gs_addrinfo_db_available = true;
 		}
 	}
+#ifdef WITH_SQLITE
+	if(bs_db_file != NULL) {
+		if(ac_data_init(bs_db_file) < 0) {
+			fprintf(stderr, "Failed to open aircraft database. "
+				"Extended data for aircraft will not be logged.\n");
+		} else {
+			ac_addrinfo_db_available = true;
+		}
+	}
+#endif
 #ifdef WITH_STATSD
 	if(statsd_enabled) {
 		if(statsd_initialize(statsd_addr) < 0) {

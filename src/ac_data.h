@@ -16,17 +16,19 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <stdbool.h>
+
 #include <stdint.h>
 
 typedef struct {
-	char *airport_code;
-	char *details;
-	char *location;
-} gs_data_entry;
+	char *registration;
+	char *icaotypecode;
+	char *operatorflagcode;
+	char *manufacturer;
+	char *type;
+	char *registeredowners;
+} ac_data_entry;
 
-// gs-file.c
-uint32_t uint_hash(void const *key);
-bool uint_compare(void const *key1, void const *key2);
-int gs_data_import(char const *file);
-gs_data_entry *gs_data_entry_lookup(uint32_t addr);
+// ac_file.c
+int ac_data_init(char const *bs_db_file);
+void ac_data_destroy();
+ac_data_entry *ac_data_entry_lookup(uint32_t addr);

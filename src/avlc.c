@@ -1,7 +1,7 @@
 /*
  *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
  *
- *  Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #include "config.h"			// IS_BIG_ENDIAN
 #include "dumpvdl2.h"
 #include "avlc.h"
+#include "ac_data.h"
 #include "gs_data.h"
 #include "xid.h"
 #include "acars.h"
@@ -268,10 +269,24 @@ static void addrinfo_format_as_text(la_vstring *vstr, int indent, avlc_addr_t co
 addrinfo_verbosity_t const verbosity) {
 	if(IS_AIRCRAFT(addr)) {
 		if(ac_addrinfo_db_available) {
+			ac_data_entry *ac = ac_data_entry_lookup(addr.a_addr.addr);
 			if(verbosity == ADDRINFO_TERSE) {
-				la_vstring_append_sprintf(vstr, " [ac_addr terse]");
-			} else {
-				LA_ISPRINTF(vstr, indent, "AC info: %d\n", verbosity);
+				la_vstring_append_sprintf(vstr, " [%s]",
+					ac && ac->registration ? ac->registration : "-"
+				);
+			} else if(verbosity == ADDRINFO_NORMAL) {
+				LA_ISPRINTF(vstr, indent, "AC info: %s, %s, %s\n",
+					ac && ac->registration ? ac->registration : "-",
+					ac && ac->icaotypecode ? ac->icaotypecode : "-",
+					ac && ac->operatorflagcode ? ac->operatorflagcode : "-"
+				);
+			} else if(verbosity == ADDRINFO_VERBOSE) {
+				LA_ISPRINTF(vstr, indent, "AC info: %s, %s, %s, %s\n",
+					ac && ac->registration ? ac->registration : "-",
+					ac && ac->manufacturer ? ac->manufacturer : "-",
+					ac && ac->type ? ac->type : "-",
+					ac && ac->registeredowners ? ac->registeredowners : "-"
+				);
 			}
 		}
 	} else if(IS_GS(addr)) {
