@@ -185,6 +185,8 @@ ac_data_entry *ac_data_entry_lookup(uint32_t addr) {
 			return ce->ac_data;
 		}
 	}
+// Cache entry missing or expired. Fetch it from DB.
+	statsd_increment("ac_data.cache.misses");
 	ac_data_entry *e = NULL;
 	if(ac_data_entry_from_db(addr, &e) == SQLITE_OK) {
 		debug_print("%06X: %sfound in BS DB\n", addr, e ? "" : "not ");
