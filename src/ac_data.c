@@ -92,11 +92,13 @@ static int ac_data_entry_from_db(uint32_t const addr, ac_data_entry **result) {
 	int rc = sqlite3_reset(stmt);
 	if(rc != SQLITE_OK) {
 		debug_print("sqlite3_reset() returned error %d\n", rc);
+		statsd_increment("ac_data.db.errors");
 		return rc;
 	}
 	rc = sqlite3_bind_text(stmt, 1, hex_addr, -1, SQLITE_STATIC);
 	if(rc != SQLITE_OK) {
 		debug_print("sqlite3_bind_text('%s') returned error %d\n", hex_addr, rc);
+		statsd_increment("ac_data.db.errors");
 		return rc;
 	}
 	rc = sqlite3_step(stmt);
@@ -106,6 +108,7 @@ static int ac_data_entry_from_db(uint32_t const addr, ac_data_entry **result) {
 			return -3;
 		}
 		rc = SQLITE_OK;
+		statsd_increment("ac_data.db.hits");
 		if(result == NULL) {
 // The caller only wants the result code, not the data
 			return rc;
@@ -126,11 +129,13 @@ static int ac_data_entry_from_db(uint32_t const addr, ac_data_entry **result) {
 		ac_data_cache_entry_create(addr, NULL);
 // Empty result is not an error
 		rc = SQLITE_OK;
+		statsd_increment("ac_data.db.misses");
 		if(result != NULL) {
 			*result = NULL;
 		}
 	} else {
 		debug_print("%s: unexpected query return code %d\n", hex_addr, rc);
+		statsd_increment("ac_data.db.errors");
 	}
 	return rc;
 }
@@ -163,6 +168,7 @@ ac_data_entry *ac_data_entry_lookup(uint32_t addr) {
 			debug_print("%06X: expired cache entry (ctime %ld)\n", addr, ce->ctime);
 			la_hash_remove(ac_data_cache, &addr);
 		} else {
+			statsd_increment("ac_data.cache.hits");
 			debug_print("%06X: %s cache hit\n", addr, ce->ac_data ? "positive" : "negative");
 			return ce->ac_data;
 		}
@@ -175,6 +181,17 @@ ac_data_entry *ac_data_entry_lookup(uint32_t addr) {
 	debug_print("%06X: not found\n", addr);
 	return NULL;
 }
+
+#ifdef WITH_STATSD
+static char *ac_data_counters[] = {
+	"ac_data.cache.hits",
+	"ac_data.cache.misses",
+	"ac_data.db.hits",
+	"ac_data.db.misses",
+	"ac_data.db.errors",
+	NULL
+};
+#endif
 
 int ac_data_init(char const *bs_db_file) {
 	if(bs_db_file == NULL) {
@@ -194,6 +211,9 @@ int ac_data_init(char const *bs_db_file) {
 	}
 	ac_data_cache = la_hash_new(uint_hash, uint_compare, la_simple_free, ac_data_cache_entry_destroy);
 	last_gc_time = time(NULL);
+#ifdef WITH_STATSD
+	statsd_initialize_counter_set(ac_data_counters);
+#endif
 	if(ac_data_entry_from_db(0, NULL) != SQLITE_OK) {
 		fprintf(stderr, "%s: test query failed, database is unusable.\n", bs_db_file);
 		goto fail;
