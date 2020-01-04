@@ -150,6 +150,13 @@ void statsd_counter_per_msgdir_increment(la_msg_dir const msg_dir, char *counter
 	statsd_inc(statsd, metric, 1.0);
 }
 
+void statsd_counter_increment(char *counter) {
+	if(statsd == NULL) {
+		return;
+	}
+	statsd_inc(statsd, counter, 1.0);
+}
+
 void statsd_timing_delta_per_channel_send(uint32_t const freq, char *timer, struct timeval const ts) {
 	if(statsd == NULL) {
 		return;

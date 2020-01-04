@@ -312,13 +312,16 @@ void statsd_initialize_counters_per_msgdir();
 void statsd_counter_per_channel_increment(uint32_t const freq, char *counter);
 void statsd_timing_delta_per_channel_send(uint32_t const freq, char *timer, struct timeval const ts);
 void statsd_counter_per_msgdir_increment(la_msg_dir const msg_dir, char *counter);
+void statsd_counter_increment(char *counter);
 #define statsd_increment_per_channel(freq, counter) statsd_counter_per_channel_increment(freq, counter)
 #define statsd_timing_delta_per_channel(freq, timer, start) statsd_timing_delta_per_channel_send(freq, timer, start)
 #define statsd_increment_per_msgdir(counter, msgdir) statsd_counter_per_msgdir_increment(counter, msgdir)
+#define statsd_increment(counter) statsd_counter_increment(counter)
 #else
 #define statsd_increment_per_channel(freq, counter) nop()
 #define statsd_timing_delta_per_channel(freq, timer, start) nop()
 #define statsd_increment_per_msgdir(counter, msgdir) nop()
+#define statsd_increment(counter) nop()
 #endif
 
 // util.c
