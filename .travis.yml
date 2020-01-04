@@ -22,10 +22,12 @@ addons:
     packages:
     - libglib2.0-dev
     - pkg-config
+    - libsqlite3-dev
     - librtlsdr-dev
   homebrew:
     packages:
     - glib
+    - sqlite
     - librtlsdr
 
 install:
