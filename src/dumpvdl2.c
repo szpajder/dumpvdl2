@@ -689,16 +689,6 @@ int main(int argc, char **argv) {
 			gs_addrinfo_db_available = true;
 		}
 	}
-#ifdef WITH_SQLITE
-	if(bs_db_file != NULL) {
-		if(ac_data_init(bs_db_file) < 0) {
-			fprintf(stderr, "Failed to open aircraft database. "
-				"Extended data for aircraft will not be logged.\n");
-		} else {
-			ac_addrinfo_db_available = true;
-		}
-	}
-#endif
 #ifdef WITH_STATSD
 	if(statsd_enabled) {
 		if(statsd_initialize(statsd_addr) < 0) {
@@ -714,6 +704,16 @@ int main(int argc, char **argv) {
 	} else {
 		XFREE(statsd_addr);
 		statsd_enabled = 0;
+	}
+#endif
+#ifdef WITH_SQLITE
+	if(bs_db_file != NULL) {
+		if(ac_data_init(bs_db_file) < 0) {
+			fprintf(stderr, "Failed to open aircraft database. "
+				"Extended data for aircraft will not be logged.\n");
+		} else {
+			ac_addrinfo_db_available = true;
+		}
 	}
 #endif
 	if(init_output_file(outfile) < 0) {
