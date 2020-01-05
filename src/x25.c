@@ -601,7 +601,7 @@ la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_a
 						x25_data_len = reassembled_len;
 // x25_data is a newly allocated buffer; keep the pointer for freeing it later
 						pkt->reasm_buf = x25_data;
-				} else if(pkt->reasm_status == LA_REASM_IN_PROGRESS && !decode_fragments) {
+				} else if(pkt->reasm_status == LA_REASM_IN_PROGRESS && Config.decode_fragments == false) {
 					decode_user_data = false;
 				}
 				update_statsd_x25_metrics(pkt->reasm_status, *msg_type);

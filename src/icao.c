@@ -531,7 +531,7 @@ void icao_apdu_format_text(la_vstring *vstr, void const * const data, int indent
 		}
 	}
 	if(icao_apdu->data != NULL && icao_apdu->type != NULL) {
-		if(dump_asn1) {
+		if(Config.dump_asn1 == true) {
 			asn_sprintf(vstr, icao_apdu->type, icao_apdu->data, indent);
 		}
 		asn1_output_icao_as_text(vstr, icao_apdu->type, icao_apdu->data, indent);

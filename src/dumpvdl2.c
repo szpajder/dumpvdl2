@@ -50,10 +50,7 @@
 #include "gs_data.h"
 
 int do_exit = 0;
-uint32_t msg_filter = MSGFLT_ALL;
-addrinfo_verbosity_t addrinfo_verbosity = ADDRINFO_NORMAL;
-bool ac_addrinfo_db_available = false;
-bool gs_addrinfo_db_available = false;
+dumpvdl2_config_t Config;
 
 pthread_barrier_t demods_ready, samples_ready;
 pthread_t decoder_thread;
@@ -467,6 +464,11 @@ int main(int argc, char **argv) {
 	char *infile = NULL, *outfile = NULL, *pp_addr = NULL;
 	char *gs_file = NULL;
 
+// Initialize default config
+	memset(&Config, 0, sizeof(Config));
+	Config.addrinfo_verbosity = ADDRINFO_NORMAL;
+	Config.msg_filter = MSGFLT_ALL;
+
 	while((opt = getopt_long(argc, argv, "", long_opts, NULL)) != -1) {
 		switch(opt) {
 		case __OPT_IQ_FILE:
@@ -486,26 +488,26 @@ int main(int argc, char **argv) {
 			}
 			break;
 		case __OPT_HOURLY:
-			hourly = 1;
+			Config.hourly = true;
 			break;
 		case __OPT_DAILY:
-			daily = 1;
+			Config.daily = true;
 			break;
 		case __OPT_UTC:
-			utc = 1;
+			Config.utc = true;
 			break;
 		case __OPT_RAW_FRAMES:
-			output_raw_frames = 1;
+			Config.output_raw_frames = true;
 			break;
 		case __OPT_DUMP_ASN1:
-			dump_asn1 = 1;
+			Config.dump_asn1 = true;
 			la_config_set_bool("dump_asn1", true);
 			break;
 		case __OPT_EXTENDED_HEADER:
-			extended_header = 1;
+			Config.extended_header = true;
 			break;
 		case __OPT_DECODE_FRAGMENTS:
-			decode_fragments = 1;
+			Config.decode_fragments = true;
 			la_config_set_bool("decode_fragments", true);
 			break;
 		case __OPT_GS_FILE:
@@ -518,11 +520,11 @@ int main(int argc, char **argv) {
 #endif
 		case __OPT_ADDRINFO_VERBOSITY:
 			if(!strcmp(optarg, "terse")) {
-				addrinfo_verbosity = ADDRINFO_TERSE;
+				Config.addrinfo_verbosity = ADDRINFO_TERSE;
 			} else if(!strcmp(optarg, "normal")) {
-				addrinfo_verbosity = ADDRINFO_NORMAL;
+				Config.addrinfo_verbosity = ADDRINFO_NORMAL;
 			} else if(!strcmp(optarg, "verbose")) {
-				addrinfo_verbosity = ADDRINFO_VERBOSE;
+				Config.addrinfo_verbosity = ADDRINFO_VERBOSE;
 			} else {
 				fprintf(stderr, "Invalid value for option --addrinfo\n");
 				usage();
@@ -618,7 +620,7 @@ int main(int argc, char **argv) {
 			pp_addr = strdup(optarg);
 			break;
 		case __OPT_MSG_FILTER:
-			msg_filter = parse_msg_filterspec(optarg);
+			Config.msg_filter = parse_msg_filterspec(optarg);
 			break;
 		case __OPT_VERSION:
 			print_version();
@@ -648,10 +650,10 @@ int main(int argc, char **argv) {
 	}
 
 	if(outfile == NULL) {
-		outfile = strdup("-");		// output to stdout by default
-		hourly = daily = 0;		// stdout is not rotateable - ignore silently
+		outfile = strdup("-");			// output to stdout by default
+		Config.hourly = Config.daily = false;	// stdout is not rotateable - ignore silently
 	}
-	if(outfile != NULL && hourly && daily) {
+	if(outfile != NULL && Config.hourly == true && Config.daily == true) {
 		fprintf(stderr, "Options: -H and -D are exclusive\n");
 		fprintf(stderr, "Use -h for help\n");
 		_exit(1);
@@ -686,7 +688,7 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "Failed to import ground station data file. "
 				"Extended data for ground stations will not be logged.\n");
 		} else {
-			gs_addrinfo_db_available = true;
+			Config.gs_addrinfo_db_available = true;
 		}
 	}
 #ifdef WITH_STATSD
@@ -712,7 +714,7 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "Failed to open aircraft database. "
 				"Extended data for aircraft will not be logged.\n");
 		} else {
-			ac_addrinfo_db_available = true;
+			Config.ac_addrinfo_db_available = true;
 		}
 	}
 #endif

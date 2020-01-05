@@ -265,22 +265,21 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 	return node;
 }
 
-static void addrinfo_format_as_text(la_vstring *vstr, int indent, avlc_addr_t const addr,
-addrinfo_verbosity_t const verbosity) {
+static void addrinfo_format_as_text(la_vstring *vstr, int indent, avlc_addr_t const addr) {
 	if(IS_AIRCRAFT(addr)) {
-		if(ac_addrinfo_db_available) {
+		if(Config.ac_addrinfo_db_available == true) {
 			ac_data_entry *ac = ac_data_entry_lookup(addr.a_addr.addr);
-			if(verbosity == ADDRINFO_TERSE) {
+			if(Config.addrinfo_verbosity == ADDRINFO_TERSE) {
 				la_vstring_append_sprintf(vstr, " [%s]",
 					ac && ac->registration ? ac->registration : "-"
 				);
-			} else if(verbosity == ADDRINFO_NORMAL) {
+			} else if(Config.addrinfo_verbosity == ADDRINFO_NORMAL) {
 				LA_ISPRINTF(vstr, indent, "AC info: %s, %s, %s\n",
 					ac && ac->registration ? ac->registration : "-",
 					ac && ac->icaotypecode ? ac->icaotypecode : "-",
 					ac && ac->operatorflagcode ? ac->operatorflagcode : "-"
 				);
-			} else if(verbosity == ADDRINFO_VERBOSE) {
+			} else if(Config.addrinfo_verbosity == ADDRINFO_VERBOSE) {
 				LA_ISPRINTF(vstr, indent, "AC info: %s, %s, %s, %s\n",
 					ac && ac->registration ? ac->registration : "-",
 					ac && ac->manufacturer ? ac->manufacturer : "-",
@@ -290,18 +289,18 @@ addrinfo_verbosity_t const verbosity) {
 			}
 		}
 	} else if(IS_GS(addr)) {
-		if(gs_addrinfo_db_available) {
+		if(Config.gs_addrinfo_db_available == true) {
 			gs_data_entry *gs = gs_data_entry_lookup(addr.a_addr.addr);
-			if(verbosity == ADDRINFO_TERSE) {
+			if(Config.addrinfo_verbosity == ADDRINFO_TERSE) {
 				la_vstring_append_sprintf(vstr, " [%s]",
 					gs && gs->airport_code ? gs->airport_code : "-"
 				);
-			} else if(verbosity == ADDRINFO_NORMAL) {
+			} else if(Config.addrinfo_verbosity == ADDRINFO_NORMAL) {
 				LA_ISPRINTF(vstr, indent, "GS info: %s, %s\n",
 					gs && gs->airport_code ? gs->airport_code : "-",
 					gs && gs->location ? gs->location : "-"
 				);
-			} else if(verbosity == ADDRINFO_VERBOSE) {
+			} else if(Config.addrinfo_verbosity == ADDRINFO_VERBOSE) {
 				LA_ISPRINTF(vstr, indent, "GS info: %s\n",
 					gs && gs->details ? gs->details : "-"
 				);
@@ -319,20 +318,20 @@ void avlc_format_text(la_vstring * const vstr, void const * const data, int inde
 
 	char ftime[30];
 	strftime(ftime, sizeof(ftime), "%F %T %Z",
-		(utc ? gmtime(&f->q->burst_timestamp.tv_sec) : localtime(&f->q->burst_timestamp.tv_sec)));
+		(Config.utc == true ? gmtime(&f->q->burst_timestamp.tv_sec) : localtime(&f->q->burst_timestamp.tv_sec)));
 	float sig_pwr_dbfs = 10.0f * log10f(f->q->frame_pwr);
 	float nf_pwr_dbfs = 20.0f * log10f(f->q->mag_nf + 0.001f);
 	LA_ISPRINTF(vstr, indent, "[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB] [%.1f ppm]",
 		ftime, (float)f->q->freq / 1e+6, sig_pwr_dbfs, nf_pwr_dbfs, sig_pwr_dbfs-nf_pwr_dbfs,
 		f->q->ppm_error);
 
-	if(extended_header) {
+	if(Config.extended_header == true) {
 		la_vstring_append_sprintf(vstr, " [S:%d] [L:%u] [F:%d] [#%u]",
 			 f->q->synd_weight, f->q->datalen_octets, f->q->num_fec_corrections, f->num);
 	}
 	EOL(vstr);
 
-	if(output_raw_frames && f->q->len > 0) {
+	if(Config.output_raw_frames == true && f->q->len > 0) {
 		append_hexdump_with_indent(vstr, f->q->buf, f->q->len, indent+1);
 	}
 
@@ -343,16 +342,16 @@ void avlc_format_text(la_vstring * const vstr, void const * const data, int inde
 	);
 // Print extra info about source and/or destination?
 // TERSE verbosity level is printed inline.
-	if(addrinfo_verbosity == ADDRINFO_TERSE) {
-		addrinfo_format_as_text(vstr, indent, f->src, addrinfo_verbosity);
+	if(Config.addrinfo_verbosity == ADDRINFO_TERSE) {
+		addrinfo_format_as_text(vstr, indent, f->src);
 	}
 
 	la_vstring_append_sprintf(vstr, " -> %06X (%s)",
 		f->dst.a_addr.addr,
 		addrtype_descr[f->dst.a_addr.type]
 	);
-	if(addrinfo_verbosity == ADDRINFO_TERSE) {
-		addrinfo_format_as_text(vstr, indent, f->dst, addrinfo_verbosity);
+	if(Config.addrinfo_verbosity == ADDRINFO_TERSE) {
+		addrinfo_format_as_text(vstr, indent, f->dst);
 	}
 	la_vstring_append_sprintf(vstr, ": %s\n",
 		status_cr_descr[f->src.a_addr.status]	// C/R
@@ -360,9 +359,9 @@ void avlc_format_text(la_vstring * const vstr, void const * const data, int inde
 
 // Print extra info about source and/or destination?
 // Verbosity levels above TERSE are printed as separate lines.
-	if(addrinfo_verbosity > ADDRINFO_TERSE) {
-		addrinfo_format_as_text(vstr, indent, f->src, addrinfo_verbosity);
-		addrinfo_format_as_text(vstr, indent, f->dst, addrinfo_verbosity);
+	if(Config.addrinfo_verbosity > ADDRINFO_TERSE) {
+		addrinfo_format_as_text(vstr, indent, f->src);
+		addrinfo_format_as_text(vstr, indent, f->dst);
 	}
 
 	if(IS_S(f->lcf)) {

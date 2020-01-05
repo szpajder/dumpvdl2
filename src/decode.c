@@ -168,7 +168,7 @@ static void enqueue_frame(vdl2_channel_t const * const v, int const frame_num, u
 	qentry->ppm_error = v->ppm_error;
 	qentry->burst_timestamp.tv_sec =  v->burst_timestamp.tv_sec;
 	qentry->burst_timestamp.tv_usec =  v->burst_timestamp.tv_usec;
-	if(extended_header) {
+	if(Config.extended_header == true) {
 		qentry->datalen_octets = v->datalen_octets;
 		qentry->synd_weight = synd_weight[v->syndrome];
 		qentry->num_fec_corrections = v->num_fec_corrections;
@@ -375,11 +375,11 @@ void *avlc_decoder_thread(void *arg) {
 		if(root == NULL) {
 			goto cleanup;
 		}
-		if((msg_type & msg_filter) == msg_type) {
-			debug_print("msg_type: %x msg_filter: %x (accepted)\n", msg_type, msg_filter);
+		if((msg_type & Config.msg_filter) == msg_type) {
+			debug_print("msg_type: %x msg_filter: %x (accepted)\n", msg_type, Config.msg_filter);
 			output_proto_tree(root);
 		} else {
-			debug_print("msg_type: %x msg_filter: %x (filtered out)\n", msg_type, msg_filter);
+			debug_print("msg_type: %x msg_filter: %x (filtered out)\n", msg_type, Config.msg_filter);
 		}
 		acars_output_pp(root);
 cleanup:

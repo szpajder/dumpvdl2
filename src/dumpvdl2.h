@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>		// abort()
 #include <sys/time.h>
@@ -137,6 +138,22 @@ typedef struct {
 	uint32_t value;
 	char *description;
 } msg_filterspec_t;
+
+typedef enum {
+	ADDRINFO_TERSE = 0,
+	ADDRINFO_NORMAL = 1,
+	ADDRINFO_VERBOSE = 2
+} addrinfo_verbosity_t;
+
+// global config
+typedef struct {
+	uint32_t msg_filter;
+	bool hourly, daily, utc;
+	bool output_raw_frames, dump_asn1, extended_header, decode_fragments;
+	bool ac_addrinfo_db_available;
+	bool gs_addrinfo_db_available;
+	addrinfo_verbosity_t addrinfo_verbosity;
+} dumpvdl2_config_t;
 
 #define nop() do {} while (0)
 
@@ -297,7 +314,6 @@ int rs_verify(uint8_t *data, int fec_octets);
 
 // output.c
 extern FILE *outf;
-extern uint8_t hourly, daily, utc, output_raw_frames, dump_asn1, extended_header, decode_fragments;
 extern int pp_sockfd;
 int init_output_file(char *file);
 int init_pp(char *pp_addr);
@@ -357,16 +373,8 @@ void unknown_proto_format_text(la_vstring * const vstr, void const * const data,
 la_proto_node *unknown_proto_pdu_new(void *buf, size_t len);
 
 // dumpvdl2.c
-typedef enum {
-	ADDRINFO_TERSE = 0,
-	ADDRINFO_NORMAL = 1,
-	ADDRINFO_VERBOSE = 2
-} addrinfo_verbosity_t;
-
-extern uint32_t msg_filter;
 extern int do_exit;
-extern addrinfo_verbosity_t addrinfo_verbosity;
-extern bool ac_addrinfo_db_available, gs_addrinfo_db_available;
+extern dumpvdl2_config_t Config;
 extern pthread_barrier_t demods_ready, samples_ready;
 
 // version.c
