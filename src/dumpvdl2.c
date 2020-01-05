@@ -527,7 +527,8 @@ int main(int argc, char **argv) {
 				Config.addrinfo_verbosity = ADDRINFO_VERBOSE;
 			} else {
 				fprintf(stderr, "Invalid value for option --addrinfo\n");
-				usage();
+				fprintf(stderr, "Use --help for help\n");
+				_exit(1);
 			}
 			break;
 		case __OPT_CENTERFREQ:
@@ -630,8 +631,11 @@ int main(int argc, char **argv) {
 			usage();
 		}
 	}
-	if(input == INPUT_UNDEF)
-		usage();
+	if(input == INPUT_UNDEF) {
+		fprintf(stderr, "No input specified\n");
+		fprintf(stderr, "Use --help for help\n");
+		_exit(1);
+	}
 
 	if(optind < argc) {
 		num_channels = argc - optind;
@@ -655,7 +659,7 @@ int main(int argc, char **argv) {
 	}
 	if(outfile != NULL && Config.hourly == true && Config.daily == true) {
 		fprintf(stderr, "Options: -H and -D are exclusive\n");
-		fprintf(stderr, "Use -h for help\n");
+		fprintf(stderr, "Use --help for help\n");
 		_exit(1);
 	}
 	sample_rate = SYMBOL_RATE * SPS * oversample;
