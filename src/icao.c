@@ -345,7 +345,9 @@ void decode_ulcs_acse(icao_apdu_t *icao_apdu, uint8_t *buf, uint32_t len, uint32
 		goto ulcs_acse_cleanup;
 	}
 #ifdef DEBUG
-	asn_fprint(stderr, &asn_DEF_ACSE_apdu, acse_apdu, 1);
+	if(Config.debug_filter & D_PROTO_DETAIL) {
+		asn_fprint(stderr, &asn_DEF_ACSE_apdu, acse_apdu, 1);
+	}
 #endif
 
 	AE_qualifier_form2_t ae_qualifier = ICAO_APP_TYPE_UNKNOWN;
