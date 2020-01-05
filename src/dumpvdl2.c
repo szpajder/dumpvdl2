@@ -159,7 +159,6 @@ void print_version() {
 }
 
 void usage() {
-	print_version();
 	fprintf(stderr,
 	"Usage:\n\n"
 #ifdef WITH_RTLSDR
@@ -510,6 +509,7 @@ int main(int argc, char **argv) {
 	Config.addrinfo_verbosity = ADDRINFO_NORMAL;
 	Config.msg_filter = MSGFLT_ALL;
 
+	print_version();
 	while((opt = getopt_long(argc, argv, "", long_opts, NULL)) != -1) {
 		switch(opt) {
 		case __OPT_IQ_FILE:
@@ -671,7 +671,7 @@ int main(int argc, char **argv) {
 			break;
 #endif
 		case __OPT_VERSION:
-			print_version();
+// No-op - the version has been printed before getopt().
 			_exit(0);
 		case __OPT_HELP:
 		default:
