@@ -111,6 +111,9 @@
 
 #define __OPT_VERSION			98
 #define __OPT_HELP			99
+#ifdef DEBUG
+#define __OPT_DEBUG			100
+#endif
 
 // message filters
 #define MSGFLT_ALL			(~0)
@@ -133,6 +136,11 @@
 #define MSGFLT_CPDLC			(1 << 15)
 #define MSGFLT_ADSC			(1 << 16)
 
+// debug message classes
+#define D_ALL				(~0)
+#define D_NONE				(0)
+#define D_BURST_DECODER_DETAIL		(1 <<  0)
+
 typedef struct {
 	char *token;
 	uint32_t value;
@@ -147,6 +155,9 @@ typedef enum {
 
 // global config
 typedef struct {
+#ifdef DEBUG
+	uint32_t debug_filter;
+#endif
 	uint32_t msg_filter;
 	bool hourly, daily, utc;
 	bool output_raw_frames, dump_asn1, extended_header, decode_fragments;
@@ -200,9 +211,22 @@ typedef struct {
 		} \
 		fprintf(stderr, "\n"); \
 	} while(0)
+#define debug_print_buf_hex2(debug_class, buf, len, fmt, ...) \
+do { \
+	if(Config.debug_filter & debug_class) { \
+		fprintf(stderr, "%s(): " fmt, __func__, ##__VA_ARGS__); \
+		fprintf(stderr, "%s(): ", __func__); \
+		for(size_t zz = 0; zz < (len); zz++) { \
+			fprintf(stderr, "%02x ", buf[zz]); \
+			if(zz && (zz+1) % 32 == 0) fprintf(stderr, "\n%s(): ", __func__); \
+		} \
+		fprintf(stderr, "\n"); \
+	} \
+} while(0)
 #else
 #define debug_print(fmt, ...) nop()
 #define debug_print_buf_hex(buf, len, fmt, ...) nop()
+#define debug_print_buf_hex2(level, buf, len, fmt, ...) nop()
 #endif
 
 #define ONES(x) ~(~0u << (x))

@@ -269,11 +269,25 @@ void usage() {
 	"General options:\n"
 	"    --help                                      Displays this text\n"
 	"    --version                                   Displays program version number\n"
+#ifdef DEBUG
+	"    --debug <filter_spec>                       Debug message classes to display (default: none) (\"--debug help\" for details)\n"
+#endif
 	);
 	_exit(0);
 }
 
-const msg_filterspec_t filters[] = {
+void print_msg_filterspec_list(FILE *f, msg_filterspec_t const *filters) {
+	for(msg_filterspec_t const *ptr = filters; ptr->token != NULL; ptr++) {
+		fprintf(f, "\t%s\t%s%s%s\n",
+			ptr->token,
+			strlen(ptr->token) < 8 ? "\t" : "",
+			strlen(ptr->token) < 16 ? "\t" : "",
+			ptr->description
+		);
+	}
+}
+
+static msg_filterspec_t const msg_filters[] = {
 	{ "all",		MSGFLT_ALL,			"All messages" },
 	{ "uplink",		MSGFLT_SRC_GND,			"Uplink messages (sourced by ground stations)" },
 	{ "downlink",		MSGFLT_SRC_AIR,			"Downlink messages (sourced by aircraft)" },
@@ -300,32 +314,46 @@ const msg_filterspec_t filters[] = {
 	{ 0,			0,				0 }
 };
 
+#ifdef DEBUG
+static msg_filterspec_t const debug_filters[] = {
+	{ "all",		D_ALL,				"All messages" },
+	{ "burst_detail",	D_BURST_DECODER_DETAIL,		"VDL2 burst decoder - details with full buffer dumps" },
+	{ 0,			0,				0 }
+};
+
+static void debug_filter_usage() {
+	fprintf(stderr,
+		"<filter_spec> is a comma-separated list of words specifying debug classes which should\n"
+		"be printed.\n\nSupported debug classes:\n\n"
+	);
+
+	print_msg_filterspec_list(stderr, debug_filters);
+
+	fprintf(stderr,
+		"\nBy default, no debug messages are printed.\n"
+	);
+}
+#endif
+
 static void msg_filter_usage() {
-	fprintf(stderr, "<filter_spec> is a comma-separated list of words specifying message types which should\n");
-	fprintf(stderr, "be displayed. Each word may optionally be preceded by a '-' sign to negate its meaning\n");
-	fprintf(stderr, "(ie. to indicate that a particular message type shall not be displayed).\n");
-	fprintf(stderr, "\nSupported message types:\n\n");
+	fprintf(stderr,
+		"<filter_spec> is a comma-separated list of words specifying message types which should\n"
+		"be displayed. Each word may optionally be preceded by a '-' sign to negate its meaning\n"
+		"(ie. to indicate that a particular message type shall not be displayed).\n"
+		"\nSupported message types:\n\n"
+	);
 
-	CAST_PTR(ptr, msg_filterspec_t *, filters);
-	while(ptr->token != NULL) {
-		fprintf(stderr, "\t%s\t%s%s%s\n",
-			ptr->token,
-			strlen(ptr->token) < 8 ? "\t" : "",
-			strlen(ptr->token) < 16 ? "\t" : "",
-			ptr->description
-		);
-		ptr++;
-	}
+	print_msg_filterspec_list(stderr, msg_filters);
 
-	fprintf(stderr, "\nWhen --msg-filter option is not used, all messages are displayed. But when it is, the\n");
-	fprintf(stderr, "filter is first reset to \"none\", ie. you have to explicitly enable all message types\n");
-	fprintf(stderr, "which you wish to see. Word list is parsed from left to right, so the last match wins.\n");
-	fprintf(stderr, "\nRefer to FILTERING_EXAMPLES.md file for usage examples.\n");
-	_exit(0);
+	fprintf(stderr,
+		"\nWhen --msg-filter option is not used, all messages are displayed. But when it is, the\n"
+		"filter is first reset to \"none\", ie. you have to explicitly enable all message types\n"
+		"which you wish to see. Word list is parsed from left to right, so the last match wins.\n"
+		"\nRefer to FILTERING_EXAMPLES.md file for usage examples.\n"
+	);
 }
 
-static void update_filtermask(char *token, uint32_t *fmask) {
-	CAST_PTR(ptr, msg_filterspec_t *, filters);
+static void update_filtermask(msg_filterspec_t const *filters, char *token, uint32_t *fmask) {
 	int negate = 0;
 	if(token[0] == '-') {
 		negate = 1;
@@ -335,7 +363,7 @@ static void update_filtermask(char *token, uint32_t *fmask) {
 			_exit(1);
 		}
 	}
-	while(ptr->token != NULL) {
+	for(msg_filterspec_t const *ptr = filters; ptr->token != NULL; ptr++) {
 		if(!strcmp(token, ptr->token)) {
 			if(negate)
 				*fmask &= ~ptr->value;
@@ -344,26 +372,26 @@ static void update_filtermask(char *token, uint32_t *fmask) {
 			debug_print("token: %s negate: %d filtermask: 0x%x\n", token, negate, *fmask);
 			return;
 		}
-		ptr++;
 	}
-	fprintf(stderr, "Invalid filter specification: %s: unknown message type\n", token);
+	fprintf(stderr, "Unknown filter specifier: %s\n", token);
 	_exit(1);
 }
 
-static uint32_t parse_msg_filterspec(char *filterspec) {
+static uint32_t parse_msg_filterspec(msg_filterspec_t const *filters, void (*help)(), char *filterspec) {
 	if(!strcmp(filterspec, "help")) {
-		msg_filter_usage();
-		return 0;
+		help();
+		_exit(0);
 	}
-	uint32_t fmask = MSGFLT_NONE;
+	uint32_t fmask = 0;
 	char *token = strtok(filterspec, ",");
 	if(token == NULL) {
 		fprintf(stderr, "Invalid filter specification\n");
 		_exit(1);
 	}
-	update_filtermask(token, &fmask);
-	while((token = strtok(NULL, ",")) != NULL)
-		update_filtermask(token, &fmask);
+	update_filtermask(filters, token, &fmask);
+	while((token = strtok(NULL, ",")) != NULL) {
+		update_filtermask(filters, token, &fmask);
+	}
 	return fmask;
 }
 
@@ -451,6 +479,9 @@ int main(int argc, char **argv) {
 #endif
 		{ "version",		no_argument,		NULL,	__OPT_VERSION },
 		{ "help",		no_argument,		NULL,	__OPT_HELP },
+#ifdef DEBUG
+		{ "debug",		required_argument,	NULL,	__OPT_DEBUG },
+#endif
 		{ 0,			0,			0,	0 }
 	};
 
@@ -621,8 +652,13 @@ int main(int argc, char **argv) {
 			pp_addr = strdup(optarg);
 			break;
 		case __OPT_MSG_FILTER:
-			Config.msg_filter = parse_msg_filterspec(optarg);
+			Config.msg_filter = parse_msg_filterspec(msg_filters, msg_filter_usage, optarg);
 			break;
+#ifdef DEBUG
+		case __OPT_DEBUG:
+			Config.debug_filter = parse_msg_filterspec(debug_filters, debug_filter_usage, optarg);
+			break;
+#endif
 		case __OPT_VERSION:
 			print_version();
 			_exit(0);
