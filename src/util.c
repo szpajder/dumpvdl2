@@ -136,12 +136,12 @@ octet_string_t *octet_string_new(void *buf, size_t len) {
 int octet_string_parse(uint8_t *buf, size_t len, octet_string_t *result) {
 	ASSERT(buf != NULL);
 	if(len == 0) {
-		debug_print("empty buffer\n");
+		debug_print(D_PROTO, "empty buffer\n");
 		return -1;
 	}
 	uint8_t buflen = *buf++; len--;
 	if(len < buflen) {
-		debug_print("buffer truncated: len %zu < expected %u\n", len, buflen);
+		debug_print(D_PROTO, "buffer truncated: len %zu < expected %u\n", len, buflen);
 		return -1;
 	}
 	result->buf = buf;
@@ -209,7 +209,7 @@ size_t slurp_hexstring(char* string, uint8_t **buf) {
 		} else if (c >= 'a' && c <= 'f') {
 			 value = (10 + (c - 'a'));
 		} else {
-			debug_print("stopped at invalid char %u at pos %zu\n", c, i);
+			debug_print(D_PROTO, "stopped at invalid char %u at pos %zu\n", c, i);
 			return i/2;
 		}
 		(*buf)[(i/2)] |= value << (((i + 1) % 2) * 4);

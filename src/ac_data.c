@@ -96,26 +96,26 @@ static int ac_data_entry_from_db(uint32_t const addr, ac_data_entry **result) {
 	}
 	char hex_addr[7];
 	if(snprintf(hex_addr, sizeof(hex_addr), "%06X", addr) != sizeof(hex_addr) - 1) {
-		debug_print("could not convert addr %u to ICAO hex string - too large?\n", addr);
+		debug_print(D_CACHE, "could not convert addr %u to ICAO hex string - too large?\n", addr);
 		return -2;
 	}
 
 	int rc = sqlite3_reset(stmt);
 	if(rc != SQLITE_OK) {
-		debug_print("sqlite3_reset() returned error %d\n", rc);
+		debug_print(D_CACHE, "sqlite3_reset() returned error %d\n", rc);
 		statsd_increment("ac_data.db.errors");
 		return rc;
 	}
 	rc = sqlite3_bind_text(stmt, 1, hex_addr, -1, SQLITE_STATIC);
 	if(rc != SQLITE_OK) {
-		debug_print("sqlite3_bind_text('%s') returned error %d\n", hex_addr, rc);
+		debug_print(D_CACHE, "sqlite3_bind_text('%s') returned error %d\n", hex_addr, rc);
 		statsd_increment("ac_data.db.errors");
 		return rc;
 	}
 	rc = sqlite3_step(stmt);
 	if(rc == SQLITE_ROW) {
 		if(sqlite3_column_count(stmt) < 6) {
-			debug_print("%s: not enough columns in the query result\n", hex_addr);
+			debug_print(D_CACHE, "%s: not enough columns in the query result\n", hex_addr);
 			return -3;
 		}
 		rc = SQLITE_OK;
@@ -145,7 +145,7 @@ static int ac_data_entry_from_db(uint32_t const addr, ac_data_entry **result) {
 			*result = NULL;
 		}
 	} else {
-		debug_print("%s: unexpected query return code %d\n", hex_addr, rc);
+		debug_print(D_CACHE, "%s: unexpected query return code %d\n", hex_addr, rc);
 		statsd_increment("ac_data.db.errors");
 	}
 	return rc;
@@ -167,7 +167,7 @@ ac_data_entry *ac_data_entry_lookup(uint32_t addr) {
 	time_t now = time(NULL);
 	if(last_gc_time + AC_CACHE_GC_INTERVAL <= now) {
 		int expired_cnt = la_hash_foreach_remove(ac_data_cache, is_cache_entry_expired, &now);
-		debug_print("last_gc: %ld, now: %ld, expired %d cache entries\n", last_gc_time, now, expired_cnt);
+		debug_print(D_CACHE, "last_gc: %ld, now: %ld, expired %d cache entries\n", last_gc_time, now, expired_cnt);
 		AC_CACHE_ENTRY_COUNT_ADD(-expired_cnt);
 		last_gc_time = now;
 	}
@@ -176,12 +176,12 @@ ac_data_entry *ac_data_entry_lookup(uint32_t addr) {
 	if(ce != NULL) {
 		time_t now = time(NULL);
 		if(is_cache_entry_expired(&addr, ce, &now)) {
-			debug_print("%06X: expired cache entry (ctime %ld)\n", addr, ce->ctime);
+			debug_print(D_CACHE, "%06X: expired cache entry (ctime %ld)\n", addr, ce->ctime);
 			la_hash_remove(ac_data_cache, &addr);
 			AC_CACHE_ENTRY_COUNT_ADD(-1);
 		} else {
 			statsd_increment("ac_data.cache.hits");
-			debug_print("%06X: %s cache hit\n", addr, ce->ac_data ? "positive" : "negative");
+			debug_print(D_CACHE, "%06X: %s cache hit\n", addr, ce->ac_data ? "positive" : "negative");
 			return ce->ac_data;
 		}
 	}
@@ -189,10 +189,10 @@ ac_data_entry *ac_data_entry_lookup(uint32_t addr) {
 	statsd_increment("ac_data.cache.misses");
 	ac_data_entry *e = NULL;
 	if(ac_data_entry_from_db(addr, &e) == SQLITE_OK) {
-		debug_print("%06X: %sfound in BS DB\n", addr, e ? "" : "not ");
+		debug_print(D_CACHE, "%06X: %sfound in BS DB\n", addr, e ? "" : "not ");
 		return e;
 	}
-	debug_print("%06X: not found\n", addr);
+	debug_print(D_CACHE, "%06X: not found\n", addr);
 	return NULL;
 }
 

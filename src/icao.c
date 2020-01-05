@@ -110,7 +110,7 @@ uint8_t *buf, int size) {
 		*decoded_apdu_type = next_td;
 		goto ads_aircraft_pdus_cleanup;
 	}
-	debug_print("Unable to decode ADSAircraftPDUs as %s\n", next_td->name);
+	debug_print(D_PROTO, "Unable to decode ADSAircraftPDUs as %s\n", next_td->name);
 ads_aircraft_pdus_cleanup:
 	ASN_STRUCT_FREE(asn_DEF_ADSAircraftPDUs, adsairpdus);
 	return ret;
@@ -160,7 +160,7 @@ uint8_t *buf, int size) {
 		*decoded_apdu_type = next_td;
 		goto ads_ground_pdus_cleanup;
 	}
-	debug_print("Unable to decode ADSGroundPDUs as %s\n", next_td->name);
+	debug_print(D_PROTO, "Unable to decode ADSGroundPDUs as %s\n", next_td->name);
 ads_ground_pdus_cleanup:
 	ASN_STRUCT_FREE(asn_DEF_ADSGroundPDUs, adsgndpdus);
 	return ret;
@@ -211,7 +211,7 @@ ACSE_apdu_PR acse_apdu_type, uint8_t *buf, int size) {
 		*decoded_apdu_type = &asn_DEF_ATCDownlinkMessage;
 		goto protected_aircraft_pdu_cleanup;
 	}
-	debug_print("unable to decode ProtectedAircraftPDU as ATCDownlinkMessage\n");
+	debug_print(D_PROTO, "unable to decode ProtectedAircraftPDU as ATCDownlinkMessage\n");
 protected_aircraft_pdu_cleanup:
 	ASN_STRUCT_FREE(asn_DEF_ProtectedAircraftPDUs, pairpdu);
 	return ret;
@@ -262,7 +262,7 @@ ACSE_apdu_PR acse_apdu_type, uint8_t *buf, int size) {
 		*decoded_apdu_type = &asn_DEF_ATCUplinkMessage;
 		goto protected_ground_pdu_cleanup;
 	}
-	debug_print("unable to decode ProtectedGroundPDU as ATCUplinkMessage\n");
+	debug_print(D_PROTO, "unable to decode ProtectedGroundPDU as ATCUplinkMessage\n");
 protected_ground_pdu_cleanup:
 	ASN_STRUCT_FREE(asn_DEF_ProtectedGroundPDUs, pgndpdu);
 	return ret;
@@ -333,7 +333,7 @@ ACSE_apdu_PR acse_apdu_type, uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 		ASN_STRUCT_FREE(asn_DEF_ADSGroundPDUs, msg);
 		msg = NULL;
 	}
-	debug_print("unknown APDU type\n");
+	debug_print(D_PROTO, "unknown APDU type\n");
 }
 
 void decode_ulcs_acse(icao_apdu_t *icao_apdu, uint8_t *buf, uint32_t len, uint32_t *msg_type) {
@@ -341,7 +341,7 @@ void decode_ulcs_acse(icao_apdu_t *icao_apdu, uint8_t *buf, uint32_t len, uint32
 	asn_dec_rval_t rval;
 	rval = uper_decode_complete(0, &asn_DEF_ACSE_apdu, (void **)&acse_apdu, buf, len);
 	if(rval.code != RC_OK) {
-		debug_print("Decoding failed at position %ld\n", (long)rval.consumed);
+		debug_print(D_PROTO, "Decoding failed at position %ld\n", (long)rval.consumed);
 		goto ulcs_acse_cleanup;
 	}
 #ifdef DEBUG
@@ -374,13 +374,13 @@ void decode_ulcs_acse(icao_apdu_t *icao_apdu, uint8_t *buf, uint32_t len, uint32
 	default:
 		break;
 	}
-	debug_print("calling-AE-qualifier: %ld\n", ae_qualifier);
+	debug_print(D_PROTO, "calling-AE-qualifier: %ld\n", ae_qualifier);
 	if(user_info == NULL) {
-		debug_print("No user-information field\n");
+		debug_print(D_PROTO, "No user-information field\n");
 		goto ulcs_acse_cleanup;
 	}
 	if(user_info->data.encoding.present != EXTERNALt__encoding_PR_arbitrary) {
-		debug_print("unsupported encoding: %d\n", user_info->data.encoding.present);
+		debug_print(D_PROTO, "unsupported encoding: %d\n", user_info->data.encoding.present);
 		goto ulcs_acse_cleanup;
 	}
 	decode_arbitrary_payload(icao_apdu, ae_qualifier, acse_apdu->present,
@@ -397,16 +397,18 @@ static void decode_fully_encoded_data(icao_apdu_t *icao_apdu, uint8_t *buf, uint
 	asn_dec_rval_t rval;
 	rval = uper_decode_complete(0, &asn_DEF_Fully_encoded_data, (void **)&fed, buf, len);
 	if(rval.code != RC_OK) {
-		debug_print("uper_decode_complete() failed at position %ld\n", (long)rval.consumed);
+		debug_print(D_PROTO, "uper_decode_complete() failed at position %ld\n", (long)rval.consumed);
 		goto fed_cleanup;
 	}
 #ifdef DEBUG
-	asn_fprint(stderr, &asn_DEF_Fully_encoded_data, fed, 1);
+	if(Config.debug_filter & D_PROTO_DETAIL) {
+		asn_fprint(stderr, &asn_DEF_Fully_encoded_data, fed, 1);
+	}
 #endif
-	debug_print("%ld bytes consumed, %ld left\n", (long)rval.consumed, (long)(len) - (long)rval.consumed);
+	debug_print(D_PROTO, "%ld bytes consumed, %ld left\n", (long)rval.consumed, (long)(len) - (long)rval.consumed);
 
 	if(fed->data.presentation_data_values.present != PDV_list__presentation_data_values_PR_arbitrary) {
-		debug_print("unsupported encoding of fully-encoded-data\n");
+		debug_print(D_PROTO, "unsupported encoding of fully-encoded-data\n");
 		goto fed_cleanup;
 	}
 	switch(fed->data.presentation_context_identifier) {
@@ -424,7 +426,7 @@ static void decode_fully_encoded_data(icao_apdu_t *icao_apdu, uint8_t *buf, uint
 				 msg_type);
 		break;
 	default:
-		debug_print("unsupported presentation-context-identifier: %ld\n",
+		debug_print(D_PROTO, "unsupported presentation-context-identifier: %ld\n",
 			fed->data.presentation_context_identifier);
 		goto fed_cleanup;
 	}
@@ -442,7 +444,7 @@ la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 
 	icao_apdu->err = true;		// fail-safe default
 	if(len < 1) {
-		debug_print("APDU too short (len: %u)\n", len);
+		debug_print(D_PROTO, "APDU too short (len: %u)\n", len);
 		goto fail;
 	}
 	uint8_t *ptr = buf;
@@ -451,7 +453,7 @@ la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 // All SPDU types have the 8-th bit of SI&P field (the first octet) set to 1.
 	if((ptr[0] & 0x80) != 0) {
 		if(remaining < 3) {
-			debug_print("Short-form SPDU too short (len: %u < 3)\n", len);
+			debug_print(D_PROTO, "Short-form SPDU too short (len: %u < 3)\n", len);
 			goto fail;
 		}
 		icao_apdu->spdu_id = ptr[0] & 0xf8;
@@ -461,7 +463,7 @@ la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 // encoding information - 0x2 indicates ASN.1 encoded with Packed Encoding Rules
 // Unaligned (X.691)
 		if((ptr[1] & 3) != 2) {
-			debug_print("Unknown PPDU payload encoding: %u\n", ptr[1] & 3);
+			debug_print(D_PROTO, "Unknown PPDU payload encoding: %u\n", ptr[1] & 3);
 			goto fail;
 		}
 		ptr += 2; remaining -= 2;
@@ -475,7 +477,7 @@ la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 // Layer and Presentation Layer, ie. only user data field is present without any header.
 // Decode it as Fully-encoded-data.
 		if(remaining < 1) {
-			debug_print("NULL SPDU too short (len: %u < 1)\n", len);
+			debug_print(D_PROTO, "NULL SPDU too short (len: %u < 1)\n", len);
 			goto fail;
 		}
 		decode_fully_encoded_data(icao_apdu, ptr, remaining, msg_type);

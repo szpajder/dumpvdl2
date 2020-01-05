@@ -182,12 +182,12 @@ void statsd_timing_delta_per_channel_send(uint32_t const freq, char *timer, stru
 	uint32_t tdiff;
 	gettimeofday(&te, NULL);
 	if(te.tv_sec < ts.tv_sec || (te.tv_sec == ts.tv_sec && te.tv_usec < ts.tv_usec)) {
-		debug_print("timediff is negative: ts.tv_sec=%lu ts.tv_usec=%lu te.tv_sec=%lu te.tv_usec=%lu\n",
+		debug_print(D_STATS, "timediff is negative: ts.tv_sec=%lu ts.tv_usec=%lu te.tv_sec=%lu te.tv_usec=%lu\n",
 			ts.tv_sec, ts.tv_usec, te.tv_sec, te.tv_usec);
 		return;
 	}
 	tdiff = ((te.tv_sec - ts.tv_sec) * 1000000UL + te.tv_usec - ts.tv_usec) / 1000;
-	debug_print("tdiff: %u ms\n", tdiff);
+	debug_print(D_STATS, "tdiff: %u ms\n", tdiff);
 	snprintf(metric, sizeof(metric), "%d.%s", freq, timer);
 	statsd_timing(statsd, metric, tdiff);
 }

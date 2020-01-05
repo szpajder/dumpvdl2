@@ -115,7 +115,7 @@ static void sdrplay_gainCallback(unsigned int gRdB, unsigned int lnaGRdB, void *
 	UNUSED(gRdB);
 	UNUSED(lnaGRdB);
 	UNUSED(cbContext);
-	debug_print("Gain change: gRdb=%u lnaGRdB=%u \n", gRdB, lnaGRdB);
+	debug_print(D_SDR, "Gain change: gRdb=%u lnaGRdB=%u \n", gRdB, lnaGRdB);
 }
 
 static int sdrplay_verbose_device_search(char * const dev, sdrplay_hw_type *hw_type) {
@@ -356,7 +356,7 @@ int const enable_notch_filter, int enable_agc, int tuner) {
 		_exit(1);
 	}
 	initialized = 1;
-	debug_print("Stream initialized (sdrplaySamplesPerPacket=%d gRdB=%d gRdBsystem=%d)\n",
+	debug_print(D_SDR, "Stream initialized (sdrplaySamplesPerPacket=%d gRdB=%d gRdBsystem=%d)\n",
 		sdrplaySamplesPerPacket, gRdb, gRdBsystem);
 
 	// If no GR has been specified, enable AGC with a default set point (unless configured otherwise)

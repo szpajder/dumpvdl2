@@ -73,7 +73,7 @@ int gs_data_import(char const *file) {
 			ret = -1;
 			goto fail;
 		}
-		debug_print("%d: addr: '%06X' apt_code: '%s' details: '%s' location: '%s'\n",
+		debug_print(D_CACHE, "%d: addr: '%06X' apt_code: '%s' details: '%s' location: '%s'\n",
 			cnt, addr, airport_code, details, location);
 		NEW(uint32_t, key);
 		NEW(gs_data_entry, entry);

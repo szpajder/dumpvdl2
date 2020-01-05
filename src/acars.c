@@ -36,27 +36,27 @@
 static void update_msg_type(uint32_t *msg_type, la_proto_node *root) {
 	la_proto_node *node = la_proto_tree_find_acars(root);
 	if(node == NULL) {
-		debug_print("proto tree contains no ACARS message");
+		debug_print(D_PROTO, "proto tree contains no ACARS message");
 		return;
 	}
 	CAST_PTR(amsg, la_acars_msg *, node->data);
 	if(strlen(amsg->txt) > 0) {
-		debug_print("MSGFLT_ACARS_DATA\n");
+		debug_print(D_PROTO, "MSGFLT_ACARS_DATA\n");
 		*msg_type |= MSGFLT_ACARS_DATA;
 	} else {
-		debug_print("MSGFLT_ACARS_NODATA\n");
+		debug_print(D_PROTO, "MSGFLT_ACARS_NODATA\n");
 		*msg_type |= MSGFLT_ACARS_NODATA;
 	}
 
 	la_proto_node *node2 = la_proto_tree_find_cpdlc(node);
 	if(node2 != NULL) {
-		debug_print("MSGFLT_CPDLC\n");
+		debug_print(D_PROTO, "MSGFLT_CPDLC\n");
 		*msg_type |= MSGFLT_CPDLC;
 	}
 
 	node2 = la_proto_tree_find_adsc(node);
 	if(node2 != NULL) {
-		debug_print("MSGFLT_ADSC\n");
+		debug_print(D_PROTO, "MSGFLT_ADSC\n");
 		*msg_type |= MSGFLT_ADSC;
 	}
 }
@@ -75,7 +75,7 @@ static void update_statsd_acars_metrics(la_msg_dir msg_dir, la_proto_node *root)
 	};
 	la_proto_node *node = la_proto_tree_find_acars(root);
 	if(node == NULL) {
-		debug_print("proto tree contains no ACARS message");
+		debug_print(D_PROTO, "proto tree contains no ACARS message");
 		return;
 	}
 	CAST_PTR(amsg, la_acars_msg *, node->data);
@@ -123,7 +123,7 @@ void acars_output_pp(la_proto_node *tree) {
 		msg->mode, msg->reg, msg->ack, msg->label, msg->block_id, msg->msg_num, msg->flight_id, txt);
 
 	if(write(pp_sockfd, vstr->str, vstr->len) < 0) {
-		debug_print("write(pp_sockfd) error: %s", strerror(errno));
+		debug_print(D_OUTPUT, "write(pp_sockfd) error: %s", strerror(errno));
 	}
 	XFREE(txt);
 	la_vstring_destroy(vstr, true);

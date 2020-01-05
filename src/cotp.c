@@ -307,7 +307,7 @@ TLV_FORMATTER(flow_control_confirmation_format_text) {
 #define TPDU_CHECK_LEN(len, val, goto_on_fail) \
 	do { \
 		if((len) < (val)) { \
-			debug_print("Truncated TPDU: len: %u < %u\n", (len), (val)); \
+			debug_print(D_PROTO, "Truncated TPDU: len: %u < %u\n", (len), (val)); \
 			goto goto_on_fail; \
 		} \
 	} while(0)
@@ -332,11 +332,11 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 	uint8_t li = ptr[0];
 	ptr++; remaining--;
 	if(li == 0 || li == 255) {
-		debug_print("invalid header length indicator: %u\n", li);
+		debug_print(D_PROTO, "invalid header length indicator: %u\n", li);
 		goto fail;
 	}
 	if(remaining < li) {
-		debug_print("header truncated: len %u < li %u\n", remaining, li);
+		debug_print(D_PROTO, "header truncated: len %u < li %u\n", remaining, li);
 		goto fail;
 	}
 	uint8_t code = ptr[0];
@@ -355,7 +355,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 	default:
 		pdu->code = code;
 	}
-	debug_print("TPDU code: 0x%02x\n", pdu->code);
+	debug_print(D_PROTO_DETAIL, "TPDU code: 0x%02x\n", pdu->code);
 
 	pdu->dst_ref = extract_uint16_msbfirst(ptr + 1);
 
@@ -447,14 +447,14 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 		}
 		break;
 	default:
-		debug_print("Unknown TPDU code 0x%02x\n", pdu->code);
+		debug_print(D_PROTO, "Unknown TPDU code 0x%02x\n", pdu->code);
 		goto fail;
 	}
 	if(variable_part_offset > 0 && remaining > variable_part_offset) {
 		pdu->variable_part_params = tlv_parse(ptr + variable_part_offset,
 			li - variable_part_offset, cotp_params, 1);
 		if(pdu->variable_part_params == NULL) {
-			debug_print("tlv_parse failed on variable part\n");
+			debug_print(D_PROTO, "tlv_parse failed on variable part\n");
 			goto fail;
 		}
 	}
@@ -499,7 +499,7 @@ la_proto_node *cotp_concatenated_pdu_parse(uint8_t *buf, uint32_t len, uint32_t 
 // so we may simplify things a bit and provide only a single next node for the whole
 // concatenated PDU instead of having a separate next node for each contained PDU,
 // which (the next node) would be NULL anyway, except for the last one.
-		debug_print("Remaining length: %u\n", len);
+		debug_print(D_PROTO_DETAIL, "Remaining length: %u\n", len);
 		cotp_pdu_parse_result r = cotp_pdu_parse(buf, len, msg_type);
 		pdu_list = la_list_append(pdu_list, r.pdu);
 		if(r.next_node != NULL) {

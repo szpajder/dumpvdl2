@@ -159,7 +159,7 @@ static const char *U_cmd[] = {
 la_type_descriptor const proto_DEF_avlc_frame;
 
 uint32_t parse_dlc_addr(uint8_t *buf) {
-	debug_print("%02x %02x %02x %02x\n", buf[0], buf[1], buf[2], buf[3]);
+	debug_print(D_PROTO_DETAIL, "%02x %02x %02x %02x\n", buf[0], buf[1], buf[2], buf[3]);
 	return reverse((buf[0] >> 1) | (buf[1] << 6) | (buf[2] << 13) | ((buf[3] & 0xfe) << 20), 28) & ONES(28);
 }
 
@@ -168,22 +168,22 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 	uint8_t *buf = q->buf;
 	uint32_t len = q->len;
 	if(len < MIN_AVLC_LEN) {
-		debug_print("Frame %d: too short (len=%u required=%d)\n", q->idx, len, MIN_AVLC_LEN);
+		debug_print(D_PROTO, "Frame %d: too short (len=%u required=%d)\n", q->idx, len, MIN_AVLC_LEN);
 		statsd_increment_per_channel(q->freq, "avlc.errors.too_short");
 		return NULL;
 	}
-	debug_print("Frame %d: len=%u\n", q->idx, len);
-	debug_print_buf_hex(buf, len, "Frame data:\n");
+	debug_print(D_PROTO, "Frame %d: len=%u\n", q->idx, len);
+	debug_print_buf_hex(D_PROTO_DETAIL, buf, len, "Frame data:\n");
 
 // FCS check
 	uint16_t fcs = crc16_ccitt(buf, len, 0xFFFFu);
-	debug_print("Check FCS: %04x\n", fcs);
+	debug_print(D_PROTO_DETAIL, "Check FCS: %04x\n", fcs);
 	if(fcs == GOOD_FCS) {
-		debug_print("FCS check OK\n");
+		debug_print(D_PROTO, "FCS check OK\n");
 		statsd_increment_per_channel(q->freq, "avlc.frames.good");
 		len -= 2;
 	} else {
-		debug_print("FCS check failed\n");
+		debug_print(D_PROTO, "FCS check failed\n");
 		statsd_increment_per_channel(q->freq, "avlc.errors.bad_fcs");
 		return NULL;
 	}

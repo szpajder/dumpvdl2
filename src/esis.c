@@ -136,23 +136,23 @@ la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	uint8_t *ptr = buf;
 	uint32_t remaining = len;
 	if(remaining < ESIS_HDR_LEN) {
-		debug_print("Too short (len %u < min len %u)\n", remaining, ESIS_HDR_LEN);
+		debug_print(D_PROTO, "Too short (len %u < min len %u)\n", remaining, ESIS_HDR_LEN);
 		goto end;
 	}
 	CAST_PTR(hdr, esis_hdr_t *, ptr);
 	if(hdr->version != 1) {
-		debug_print("Unsupported PDU version %u\n", hdr->version);
+		debug_print(D_PROTO, "Unsupported PDU version %u\n", hdr->version);
 		goto end;
 	}
 	pdu->holdtime = ((uint16_t)hdr->holdtime[0] << 8) | ((uint16_t)hdr->holdtime[1]);
-	debug_print("pid: %02x len: %u type: %u holdtime: %u\n",
+	debug_print(D_PROTO, "pid: %02x len: %u type: %u holdtime: %u\n",
 		hdr->pid, hdr->len, hdr->type, pdu->holdtime);
 	if(remaining < hdr->len) {
-		debug_print("Too short (len %u < PDU len %u)\n", remaining, hdr->len);
+		debug_print(D_PROTO, "Too short (len %u < PDU len %u)\n", remaining, hdr->len);
 		goto end;
 	}
 	ptr += ESIS_HDR_LEN; remaining -= ESIS_HDR_LEN;
-	debug_print("skipping %u hdr octets, len is now %u\n", ESIS_HDR_LEN, remaining);
+	debug_print(D_PROTO, "skipping %u hdr octets, len is now %u\n", ESIS_HDR_LEN, remaining);
 
 	int ret = octet_string_parse(ptr, remaining, &pdu->net_addr);
 	if(ret < 0) {
@@ -165,13 +165,13 @@ la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		if(remaining > 0) {
 			pdu->options = tlv_parse(ptr, remaining, esis_options, 1);
 			if(pdu->options == NULL) {
-				debug_print("tlv_parse failed when parsing options\n");
+				debug_print(D_PROTO, "tlv_parse failed when parsing options\n");
 				goto end;
 			}
 		}
 		break;
 	default:
-		debug_print("Unknown PDU type 0x%02x\n", hdr->type);
+		debug_print(D_PROTO, "Unknown PDU type 0x%02x\n", hdr->type);
 		goto end;
 	}
 	pdu->hdr = hdr;

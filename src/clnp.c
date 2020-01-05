@@ -39,7 +39,7 @@ static la_proto_node *parse_clnp_pdu_payload(uint8_t *buf, uint32_t len, uint32_
 	case SN_PROTO_IDRP:
 		return idrp_pdu_parse(buf, len, msg_type);
 	case SN_PROTO_CLNP:
-		debug_print("CLNP inside CLNP? Bailing out to avoid loop\n");
+		debug_print(D_PROTO, "CLNP inside CLNP? Bailing out to avoid loop\n");
 		break;
 	default:
 // assume X.224 COTP TPDU
@@ -169,49 +169,49 @@ la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	uint8_t *ptr = buf;
 	uint32_t remaining = len;
 	if(remaining < CLNP_MIN_LEN) {
-		debug_print("Too short (len %u < min len %u)\n", remaining, CLNP_MIN_LEN);
+		debug_print(D_PROTO, "Too short (len %u < min len %u)\n", remaining, CLNP_MIN_LEN);
 		goto fail;
 	}
 
 	CAST_PTR(hdr, clnp_hdr_t *, ptr);
 	pdu->hdr = hdr;
 	if(hdr->len == 255) {
-		debug_print("invalid length indicator - value 255 is reserved\n");
+		debug_print(D_PROTO, "invalid length indicator - value 255 is reserved\n");
 		goto fail;
 	}
 	if(remaining < hdr->len) {
-		debug_print("header truncated: buf_len %u < len_indicator %u\n", remaining, hdr->len);
+		debug_print(D_PROTO, "header truncated: buf_len %u < len_indicator %u\n", remaining, hdr->len);
 		goto fail;
 	}
 	if(hdr->version != 1) {
-		debug_print("unsupported PDU version %u\n", hdr->version);
+		debug_print(D_PROTO, "unsupported PDU version %u\n", hdr->version);
 		goto fail;
 	}
 	pdu->lifetime_sec = (float)hdr->lifetime * 0.5f;
 	pdu->seg_len = extract_uint16_msbfirst(hdr->seg_len);
 	pdu->cksum = extract_uint16_msbfirst(hdr->cksum);
-	debug_print("seg_len: %u, cksum: 0x%x\n", pdu->seg_len, pdu->cksum);
+	debug_print(D_PROTO_DETAIL, "seg_len: %u, cksum: 0x%x\n", pdu->seg_len, pdu->cksum);
 	ptr += sizeof(clnp_hdr_t); remaining -= sizeof(clnp_hdr_t);
 
 	int ret = octet_string_parse(ptr, remaining, &(pdu->dst_nsap));
 	if(ret < 0) {
-		debug_print("failed to parse dst NET addr\n");
+		debug_print(D_PROTO, "failed to parse dst NET addr\n");
 		goto fail;
 	}
 	ptr += ret; remaining -= ret;
-	debug_print("dst NET: consumed %d octets, remaining: %u\n", ret, remaining);
+	debug_print(D_PROTO_DETAIL, "dst NET: consumed %d octets, remaining: %u\n", ret, remaining);
 
 	ret = octet_string_parse(ptr, remaining, &(pdu->src_nsap));
 	if(ret < 0) {
-		debug_print("failed to parse src NET addr\n");
+		debug_print(D_PROTO, "failed to parse src NET addr\n");
 		goto fail;
 	}
 	ptr += ret; remaining -= ret;
-	debug_print("src NET: consumed %d octets, remaining: %u\n", ret, remaining);
+	debug_print(D_PROTO_DETAIL, "src NET: consumed %d octets, remaining: %u\n", ret, remaining);
 
 	if(hdr->sp != 0) {	// segmentation part is present
 		if(remaining < 6) {
-			debug_print("segmentation part truncated: len %u < required 6\n", remaining);
+			debug_print(D_PROTO, "segmentation part truncated: len %u < required 6\n", remaining);
 			goto fail;
 		}
 		pdu->pdu_id = extract_uint16_msbfirst(ptr);
@@ -221,11 +221,11 @@ la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	}
 
 	int options_part_len = hdr->len - (ptr - buf);
-	debug_print("options_part_len: %d\n", options_part_len);
+	debug_print(D_PROTO_DETAIL, "options_part_len: %d\n", options_part_len);
 	if(options_part_len > 0) {
 		pdu->options = tlv_parse(ptr, (size_t)options_part_len, clnp_options, 1);
 		if(pdu->options == NULL) {
-			debug_print("tlv_parse failed on options part\n");
+			debug_print(D_PROTO, "tlv_parse failed on options part\n");
 			goto fail;
 		}
 	}
@@ -403,7 +403,7 @@ la_proto_node *clnp_compressed_init_data_pdu_parse(uint8_t *buf, uint32_t len, u
 
 	pdu->err = true;			// fail-safe default
 	if(len < CLNP_COMPRESSED_INIT_MIN_LEN) {
-		debug_print("Too short (len %u < min len %u)\n", len, CLNP_COMPRESSED_INIT_MIN_LEN);
+		debug_print(D_PROTO, "Too short (len %u < min len %u)\n", len, CLNP_COMPRESSED_INIT_MIN_LEN);
 		goto fail;
 	}
 
@@ -413,16 +413,16 @@ la_proto_node *clnp_compressed_init_data_pdu_parse(uint8_t *buf, uint32_t len, u
 	if(hdr->exp != 0) hdrlen += 1;		// EXP flag = 1 means localRef/B octet is present
 	if(hdr->type & 1) hdrlen += 2;		// odd PDU type means PDU identifier is present
 
-	debug_print("hdrlen: %u type: %02x prio: %02x lifetime: %02x flags: %02x exp: %d lref_a: %02x\n",
+	debug_print(D_PROTO, "hdrlen: %u type: %02x prio: %02x lifetime: %02x flags: %02x exp: %d lref_a: %02x\n",
 		hdrlen, hdr->type, hdr->priority, hdr->lifetime, hdr->flags.val, hdr->exp, hdr->lref_a);
 
 	if(len < hdrlen) {
-		debug_print("header truncated: buf_len %u < hdr_len %u\n", len, hdrlen);
+		debug_print(D_PROTO, "header truncated: buf_len %u < hdr_len %u\n", len, hdrlen);
 		goto fail;
 	}
 	buf += 4; len -= 4;
 	if(hdr->exp != 0) {
-		debug_print("lref_b: %02x\n", buf[0]);
+		debug_print(D_PROTO_DETAIL, "lref_b: %02x\n", buf[0]);
 		pdu->lref = ((uint16_t)(hdr->lref_a) << 8) | (uint16_t)buf[0];
 		buf++; len--;
 	} else {

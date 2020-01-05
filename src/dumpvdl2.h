@@ -139,7 +139,17 @@
 // debug message classes
 #define D_ALL				(~0)
 #define D_NONE				(0)
-#define D_BURST_DECODER_DETAIL		(1 <<  0)
+#define D_SDR				(1 <<  0)
+#define D_DEMOD				(1 <<  1)
+#define D_DEMOD_DETAIL			(1 <<  2)
+#define D_BURST				(1 <<  3)
+#define D_BURST_DETAIL			(1 <<  4)
+#define D_PROTO				(1 <<  5)
+#define D_PROTO_DETAIL			(1 <<  6)
+#define D_STATS				(1 <<  7)
+#define D_CACHE				(1 <<  8)
+#define D_OUTPUT			(1 <<  9)
+#define D_MISC				(1 << 31)
 
 typedef struct {
 	char *token;
@@ -198,20 +208,14 @@ typedef struct {
 #endif
 
 #ifdef DEBUG
-#define debug_print(fmt, ...) \
-	do { fprintf(stderr, "%s(): " fmt, __func__, ##__VA_ARGS__); } while (0)
-
-#define debug_print_buf_hex(buf, len, fmt, ...) \
-	do { \
+#define debug_print(debug_class, fmt, ...) \
+do { \
+	if(Config.debug_filter & debug_class) { \
 		fprintf(stderr, "%s(): " fmt, __func__, ##__VA_ARGS__); \
-		fprintf(stderr, "%s(): ", __func__); \
-		for(size_t zz = 0; zz < (len); zz++) { \
-			fprintf(stderr, "%02x ", buf[zz]); \
-			if(zz && (zz+1) % 32 == 0) fprintf(stderr, "\n%s(): ", __func__); \
-		} \
-		fprintf(stderr, "\n"); \
-	} while(0)
-#define debug_print_buf_hex2(debug_class, buf, len, fmt, ...) \
+	} \
+} while (0)
+
+#define debug_print_buf_hex(debug_class, buf, len, fmt, ...) \
 do { \
 	if(Config.debug_filter & debug_class) { \
 		fprintf(stderr, "%s(): " fmt, __func__, ##__VA_ARGS__); \
@@ -224,9 +228,8 @@ do { \
 	} \
 } while(0)
 #else
-#define debug_print(fmt, ...) nop()
-#define debug_print_buf_hex(buf, len, fmt, ...) nop()
-#define debug_print_buf_hex2(level, buf, len, fmt, ...) nop()
+#define debug_print(debug_class, fmt, ...) nop()
+#define debug_print_buf_hex(debug_class, buf, len, fmt, ...) nop()
 #endif
 
 #define ONES(x) ~(~0u << (x))

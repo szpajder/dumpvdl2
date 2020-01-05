@@ -52,7 +52,7 @@ void *x25_key_get(void const *msg) {
 	NEW(x25_avlc_info, key);
 	key->src_addr = avlc_info->src_addr;
 	key->dst_addr = avlc_info->dst_addr;
-	debug_print("ALLOC KEY %06X %06X\n", key->src_addr, key->dst_addr);
+	debug_print(D_PROTO, "ALLOC KEY %06X %06X\n", key->src_addr, key->dst_addr);
 	return (void *)key;
 }
 
@@ -304,7 +304,7 @@ static la_proto_node *sndcf_error_report_parse(uint8_t *buf, uint32_t len, uint3
 
 	rpt->err = true;		// fail-safe value
 	if(len < 3) {
-		debug_print("Too short (len %u < min len %u)\n", len, 3);
+		debug_print(D_PROTO, "Too short (len %u < min len %u)\n", len, 3);
 		goto fail;
 	}
 	rpt->error_code = buf[1];
@@ -395,9 +395,9 @@ static int parse_x25_address_block(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
 	uint8_t addr_len = (calling_len + called_len) >> 1;			// bytes
 	addr_len += (calling_len & 1) ^ (called_len & 1);	// add 1 byte if total nibble count is odd
 	buf++; len--;
-	debug_print("calling_len=%u called_len=%u total_len=%u len=%u\n", calling_len, called_len, addr_len, len);
+	debug_print(D_PROTO_DETAIL, "calling_len=%u called_len=%u total_len=%u len=%u\n", calling_len, called_len, addr_len, len);
 	if(len < addr_len) {
-		debug_print("Address block truncated (buf len %u < addr len %u)\n", len, addr_len);
+		debug_print(D_PROTO, "Address block truncated (buf len %u < addr len %u)\n", len, addr_len);
 		return -1;
 	}
 	uint8_t *abuf = pkt->called.addr;
@@ -425,17 +425,17 @@ static int parse_x25_address_block(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
 static int parse_x25_callreq_sndcf(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
 	if(len < 2) return -1;
 	if(*buf != X25_SNDCF_ID) {
-		debug_print("SNDCF identifier not found\n");
+		debug_print(D_PROTO, "SNDCF identifier not found\n");
 		return -1;
 	}
 	buf++; len--;
 	uint8_t sndcf_len = *buf++; len--;
 	if(sndcf_len < MIN_X25_SNDCF_LEN || *buf != X25_SNDCF_VERSION) {
-		debug_print("Unsupported SNDCF field format or version (len=%u ver=%u)\n", sndcf_len, *buf);
+		debug_print(D_PROTO, "Unsupported SNDCF field format or version (len=%u ver=%u)\n", sndcf_len, *buf);
 		return -1;
 	}
 	if(len < sndcf_len) {
-		debug_print("SNDCF field truncated (sndcf_len %u < buf_len %u)\n", sndcf_len, len);
+		debug_print(D_PROTO, "SNDCF field truncated (sndcf_len %u < buf_len %u)\n", sndcf_len, len);
 		return -1;
 	}
 	pkt->compression = buf[3];
@@ -447,7 +447,7 @@ static int parse_x25_facility_field(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) 
 	uint8_t fac_len = *buf;
 	buf++; len--;
 	if(len < fac_len) {
-		debug_print("Facility field truncated (buf len %u < fac_len %u)\n", len, fac_len);
+		debug_print(D_PROTO, "Facility field truncated (buf len %u < fac_len %u)\n", len, fac_len);
 		return -1;
 	}
 	uint8_t i = fac_len;
@@ -464,13 +464,13 @@ static int parse_x25_facility_field(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) 
 				param_len = *buf++;
 				i--;
 			} else {
-				debug_print("Facility field truncated: code=0x%02x param_len=%u, length octet missing\n",
+				debug_print(D_PROTO, "Facility field truncated: code=0x%02x param_len=%u, length octet missing\n",
 					code, param_len);
 				return -1;
 			}
 		}
 		if(i < param_len) {
-			debug_print("Facility field truncated: code=%02x param_len=%u buf len=%u\n", code, param_len, i);
+			debug_print(D_PROTO, "Facility field truncated: code=%02x param_len=%u buf len=%u\n", code, param_len, i);
 			return -1;
 		}
 		pkt->facilities = tlv_single_tag_parse(code, buf, param_len, x25_facilities, pkt->facilities);
@@ -510,15 +510,15 @@ la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_a
 	uint8_t *ptr = buf;
 	uint32_t remaining = len;
 	if(remaining < X25_MIN_LEN) {
-		debug_print("Too short (len %u < min len %u)\n", remaining, X25_MIN_LEN);
+		debug_print(D_PROTO, "Too short (len %u < min len %u)\n", remaining, X25_MIN_LEN);
 		goto fail;
 	}
 
 	CAST_PTR(hdr, x25_hdr_t *, ptr);
-	debug_print("gfi=0x%02x group=0x%02x chan=0x%02x type=0x%02x\n", hdr->gfi,
+	debug_print(D_PROTO_DETAIL, "gfi=0x%02x group=0x%02x chan=0x%02x type=0x%02x\n", hdr->gfi,
 		hdr->chan_group, hdr->chan_num, hdr->type.val);
 	if(hdr->gfi != GFI_X25_MOD8) {
-		debug_print("Unsupported GFI 0x%x\n", hdr->gfi);
+		debug_print(D_PROTO, "Unsupported GFI 0x%x\n", hdr->gfi);
 		goto fail;
 	}
 
@@ -560,7 +560,7 @@ la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_a
 				pkt->compression = *ptr++;
 				remaining--;
 			} else {
-				debug_print("X25_CALL_ACCEPT: no payload\n");
+				debug_print(D_PROTO, "X25_CALL_ACCEPT: no payload\n");
 				goto fail;
 			}
 		}
@@ -651,7 +651,7 @@ la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_a
 	case X25_RESTART_CONFIRM:
 		break;
 	default:
-		debug_print("Unsupported packet identifier 0x%02x\n", pkt->type);
+		debug_print(D_PROTO, "Unsupported packet identifier 0x%02x\n", pkt->type);
 		goto fail;
 	}
 	pkt->hdr = hdr;

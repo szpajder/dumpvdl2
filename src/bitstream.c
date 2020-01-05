@@ -98,7 +98,7 @@ void bitstream_descramble(bitstream_t *bs, uint16_t *lfsr) {
 		*lfsr = (*lfsr >> 1) | (bit << 14);
 		bs->buf[i] ^= bit;
 	}
-	debug_print("descrambled from %u to %u\n", bs->descrambler_pos, bs->end-1);
+	debug_print(D_BURST_DETAIL, "descrambled from %u to %u\n", bs->descrambler_pos, bs->end-1);
 	bs->descrambler_pos = bs->end;
 }
 
@@ -115,7 +115,7 @@ restart:
 		} else if(src->buf[i] == 0x1) {
 			ones++;
 			if(ones > 6) {				// 7 ones - invalid bit sequence
-				debug_print("Invalid bit stuffing sequence\n");
+				debug_print(D_BURST_DETAIL, "Invalid bit stuffing sequence\n");
 				return -1;
 			}
 		}
@@ -124,11 +124,11 @@ restart:
 			if(ones == 6) {				// frame boundary flag (0x7e)
 				if(j == 7) {			// move past the initial flag
 					src->start++;
-					debug_print("Initial flag found, restarting\n");
+					debug_print(D_BURST_DETAIL, "Initial flag found, restarting\n");
 					goto restart;
 				} else {
 					if(j < 7) {
-						debug_print("Invalid bit sequence - 6 ones at the start of the stream\n");
+						debug_print(D_BURST_DETAIL, "Invalid bit sequence - 6 ones at the start of the stream\n");
 						return -1;
 					}
 					dst->end = j - 7;	// remove trailing flag from the result
@@ -140,7 +140,7 @@ restart:
 		}
 		j++; dst->end++;
 	}
-	debug_print("dst len: %u, next src read at %u, remaining src length: %u\n",
+	debug_print(D_BURST_DETAIL, "dst len: %u, next src read at %u, remaining src length: %u\n",
 		dst->end - dst->start, src->start, src->end - src->start);
 	return (src->start < src->end ? 1 : 0);
 }

@@ -41,9 +41,9 @@ static void chebyshev_lpf_calc_pole(int const p, float const cutoff_freq, float 
 		kx = (expf(kx) + expf(-kx)) / 2.f;
 		rp *= ((expf(vx) - expf(-vx)) / 2.f) / kx;
 		ip *= ((expf(vx) + expf(-vx)) / 2.f) / kx;
-		debug_print("es=%f, vx=%f, kx=%f\n", es, vx, kx);
+		debug_print(D_MISC, "es=%f, vx=%f, kx=%f\n", es, vx, kx);
 	}
-	debug_print("rp=%f ip=%f\n", rp, ip);
+	debug_print(D_MISC, "rp=%f ip=%f\n", rp, ip);
 	float t = 2.f * tanf(0.5f);
 	float w = 2.f * M_PI * cutoff_freq;
 	float m = rp * rp + ip * ip;
@@ -53,8 +53,8 @@ static void chebyshev_lpf_calc_pole(int const p, float const cutoff_freq, float 
 	float x2 = x0;
 	float y1 = (8.f - 2.f * m * t * t) / d;
 	float y2 = (-4.f - 4.f * rp * t - m * t * t) / d;
-	debug_print("t=%f w=%f m=%f d=%f\n", t, w, m, d);
-	debug_print("x0=%f x1=%f x2=%f y1=%f y2=%f\n", x0, x1, x2, y1, y2);
+	debug_print(D_MISC, "t=%f w=%f m=%f d=%f\n", t, w, m, d);
+	debug_print(D_MISC, "x0=%f x1=%f x2=%f y1=%f y2=%f\n", x0, x1, x2, y1, y2);
 	float k = sinf(0.5f - w / 2.f) / sinf(0.5f + w / 2.f);
 	d = 1 + y1 * k - y2 * k * k;
 	AA[0] = (x0 - x1 * k + x2 * k * k) / d;
@@ -87,9 +87,9 @@ void chebyshev_lpf_init(float const cutoff_freq, float const ripple, int const n
 
 	for(int p = 1; p <= npoles / 2; p++) {
 		chebyshev_lpf_calc_pole(p, cutoff_freq, ripple, npoles, AA, BB);
-		debug_print("AA[0] = %f\n", AA[0]);
+		debug_print(D_MISC, "AA[0] = %f\n", AA[0]);
 		for(int i = 1; i < 3; i++)
-			debug_print("AA[%d] = %f\tBB[%d] = %f\n", i, AA[i], i, BB[i]);
+			debug_print(D_MISC, "AA[%d] = %f\tBB[%d] = %f\n", i, AA[i], i, BB[i]);
 		memcpy(TA, A, LP_BSIZE * sizeof(float));
 		memcpy(TB, B, LP_BSIZE * sizeof(float));
 		for(int i = 2; i < LP_BSIZE; i++) {
@@ -111,8 +111,8 @@ void chebyshev_lpf_init(float const cutoff_freq, float const ripple, int const n
 	for(int i = 0; i < LP_BSIZE-2; i++) {
 		A[i] /= gain;
 	}
-	debug_print("a%d = %.12f\n", 0, A[0]);
+	debug_print(D_MISC, "a%d = %.12f\n", 0, A[0]);
 	for(int i = 1; i <= npoles; i++) {
-		debug_print("a%d = %.12f\tb%d = %.12f\n", i, A[i], i, B[i]);
+		debug_print(D_MISC, "a%d = %.12f\tb%d = %.12f\n", i, A[i], i, B[i]);
 	}
 }

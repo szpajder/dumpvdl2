@@ -316,8 +316,19 @@ static msg_filterspec_t const msg_filters[] = {
 
 #ifdef DEBUG
 static msg_filterspec_t const debug_filters[] = {
+	{ "none",		D_NONE,				"No messages" },
 	{ "all",		D_ALL,				"All messages" },
-	{ "burst_detail",	D_BURST_DECODER_DETAIL,		"VDL2 burst decoder - details with full buffer dumps" },
+	{ "sdr",		D_SDR,				"SDR device handling" },
+	{ "demod",		D_DEMOD,			"DSP and demodulation" },
+	{ "demod_detail",	D_DEMOD_DETAIL,			"DSP and demodulation - details with raw data dumps" },
+	{ "burst",		D_BURST,			"VDL2 burst decoding" },
+	{ "burst_detail",	D_BURST_DETAIL,			"VDL2 burst decoding - details with raw data dumps" },
+	{ "proto",		D_PROTO,			"Frame payload decoding" },
+	{ "proto_detail",	D_PROTO_DETAIL,			"Frame payload decoding - details with raw data dumps" },
+	{ "stats",		D_STATS,			"Statistics generation" },
+	{ "cache",		D_CACHE,			"AC and GS data cache operations" },
+	{ "output",		D_OUTPUT,			"Data output operations" },
+	{ "misc",		D_MISC,				"Messages not falling into other categories" },
 	{ 0,			0,				0 }
 };
 
@@ -369,7 +380,6 @@ static void update_filtermask(msg_filterspec_t const *filters, char *token, uint
 				*fmask &= ~ptr->value;
 			else
 				*fmask |= ptr->value;
-			debug_print("token: %s negate: %d filtermask: 0x%x\n", token, negate, *fmask);
 			return;
 		}
 	}
@@ -657,6 +667,7 @@ int main(int argc, char **argv) {
 #ifdef DEBUG
 		case __OPT_DEBUG:
 			Config.debug_filter = parse_msg_filterspec(debug_filters, debug_filter_usage, optarg);
+			debug_print(D_MISC, "debug filtermask: 0x%x\n", Config.debug_filter);
 			break;
 #endif
 		case __OPT_VERSION:

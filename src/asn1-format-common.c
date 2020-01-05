@@ -123,14 +123,14 @@ void _format_SEQUENCE_OF(la_vstring *vstr, char const * const label, asn1_output
 void _format_BIT_STRING(la_vstring *vstr, char const * const label, dict const * const bit_labels,
 void const *sptr, int indent) {
 	CAST_PTR(bs, BIT_STRING_t *, sptr);
-	debug_print("buf len: %d bits_unused: %d\n", bs->size, bs->bits_unused);
+	debug_print(D_PROTO_DETAIL, "buf len: %d bits_unused: %d\n", bs->size, bs->bits_unused);
 	uint32_t val = 0;
 	int truncated = 0;
 	int len = bs->size;
 	int bits_unused = bs->bits_unused;
 
 	if(len > (int)sizeof(val)) {
-		debug_print("bit stream too long (%d octets), truncating to %zu octets\n",
+		debug_print(D_PROTO, "bit stream too long (%d octets), truncating to %zu octets\n",
 			len, sizeof(val));
 		truncated = len - sizeof(val);
 		len = sizeof(val);
@@ -141,7 +141,7 @@ void const *sptr, int indent) {
 	}
 	for(int i = 0; i < len; val = (val << 8) | bs->buf[i++])
 		;
-	debug_print("val: 0x%08x\n", val);
+	debug_print(D_PROTO_DETAIL, "val: 0x%08x\n", val);
 	val &= (~0u << bits_unused);	// zeroize unused bits
 	if(val == 0) {
 		la_vstring_append_sprintf(vstr, "none\n");
