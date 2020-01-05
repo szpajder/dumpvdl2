@@ -30,8 +30,8 @@
 #include <libacars/vstring.h>		// la_vstring
 #include "dumpvdl2.h"
 
-FILE *outf;
 int pp_sockfd = 0;
+static FILE *outf;
 static char *filename_prefix = NULL;
 static char *extension = NULL;
 static size_t prefix_len;

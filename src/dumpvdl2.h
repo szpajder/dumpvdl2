@@ -313,7 +313,6 @@ int rs_init();
 int rs_verify(uint8_t *data, int fec_octets);
 
 // output.c
-extern FILE *outf;
 extern int pp_sockfd;
 int init_output_file(char *file);
 int init_pp(char *pp_addr);
