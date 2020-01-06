@@ -588,6 +588,7 @@ la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_a
 					.msg_info = &avlc_info,
 					.msg_data = ptr,
 					.msg_data_len = remaining,
+					.total_pdu_len = 0,		// not used here
 					.seq_num = hdr->type.data.sseq,
 					.seq_num_first = SEQ_FIRST_NONE,
 					.seq_num_wrap = 8,
