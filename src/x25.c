@@ -835,16 +835,6 @@ static const dict x25_pkttype_names[] = {
 	{ 0,			NULL }
 };
 
-static char *reasm_status_descr[] = {
-	[LA_REASM_UNKNOWN] = "unknown",
-	[LA_REASM_COMPLETE] = "complete",
-	[LA_REASM_IN_PROGRESS] = "in progress",
-	[LA_REASM_SKIPPED] = "skipped",
-	[LA_REASM_DUPLICATE] = "duplicate",
-	[LA_REASM_FRAG_OUT_OF_SEQUENCE] = "out of sequence",
-	[LA_REASM_ARGS_INVALID] = "invalid args"
-};
-
 void x25_format_text(la_vstring * const vstr, void const * const data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
@@ -883,7 +873,7 @@ void x25_format_text(la_vstring * const vstr, void const * const data, int inden
 		EOL(vstr);
 		break;
 	case X25_DATA:
-		LA_ISPRINTF(vstr, indent, "Reasm status: %s\n", reasm_status_descr[pkt->reasm_status]);
+		LA_ISPRINTF(vstr, indent, "Reasm status: %s\n", la_reasm_status_name_get(pkt->reasm_status));
 		break;
 	case X25_CLEAR_REQUEST:
 		cause_dict = x25_clr_causes;
