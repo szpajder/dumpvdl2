@@ -91,6 +91,7 @@
 #define __OPT_BS_DB			23
 #endif
 #define __OPT_ADDRINFO_VERBOSITY	24
+#define __OPT_PRETTIFY_XML		25
 
 #ifdef WITH_SDRPLAY
 #define __OPT_SDRPLAY			80

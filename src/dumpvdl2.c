@@ -197,6 +197,7 @@ void usage() {
 	"    --dump-asn1                                 Output full ASN.1 structure of CM and CPDLC messages\n"
 	"    --extended-header                           Output additional fields in message header\n"
 	"    --decode-fragments                          Decode higher level protocols in fragmented packets (default: off)\n"
+	"    --prettify-xml                              Pretty-print XML payloads in ACARS and MIAM CORE PDUs (default: off)\n"
 	"    --gs-file <file>                            Read ground station info from <file> (MultiPSK format)\n"
 #ifdef WITH_SQLITE
 	"    --bs-db <file>                              Read aircraft info from Basestation database <file> (SQLite)\n"
@@ -443,6 +444,7 @@ int main(int argc, char **argv) {
 		{ "dump-asn1",		no_argument,		NULL,	__OPT_DUMP_ASN1 },
 		{ "extended-header",	no_argument,		NULL,	__OPT_EXTENDED_HEADER },
 		{ "decode-fragments",	no_argument,		NULL,	__OPT_DECODE_FRAGMENTS },
+		{ "prettify-xml",	no_argument,		NULL,	__OPT_PRETTIFY_XML },
 		{ "gs-file",		required_argument,	NULL,	__OPT_GS_FILE },
 #ifdef WITH_SQLITE
 		{ "bs-db",		required_argument,	NULL,	__OPT_BS_DB },
@@ -550,6 +552,9 @@ int main(int argc, char **argv) {
 		case __OPT_DECODE_FRAGMENTS:
 			Config.decode_fragments = true;
 			la_config_set_bool("decode_fragments", true);
+			break;
+		case __OPT_PRETTIFY_XML:
+			la_config_set_bool("prettify_xml", true);
 			break;
 		case __OPT_GS_FILE:
 			gs_file = optarg;
