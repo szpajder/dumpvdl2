@@ -536,7 +536,10 @@ void icao_apdu_format_text(la_vstring *vstr, void const * const data, int indent
 	}
 	if(icao_apdu->data != NULL && icao_apdu->type != NULL) {
 		if(Config.dump_asn1 == true) {
-			asn_sprintf(vstr, icao_apdu->type, icao_apdu->data, indent);
+			LA_ISPRINTF(vstr, indent, "ASN.1 dump:\n");
+			// asn_fprint does not indent the first line
+			LA_ISPRINTF(vstr, indent + 1, "");
+			asn_sprintf(vstr, icao_apdu->type, icao_apdu->data, indent + 2);
 		}
 		asn1_output_icao_as_text(vstr, icao_apdu->type, icao_apdu->data, indent);
 	} else {

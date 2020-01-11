@@ -95,7 +95,7 @@ static void ASN_DEBUG(const char *fmt, ...) { (void)fmt; }
         if((nl) && cb("\n", 1, app_key) < 0)        \
             return -1;                              \
         for(tmp_i = 0; tmp_i < ilevel; tmp_i++)     \
-            if(cb("    ", 4, app_key) < 0)          \
+            if(cb(" ", 1, app_key) < 0)          \
                 return -1;                          \
     } while(0)
 
