@@ -325,7 +325,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 
 	pdu->err = true;			// fail-safe default
 	pdu->x225_xport_disc_reason = -1;	// X.225 xport disc reason not present
-	int final_pdu = 0;
+	bool final_pdu = false;
 	uint8_t *ptr = buf;
 	uint32_t remaining = len;
 
@@ -375,7 +375,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 			pdu->options = ptr[5] & 0xf;
 		}
 		variable_part_offset = 6;
-		final_pdu = 1;
+		final_pdu = true;
 		break;
 	case COTP_TPDU_ER:
 		TPDU_CHECK_LEN(remaining, 4, fail);
@@ -401,7 +401,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 			variable_part_offset = 4;
 			pdu->extended = false;
 		}
-		final_pdu = 1;
+		final_pdu = true;
 		break;
 	case COTP_TPDU_DC:
 		pdu->src_ref = extract_uint16_msbfirst(ptr + 3);
@@ -458,7 +458,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 			goto fail;
 		}
 	}
-	if(final_pdu) {
+	if(final_pdu == true) {
 // user data is allowed in this PDU; if it's there, try to parse it
 		ptr += li; remaining -= li;
 		if(remaining > 0) {

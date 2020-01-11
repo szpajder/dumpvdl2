@@ -400,7 +400,7 @@ void unknown_proto_format_text(la_vstring * const vstr, void const * const data,
 la_proto_node *unknown_proto_pdu_new(void *buf, size_t len);
 
 // dumpvdl2.c
-extern int do_exit;
+extern bool do_exit;
 extern dumpvdl2_config_t Config;
 extern pthread_barrier_t demods_ready, samples_ready;
 

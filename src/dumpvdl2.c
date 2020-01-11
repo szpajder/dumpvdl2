@@ -16,6 +16,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -49,7 +50,7 @@
 #endif
 #include "gs_data.h"
 
-int do_exit = 0;
+bool do_exit = false;
 dumpvdl2_config_t Config;
 
 pthread_barrier_t demods_ready, samples_ready;
@@ -57,7 +58,7 @@ pthread_t decoder_thread;
 
 void sighandler(int sig) {
 	fprintf(stderr, "Got signal %d, exiting\n", sig);
-	do_exit = 1;
+	do_exit = true;
 #ifdef WITH_RTLSDR
 	rtl_cancel();
 #endif
@@ -150,7 +151,7 @@ void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
 	do {
 		len = fread(buf, 1, FILE_BUFSIZE, f);
 		(*process_buf)(buf, len, NULL);
-	} while(len == FILE_BUFSIZE && !do_exit);
+	} while(len == FILE_BUFSIZE && do_exit == false);
 	fclose(f);
 }
 
@@ -365,9 +366,9 @@ static void msg_filter_usage() {
 }
 
 static void update_filtermask(msg_filterspec_t const *filters, char *token, uint32_t *fmask) {
-	int negate = 0;
+	bool negate = false;
 	if(token[0] == '-') {
-		negate = 1;
+		negate = true;
 		token++;
 		if(token[0] == '\0') {
 			fprintf(stderr, "Invalid filtermask: no token after '-'\n");
@@ -498,7 +499,7 @@ int main(int argc, char **argv) {
 
 #ifdef WITH_STATSD
 	char *statsd_addr = NULL;
-	int statsd_enabled = 0;
+	bool statsd_enabled = false;
 #endif
 #ifdef WITH_SQLITE
 	char *bs_db_file = NULL;
@@ -660,7 +661,7 @@ int main(int argc, char **argv) {
 #ifdef WITH_STATSD
 		case __OPT_STATSD:
 			statsd_addr = strdup(optarg);
-			statsd_enabled = 1;
+			statsd_enabled = true;
 			break;
 #endif
 		case __OPT_OUTPUT_ACARS_PP:
@@ -752,7 +753,7 @@ int main(int argc, char **argv) {
 		if(statsd_initialize(statsd_addr) < 0) {
 				fprintf(stderr, "Failed to initialize statsd client - disabling\n");
 				XFREE(statsd_addr);
-				statsd_enabled = 0;
+				statsd_enabled = false;
 		} else {
 			for(int i = 0; i < num_channels; i++) {
 				statsd_initialize_counters_per_channel(freqs[i]);
@@ -761,7 +762,7 @@ int main(int argc, char **argv) {
 		}
 	} else {
 		XFREE(statsd_addr);
-		statsd_enabled = 0;
+		statsd_enabled = false;
 	}
 #endif
 #ifdef WITH_SQLITE
