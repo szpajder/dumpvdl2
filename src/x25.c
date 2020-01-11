@@ -310,7 +310,13 @@ static la_proto_node *sndcf_error_report_parse(uint8_t *buf, uint32_t len, uint3
 	rpt->error_code = buf[1];
 	rpt->local_ref = buf[2];
 	if(len > 3) {
+// Parse SNDCF Error Report payload, if present.
+// The payload is the PDU which caused the error. It was sent in the other
+// direction, so we have to flip message direction bits for a moment in order
+// to decode this message correctly (this is important if it's CPDLC or CM).
+		*msg_type ^= (MSGFLT_SRC_AIR | MSGFLT_SRC_GND);
 		node->next = parse_x25_user_data(buf + 3, len - 3, msg_type);
+		*msg_type ^= (MSGFLT_SRC_AIR | MSGFLT_SRC_GND);
 		rpt->errored_pdu_present = true;
 	} else {
 		rpt->errored_pdu_present = false;
