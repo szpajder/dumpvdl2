@@ -100,12 +100,11 @@ typedef struct {
 	octet_string_t diag_data;	// Explanation field in DIAG packet
 	x25_addr_t calling, called;
 	la_reasm_status reasm_status;
+	bool addr_block_present;
 	uint8_t type;
-	uint8_t addr_block_present;
 	uint8_t compression;
 	uint8_t clr_cause;	// clearing cause or reset cause or restart cause
 	uint8_t diag_code;
-	uint8_t more_data;
 	uint8_t rseq, sseq;
 	bool diag_code_present;
 	bool err;

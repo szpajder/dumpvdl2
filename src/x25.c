@@ -424,7 +424,7 @@ static int parse_x25_address_block(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
 	}
 	pkt->called.len = called_len;
 	pkt->calling.len = calling_len;
-	pkt->addr_block_present = 1;
+	pkt->addr_block_present = true;
 	return 1 + addr_len;	// return total number of bytes consumed
 }
 
