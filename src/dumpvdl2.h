@@ -1,7 +1,7 @@
 /*
- *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
+ *  This file is a part of dumpvdl2
  *
- *  Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>		// abort()
 #include <sys/time.h>
@@ -84,6 +85,13 @@
 #define __OPT_RAW_FRAMES		18
 #define __OPT_DUMP_ASN1			19
 #define __OPT_EXTENDED_HEADER		20
+#define __OPT_DECODE_FRAGMENTS		21
+#define __OPT_GS_FILE			22
+#ifdef WITH_SQLITE
+#define __OPT_BS_DB			23
+#endif
+#define __OPT_ADDRINFO_VERBOSITY	24
+#define __OPT_PRETTIFY_XML		25
 
 #ifdef WITH_SDRPLAY
 #define __OPT_SDRPLAY			80
@@ -102,7 +110,11 @@
 #define __OPT_SOAPY_GAIN		93
 #endif
 
+#define __OPT_VERSION			98
 #define __OPT_HELP			99
+#ifdef DEBUG
+#define __OPT_DEBUG			100
+#endif
 
 // message filters
 #define MSGFLT_ALL			(~0)
@@ -125,11 +137,45 @@
 #define MSGFLT_CPDLC			(1 << 15)
 #define MSGFLT_ADSC			(1 << 16)
 
+// debug message classes
+#define D_ALL				(~0)
+#define D_NONE				(0)
+#define D_SDR				(1 <<  0)
+#define D_DEMOD				(1 <<  1)
+#define D_DEMOD_DETAIL			(1 <<  2)
+#define D_BURST				(1 <<  3)
+#define D_BURST_DETAIL			(1 <<  4)
+#define D_PROTO				(1 <<  5)
+#define D_PROTO_DETAIL			(1 <<  6)
+#define D_STATS				(1 <<  7)
+#define D_CACHE				(1 <<  8)
+#define D_OUTPUT			(1 <<  9)
+#define D_MISC				(1 << 31)
+
 typedef struct {
 	char *token;
 	uint32_t value;
 	char *description;
 } msg_filterspec_t;
+
+typedef enum {
+	ADDRINFO_TERSE = 0,
+	ADDRINFO_NORMAL = 1,
+	ADDRINFO_VERBOSE = 2
+} addrinfo_verbosity_t;
+
+// global config
+typedef struct {
+#ifdef DEBUG
+	uint32_t debug_filter;
+#endif
+	uint32_t msg_filter;
+	bool hourly, daily, utc;
+	bool output_raw_frames, dump_asn1, extended_header, decode_fragments;
+	bool ac_addrinfo_db_available;
+	bool gs_addrinfo_db_available;
+	addrinfo_verbosity_t addrinfo_verbosity;
+} dumpvdl2_config_t;
 
 #define nop() do {} while (0)
 
@@ -163,22 +209,28 @@ typedef struct {
 #endif
 
 #ifdef DEBUG
-#define debug_print(fmt, ...) \
-	do { fprintf(stderr, "%s(): " fmt, __func__, ##__VA_ARGS__); } while (0)
+#define debug_print(debug_class, fmt, ...) \
+do { \
+	if(Config.debug_filter & debug_class) { \
+		fprintf(stderr, "%s(): " fmt, __func__, ##__VA_ARGS__); \
+	} \
+} while (0)
 
-#define debug_print_buf_hex(buf, len, fmt, ...) \
-	do { \
+#define debug_print_buf_hex(debug_class, buf, len, fmt, ...) \
+do { \
+	if(Config.debug_filter & debug_class) { \
 		fprintf(stderr, "%s(): " fmt, __func__, ##__VA_ARGS__); \
 		fprintf(stderr, "%s(): ", __func__); \
-		for(int zz = 0; zz < (len); zz++) { \
+		for(size_t zz = 0; zz < (len); zz++) { \
 			fprintf(stderr, "%02x ", buf[zz]); \
 			if(zz && (zz+1) % 32 == 0) fprintf(stderr, "\n%s(): ", __func__); \
 		} \
 		fprintf(stderr, "\n"); \
-	} while(0)
+	} \
+} while(0)
 #else
-#define debug_print(fmt, ...) nop()
-#define debug_print_buf_hex(buf, len, fmt, ...) nop()
+#define debug_print(debug_class, fmt, ...) nop()
+#define debug_print_buf_hex(debug_class, buf, len, fmt, ...) nop()
 #endif
 
 #define ONES(x) ~(~0u << (x))
@@ -289,8 +341,6 @@ int rs_init();
 int rs_verify(uint8_t *data, int fec_octets);
 
 // output.c
-extern FILE *outf;
-extern uint8_t hourly, daily, utc, output_raw_frames, dump_asn1, extended_header;
 extern int pp_sockfd;
 int init_output_file(char *file);
 int init_pp(char *pp_addr);
@@ -300,14 +350,25 @@ void output_proto_tree(la_proto_node *root);
 // statsd.c
 #ifdef WITH_STATSD
 int statsd_initialize(char *statsd_addr);
-void statsd_initialize_counters(uint32_t freq);
-void statsd_counter_increment(uint32_t freq, char *counter);
-void statsd_timing_delta_send(uint32_t freq, char *timer, struct timeval *ts);
-#define statsd_increment(freq, counter) do { statsd_counter_increment(freq, counter); } while(0)
-#define statsd_timing_delta(freq, timer, start) do { statsd_timing_delta_send(freq, timer, start); } while(0)
+void statsd_initialize_counters_per_channel(uint32_t const freq);
+void statsd_initialize_counters_per_msgdir();
+void statsd_initialize_counter_set(char **counter_set);
+void statsd_counter_per_channel_increment(uint32_t const freq, char *counter);
+void statsd_timing_delta_per_channel_send(uint32_t const freq, char *timer, struct timeval const ts);
+void statsd_counter_per_msgdir_increment(la_msg_dir const msg_dir, char *counter);
+void statsd_counter_increment(char *counter);
+void statsd_gauge_set(char *gauge, size_t value);
+#define statsd_increment_per_channel(freq, counter) statsd_counter_per_channel_increment(freq, counter)
+#define statsd_timing_delta_per_channel(freq, timer, start) statsd_timing_delta_per_channel_send(freq, timer, start)
+#define statsd_increment_per_msgdir(counter, msgdir) statsd_counter_per_msgdir_increment(counter, msgdir)
+#define statsd_increment(counter) statsd_counter_increment(counter)
+#define statsd_set(gauge, value) statsd_gauge_set(gauge, value)
 #else
-#define statsd_increment(freq, counter) nop()
-#define statsd_timing_delta(freq, timer, start) nop()
+#define statsd_increment_per_channel(freq, counter) nop()
+#define statsd_timing_delta_per_channel(freq, timer, start) nop()
+#define statsd_increment_per_msgdir(counter, msgdir) nop()
+#define statsd_increment(counter) nop()
+#define statsd_set(gauge, value) nop()
 #endif
 
 // util.c
@@ -316,17 +377,17 @@ typedef struct {
 	size_t len;
 } octet_string_t;
 typedef struct {
-	uint8_t id;
+	int id;
 	void *val;
 } dict;
 
 extern la_type_descriptor const proto_DEF_unknown;
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func);
 void *xrealloc(void *ptr, size_t size, const char *file, const int line, const char *func);
-void *dict_search(const dict *list, uint8_t id);
+void *dict_search(const dict *list, int id);
 uint16_t extract_uint16_msbfirst(uint8_t const * const data);
 uint32_t extract_uint32_msbfirst(uint8_t const * const data);
-void bitfield_format_text(la_vstring *vstr, uint8_t val, dict const *d);
+void bitfield_format_text(la_vstring *vstr, uint8_t *buf, size_t len, dict const *d);
 octet_string_t *octet_string_new(void *buf, size_t len);
 int octet_string_parse(uint8_t *buf, size_t len, octet_string_t *result);
 void octet_string_format_text(la_vstring * const vstr, void const * const data, int indent);
@@ -339,8 +400,8 @@ void unknown_proto_format_text(la_vstring * const vstr, void const * const data,
 la_proto_node *unknown_proto_pdu_new(void *buf, size_t len);
 
 // dumpvdl2.c
-extern uint32_t msg_filter;
-extern int do_exit;
+extern bool do_exit;
+extern dumpvdl2_config_t Config;
 extern pthread_barrier_t demods_ready, samples_ready;
 
 // version.c

@@ -1,7 +1,7 @@
 /*
- *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
+ *  This file is a part of dumpvdl2
  *
- *  Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -182,7 +182,7 @@ static int got_sync(vdl2_channel_t *v) {
 		v->prev_phi = v->syncbuf[sp];
 		v->dphi = v->prev_dphi;
 		v->ppm_error = SYMBOL_RATE * v->dphi / (2.0f * M_PI * v->freq) * 1e+6;
-		debug_print("Preamble found at %llu (pherr[2]=%f pherr[1]=%f pherr[0]=%f vertex_x=%f syncbufidx=%d, "
+		debug_print(D_DEMOD, "Preamble found at %llu (pherr[2]=%f pherr[1]=%f pherr[0]=%f vertex_x=%f syncbufidx=%d, "
 			"syncpoint=%d syncpoint_phase=%f sclk=%d v->dphi=%f ppm=%f)\n",
 			v->samplenum - SYNC_SKIP, v->pherr[2], v->pherr[1], v->pherr[0], vertex_x, v->syncbufidx,
 			sp, v->prev_phi, v->sclk, v->dphi, v->ppm_error);
@@ -240,10 +240,10 @@ static void demod(vdl2_channel_t *v, float re, float im) {
 			v->mag_nf = NF_LP * v->mag_nf + (1.0f - NF_LP) * fminf(v->mag_lp, v->mag_nf) + 0.0001f;
 		}
 		if(got_sync(v)) {
-			statsd_increment(v->freq, "demod.sync.good");
+			statsd_increment_per_channel(v->freq, "demod.sync.good");
 			gettimeofday(&v->burst_timestamp, NULL);
 			v->demod_state = DM_SYNC;
-			debug_print("DM_SYNC, v->sclk=%d\n", v->sclk);
+			debug_print(D_DEMOD, "DM_SYNC, v->sclk=%d\n", v->sclk);
 		}
 		return;
 	case DM_SYNC:
@@ -265,17 +265,17 @@ static void demod(vdl2_channel_t *v, float re, float im) {
 		v->frame_pwr = (v->frame_pwr * v->frame_pwr_cnt + symbol_pwr) / (v->frame_pwr_cnt + 1);
 		v->frame_pwr_cnt++;
 
-		debug_print("%llu: I: %f Q: %f symb_pwr: %f frame_pwr: %f dphi: %f * pi/4 idx: %d bits: %d\n",
+		debug_print(D_DEMOD_DETAIL, "%llu: I: %f Q: %f symb_pwr: %f frame_pwr: %f dphi: %f * pi/4 idx: %d bits: %d\n",
 			v->samplenum, re, im, symbol_pwr, v->frame_pwr, dphi, idx, graycode[idx]);
 
 		v->prev_phi = phi;
 		if(bitstream_append_msbfirst(v->bs, &(graycode[idx]), 1, BPS) < 0) {
-			debug_print("bitstream_append_msbfirst failed\n");
+			debug_print(D_DEMOD, "bitstream_append_msbfirst failed\n");
 			demod_reset(v);
 			return;
 		}
 		if(v->bs->end - v->bs->start >= v->requested_bits) {
-			debug_print("bitstream len=%u requested_bits=%u, launching frame decoder\n",
+			debug_print(D_DEMOD, "bitstream len=%u requested_bits=%u, launching frame decoder\n",
 				v->bs->end - v->bs->start, v->requested_bits);
 			decode_vdl_frame(v);
 		}
@@ -328,7 +328,7 @@ void *process_samples(void *arg) {
 #ifdef DEBUG
 		if(++v->bufnum == 10) {
 			v->bufnum = 0;
-			debug_print("%u: noise_floor: %.1f dBFS\n", v->freq, 20.0f * log10f(v->mag_nf + 0.001f));
+			debug_print(D_DEMOD, "%u: noise_floor: %.1f dBFS\n", v->freq, 20.0f * log10f(v->mag_nf + 0.001f));
 		}
 #endif
 	}
@@ -381,7 +381,7 @@ vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t s
 	v->mag_nf = 2.0f;
 // Cast to signed first, because casting negative float to uint is not portable
 	v->downmix_dphi = (uint32_t)(int)(((float)centerfreq - (float)freq) / (float)source_rate * 256.0f * 65536.0f);
-	debug_print("downmix_dphi: 0x%x\n", v->downmix_dphi);
+	debug_print(D_DEMOD, "downmix_dphi: 0x%x\n", v->downmix_dphi);
 	v->offset_tuning = (centerfreq != freq);
 	v->oversample = oversample;
 	v->freq = freq;

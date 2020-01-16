@@ -1,7 +1,7 @@
 /*
- *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
+ *  This file is a part of dumpvdl2
  *
- *  Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -147,8 +147,9 @@ TLV_FORMATTER(modulation_support_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 	CAST_PTR(val, uint32_t *, data);
+	uint8_t mods_val = (uint8_t)(*val & 0xff);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
-	bitfield_format_text(ctx->vstr, (uint8_t)(*val & 0xff), modulations);
+	bitfield_format_text(ctx->vstr, &mods_val, 1, modulations);
 	EOL(ctx->vstr);
 }
 
@@ -185,7 +186,7 @@ static void append_frequency_as_text(vdl2_frequency_t *f, la_vstring *vstr) {
 	ASSERT(vstr != NULL);
 	ASSERT(f != NULL);
 	la_vstring_append_sprintf(vstr, "%.3f MHz (", f->frequency);
-	bitfield_format_text(vstr, f->modulations, modulations);
+	bitfield_format_text(vstr, &f->modulations, 1, modulations);
 	la_vstring_append_sprintf(vstr, "%s", ")");
 }
 
@@ -368,7 +369,7 @@ static location_t loc_parse(uint8_t *buf) {
 	struct { signed int coord:12; } s;
 	int lat = s.coord = (int)(extract_uint16_msbfirst(buf) >> 4);
 	int lon = s.coord = (int)(extract_uint16_msbfirst(buf + 1) & 0xfff);
-	debug_print("lat: %d lon: %d\n", lat, lon);
+	debug_print(D_PROTO_DETAIL, "lat: %d lon: %d\n", lat, lon);
 	float latf = (float)lat / 10.0f;
 	float lonf = (float)lon / 10.0f;
 	return (location_t){ .lat = latf, .lon = lonf };
@@ -827,13 +828,13 @@ la_proto_node *xid_parse(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uin
 
 	msg->err = true;		// fail-safe default
 	if(len < XID_MIN_LEN) {
-		debug_print("XID too short\n");
+		debug_print(D_PROTO, "XID too short\n");
 		goto end;
 	}
 	uint8_t *ptr = buf;
 	uint32_t remaining = len;
 	if(ptr[0] != XID_FMT_ID) {
-		debug_print("Unknown XID format\n");
+		debug_print(D_PROTO, "Unknown XID format\n");
 		goto end;
 	}
 	ptr++; remaining--;
@@ -843,37 +844,37 @@ la_proto_node *xid_parse(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uin
 		uint16_t grouplen = extract_uint16_msbfirst(ptr);
 		ptr += 2; remaining -= 2;
 		if(grouplen > len) {
-			debug_print("XID group %02x truncated: grouplen=%u buflen=%u\n", gid,
+			debug_print(D_PROTO, "XID group %02x truncated: grouplen=%u buflen=%u\n", gid,
 				grouplen, remaining);
 			goto end;
 		}
 		switch(gid) {
 		case XID_GID_PUBLIC:
 			if(msg->pub_params != NULL) {
-				debug_print("Duplicate XID group 0x%02x\n", XID_GID_PUBLIC);
+				debug_print(D_PROTO, "Duplicate XID group 0x%02x\n", XID_GID_PUBLIC);
 				goto end;
 			}
 			msg->pub_params = tlv_parse(ptr, grouplen, xid_pub_params, 1);
 			break;
 		case XID_GID_PRIVATE:
 			if(msg->vdl_params != NULL) {
-				debug_print("Duplicate XID group 0x%02x\n", XID_GID_PRIVATE);
+				debug_print(D_PROTO, "Duplicate XID group 0x%02x\n", XID_GID_PRIVATE);
 				goto end;
 			}
 			msg->vdl_params = tlv_parse(ptr, grouplen, xid_vdl_params, 1);
 			break;
 		default:
-			debug_print("Unknown XID Group ID 0x%x, ignored\n", gid);
+			debug_print(D_PROTO, "Unknown XID Group ID 0x%x, ignored\n", gid);
 		}
 		ptr += grouplen; remaining -= grouplen;
 	}
 // pub_params are optional, vdl_params are mandatory
 	if(msg->vdl_params == NULL) {
-		debug_print("Incomplete XID message\n");
+		debug_print(D_PROTO, "Incomplete XID message\n");
 		goto end;
 	}
 	if(remaining > 0) {
-		debug_print("Warning: %u unparsed octets left at end of XID message\n", remaining);
+		debug_print(D_PROTO, "Warning: %u unparsed octets left at end of XID message\n", remaining);
 		node->next = unknown_proto_pdu_new(ptr, remaining);
 	}
 // find connection management parameter to figure out the XID type

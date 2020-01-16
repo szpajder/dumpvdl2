@@ -1,7 +1,7 @@
 /*
- *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
+ *  This file is a part of dumpvdl2
  *
- *  Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,8 +20,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>		// struct timeval
 #include <libacars/libacars.h>	// la_type_descriptor, la_proto_node
 #include <libacars/vstring.h>	// la_vstring, LA_ISPRINTF()
+#include <libacars/reassembly.h>
 #include "config.h"		// IS_BIG_ENDIAN
 #include "dumpvdl2.h"
 #include "x25.h"
@@ -29,21 +31,78 @@
 #include "esis.h"
 #include "tlv.h"
 
-static const dict x25_pkttype_names[] = {
-	{ X25_CALL_REQUEST,	"Call Request" },
-	{ X25_CALL_ACCEPTED,	"Call Accepted" },
-	{ X25_CLEAR_REQUEST,	"Clear Request" },
-	{ X25_CLEAR_CONFIRM,	"Clear Confirm" },
-	{ X25_DATA,		"Data" },
-	{ X25_RR,		"Receive Ready" },
-	{ X25_REJ,		"Receive Reject" },
-	{ X25_RESET_REQUEST,	"Reset Request" },
-	{ X25_RESET_CONFIRM,	"Reset Confirm" },
-	{ X25_RESTART_REQUEST,	"Restart Request" },
-	{ X25_RESTART_CONFIRM,	"Restart Confirm" },
-	{ X25_DIAG,		"Diagnostics" },
-	{ 0,			NULL }
+/***************************************************************************
+ * Packet reassembly types and callbacks
+ **************************************************************************/
+
+// Can't use X.25 header as msg_info during reassembly, because
+// it does not contain enough addressing information to discriminate
+// packes uniquely. We need AVLC addresses to do this.
+// This structure is also used as a hash key in reassembly table.
+typedef struct {
+	uint32_t src_addr, dst_addr;
+} x25_avlc_info;
+
+// Allocates X.25 persistent key for a new hash entry.
+// As there are no allocations performed for x25_avlc_info structure members,
+// it is used as a temporary key allocator as well.
+void *x25_key_get(void const *msg) {
+	ASSERT(msg != NULL);
+	CAST_PTR(avlc_info, x25_avlc_info *, msg);
+	NEW(x25_avlc_info, key);
+	key->src_addr = avlc_info->src_addr;
+	key->dst_addr = avlc_info->dst_addr;
+	debug_print(D_PROTO, "ALLOC KEY %06X %06X\n", key->src_addr, key->dst_addr);
+	return (void *)key;
+}
+
+void x25_key_destroy(void *ptr) {
+	XFREE(ptr);
+}
+
+uint32_t x25_key_hash(void const *key) {
+	CAST_PTR(k, x25_avlc_info *, key);
+	return k->src_addr * 11 + k->dst_addr * 23;
+}
+
+bool x25_key_compare(void const *key1, void const *key2) {
+	CAST_PTR(k1, x25_avlc_info *, key1);
+	CAST_PTR(k2, x25_avlc_info *, key2);
+	return k1->src_addr == k2->src_addr && k1->dst_addr == k2->dst_addr;
+}
+
+static la_reasm_table_funcs x25_reasm_funcs = {
+	.get_key = x25_key_get,
+	.get_tmp_key = x25_key_get,
+	.hash_key = x25_key_hash,
+	.compare_keys = x25_key_compare,
+	.destroy_key = x25_key_destroy
 };
+
+static struct timeval x25_reasm_timeout = {
+	.tv_sec = X25_REASM_TIMEOUT_SECONDS,
+	.tv_usec = 0
+};
+
+void update_statsd_x25_metrics(la_reasm_status const reasm_status, uint32_t const msg_type) {
+	static dict const reasm_status_counter_names[] = {
+		{ .id = LA_REASM_UNKNOWN, .val = "x25.reasm.unknown" },
+		{ .id = LA_REASM_COMPLETE, .val = "x25.reasm.complete" },
+//		{ .id = LA_REASM_IN_PROGRESS, .val = "x25.reasm.in_progress" },  // report final states only
+		{ .id = LA_REASM_SKIPPED, .val = "x25.reasm.skipped" },
+		{ .id = LA_REASM_DUPLICATE, .val = "x25.reasm.duplicate" },
+		{ .id = LA_REASM_FRAG_OUT_OF_SEQUENCE, .val = "x25.reasm.out_of_seq" },
+		{ .id = LA_REASM_ARGS_INVALID, .val = "x25.reasm.invalid_args" },
+		{ .id = 0, .val = NULL }
+	};
+	CAST_PTR(metric, char *, dict_search(reasm_status_counter_names, reasm_status));
+	if(metric == NULL) {
+		return;
+	}
+	statsd_increment_per_msgdir(msg_type & MSGFLT_SRC_AIR ? LA_MSG_DIR_AIR2GND : LA_MSG_DIR_GND2AIR, metric);
+// In case USE_STATSD is disabled
+	UNUSED(msg_type);
+}
 
 /***************************************************************************
  * Parsers and formatters for X.25 facilities
@@ -245,13 +304,19 @@ static la_proto_node *sndcf_error_report_parse(uint8_t *buf, uint32_t len, uint3
 
 	rpt->err = true;		// fail-safe value
 	if(len < 3) {
-		debug_print("Too short (len %u < min len %u)\n", len, 3);
+		debug_print(D_PROTO, "Too short (len %u < min len %u)\n", len, 3);
 		goto fail;
 	}
 	rpt->error_code = buf[1];
 	rpt->local_ref = buf[2];
 	if(len > 3) {
+// Parse SNDCF Error Report payload, if present.
+// The payload is the PDU which caused the error. It was sent in the other
+// direction, so we have to flip message direction bits for a moment in order
+// to decode this message correctly (this is important if it's CPDLC or CM).
+		*msg_type ^= (MSGFLT_SRC_AIR | MSGFLT_SRC_GND);
 		node->next = parse_x25_user_data(buf + 3, len - 3, msg_type);
+		*msg_type ^= (MSGFLT_SRC_AIR | MSGFLT_SRC_GND);
 		rpt->errored_pdu_present = true;
 	} else {
 		rpt->errored_pdu_present = false;
@@ -336,9 +401,9 @@ static int parse_x25_address_block(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
 	uint8_t addr_len = (calling_len + called_len) >> 1;			// bytes
 	addr_len += (calling_len & 1) ^ (called_len & 1);	// add 1 byte if total nibble count is odd
 	buf++; len--;
-	debug_print("calling_len=%u called_len=%u total_len=%u len=%u\n", calling_len, called_len, addr_len, len);
+	debug_print(D_PROTO_DETAIL, "calling_len=%u called_len=%u total_len=%u len=%u\n", calling_len, called_len, addr_len, len);
 	if(len < addr_len) {
-		debug_print("Address block truncated (buf len %u < addr len %u)\n", len, addr_len);
+		debug_print(D_PROTO, "Address block truncated (buf len %u < addr len %u)\n", len, addr_len);
 		return -1;
 	}
 	uint8_t *abuf = pkt->called.addr;
@@ -359,24 +424,24 @@ static int parse_x25_address_block(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
 	}
 	pkt->called.len = called_len;
 	pkt->calling.len = calling_len;
-	pkt->addr_block_present = 1;
+	pkt->addr_block_present = true;
 	return 1 + addr_len;	// return total number of bytes consumed
 }
 
 static int parse_x25_callreq_sndcf(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) {
 	if(len < 2) return -1;
 	if(*buf != X25_SNDCF_ID) {
-		debug_print("SNDCF identifier not found\n");
+		debug_print(D_PROTO, "SNDCF identifier not found\n");
 		return -1;
 	}
 	buf++; len--;
 	uint8_t sndcf_len = *buf++; len--;
 	if(sndcf_len < MIN_X25_SNDCF_LEN || *buf != X25_SNDCF_VERSION) {
-		debug_print("Unsupported SNDCF field format or version (len=%u ver=%u)\n", sndcf_len, *buf);
+		debug_print(D_PROTO, "Unsupported SNDCF field format or version (len=%u ver=%u)\n", sndcf_len, *buf);
 		return -1;
 	}
 	if(len < sndcf_len) {
-		debug_print("SNDCF field truncated (sndcf_len %u < buf_len %u)\n", sndcf_len, len);
+		debug_print(D_PROTO, "SNDCF field truncated (sndcf_len %u < buf_len %u)\n", sndcf_len, len);
 		return -1;
 	}
 	pkt->compression = buf[3];
@@ -388,7 +453,7 @@ static int parse_x25_facility_field(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) 
 	uint8_t fac_len = *buf;
 	buf++; len--;
 	if(len < fac_len) {
-		debug_print("Facility field truncated (buf len %u < fac_len %u)\n", len, fac_len);
+		debug_print(D_PROTO, "Facility field truncated (buf len %u < fac_len %u)\n", len, fac_len);
 		return -1;
 	}
 	uint8_t i = fac_len;
@@ -405,13 +470,13 @@ static int parse_x25_facility_field(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) 
 				param_len = *buf++;
 				i--;
 			} else {
-				debug_print("Facility field truncated: code=0x%02x param_len=%u, length octet missing\n",
+				debug_print(D_PROTO, "Facility field truncated: code=0x%02x param_len=%u, length octet missing\n",
 					code, param_len);
 				return -1;
 			}
 		}
 		if(i < param_len) {
-			debug_print("Facility field truncated: code=%02x param_len=%u buf len=%u\n", code, param_len, i);
+			debug_print(D_PROTO, "Facility field truncated: code=%02x param_len=%u buf len=%u\n", code, param_len, i);
 			return -1;
 		}
 		pkt->facilities = tlv_single_tag_parse(code, buf, param_len, x25_facilities, pkt->facilities);
@@ -421,8 +486,9 @@ static int parse_x25_facility_field(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) 
 }
 
 static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	if(buf == NULL || len == 0)
+	if(buf == NULL || len == 0) {
 		return NULL;
+	}
 	uint8_t proto = *buf;
 	if(proto == SN_PROTO_CLNP) {
 		return clnp_pdu_parse(buf, len, msg_type);
@@ -438,7 +504,8 @@ static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *
 	return unknown_proto_pdu_new(buf, len);
 }
 
-la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
+la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
 	NEW(x25_pkt_t, pkt);
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_X25_pkt;
@@ -449,15 +516,15 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	uint8_t *ptr = buf;
 	uint32_t remaining = len;
 	if(remaining < X25_MIN_LEN) {
-		debug_print("Too short (len %u < min len %u)\n", remaining, X25_MIN_LEN);
+		debug_print(D_PROTO, "Too short (len %u < min len %u)\n", remaining, X25_MIN_LEN);
 		goto fail;
 	}
 
 	CAST_PTR(hdr, x25_hdr_t *, ptr);
-	debug_print("gfi=0x%02x group=0x%02x chan=0x%02x type=0x%02x\n", hdr->gfi,
+	debug_print(D_PROTO_DETAIL, "gfi=0x%02x group=0x%02x chan=0x%02x type=0x%02x\n", hdr->gfi,
 		hdr->chan_group, hdr->chan_num, hdr->type.val);
 	if(hdr->gfi != GFI_X25_MOD8) {
-		debug_print("Unsupported GFI 0x%x\n", hdr->gfi);
+		debug_print(D_PROTO, "Unsupported GFI 0x%x\n", hdr->gfi);
 		goto fail;
 	}
 
@@ -499,14 +566,59 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 				pkt->compression = *ptr++;
 				remaining--;
 			} else {
-				debug_print("X25_CALL_ACCEPT: no payload\n");
+				debug_print(D_PROTO, "X25_CALL_ACCEPT: no payload\n");
 				goto fail;
 			}
 		}
-	/* FALLTHROUGH */
-	/* because Fast Select is on, so there might be a data PDU in call req or accept */
-	case X25_DATA:
+// Fast Select is on, so there might be a data PDU in call req or accept
 		node->next = parse_x25_user_data(ptr, remaining, msg_type);
+		break;
+	case X25_DATA:
+		{
+			uint8_t *x25_data = ptr;
+			uint32_t x25_data_len = remaining;
+			pkt->reasm_status = LA_REASM_UNKNOWN;
+			bool decode_user_data = true;
+
+			if(rtables != NULL) {		// reassembly engine is enabled
+				la_reasm_table *x25_rtable = la_reasm_table_lookup(rtables, &proto_DEF_X25_pkt);
+				if(x25_rtable == NULL) {
+					x25_rtable = la_reasm_table_new(rtables, &proto_DEF_X25_pkt,
+						x25_reasm_funcs, X25_REASM_TABLE_CLEANUP_INTERVAL);
+				}
+				x25_avlc_info avlc_info = {
+					.src_addr = src_addr, .dst_addr = dst_addr
+				};
+				pkt->reasm_status = la_reasm_fragment_add(x25_rtable,
+				&(la_reasm_fragment_info){
+					.msg_info = &avlc_info,
+					.msg_data = ptr,
+					.msg_data_len = remaining,
+					.total_pdu_len = 0,		// not used here
+					.seq_num = hdr->type.data.sseq,
+					.seq_num_first = SEQ_FIRST_NONE,
+					.seq_num_wrap = 8,
+					.is_final_fragment = hdr->type.data.more ? 0 : 1,
+					.rx_time = rx_time,
+					.reasm_timeout = x25_reasm_timeout
+				});
+				int reassembled_len = 0;
+				if(pkt->reasm_status == LA_REASM_COMPLETE &&
+					(reassembled_len = la_reasm_payload_get(x25_rtable, &avlc_info, &x25_data)) > 0) {
+						x25_data_len = reassembled_len;
+// x25_data is a newly allocated buffer; keep the pointer for freeing it later
+						pkt->reasm_buf = x25_data;
+				} else if((pkt->reasm_status == LA_REASM_IN_PROGRESS ||
+					pkt->reasm_status == LA_REASM_DUPLICATE) &&
+					Config.decode_fragments == false) {
+					decode_user_data = false;
+				}
+				update_statsd_x25_metrics(pkt->reasm_status, *msg_type);
+			}
+			node->next = decode_user_data == true ?
+				parse_x25_user_data(x25_data, x25_data_len, msg_type) :
+				unknown_proto_pdu_new(x25_data, x25_data_len);
+		}
 		break;
 	case X25_CLEAR_REQUEST:
 	case X25_RESET_REQUEST:
@@ -548,7 +660,7 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	case X25_RESTART_CONFIRM:
 		break;
 	default:
-		debug_print("Unsupported packet identifier 0x%02x\n", pkt->type);
+		debug_print(D_PROTO, "Unsupported packet identifier 0x%02x\n", pkt->type);
 		goto fail;
 	}
 	pkt->hdr = hdr;
@@ -713,6 +825,22 @@ static dict const x25_diag_codes[] = {
 	{ .id = 0x00, .val = NULL }
 };
 
+static const dict x25_pkttype_names[] = {
+	{ X25_CALL_REQUEST,	"Call Request" },
+	{ X25_CALL_ACCEPTED,	"Call Accepted" },
+	{ X25_CLEAR_REQUEST,	"Clear Request" },
+	{ X25_CLEAR_CONFIRM,	"Clear Confirm" },
+	{ X25_DATA,		"Data" },
+	{ X25_RR,		"Receive Ready" },
+	{ X25_REJ,		"Receive Reject" },
+	{ X25_RESET_REQUEST,	"Reset Request" },
+	{ X25_RESET_CONFIRM,	"Reset Confirm" },
+	{ X25_RESTART_REQUEST,	"Restart Request" },
+	{ X25_RESTART_CONFIRM,	"Restart Confirm" },
+	{ X25_DIAG,		"Diagnostics" },
+	{ 0,			NULL }
+};
+
 void x25_format_text(la_vstring * const vstr, void const * const data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
@@ -747,11 +875,11 @@ void x25_format_text(la_vstring * const vstr, void const * const data, int inden
 		LA_ISPRINTF(vstr, indent, "%s", "Facilities:\n");
 		tlv_list_format_text(vstr, pkt->facilities, indent+1);
 		LA_ISPRINTF(vstr, indent, "%s: ", "Compression support");
-		bitfield_format_text(vstr, pkt->compression, x25_comp_algos);
+		bitfield_format_text(vstr, &pkt->compression, 1, x25_comp_algos);
 		EOL(vstr);
-		/* FALLTHROUGH */
-		/* because Fast Select is on, so there might be a data PDU in call req or accept */
+		break;
 	case X25_DATA:
+		LA_ISPRINTF(vstr, indent, "Reasm status: %s\n", la_reasm_status_name_get(pkt->reasm_status));
 		break;
 	case X25_CLEAR_REQUEST:
 		cause_dict = x25_clr_causes;
@@ -789,6 +917,7 @@ void x25_destroy(void *data) {
 		tlv_list_destroy(pkt->facilities);
 		pkt->facilities = NULL;
 	}
+	XFREE(pkt->reasm_buf);
 	XFREE(data);
 }
 

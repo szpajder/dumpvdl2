@@ -1,7 +1,7 @@
 /*
  *  This file is a part of dumpvdl2
  *
- *  Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,7 +31,10 @@ void _format_SEQUENCE(la_vstring *vstr, char const * const label, asn1_output_fu
 	asn_TYPE_descriptor_t *td, void const *sptr, int indent);
 void _format_SEQUENCE_OF(la_vstring *vstr, char const * const label, asn1_output_fun_t cb,
 	asn_TYPE_descriptor_t *td, void const *sptr, int indent);
+void _format_BIT_STRING(la_vstring *vstr, char const * const label, dict const * const bit_labels,
+	void const *sptr, int indent);
 ASN1_FORMATTER_PROTOTYPE(asn1_format_any);
 ASN1_FORMATTER_PROTOTYPE(asn1_format_NULL);
+ASN1_FORMATTER_PROTOTYPE(asn1_format_label_only);
 ASN1_FORMATTER_PROTOTYPE(asn1_format_ENUM);
 ASN1_FORMATTER_PROTOTYPE(asn1_format_Deg);

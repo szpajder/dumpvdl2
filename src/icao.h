@@ -1,7 +1,7 @@
 /*
- *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
+ *  This file is a part of dumpvdl2
  *
- *  Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ typedef struct {
 } icao_apdu_t;
 
 // app-type values for ATN applications
+#define ICAO_APP_TYPE_ADS	0
 #define ICAO_APP_TYPE_CMA	1
 #define ICAO_APP_TYPE_CPC	22
 #define ICAO_APP_TYPE_UNKNOWN	-1

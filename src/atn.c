@@ -1,7 +1,7 @@
 /*
- *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
+ *  This file is a part of dumpvdl2
  *
- *  Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -169,7 +169,7 @@ TLV_FORMATTER(atn_subnet_type_format_text) {
 	if((t->permitted_traffic_types & ATN_TRAFFIC_TYPES_ALL) == ATN_TRAFFIC_TYPES_ALL) {
 		la_vstring_append_sprintf(ctx->vstr, "%s", "all");
 	} else {
-		bitfield_format_text(ctx->vstr, t->permitted_traffic_types, atn_traffic_types);
+		bitfield_format_text(ctx->vstr, &t->permitted_traffic_types, 1, atn_traffic_types);
 	}
 	EOL(ctx->vstr);
 	ctx->indent--;
@@ -185,7 +185,7 @@ TLV_FORMATTER(atn_supported_traffic_classes_format_text) {
 	if((*t & ATSC_TRAFFIC_CLASSES_ALL) == ATSC_TRAFFIC_CLASSES_ALL) {
 		la_vstring_append_sprintf(ctx->vstr, "%s", "all");
 	} else {
-		bitfield_format_text(ctx->vstr, *t, atsc_traffic_classes);
+		bitfield_format_text(ctx->vstr, t, 1, atsc_traffic_classes);
 	}
 	EOL(ctx->vstr);
 }
@@ -272,7 +272,7 @@ static la_list *atn_sec_info_parse(uint8_t *buf, size_t len) {
 // this method won't work, so we return NULL to indicate parsing error.
 	while(len >= 3) {	// tag set name len + tag set name + tag set len + 0-length sec tag
 		if(buf[0] != 1) {
-			debug_print("Unsupported tag set name length %u\n", buf[0]);
+			debug_print(D_PROTO, "Unsupported tag set name length %u\n", buf[0]);
 			goto fail;
 		}
 		buf++; len--;
@@ -280,7 +280,7 @@ static la_list *atn_sec_info_parse(uint8_t *buf, size_t len) {
 		uint8_t tagset_len = buf[1];
 		buf += 2; len -= 2;
 		if(len < tagset_len) {
-			debug_print("tagset 0x%02u truncated: len %zu < tagset_len %u\n",
+			debug_print(D_PROTO, "tagset 0x%02u truncated: len %zu < tagset_len %u\n",
 				tagset_name, len, tagset_len);
 			goto fail;
 		}
@@ -288,7 +288,7 @@ static la_list *atn_sec_info_parse(uint8_t *buf, size_t len) {
 		buf += tagset_len; len -= tagset_len;
 	}
 	if(len > 0) {
-		debug_print("%zu octets left after parsing sec_info\n", len);
+		debug_print(D_PROTO, "%zu octets left after parsing sec_info\n", len);
 		goto fail;
 	}
 	return l;
@@ -307,7 +307,7 @@ TLV_PARSER(atn_sec_label_parse) {
 	uint8_t srid_len = buf[0];
 	buf++; len--;
 	if(len < srid_len) {
-		debug_print("srid truncated: buf len %zu < srid_len %u\n", len, srid_len);
+		debug_print(D_PROTO, "srid truncated: buf len %zu < srid_len %u\n", len, srid_len);
 		return NULL;
 	}
 	NEW(atn_sec_label_t, l);
@@ -316,17 +316,17 @@ TLV_PARSER(atn_sec_label_parse) {
 	buf += srid_len; len -= srid_len;
 
 	if(len < 1) {
-		debug_print("sinfo absent\n");
+		debug_print(D_PROTO, "sinfo absent\n");
 		goto end;
 	}
 	uint8_t sinfo_len = buf[0];
 	buf++; len--;
 	if(len < 1) {
-		debug_print("sinfo present but length 0\n");
+		debug_print(D_PROTO, "sinfo present but length 0\n");
 		goto end;
 	}
 	if(len < sinfo_len) {
-		debug_print("sinfo truncated: buf len %zu < sinfo_len %u\n", len, sinfo_len);
+		debug_print(D_PROTO, "sinfo truncated: buf len %zu < sinfo_len %u\n", len, sinfo_len);
 		goto fail;
 	}
 	l->sec_info = atn_sec_info_parse(buf, len);

@@ -15,27 +15,33 @@ Current stable version: 1.7.1 (released Nov 11, 2019)
   - SoapySDR (via [soapy-sdr project](https://github.com/pothosware/SoapySDR/wiki))
   - reads prerecorded IQ data from file
 - Decodes up to 8 VDL2 channels simultaneously
-- Outputs messages to standard output or to a file (with optional daily or hourly file rotation)
+- Automatically reassembles multiblock ACARS messages, MIAM file transfers, and
+  fragmented X.25 packets
+- Outputs messages to standard output or to a file (with optional daily or
+  hourly file rotation)
+- Enriches logged messages with ground station details read from a text file
+  (MultiPSK format)
+- Enriches logged messages with aircraft data read from Basestation SQLite
+  database
 - Outputs ACARS messages to PlanePlotter over UDP/IP socket
 - Supports message filtering by type or direction (uplink, downlink)
-- Outputs decoding statistics using [Etsy StatsD](https://github.com/etsy/statsd) protocol
+- Produces decoding statistics using [Etsy StatsD](https://github.com/etsy/statsd) protocol
 
 ## Example
 ![dumpvdl2 screenshot](example.png?raw=true)
 
-## Protocol support status
-- [X] AVLC - supported
-- [X] ACARS over AVLC - supported
-- [X] ISO 8208 (X.25) control packets - supported
-- [X] ISO 8473 (CLNP) - supported
-- [X] ISO 9542 (ES-IS) - supported
-- [X] ISO 10747 (IDRP) - supported
-- [X] ISO 8073 (COTP) - supported
-- [X] ICAO ATN-B1 CM (Context Management) - supported
-- [X] ICAO ATN-B1 CPDLC (Controller-Pilot Data Link Communications) - supported
-- [ ] ICAO ATN-B1 ADS-C (Automatic Dependent Surveillance - Contract) - not
-  supported
-- [X] All applications and protocols handled by libacars library (full list [here](https://github.com/szpajder/libacars/blob/master/README.md#supported-message-types))
+## Supported protocols
+- AVLC (Aviation Link Control)
+- ACARS over AVLC
+- ISO 8208 (X.25)
+- ISO 8473 CLNP (Connectionless Network Protocol)
+- ISO 9542 ES-IS (End System to Intermediate System)
+- ISO 10747 IDRP (Inter-Domain Routing Protocol)
+- ISO 8073 COTP (Connection Oriented Transport Protocol)
+- ATN-B1 CM (Context Management)
+- ATN-B1 CPDLC (Controller-Pilot Data Link Communications) version 1
+- ATN-B2 ADS-C (Automatic Dependent Surveillance - Contract) version 2
+- All applications and protocols handled by libacars library (full list [here](https://github.com/szpajder/libacars/blob/master/README.md#supported-message-types))
 
 ## Installation
 
@@ -50,7 +56,7 @@ Mandatory dependencies:
 - git (unless you intend to use only packaged releases of dumpvdl2 and all
   dependencies)
 - glib2
-- libacars 1.3.0 or later
+- libacars 2.0.0 or later
 
 Optional dependencies:
 
@@ -58,6 +64,7 @@ Optional dependencies:
 - libmirisdr-4
 - SDRPlay binary driver
 - SoapySDR
+- sqlite3
 - statsd-c-client
 
 Install necessary dependencies (unless you have them already). Example for
@@ -91,8 +98,8 @@ sudo ldconfig
 
 #### RTLSDR support (optional)
 
-Install `librtlsdr` library (unless you have it already). Raspbian has a
-packaged version:
+To use RTL dongles, install `librtlsdr` library (unless you have it already).
+Raspbian has a packaged version:
 
 ```
 apt-get install librtlsdr-dev
@@ -144,6 +151,8 @@ sudo cp $HOME/libmirisdr-4/mirisdr.rules /etc/udev/rules.d/mirisdr.rules
 Download and install API/hardware driver package from
 http://www.sdrplay.com/downloads/.  Make sure you have selected the right
 hardware platform before downloading, otherwise the installer will fail.
+Version 3 of the driver is not supported in dumpvdl2 - please use version 2 (as
+of January 2020, the latest version is 2.13).
 
 #### SoapySDR support (optional)
 
@@ -155,6 +164,19 @@ for a list of all supported modules.
 to work correctly with dumpvdl2. It is therefore not possible to use devices
 which only support predefined, fixed sampling rates (notably Airspies). This
 limitation will be removed in a future release of dumpvdl2.
+
+
+#### SQLite (optional)
+
+VDL2 message addressing is based on ICAO 24-bit hex codes (same as ADS-B).
+dumpvdl2 may use your basestation.sqb database to enrich logged messages with
+aircraft data (registration number, operator, type, etc). If you want this
+feature, install SQLite3 library:
+
+```
+sudo apt-get install libsqlite3-dev
+sudo ldconfig
+```
 
 #### Etsy StatsD statistics (optional)
 
@@ -171,8 +193,8 @@ sudo ldconfig
 
 ### Compiling dumpvdl2
 
-- Download a stable release package from [here](https://github.com/szpajder/dumpvdl2/releases)
-- or clone the repository:
+- Download a stable release package from [here](https://github.com/szpajder/dumpvdl2/releases) and unpack it...
+- ...or clone the repository:
 
 ```
 cd
@@ -196,16 +218,17 @@ the process `cmake` displays a short configuration summary, like this:
 ```
 -- dumpvdl2 configuration summary:
 -- - SDR drivers:
---   - librtsdr:        requested: ON   enabled: TRUE
---   - mirisdr:         requested: ON   enabled: TRUE
---   - sdrplay:         requested: ON   enabled: FALSE
---   - soapysdr:        requested: ON   enabled: TRUE
+--   - librtsdr:                requested: ON, enabled: TRUE
+--   - mirisdr:                 requested: ON, enabled: TRUE
+--   - sdrplay:                 requested: ON, enabled: TRUE
+--   - soapysdr:                requested: ON, enabled: TRUE
 -- - Other options:
---   - Etsy StatsD:     requested: ON   enabled: FALSE
+--   - Etsy StatsD:             requested: ON, enabled: TRUE
+--   - SQLite:                  requested: ON, enabled: TRUE
 -- Configuring done
 ```
 
-Here you can verify whether all the SDR drivers which you need were properly
+Here you can verify whether all the SDR drivers that you need were properly
 detected and enabled. Then compile and install the program:
 
 ```
@@ -240,11 +263,13 @@ Disabling optional features:
 - `-DMIRISDR=FALSE`
 - `-DSDRPLAY=FALSE`
 - `-DSOAPYSDR=FALSE`
+- `-DSQLITE=FALSE`
 - `-DETSY_STATSD=FALSE`
 
 Setting build type:
 
-- `-DCMAKE_BUILD_TYPE=Debug` - enables a lot of debugging output (useful for
+- `-DCMAKE_BUILD_TYPE=Debug` - builds the program without optimizations and
+  enables `--debug` command line option which enables debug messages (useful for
   troubleshooting, not recommended for general use)
 - `-DCMAKE_BUILD_TYPE=Release` - debugging output disabled (the default)
 
@@ -341,7 +366,7 @@ SDRPlay RSP native driver supports several advanced configuration options:
 Type `./dumpvdl2 --help` to find out all the options and their default values.
 
 SDRPlay driver has a concept of "gain reduction", which is an amount of gain (in
-decibels) which shall be deducted from the maximum gain. As a result, `--gain`
+decibels) that shall be deducted from the maximum gain. As a result, `--gain`
 option is not available with this driver - use `--gr` option to specify
 requested end-to-end gain reduction instead.  The smallest possible value is 20.
 The highest value depends on receiver type, but it's not that important, because
@@ -448,6 +473,131 @@ Then you may run dumpvdl2 on any remote machine with :
 - Add `--dump-asn1` option to display full ASN.1 structure dumps of CPDLC and CM
   messages.
 
+- ACARS and MIAM CORE messages sometimes contain XML data. Add `--prettify-xml`
+  option to enable pretty-printing of such content. XML will then be reformatted
+  with proper indentation for easier reading. This feature requires libacars
+  built with libxml2 library support - otherwise this option has no effect.
+
+## Enriching log files with ground station data
+
+VDL2 messages are normally logged like this:
+
+```
+[2020-01-10 00:02:40 CET] [136.775] [-31.8/-51.6 dBFS] [19.8 dB] [-1.2 ppm]
+06A0B7 (Aircraft, Airborne) -> 29E0C5 (Ground station): Response
+AVLC type: S (Receive Ready) P/F: 0 rseq: 2
+```
+
+dumpvdl2 can optionally print more information about ground stations using data
+read from a text file. Each line in the file should have the following format:
+
+```
+hex_address [airport_icao_code ground_station_details] [ground_station_location]
+```
+
+Example:
+
+```
+29E0C5 [EDDB Berlin Schonefeld DE] [Berlin Schonefeld]
+```
+
+Add the following option to dumpvdl2 command line:
+
+```
+--gs-file /path/to/ground_station_file.txt
+```
+
+Provide the correct path to the file, of course.
+
+Verbosity can be controlled with `--addrinfo` option, which takes three values:
+
+`--addrinfo normal (the default)`:
+
+```
+[2020-01-10 00:02:40 CET] [136.775] [-31.8/-51.6 dBFS] [19.8 dB] [-1.2 ppm]
+06A0B7 (Aircraft, Airborne) -> 29E0C5 (Ground station): Response
+GS info: EDDB, Berlin Schonefeld
+AVLC type: S (Receive Ready) P/F: 0 rseq: 2
+```
+
+`--addrinfo terse`:
+
+```
+[2020-01-10 00:02:40 CET] [136.775] [-31.8/-51.6 dBFS] [19.8 dB] [-1.2 ppm]
+06A0B7 (Aircraft, Airborne) -> 29E0C5 (Ground station) [EDDB]: Response
+AVLC type: S (Receive Ready) P/F: 0 rseq: 2
+```
+
+`--addrinfo verbose`:
+
+```
+[2020-01-10 00:02:40 CET] [136.775] [-31.8/-51.6 dBFS] [19.8 dB] [-1.2 ppm]
+06A0B7 (Aircraft, Airborne) -> 29E0C5 (Ground station): Response
+GS info: EDDB Berlin Schonefeld DE
+AVLC type: S (Receive Ready) P/F: 0 rseq: 2
+```
+
+dumpvdl2 reads the whole ground station data file on startup and caches it in
+memory. Whenever you make changes to the file, you have to restart the program
+in order for the changes to take effect.
+
+## Enriching log files with aircraft data
+
+If compiled with SQLite3 support, dumpvdl2 can read aircraft data from SQLite3
+database in a well-known Basestation format used in various plane tracking
+applications. Such data can be printed along the header of each message. Use
+`--bs-db /path/to/basestation.sqb` option to enable the feature. `--addrinfo`
+controls aircraft data verbosity in the same way as for ground stations (see
+above). Example with `--addrinfo` set to `normal`:
+
+```
+[2020-01-10 00:02:40 CET] [136.775] [-31.8/-51.6 dBFS] [19.8 dB] [-1.2 ppm]
+06A0B7 (Aircraft, Airborne) -> 29E0C5 (Ground station): Response
+AC info: A7-BCS, B788, QTR
+GS info: EDDB, Berlin Schonefeld
+AVLC type: S (Receive Ready) P/F: 0 rseq: 2
+```
+
+dumpvdl2 reads data from `Aircraft` table. The following fields are used:
+
+- `--addrinfo terse`: Registration
+- `--addrinfo normal`: Registration, ICAOTypeCode, OperatorFlagCode
+- `--addrinfo verbose`: Registration, Manufacturer, Type, RegisteredOwners
+
+ICAO hex code is read from ModeS field. All fields are expected to have a data
+type `varchar`. ModeS field must be unique and non-NULL. Other fields are
+allowed to be NULL (the program will substitute each NULL value with a dash).
+
+Entries from the database are read on the fly, when needed. They are cached in
+memory for 30 minutes and then re-read from the database or purged.
+
+## Decoding upper-level protocols in fragmented packets
+
+ACARS messages, MIAM file transfers and X.25 packets are limited in size.
+Whenever there is a need to send a larger message than the protocol allows, it
+must be split into smaller parts (fragments). dumpvdl2 will automatically
+reassemble such messages. Individual fragments will be logged too, as they
+arrive. Only when all parts of the message are successfully received, dumpvdl2
+will reassemble the message and log its payload in one piece.
+
+ACARS messages, MIAM file transfers and X.25 packets often contain binary data
+of higher level protocols or applications, which dumpvdl2 can also decode (for
+example: CPDLC, ADS-C, IDRP or MIAM CORE). Such protocols will only decode
+correctly when a complete payload is presented to the decoder. If the message is
+fragmented, there is no point in decoding higher level protocol in individual
+fragments, because this will often result in a partial decode with an
+`-- Unparseable <protocol name> PDU` error printed to the log file. To reduce
+log file cluttering, dumpvdl2 does not decode higher level protocols in
+fragmented packets. Data contained in individual fragments will be printed in
+hex, but this does not mean the packet type is unknown - it's just not
+decodable yet. When all the fragments have been received and correctly reassembled,
+the packet will be decoded and logged in full.
+
+Before version 1.8.0, dumpvdl2 always attempted to decode higher level
+protocols, regardless of whether the packet was a fragment of a larger packet or
+not. You can enable the old behaviour by adding `--decode-fragments` command
+line option.
+
 ## Integration with Planeplotter
 
 dumpvdl2 can send ACARS messages to Planeplotter, which in turn can extract
@@ -499,6 +649,14 @@ For full list of supported filtering options, run:
 
 Refer to `doc/FILTERING_EXAMPLES.md` file for more examples and details.
 
+## Debugging output
+
+If the program has been compiled with `-DCMAKE_BUILD_TYPE=Debug`, there is
+`--debug` option available. It controls debug message classes which should (or
+should not) be printed to standard error. This works in the same way as message
+filters described above. Run the program with `--debug help` to list all debug
+message classes available.
+
 ## Statistics
 
 The program does not calculate statistics by itself. Instead, it sends metric
@@ -524,9 +682,7 @@ Here is an example of some dumpvdl2 metrics being graphed by Grafana:
 ![Statistics](statistics.png?raw=true)
 
 Metrics are quite handy when tuning the antenna installation or receiver
-parameters (like gain or correction). Full list of currently supported counters
-can be found in `statsd.c` source file.  dumpvdl2 produces a separate set of
-counters for each configured VDL2 channel.
+parameters (like gain or correction).
 
 To enable statistics just give dumpvdl2 your StatsD collector's hostname (or IP
 address) and UDP port number, for example:
@@ -643,6 +799,12 @@ automatically at boot:
 systemctl enable dumpvdl2
 ```
 
+## Extras
+
+There are a few additions to the program in the `extras` directory in the source
+tree. Refer to the README.md file in that directory for the current list of
+extras and their purpose.
+
 ## Frequently Asked Questions
 
 ### What is VDL Mode 2?
@@ -654,7 +816,7 @@ or [SigIdWiki](http://www.sigidwiki.com/wiki/VHF_Data_Link_-_Mode_2_(VDL-M2)).
 
 ### Who uses it?
 
-Civil airlines - not all, but many. Military? Umm, no.
+Large transport aircraft operators - civil airlines and some military.
 
 ### What frequencies it runs on?
 
@@ -692,8 +854,8 @@ It basically comes down to three things:
   aircraft is just overflying your antenna).  On SDRPlay it should be good enough
   to use auto gain control.
 
-- check SDR Console with the same gain setting - do you see data bursts clearly?
-  (they are very short, like pops).
+- observe the waterfall in your favorite SDR console app, using the same gain
+  setting - do you see data bursts clearly?  (they are very short, like pops).
 
 - if your DC spike is very high, set the center frequency manually to dodge it
   (use `--centerfreq` option).
@@ -803,6 +965,43 @@ fields:
   (messages) may be concatenated and sent as a single transmission burst. When a
   multiframe burst is received, frames will be numbered incrementally.
 
+### I want colorized logs, like on the screenshot.
+
+dumpvdl2 does not have log colorization feature. But there is an app named
+[MultiTail](https://www.vanheusden.com/multitail/) which you can use to follow dumpvdl2 log file in real time, as it grows,
+with optional colorization. It's just a matter of writing a proper colorization
+scheme (it tells the program what words or phrases to colorize and what color to
+use). Refer to `multitail-dumpvdl2.conf` file in the `extras` subdirectory for
+an example. To use it:
+
+- Install the program:
+
+```
+sudo apt-get install multitail
+```
+
+- Copy the example colorization scheme to `/etc`:
+
+```
+sudo cp extras/multitail-dumpvdl2.conf /etc
+```
+
+- Include the color scheme into the main MultiTail configuration file:
+
+```
+sudo echo "include:/etc/multitail-dumpvdl2.conf" >> /etc/multitail.conf
+```
+
+- You can only colorize the file while it grows.  So assuming that dumpvdl2 is
+  running and writing its log into `vdl2.log` file in the current directory,
+  type the following:
+
+```
+multitail -cS dumpvdl2 vdl2.log
+```
+
+`-cS dumpvdl2` option select the color scheme named `dumpvdl2`.
+
 ### Can you add support for [*my favourite SDR receiver type*]?
 
 Maybe. However do not expect me to purchase all SDRs available on the market
@@ -835,9 +1034,7 @@ Adding new device type basically comes down to the following:
 
 ### Can you add support for Windows?
 
-To be honest, I don't use Windows very often and I don't know the programming
-intricacies of this OS. However, if you feel like you could port the code and
-maintain the port later on, please do so. Pull requests welcome.
+Maybe. I may do it one day, but it's not currently top priority.
 
 ## Credits and thanks
 
@@ -852,7 +1049,7 @@ testing of dumpvdl2. Special thanks go to:
 
 ## License
 
-Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
+Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
 
 Contains code from the following software projects:
 

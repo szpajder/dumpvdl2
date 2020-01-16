@@ -1,7 +1,7 @@
 /*
- *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
+ *  This file is a part of dumpvdl2
  *
- *  Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,15 +32,15 @@ int rs_init() {
 int rs_verify(uint8_t *data, int fec_octets) {
 	if(fec_octets == 0)
 		return 0;
-	debug_print_buf_hex(data, RS_N, "Input data:\n");
+	debug_print_buf_hex(D_BURST_DETAIL, data, RS_N, "Input data:\n");
 	int erasure_cnt = RS_N - RS_K - fec_octets;
 	int ret;
-	debug_print("erasure_cnt=%d\n", erasure_cnt);
+	debug_print(D_BURST_DETAIL, "erasure_cnt=%d\n", erasure_cnt);
 	if(erasure_cnt > 0) {
 		int erasures[RS_N - RS_K];
 		for(int i = 0; i < erasure_cnt; i++)
 			erasures[i] = RS_K + fec_octets + i;
-		debug_print_buf_hex(erasures, erasure_cnt, "Erasures:\n");
+		debug_print_buf_hex(D_BURST_DETAIL, erasures, (size_t)erasure_cnt, "Erasures:\n");
 		ret = decode_rs_char(rs, data, erasures, erasure_cnt);
 	} else {
 		ret = decode_rs_char(rs, data, NULL, erasure_cnt);

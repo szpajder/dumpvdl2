@@ -1,7 +1,7 @@
 /*
- *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
+ *  This file is a part of dumpvdl2
  *
- *  Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -155,7 +155,7 @@ typedef struct {
 TLV_PARSER(idrp_route_separator_parse) {
 	UNUSED(typecode);
 	if(len != 5) {
-		debug_print("incorrect length: %zu != 5)", len);
+		debug_print(D_PROTO, "incorrect length: %zu != 5)", len);
 		return NULL;
 	}
 	NEW(idrp_route_separator_t, ret);
@@ -186,11 +186,11 @@ TLV_PARSER(rd_path_segment_parse) {
 		uint8_t rdi_len = buf[0];
 		buf++; len--;
 		if(rdi_len == 0) {
-			debug_print("RDI length 0 not allowed\n");
+			debug_print(D_PROTO, "RDI length 0 not allowed\n");
 			goto fail;
 		}
 		if(len < rdi_len) {
-			debug_print("RDI truncated: remaining: %zu < rdi_len: %u\n",
+			debug_print(D_PROTO, "RDI truncated: remaining: %zu < rdi_len: %u\n",
 				len, rdi_len);
 			goto fail;
 		}
@@ -479,7 +479,7 @@ static attr_parse_result_t parse_idrp_ribatt(uint8_t *buf, uint32_t len) {
 			size_t tag_len = extract_uint16_msbfirst(buf);
 			buf += 2; consumed += 2; len -= 2;
 			if(tag_len > len) {
-				debug_print("Tag %d: parameter truncated: tag_len=%zu buflen=%u\n",
+				debug_print(D_PROTO, "Tag %d: parameter truncated: tag_len=%zu buflen=%u\n",
 					typecode, tag_len, len);
 				goto fail;
 			}
@@ -519,7 +519,7 @@ static attr_parse_result_t parse_idrp_ribatts_set(uint8_t *buf, uint32_t len) {
 	uint8_t i = 0;
 	while(i < ribatts_cnt && len > 0) {
 		attr_parse_result_t result = parse_idrp_ribatt(buf, len);
-		debug_print("RibAtt #%u: parse_idrp_ribatt consumed %d octets\n", i, result.consumed);
+		debug_print(D_PROTO_DETAIL, "RibAtt #%u: parse_idrp_ribatt consumed %d octets\n", i, result.consumed);
 		if(result.consumed < 0) {
 			goto fail;
 		}
@@ -585,7 +585,7 @@ static attr_parse_result_t parse_idrp_confed_ids(uint8_t *buf, uint32_t len) {
 		uint8_t confed_id_len = buf[0];
 		buf++; consumed++; len--;
 		if(len < confed_id_len) {
-			debug_print("Truncated Confed ID #%d: len %u < confed_id_len %u\n",
+			debug_print(D_PROTO, "Truncated Confed ID #%d: len %u < confed_id_len %u\n",
 				i, len, confed_id_len);
 			goto fail;
 		}
@@ -601,11 +601,11 @@ fail:
 
 static int parse_idrp_open_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	if(len < 6) {
-		debug_print("Truncated Open BISPDU: len %u < 6\n", len);
+		debug_print(D_PROTO, "Truncated Open BISPDU: len %u < 6\n", len);
 		return -1;
 	}
 	if(*buf != BISPDU_OPEN_VERSION) {
-		debug_print("Unsupported Open BISPDU version %u\n", *buf);
+		debug_print(D_PROTO, "Unsupported Open BISPDU version %u\n", *buf);
 		return -1;
 	}
 	int consumed = 0;
@@ -616,7 +616,7 @@ static int parse_idrp_open_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	buf += 2; consumed += 2; len -= 2;
 	pdu->open_src_rdi.len = *buf++; consumed++; len--;
 	if(len < pdu->open_src_rdi.len) {
-		debug_print("Truncated source RDI: len %u < rdi_len %zu\n", len, pdu->open_src_rdi.len);
+		debug_print(D_PROTO, "Truncated source RDI: len %u < rdi_len %zu\n", len, pdu->open_src_rdi.len);
 		return -1;
 	}
 	pdu->open_src_rdi.buf = buf;
@@ -632,20 +632,20 @@ static int parse_idrp_open_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 
 	result = parse_idrp_confed_ids(buf, len);
 	if(result.consumed < 0) {
-		debug_print("Failed to parse Confed-IDs\n");
+		debug_print(D_PROTO, "Failed to parse Confed-IDs\n");
 		return -1;
 	}
 	pdu->confed_ids = result.list;
 	buf += result.consumed; consumed += result.consumed; len -= result.consumed;
 
 	if(len < 1) {
-		debug_print("PDU truncated before auth mech\n");
+		debug_print(D_PROTO, "PDU truncated before auth mech\n");
 		return -1;
 	}
 	pdu->auth_mech = buf[0];
 	buf++; consumed++; len--;
 	if(len > 0) {
-		debug_print("Auth data: len %u\n", len);
+		debug_print(D_PROTO, "Auth data: len %u\n", len);
 		pdu->auth_data.buf = buf;
 		pdu->auth_data.len = len;
 		consumed += len;
@@ -667,7 +667,7 @@ static attr_parse_result_t parse_nlri_list(uint8_t *buf, uint32_t len) {
 
 	while(len > 0) {
 		if(len < 6) {
-			debug_print("NLRI truncated: len %u < 7\n", len);
+			debug_print(D_PROTO, "NLRI truncated: len %u < 7\n", len);
 			goto fail;
 		}
 		NEW(idrp_nlri_t, nlri);
@@ -677,7 +677,7 @@ static attr_parse_result_t parse_nlri_list(uint8_t *buf, uint32_t len) {
 		uint8_t proto_len = buf[1];
 		buf += 2; consumed += 2; len -= 2;
 		if(len < proto_len) {
-			debug_print("Protocol field truncated: len %u < proto_len %u\n",
+			debug_print(D_PROTO, "Protocol field truncated: len %u < proto_len %u\n",
 				len, proto_len);
 			goto fail;
 		}
@@ -692,11 +692,11 @@ static attr_parse_result_t parse_nlri_list(uint8_t *buf, uint32_t len) {
 		uint16_t addr_len = extract_uint16_msbfirst(buf);
 		buf += 2; consumed += 2; len -= 2;
 		if(addr_len < 1) {
-			debug_print("Addr_length %u too short\n", addr_len);
+			debug_print(D_PROTO, "Addr_length %u too short\n", addr_len);
 			goto fail;
 		}
 		if(len < addr_len) {
-			debug_print("Addr_info field truncated: len %u < addr_len %u\n",
+			debug_print(D_PROTO, "Addr_info field truncated: len %u < addr_len %u\n",
 				len, addr_len);
 			goto fail;
 		}
@@ -718,7 +718,7 @@ fail:
 
 static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	if(len < 4) {
-		debug_print("Truncated Update BISPDU: len %u < 4\n", len);
+		debug_print(D_PROTO, "Truncated Update BISPDU: len %u < 4\n", len);
 		return -1;
 	}
 	int consumed = 0;
@@ -726,7 +726,7 @@ static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	buf += 2; consumed += 2; len -= 2;
 	if(num_withdrawn > 0) {
 		if(len < num_withdrawn * 4) {
-			debug_print("Withdrawn Routes field truncated: len %u < expected %u\n", len, 4 * num_withdrawn);
+			debug_print(D_PROTO, "Withdrawn Routes field truncated: len %u < expected %u\n", len, 4 * num_withdrawn);
 			return -1;
 		}
 		for(uint16_t i = 0; i < num_withdrawn; i++) {
@@ -737,14 +737,14 @@ static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 		}
 	}
 	if(len < 2) {
-		debug_print("BISPDU truncated after withdrawn routes: len %u < 2\n", len);
+		debug_print(D_PROTO, "BISPDU truncated after withdrawn routes: len %u < 2\n", len);
 		return -1;
 	}
 	uint16_t total_attrib_len = extract_uint16_msbfirst(buf);
 	buf += 2; consumed += 2; len -= 2;
 	if(total_attrib_len > 0) {
 		if(len < total_attrib_len) {
-			debug_print("Path attributes field truncated: len %u < expected %u\n", len, total_attrib_len);
+			debug_print(D_PROTO, "Path attributes field truncated: len %u < expected %u\n", len, total_attrib_len);
 			return -1;
 		}
 		while(total_attrib_len > 4) {				// flag + typecode + length
@@ -754,7 +754,7 @@ static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 			uint16_t alen = extract_uint16_msbfirst(buf);
 			buf += 2; consumed += 2; len -= 2; total_attrib_len -= 2;
 			if(len < alen) {
-				debug_print("Attribute value truncated: len %u < expected %u\n", len, alen);
+				debug_print(D_PROTO, "Attribute value truncated: len %u < expected %u\n", len, alen);
 				return -1;
 			}
 			pdu->path_attributes = tlv_single_tag_parse(typecode, buf, alen,
@@ -762,7 +762,7 @@ static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 			buf += alen; consumed += alen; len -= alen; total_attrib_len -= alen;
 		}
 		if(total_attrib_len > 0) {
-			debug_print("total_attrib_len disagrees with length of the attributes: (%u octets left)\n",
+			debug_print(D_PROTO, "total_attrib_len disagrees with length of the attributes: (%u octets left)\n",
 				total_attrib_len);
 			return -1;
 		}
@@ -781,7 +781,7 @@ static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 
 static int parse_idrp_error_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	if(len < 2) {
-		debug_print("Truncated Error BISPDU: len %u < 2\n", len);
+		debug_print(D_PROTO, "Truncated Error BISPDU: len %u < 2\n", len);
 		return -1;
 	}
 	int consumed = 0;
@@ -789,7 +789,7 @@ static int parse_idrp_error_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	uint8_t err_subcode = *buf++;
 	consumed += 2; len -= 2;
 
-	debug_print("code=%u subcode=%u\n", err_code, err_subcode);
+	debug_print(D_PROTO, "code=%u subcode=%u\n", err_code, err_subcode);
 	if(err_code == BISPDU_ERR_FSM) {
 // upper nibble of subcode contains BISPDU type which this error PDU is related to.
 // lower nibble contains current FSM state
@@ -812,22 +812,22 @@ la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 
 	pdu->err = true;	// fail-safe default
 	if(len < BISPDU_HDR_LEN) {
-		debug_print("Too short (len %u < min len %u)\n", len, BISPDU_HDR_LEN);
+		debug_print(D_PROTO, "Too short (len %u < min len %u)\n", len, BISPDU_HDR_LEN);
 		goto end;
 	}
 	uint8_t *ptr = buf;
 	uint32_t remaining = len;
 	CAST_PTR(hdr, idrp_hdr_t *, ptr);
 	uint16_t pdu_len = extract_uint16_msbfirst(hdr->len);
-	debug_print("pid: %02x len: %u type: %u seq: %u ack: %u coff: %u cavail: %u\n",
+	debug_print(D_PROTO, "pid: %02x len: %u type: %u seq: %u ack: %u coff: %u cavail: %u\n",
 		hdr->pid, pdu_len, hdr->type, ntohl(hdr->seq), ntohl(hdr->ack), hdr->coff, hdr->cavail);
-	debug_print_buf_hex(hdr->validation, 16, "Validation:\n");
+	debug_print_buf_hex(D_PROTO_DETAIL, hdr->validation, 16, "Validation:\n");
 	if(remaining < pdu_len) {
-		debug_print("Too short (len %u < PDU len %u)\n", remaining, pdu_len);
+		debug_print(D_PROTO, "Too short (len %u < PDU len %u)\n", remaining, pdu_len);
 		goto end;
 	}
 	ptr += BISPDU_HDR_LEN; remaining -= BISPDU_HDR_LEN; pdu_len -= BISPDU_HDR_LEN;
-	debug_print("skipping %u hdr octets, %u octets remaining\n", BISPDU_HDR_LEN, remaining);
+	debug_print(D_PROTO, "skipping %u hdr octets, %u octets remaining\n", BISPDU_HDR_LEN, remaining);
 	int result = 0;
 	switch(hdr->type) {
 	case BISPDU_TYPE_OPEN:
@@ -845,7 +845,7 @@ la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	case BISPDU_TYPE_RIBREFRESH:
 		break;
 	default:
-		debug_print("Unknown BISPDU type 0x%02x\n", hdr->type);
+		debug_print(D_PROTO, "Unknown BISPDU type 0x%02x\n", hdr->type);
 		result = -1;
 	}
 	if(result < 0) {		// unparseable PDU
@@ -951,7 +951,7 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 			LA_ISPRINTF(vstr, indent, "%s", "Withdrawn Routes:\n");
 			indent++;
 			for(la_list *p = pdu->withdrawn_routes; p != NULL; p = p->next) {
-				LA_ISPRINTF(vstr, indent, "ID: %lu\n", *(uint32_t *)(p->data));
+				LA_ISPRINTF(vstr, indent, "ID: %u\n", *(uint32_t *)(p->data));
 			}
 			indent--;
 		}

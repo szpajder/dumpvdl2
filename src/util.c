@@ -1,7 +1,7 @@
 /*
- *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
+ *  This file is a part of dumpvdl2
  *
- *  Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ void *xrealloc(void *ptr, size_t size, const char *file, const int line, const c
 	return ptr;
 }
 
-void *dict_search(const dict *list, uint8_t id) {
+void *dict_search(const dict *list, int id) {
 	if(list == NULL) return NULL;
 	dict *ptr;
 	for(ptr = (dict *)list; ; ptr++) {
@@ -93,17 +93,21 @@ static char *replace_nonprintable_chars(uint8_t *data, size_t len) {
 	return buf;
 }
 
-void bitfield_format_text(la_vstring *vstr, uint8_t val, dict const *d) {
+void bitfield_format_text(la_vstring *vstr, uint8_t *buf, size_t len, dict const *d) {
 	ASSERT(vstr != NULL);
 	ASSERT(d != NULL);
+	ASSERT(len <= sizeof(uint32_t));
 
+	uint32_t val = 0;
+	for(size_t i = 0; i < len; val = (val << 8) | buf[i++])
+		;
 	if(val == 0) {
 		la_vstring_append_sprintf(vstr, "%s", "none");
 		return;
 	}
 	bool first = true;
 	for(dict const *ptr = d; ptr->val != NULL; ptr++) {
-		if((val & ptr->id) == ptr->id) {
+		if((val & (uint32_t)ptr->id) == (uint32_t)ptr->id) {
 			la_vstring_append_sprintf(vstr, "%s%s",
 				(first ? "" : ", "), (char *)ptr->val);
 			first = false;
@@ -132,12 +136,12 @@ octet_string_t *octet_string_new(void *buf, size_t len) {
 int octet_string_parse(uint8_t *buf, size_t len, octet_string_t *result) {
 	ASSERT(buf != NULL);
 	if(len == 0) {
-		debug_print("empty buffer\n");
+		debug_print(D_PROTO, "empty buffer\n");
 		return -1;
 	}
 	uint8_t buflen = *buf++; len--;
 	if(len < buflen) {
-		debug_print("buffer truncated: len %zu < expected %u\n", len, buflen);
+		debug_print(D_PROTO, "buffer truncated: len %zu < expected %u\n", len, buflen);
 		return -1;
 	}
 	result->buf = buf;
@@ -205,7 +209,7 @@ size_t slurp_hexstring(char* string, uint8_t **buf) {
 		} else if (c >= 'a' && c <= 'f') {
 			 value = (10 + (c - 'a'));
 		} else {
-			debug_print("stopped at invalid char %u at pos %zu\n", c, i);
+			debug_print(D_PROTO, "stopped at invalid char %u at pos %zu\n", c, i);
 			return i/2;
 		}
 		(*buf)[(i/2)] |= value << (((i + 1) % 2) * 4);

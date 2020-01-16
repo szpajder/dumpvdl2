@@ -1,7 +1,7 @@
 /*
  *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
  *
- *  Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -24,7 +25,8 @@
 #include <getopt.h>
 #include <signal.h>
 #include <errno.h>
-#include <libacars/libacars.h>	// LA_VERSION
+#include <libacars/libacars.h>		// LA_VERSION, la_config_set_bool()
+#include <libacars/acars.h>		// LA_ACARS_BEARER_VHF
 #include <pthread.h>
 #include "config.h"
 #ifndef HAVE_PTHREAD_BARRIERS
@@ -43,15 +45,20 @@
 #include "soapysdr.h"
 #endif
 #include "dumpvdl2.h"
+#ifdef WITH_SQLITE
+#include "ac_data.h"
+#endif
+#include "gs_data.h"
 
-int do_exit = 0;
-uint32_t msg_filter = MSGFLT_ALL;
+bool do_exit = false;
+dumpvdl2_config_t Config;
+
 pthread_barrier_t demods_ready, samples_ready;
 pthread_t decoder_thread;
 
 void sighandler(int sig) {
 	fprintf(stderr, "Got signal %d, exiting\n", sig);
-	do_exit = 1;
+	do_exit = true;
 #ifdef WITH_RTLSDR
 	rtl_cancel();
 #endif
@@ -110,7 +117,7 @@ static uint32_t calc_centerfreq(uint32_t *freq, int cnt, uint32_t source_rate) {
 		if(freq[i] > freq_max) freq_max = freq[i];
 	}
 	if(freq_max - freq_min > source_rate * 0.8f) {
-		fprintf(stderr, "Error: given frequencies are too fart apart\n");
+		fprintf(stderr, "Error: given frequencies are too far apart\n");
 		return 0;
 	}
 	return freq_min + (freq_max - freq_min) / 2;
@@ -144,95 +151,144 @@ void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
 	do {
 		len = fread(buf, 1, FILE_BUFSIZE, f);
 		(*process_buf)(buf, len, NULL);
-	} while(len == FILE_BUFSIZE && !do_exit);
+	} while(len == FILE_BUFSIZE && do_exit == false);
 	fclose(f);
 }
 
+void print_version() {
+	fprintf(stderr, "dumpvdl2 %s (libacars %s)\n", DUMPVDL2_VERSION, LA_VERSION);
+}
+
 void usage() {
-	fprintf(stderr, "Usage:\n\n");
+	fprintf(stderr,
+	"Usage:\n\n"
 #ifdef WITH_RTLSDR
-	fprintf(stderr, "RTL-SDR receiver:\n");
-	fprintf(stderr, "\tdumpvdl2 [output_options] --rtlsdr <device_id> [rtlsdr_options] [<freq_1> [freq_2 [...]]]\n");
+	"RTL-SDR receiver:\n"
+	"    dumpvdl2 [output_options] --rtlsdr <device_id> [rtlsdr_options] [<freq_1> [<freq_2> [...]]]\n"
 #endif
 #ifdef WITH_MIRISDR
-	fprintf(stderr, "MIRI-SDR receiver:\n");
-	fprintf(stderr, "\tdumpvdl2 [output_options] --mirisdr <device_id> [mirisdr_options] [<freq_1> [freq_2 [...]]]\n");
+	"MIRI-SDR receiver:\n"
+	"    dumpvdl2 [output_options] --mirisdr <device_id> [mirisdr_options] [<freq_1> [<freq_2> [...]]]\n"
 #endif
 #ifdef WITH_SDRPLAY
-	fprintf(stderr, "SDRPLAY RSP receiver:\n");
-	fprintf(stderr, "\tdumpvdl2 [output_options] --sdrplay <device_id> [sdrplay_options] [<freq_1> [freq_2 [...]]]\n");
+	"SDRPLAY RSP receiver:\n"
+	"    dumpvdl2 [output_options] --sdrplay <device_id> [sdrplay_options] [<freq_1> [<freq_2> [...]]]\n"
 #endif
 #ifdef WITH_SOAPYSDR
-	fprintf(stderr, "SOAPYSDR compatible receiver:\n");
-	fprintf(stderr, "\tdumpvdl2 [output_options] --soapysdr <device_id> [soapysdr_options] [<freq_1> [freq_2 [...]]]\n");
+	"SOAPYSDR compatible receiver:\n"
+	"    dumpvdl2 [output_options] --soapysdr <device_id> [soapysdr_options] [<freq_1> [<freq_2> [...]]]\n"
 #endif
-	fprintf(stderr, "I/Q input from file:\n");
-	fprintf(stderr, "\tdumpvdl2 [output_options] --iq-file <input_file> [file_options] [<freq_1> [freq_2 [...]]]\n");
-	fprintf(stderr, "\ncommon options:\n");
-	fprintf(stderr, "\t<freq_1> [freq_2 [...]]\t\tVDL2 channel frequences, in Hz (max %d simultaneous channels supported).\n", MAX_CHANNELS);
-	fprintf(stderr, "\t\t\t\t\tIf omitted, will use VDL2 Common Signalling Channel (%u Hz)\n", CSC_FREQ);
-	fprintf(stderr, "\noutput_options:\n");
-	fprintf(stderr, "\t--output-file <output_file>\tOutput decoded frames to <output_file> (default: stdout)\n");
-	fprintf(stderr, "\t--hourly\t\t\tRotate output file hourly\n");
-	fprintf(stderr, "\t--daily\t\t\t\tRotate output file daily\n");
-	fprintf(stderr, "\t--utc\t\t\t\tUse UTC timestamps in output and file names\n");
-	fprintf(stderr, "\t--raw-frames\t\t\tOutput AVLC payload as raw bytes\n");
-	fprintf(stderr, "\t--dump-asn1\t\t\tOutput full ASN.1 structure of CM and CPDLC messages\n");
-	fprintf(stderr, "\t--extended-header\t\tOutput additional fields in message header\n");
-	fprintf(stderr, "\t--msg-filter <filter_spec>\tMessage types to display (default: all) (\"--msg-filter help\" for details)\n");
-	fprintf(stderr, "\t--output-acars-pp <host:port>\tSend ACARS messages to Planeplotter over UDP/IP\n");
+	"I/Q input from file:\n"
+	"    dumpvdl2 [output_options] --iq-file <input_file> [file_options] [<freq_1> [<freq_2> [...]]]\n"
+	"\n"
+	"common options:\n"
+	"    <freq_1> [<freq_2> [...]]                   VDL2 channel frequences, in Hz (max %d simultaneous channels supported).\n"
+	"                                                If omitted, will use VDL2 Common Signalling Channel (%u Hz)\n",
+	MAX_CHANNELS, CSC_FREQ
+	);
+
+	fprintf(stderr,
+	"\n"
+	"output_options:\n"
+	"    --output-file <output_file>                 Output decoded frames to <output_file> (default: stdout)\n"
+	"    --hourly                                    Rotate output file hourly\n"
+	"    --daily                                     Rotate output file daily\n"
+	"    --utc                                       Use UTC timestamps in output and file names\n"
+	"    --raw-frames                                Output AVLC payload as raw bytes\n"
+	"    --dump-asn1                                 Output full ASN.1 structure of CM and CPDLC messages\n"
+	"    --extended-header                           Output additional fields in message header\n"
+	"    --decode-fragments                          Decode higher level protocols in fragmented packets (default: off)\n"
+	"    --prettify-xml                              Pretty-print XML payloads in ACARS and MIAM CORE PDUs (default: off)\n"
+	"    --gs-file <file>                            Read ground station info from <file> (MultiPSK format)\n"
+#ifdef WITH_SQLITE
+	"    --bs-db <file>                              Read aircraft info from Basestation database <file> (SQLite)\n"
+#endif
+	"    --addrinfo terse|normal|verbose             Aircraft/ground station info verbosity level (default: normal)\n"
+	"    --msg-filter <filter_spec>                  Message types to display (default: all) (\"--msg-filter help\" for details)\n"
+	"    --output-acars-pp <host:port>               Send ACARS messages to Planeplotter over UDP/IP\n"
 #ifdef WITH_STATSD
-	fprintf(stderr, "\t--statsd <host>:<port>\t\tSend statistics to Etsy StatsD server <host>:<port> (default: disabled)\n");
+	"    --statsd <host>:<port>                      Send statistics to Etsy StatsD server <host>:<port> (default: disabled)\n"
 #endif
 #ifdef WITH_RTLSDR
-	fprintf(stderr, "\nrtlsdr_options:\n");
-	fprintf(stderr, "\t--rtlsdr <device_id>\t\tUse RTL device with specified ID or serial number (default: ID=0)\n");
-	fprintf(stderr, "\t--gain <gain>\t\t\tSet gain (decibels)\n");
-	fprintf(stderr, "\t--correction <correction>\tSet freq correction (ppm)\n");
-	fprintf(stderr, "\t--centerfreq <center_frequency>\tSet center frequency in Hz (default: auto)\n");
+	"\n"
+	"rtlsdr_options:\n"
+	"    --rtlsdr <device_id>                        Use RTL device with specified ID or serial number (default: ID=0)\n"
+	"    --gain <gain>                               Set gain (decibels)\n"
+	"    --correction <correction>                   Set freq correction (ppm)\n"
+	"    --centerfreq <center_frequency>             Set center frequency in Hz (default: auto)\n"
 #endif
 #ifdef WITH_MIRISDR
-	fprintf(stderr, "\nmirisdr_options:\n");
-	fprintf(stderr, "\t--mirisdr <device_id>\t\tUse Mirics device with specified ID or serial number (default: ID=0)\n");
-	fprintf(stderr, "\t--hw-type <device_type>\t\t0 - default, 1 - SDRPlay\n");
-	fprintf(stderr, "\t--gain <gain>\t\t\tSet gain (in decibels, from 0 to 102 dB)\n");
-	fprintf(stderr, "\t--correction <correction>\tSet freq correction (in Hertz)\n");
-	fprintf(stderr, "\t--centerfreq <center_frequency>\tSet center frequency in Hz (default: auto)\n");
-	fprintf(stderr, "\t--usb-mode <usb_transfer_mode>\t0 - isochronous (default), 1 - bulk\n");
+	"\n"
+	"mirisdr_options:\n"
+	"    --mirisdr <device_id>                       Use Mirics device with specified ID or serial number (default: ID=0)\n"
+	"    --hw-type <device_type>                     0 - default, 1 - SDRPlay\n"
+	"    --gain <gain>                               Set gain (in decibels, from 0 to 102 dB)\n"
+	"    --correction <correction>                   Set freq correction (in Hertz)\n"
+	"    --centerfreq <center_frequency>             Set center frequency in Hz (default: auto)\n"
+	"    --usb-mode <usb_transfer_mode>              0 - isochronous (default), 1 - bulk\n"
 #endif
 #ifdef WITH_SDRPLAY
-	fprintf(stderr, "\nsdrplay_options:\n");
-	fprintf(stderr, "\t--sdrplay <device_id>\t\tUse SDRPlay RSP device with specified ID or serial number (default: ID=0)\n");
-	fprintf(stderr, "\t--gr <gr>\t\t\tSet system gain reduction, in dB, positive (-100 = enables AGC)\n");
-	fprintf(stderr, "\t--agc <set point in dBFS>\tAutomatic Gain Control set point in dBFS, negative (default: 0 = AGC off)\n");
-	fprintf(stderr, "\t--correction <correction>\tSet freq correction (ppm)\n");
-	fprintf(stderr, "\t--centerfreq <center_frequency>\tSet center frequency in Hz (default: auto)\n");
-	fprintf(stderr, "\t--antenna <A/B>\t\t\tRSP2 antenna port selection (default: A)\n");
-	fprintf(stderr, "\t--biast <0/1>\t\t\tRSP2 Bias-T control: 0 - off (default), 1 - on\n");
-	fprintf(stderr, "\t--notch-filter <0/1>\t\tRSP2/1a/duo AM/FM/bcast notch filter control: 0 - off (default), 1 - on\n");
-	fprintf(stderr, "\t--tuner <1/2>\t\t\tRSPduo tuner selection: (default: 1)\n");
+	"\n"
+	"sdrplay_options:\n"
+	"    --sdrplay <device_id>                       Use SDRPlay RSP device with specified ID or serial number (default: ID=0)\n"
+	"    --gr <gr>                                   Set system gain reduction, in dB, positive (-100 = enables AGC)\n"
+	"    --agc <set point in dBFS>                   Automatic Gain Control set point in dBFS, negative (default: 0 = AGC off)\n"
+	"    --correction <correction>                   Set freq correction (ppm)\n"
+	"    --centerfreq <center_frequency>             Set center frequency in Hz (default: auto)\n"
+	"    --antenna <A/B>                             RSP2 antenna port selection (default: A)\n"
+	"    --biast <0/1>                               RSP2 Bias-T control: 0 - off (default), 1 - on\n"
+	"    --notch-filter <0/1>                        RSP2/1a/duo AM/FM/bcast notch filter control: 0 - off (default), 1 - on\n"
+	"    --tuner <1/2>                               RSPduo tuner selection: (default: 1)\n"
 #endif
 #ifdef WITH_SOAPYSDR
-	fprintf(stderr, "\nsoapysdr_options:\n");
-	fprintf(stderr, "\t--soapysdr <device_id>\t\tUse SoapySDR compatible device with specified ID (default: ID=0)\n");
-	fprintf(stderr, "\t--device-settings <key1=val1,key2=val2,...>\tSet device-specific parameters (default: none)\n");
-	fprintf(stderr, "\t--gain <gain>\t\t\tSet gain (decibels)\n");
-	fprintf(stderr, "\t--correction <correction>\tSet freq correction (ppm)\n");
-	fprintf(stderr, "\t--soapy-antenna <antenna>\tSet antenna port selection (default: RX)\n");
-	fprintf(stderr, "\t--soapy-gain <gain1=val1,gain2=val2,...>\tSet gain components (default: none)\n");
+	"\n"
+	"soapysdr_options:\n"
+	"    --soapysdr <device_id>                      Use SoapySDR compatible device with specified ID (default: ID=0)\n"
+	"    --device-settings <key1=val1,key2=val2,...> Set device-specific parameters (default: none)\n"
+	"    --gain <gain>                               Set gain (decibels)\n"
+	"    --correction <correction>                   Set freq correction (ppm)\n"
+	"    --soapy-antenna <antenna>                   Set antenna port selection (default: RX)\n"
+	"    --soapy-gain <gain1=val1,gain2=val2,...>    Set gain components (default: none)\n"
 #endif
-	fprintf(stderr, "\nfile_options:\n");
-	fprintf(stderr, "\t--iq-file <input_file>\t\tRead I/Q samples from file\n");
-	fprintf(stderr, "\t--centerfreq <center_frequency>\tCenter frequency of the input data, in Hz (default: 0)\n");
-	fprintf(stderr, "\t--oversample <oversample_rate>\tOversampling rate for recorded data (default: %u)\n", FILE_OVERSAMPLE);
-	fprintf(stderr, "\t\t\t\t\t  (sampling rate will be set to %u * oversample_rate)\n", SYMBOL_RATE * SPS);
-	fprintf(stderr, "\t--sample-format <sample_format>\tInput sample format. Supported formats:\n");
-	fprintf(stderr, "\t\t\t\t\t  U8\t\t8-bit unsigned (eg. recorded with rtl_sdr) (default)\n");
-	fprintf(stderr, "\t\t\t\t\t  S16_LE\t16-bit signed, little-endian (eg. recorded with miri_sdr)\n");
+	"\n"
+	"file_options:\n"
+	"    --iq-file <input_file>                      Read I/Q samples from file\n"
+	"    --centerfreq <center_frequency>             Center frequency of the input data, in Hz (default: 0)\n"
+	"    --oversample <oversample_rate>              Oversampling rate for recorded data (default: %u)\n"
+	"                                                (sampling rate will be set to %u * oversample_rate)\n",
+	FILE_OVERSAMPLE, SYMBOL_RATE * SPS
+	);
+
+	fprintf(stderr,
+	"    --sample-format <sample_format>             Input sample format. Supported formats:\n"
+	"                                                    U8     8-bit unsigned (eg. recorded with rtl_sdr) (default)\n"
+	"                                                    S16_LE 16-bit signed, little-endian (eg. recorded with miri_sdr)\n"
+	);
+
+	fprintf(stderr,
+	"\n"
+	"General options:\n"
+	"    --help                                      Displays this text\n"
+	"    --version                                   Displays program version number\n"
+#ifdef DEBUG
+	"    --debug <filter_spec>                       Debug message classes to display (default: none) (\"--debug help\" for details)\n"
+#endif
+	);
 	_exit(0);
 }
 
-const msg_filterspec_t filters[] = {
+void print_msg_filterspec_list(FILE *f, msg_filterspec_t const *filters) {
+	for(msg_filterspec_t const *ptr = filters; ptr->token != NULL; ptr++) {
+		fprintf(f, "\t%s\t%s%s%s\n",
+			ptr->token,
+			strlen(ptr->token) < 8 ? "\t" : "",
+			strlen(ptr->token) < 16 ? "\t" : "",
+			ptr->description
+		);
+	}
+}
+
+static msg_filterspec_t const msg_filters[] = {
 	{ "all",		MSGFLT_ALL,			"All messages" },
 	{ "uplink",		MSGFLT_SRC_GND,			"Uplink messages (sourced by ground stations)" },
 	{ "downlink",		MSGFLT_SRC_AIR,			"Downlink messages (sourced by aircraft)" },
@@ -259,70 +315,94 @@ const msg_filterspec_t filters[] = {
 	{ 0,			0,				0 }
 };
 
+#ifdef DEBUG
+static msg_filterspec_t const debug_filters[] = {
+	{ "none",		D_NONE,				"No messages" },
+	{ "all",		D_ALL,				"All messages" },
+	{ "sdr",		D_SDR,				"SDR device handling" },
+	{ "demod",		D_DEMOD,			"DSP and demodulation" },
+	{ "demod_detail",	D_DEMOD_DETAIL,			"DSP and demodulation - details with raw data dumps" },
+	{ "burst",		D_BURST,			"VDL2 burst decoding" },
+	{ "burst_detail",	D_BURST_DETAIL,			"VDL2 burst decoding - details with raw data dumps" },
+	{ "proto",		D_PROTO,			"Frame payload decoding" },
+	{ "proto_detail",	D_PROTO_DETAIL,			"Frame payload decoding - details with raw data dumps" },
+	{ "stats",		D_STATS,			"Statistics generation" },
+	{ "cache",		D_CACHE,			"AC and GS data cache operations" },
+	{ "output",		D_OUTPUT,			"Data output operations" },
+	{ "misc",		D_MISC,				"Messages not falling into other categories" },
+	{ 0,			0,				0 }
+};
+
+static void debug_filter_usage() {
+	fprintf(stderr,
+		"<filter_spec> is a comma-separated list of words specifying debug classes which should\n"
+		"be printed.\n\nSupported debug classes:\n\n"
+	);
+
+	print_msg_filterspec_list(stderr, debug_filters);
+
+	fprintf(stderr,
+		"\nBy default, no debug messages are printed.\n"
+	);
+}
+#endif
+
 static void msg_filter_usage() {
-	fprintf(stderr, "<filter_spec> is a comma-separated list of words specifying message types which should\n");
-	fprintf(stderr, "be displayed. Each word may optionally be preceded by a '-' sign to negate its meaning\n");
-	fprintf(stderr, "(ie. to indicate that a particular message type shall not be displayed).\n");
-	fprintf(stderr, "\nSupported message types:\n\n");
+	fprintf(stderr,
+		"<filter_spec> is a comma-separated list of words specifying message types which should\n"
+		"be displayed. Each word may optionally be preceded by a '-' sign to negate its meaning\n"
+		"(ie. to indicate that a particular message type shall not be displayed).\n"
+		"\nSupported message types:\n\n"
+	);
 
-	CAST_PTR(ptr, msg_filterspec_t *, filters);
-	while(ptr->token != NULL) {
-		fprintf(stderr, "\t%s\t%s%s%s\n",
-			ptr->token,
-			strlen(ptr->token) < 8 ? "\t" : "",
-			strlen(ptr->token) < 16 ? "\t" : "",
-			ptr->description
-		);
-		ptr++;
-	}
+	print_msg_filterspec_list(stderr, msg_filters);
 
-	fprintf(stderr, "\nWhen --msg-filter option is not used, all messages are displayed. But when it is, the\n");
-	fprintf(stderr, "filter is first reset to \"none\", ie. you have to explicitly enable all message types\n");
-	fprintf(stderr, "which you wish to see. Word list is parsed from left to right, so the last match wins.\n");
-	fprintf(stderr, "\nRefer to FILTERING_EXAMPLES.md file for usage examples.\n");
-	_exit(0);
+	fprintf(stderr,
+		"\nWhen --msg-filter option is not used, all messages are displayed. But when it is, the\n"
+		"filter is first reset to \"none\", ie. you have to explicitly enable all message types\n"
+		"which you wish to see. Word list is parsed from left to right, so the last match wins.\n"
+		"\nRefer to FILTERING_EXAMPLES.md file for usage examples.\n"
+	);
 }
 
-static void update_filtermask(char *token, uint32_t *fmask) {
-	CAST_PTR(ptr, msg_filterspec_t *, filters);
-	int negate = 0;
+static void update_filtermask(msg_filterspec_t const *filters, char *token, uint32_t *fmask) {
+	bool negate = false;
 	if(token[0] == '-') {
-		negate = 1;
+		negate = true;
 		token++;
 		if(token[0] == '\0') {
 			fprintf(stderr, "Invalid filtermask: no token after '-'\n");
 			_exit(1);
 		}
 	}
-	while(ptr->token != NULL) {
+	for(msg_filterspec_t const *ptr = filters; ptr->token != NULL; ptr++) {
 		if(!strcmp(token, ptr->token)) {
 			if(negate)
 				*fmask &= ~ptr->value;
 			else
 				*fmask |= ptr->value;
-			debug_print("token: %s negate: %d filtermask: 0x%x\n", token, negate, *fmask);
 			return;
 		}
-		ptr++;
 	}
-	fprintf(stderr, "Invalid filter specification: %s: unknown message type\n", token);
+	fprintf(stderr, "Unknown filter specifier: %s\n", token);
 	_exit(1);
 }
 
-static uint32_t parse_msg_filterspec(char *filterspec) {
+static uint32_t parse_msg_filterspec(msg_filterspec_t const *filters, void (*help)(), char *filterspec) {
 	if(!strcmp(filterspec, "help")) {
-		msg_filter_usage();
-		return 0;
+		help();
+		_exit(0);
 	}
-	uint32_t fmask = MSGFLT_NONE;
+	uint32_t fmask = 0;
 	char *token = strtok(filterspec, ",");
 	if(token == NULL) {
 		fprintf(stderr, "Invalid filter specification\n");
 		_exit(1);
 	}
-	update_filtermask(token, &fmask);
-	while((token = strtok(NULL, ",")) != NULL)
-		update_filtermask(token, &fmask);
+	update_filtermask(filters, token, &fmask);
+	while((token = strtok(NULL, ",")) != NULL) {
+		update_filtermask(filters, token, &fmask);
+	}
 	return fmask;
 }
 
@@ -364,6 +444,13 @@ int main(int argc, char **argv) {
 		{ "raw-frames",		no_argument,		NULL,	__OPT_RAW_FRAMES },
 		{ "dump-asn1",		no_argument,		NULL,	__OPT_DUMP_ASN1 },
 		{ "extended-header",	no_argument,		NULL,	__OPT_EXTENDED_HEADER },
+		{ "decode-fragments",	no_argument,		NULL,	__OPT_DECODE_FRAGMENTS },
+		{ "prettify-xml",	no_argument,		NULL,	__OPT_PRETTIFY_XML },
+		{ "gs-file",		required_argument,	NULL,	__OPT_GS_FILE },
+#ifdef WITH_SQLITE
+		{ "bs-db",		required_argument,	NULL,	__OPT_BS_DB },
+#endif
+		{ "addrinfo",		required_argument,	NULL,	__OPT_ADDRINFO_VERBOSITY },
 		{ "output-file",	required_argument,	NULL,	__OPT_OUTPUT_FILE },
 		{ "iq-file",		required_argument,	NULL,	__OPT_IQ_FILE },
 		{ "oversample",		required_argument,	NULL,	__OPT_OVERSAMPLE },
@@ -402,17 +489,30 @@ int main(int argc, char **argv) {
 #ifdef WITH_STATSD
 		{ "statsd",		required_argument,	NULL,	__OPT_STATSD },
 #endif
+		{ "version",		no_argument,		NULL,	__OPT_VERSION },
 		{ "help",		no_argument,		NULL,	__OPT_HELP },
+#ifdef DEBUG
+		{ "debug",		required_argument,	NULL,	__OPT_DEBUG },
+#endif
 		{ 0,			0,			0,	0 }
 	};
 
 #ifdef WITH_STATSD
 	char *statsd_addr = NULL;
-	int statsd_enabled = 0;
+	bool statsd_enabled = false;
+#endif
+#ifdef WITH_SQLITE
+	char *bs_db_file = NULL;
 #endif
 	char *infile = NULL, *outfile = NULL, *pp_addr = NULL;
+	char *gs_file = NULL;
 
-	fprintf(stderr, "dumpvdl2 %s (libacars %s)\n", DUMPVDL2_VERSION, LA_VERSION);
+// Initialize default config
+	memset(&Config, 0, sizeof(Config));
+	Config.addrinfo_verbosity = ADDRINFO_NORMAL;
+	Config.msg_filter = MSGFLT_ALL;
+
+	print_version();
 	while((opt = getopt_long(argc, argv, "", long_opts, NULL)) != -1) {
 		switch(opt) {
 		case __OPT_IQ_FILE:
@@ -432,22 +532,51 @@ int main(int argc, char **argv) {
 			}
 			break;
 		case __OPT_HOURLY:
-			hourly = 1;
+			Config.hourly = true;
 			break;
 		case __OPT_DAILY:
-			daily = 1;
+			Config.daily = true;
 			break;
 		case __OPT_UTC:
-			utc = 1;
+			Config.utc = true;
 			break;
 		case __OPT_RAW_FRAMES:
-			output_raw_frames = 1;
+			Config.output_raw_frames = true;
 			break;
 		case __OPT_DUMP_ASN1:
-			dump_asn1 = 1;
+			Config.dump_asn1 = true;
+			la_config_set_bool("dump_asn1", true);
 			break;
 		case __OPT_EXTENDED_HEADER:
-			extended_header = 1;
+			Config.extended_header = true;
+			break;
+		case __OPT_DECODE_FRAGMENTS:
+			Config.decode_fragments = true;
+			la_config_set_bool("decode_fragments", true);
+			break;
+		case __OPT_PRETTIFY_XML:
+			la_config_set_bool("prettify_xml", true);
+			break;
+		case __OPT_GS_FILE:
+			gs_file = optarg;
+			break;
+#ifdef WITH_SQLITE
+		case __OPT_BS_DB:
+			bs_db_file = optarg;
+			break;
+#endif
+		case __OPT_ADDRINFO_VERBOSITY:
+			if(!strcmp(optarg, "terse")) {
+				Config.addrinfo_verbosity = ADDRINFO_TERSE;
+			} else if(!strcmp(optarg, "normal")) {
+				Config.addrinfo_verbosity = ADDRINFO_NORMAL;
+			} else if(!strcmp(optarg, "verbose")) {
+				Config.addrinfo_verbosity = ADDRINFO_VERBOSE;
+			} else {
+				fprintf(stderr, "Invalid value for option --addrinfo\n");
+				fprintf(stderr, "Use --help for help\n");
+				_exit(1);
+			}
 			break;
 		case __OPT_CENTERFREQ:
 			centerfreq = strtoul(optarg, NULL, 10);
@@ -532,22 +661,34 @@ int main(int argc, char **argv) {
 #ifdef WITH_STATSD
 		case __OPT_STATSD:
 			statsd_addr = strdup(optarg);
-			statsd_enabled = 1;
+			statsd_enabled = true;
 			break;
 #endif
 		case __OPT_OUTPUT_ACARS_PP:
 			pp_addr = strdup(optarg);
 			break;
 		case __OPT_MSG_FILTER:
-			msg_filter = parse_msg_filterspec(optarg);
+			Config.msg_filter = parse_msg_filterspec(msg_filters, msg_filter_usage, optarg);
 			break;
+#ifdef DEBUG
+		case __OPT_DEBUG:
+			Config.debug_filter = parse_msg_filterspec(debug_filters, debug_filter_usage, optarg);
+			debug_print(D_MISC, "debug filtermask: 0x%x\n", Config.debug_filter);
+			break;
+#endif
+		case __OPT_VERSION:
+// No-op - the version has been printed before getopt().
+			_exit(0);
 		case __OPT_HELP:
 		default:
 			usage();
 		}
 	}
-	if(input == INPUT_UNDEF)
-		usage();
+	if(input == INPUT_UNDEF) {
+		fprintf(stderr, "No input specified\n");
+		fprintf(stderr, "Use --help for help\n");
+		_exit(1);
+	}
 
 	if(optind < argc) {
 		num_channels = argc - optind;
@@ -566,12 +707,12 @@ int main(int argc, char **argv) {
 	}
 
 	if(outfile == NULL) {
-		outfile = strdup("-");		// output to stdout by default
-		hourly = daily = 0;		// stdout is not rotateable - ignore silently
+		outfile = strdup("-");			// output to stdout by default
+		Config.hourly = Config.daily = false;	// stdout is not rotateable - ignore silently
 	}
-	if(outfile != NULL && hourly && daily) {
+	if(outfile != NULL && Config.hourly == true && Config.daily == true) {
 		fprintf(stderr, "Options: -H and -D are exclusive\n");
-		fprintf(stderr, "Use -h for help\n");
+		fprintf(stderr, "Use --help for help\n");
 		_exit(1);
 	}
 	sample_rate = SYMBOL_RATE * SPS * oversample;
@@ -598,19 +739,40 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Failed to initialize RS codec\n");
 		_exit(3);
 	}
+
+	if(gs_file != NULL) {
+		if(gs_data_import(gs_file) < 0) {
+			fprintf(stderr, "Failed to import ground station data file. "
+				"Extended data for ground stations will not be logged.\n");
+		} else {
+			Config.gs_addrinfo_db_available = true;
+		}
+	}
 #ifdef WITH_STATSD
-	if(statsd_enabled && input != INPUT_FILE) {
+	if(statsd_enabled) {
 		if(statsd_initialize(statsd_addr) < 0) {
 				fprintf(stderr, "Failed to initialize statsd client - disabling\n");
 				XFREE(statsd_addr);
-				statsd_enabled = 0;
+				statsd_enabled = false;
 		} else {
-			for(int i = 0; i < num_channels; i++)
-				statsd_initialize_counters(freqs[i]);
+			for(int i = 0; i < num_channels; i++) {
+				statsd_initialize_counters_per_channel(freqs[i]);
+			}
+			statsd_initialize_counters_per_msgdir();
 		}
 	} else {
 		XFREE(statsd_addr);
-		statsd_enabled = 0;
+		statsd_enabled = false;
+	}
+#endif
+#ifdef WITH_SQLITE
+	if(bs_db_file != NULL) {
+		if(ac_data_init(bs_db_file) < 0) {
+			fprintf(stderr, "Failed to open aircraft database. "
+				"Extended data for aircraft will not be logged.\n");
+		} else {
+			Config.ac_addrinfo_db_available = true;
+		}
 	}
 #endif
 	if(init_output_file(outfile) < 0) {
@@ -621,6 +783,10 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Failed to initialize output socket to Planeplotter - disabling it\n");
 		XFREE(pp_addr);
 	}
+
+// Configure libacars
+	la_config_set_int("acars_bearer", LA_ACARS_BEARER_VHF);
+
 	setup_signals();
 	sincosf_lut_init();
 	input_lpf_init(sample_rate);

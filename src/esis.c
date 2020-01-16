@@ -1,7 +1,7 @@
 /*
- *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
+ *  This file is a part of dumpvdl2
  *
- *  Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ TLV_FORMATTER(esis_subnet_caps_format_text) {
 	if((c->atn_traffic_types & ATN_TRAFFIC_TYPES_ALL) == ATN_TRAFFIC_TYPES_ALL) {
 		la_vstring_append_sprintf(ctx->vstr, "%s", "all");
 	} else {
-		bitfield_format_text(ctx->vstr, c->atn_traffic_types, atn_traffic_types);
+		bitfield_format_text(ctx->vstr, &c->atn_traffic_types, 1, atn_traffic_types);
 	}
 	EOL(ctx->vstr);
 	if(c->atsc_traffic_classes_present) {
@@ -69,7 +69,7 @@ TLV_FORMATTER(esis_subnet_caps_format_text) {
 		if((c->atsc_traffic_classes & ATSC_TRAFFIC_CLASSES_ALL) == ATSC_TRAFFIC_CLASSES_ALL) {
 			la_vstring_append_sprintf(ctx->vstr, "%s", "all");
 		} else {
-			bitfield_format_text(ctx->vstr, c->atsc_traffic_classes, atsc_traffic_classes);
+			bitfield_format_text(ctx->vstr, &c->atsc_traffic_classes, 1, atsc_traffic_classes);
 		}
 	}
 	EOL(ctx->vstr);
@@ -136,23 +136,23 @@ la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	uint8_t *ptr = buf;
 	uint32_t remaining = len;
 	if(remaining < ESIS_HDR_LEN) {
-		debug_print("Too short (len %u < min len %u)\n", remaining, ESIS_HDR_LEN);
+		debug_print(D_PROTO, "Too short (len %u < min len %u)\n", remaining, ESIS_HDR_LEN);
 		goto end;
 	}
 	CAST_PTR(hdr, esis_hdr_t *, ptr);
 	if(hdr->version != 1) {
-		debug_print("Unsupported PDU version %u\n", hdr->version);
+		debug_print(D_PROTO, "Unsupported PDU version %u\n", hdr->version);
 		goto end;
 	}
 	pdu->holdtime = ((uint16_t)hdr->holdtime[0] << 8) | ((uint16_t)hdr->holdtime[1]);
-	debug_print("pid: %02x len: %u type: %u holdtime: %u\n",
+	debug_print(D_PROTO, "pid: %02x len: %u type: %u holdtime: %u\n",
 		hdr->pid, hdr->len, hdr->type, pdu->holdtime);
 	if(remaining < hdr->len) {
-		debug_print("Too short (len %u < PDU len %u)\n", remaining, hdr->len);
+		debug_print(D_PROTO, "Too short (len %u < PDU len %u)\n", remaining, hdr->len);
 		goto end;
 	}
 	ptr += ESIS_HDR_LEN; remaining -= ESIS_HDR_LEN;
-	debug_print("skipping %u hdr octets, len is now %u\n", ESIS_HDR_LEN, remaining);
+	debug_print(D_PROTO, "skipping %u hdr octets, len is now %u\n", ESIS_HDR_LEN, remaining);
 
 	int ret = octet_string_parse(ptr, remaining, &pdu->net_addr);
 	if(ret < 0) {
@@ -165,13 +165,13 @@ la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		if(remaining > 0) {
 			pdu->options = tlv_parse(ptr, remaining, esis_options, 1);
 			if(pdu->options == NULL) {
-				debug_print("tlv_parse failed when parsing options\n");
+				debug_print(D_PROTO, "tlv_parse failed when parsing options\n");
 				goto end;
 			}
 		}
 		break;
 	default:
-		debug_print("Unknown PDU type 0x%02x\n", hdr->type);
+		debug_print(D_PROTO, "Unknown PDU type 0x%02x\n", hdr->type);
 		goto end;
 	}
 	pdu->hdr = hdr;

@@ -1,7 +1,7 @@
 /*
- *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
+ *  This file is a part of dumpvdl2
  *
- *  Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,9 +30,8 @@
 #include <libacars/vstring.h>		// la_vstring
 #include "dumpvdl2.h"
 
-FILE *outf;
 int pp_sockfd = 0;
-uint8_t hourly = 0, daily = 0, utc = 0, output_raw_frames = 0, dump_asn1 = 0, extended_header = 0;
+static FILE *outf;
 static char *filename_prefix = NULL;
 static char *extension = NULL;
 static size_t prefix_len;
@@ -43,17 +42,19 @@ static int open_outfile() {
 	char *fmt = NULL;
 	size_t tlen = 0;
 
-	if(hourly || daily) {
+	if(Config.hourly == true || Config.daily == true) {
 		time_t t = time(NULL);
-		if(utc)
+		if(Config.utc == true) {
 			gmtime_r(&t, &current_tm);
-		else
+		} else {
 			localtime_r(&t, &current_tm);
+		}
 		char suffix[16];
-		if(hourly)
+		if(Config.hourly == true) {
 			fmt = "_%Y%m%d_%H";
-		else	// daily
+		} else {	// Config.daily == true
 			fmt = "_%Y%m%d";
+		}
 		tlen = strftime(suffix, sizeof(suffix), fmt, &current_tm);
 		if(tlen == 0) {
 			fprintf(stderr, "open_outfile(): strfime returned 0\n");
@@ -80,7 +81,7 @@ int init_output_file(char *file) {
 	} else {
 		filename_prefix = file;
 		prefix_len = strlen(filename_prefix);
-		if(hourly || daily) {
+		if(Config.hourly == true || Config.daily == true) {
 			char *basename = strrchr(filename_prefix, '/');
 			if(basename != NULL) {
 				basename++;
@@ -142,11 +143,13 @@ int init_pp(char *pp_addr) {
 static int rotate_outfile() {
 	struct tm new_tm;
 	time_t t = time(NULL);
-	if(utc)
+	if(Config.utc == true) {
 		gmtime_r(&t, &new_tm);
-	else
+	} else {
 		localtime_r(&t, &new_tm);
-	if((hourly && new_tm.tm_hour != current_tm.tm_hour) || (daily && new_tm.tm_mday != current_tm.tm_mday)) {
+	}
+	if((Config.hourly == true && new_tm.tm_hour != current_tm.tm_hour) ||
+		(Config.daily == true && new_tm.tm_mday != current_tm.tm_mday)) {
 		fclose(outf);
 		return open_outfile();
 	}
@@ -164,7 +167,7 @@ void output_raw(uint8_t *buf, uint32_t len) {
 
 void output_proto_tree(la_proto_node *root) {
 	ASSERT(root != NULL);
-	if((daily || hourly) && rotate_outfile() < 0) {
+	if((Config.daily == true || Config.hourly == true) && rotate_outfile() < 0) {
 		_exit(1);
 	}
 	la_vstring *vstr = la_proto_tree_format_text(NULL, root);

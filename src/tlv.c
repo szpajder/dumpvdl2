@@ -1,7 +1,7 @@
 /*
- *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
+ *  This file is a part of dumpvdl2
  *
- *  Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -73,7 +73,7 @@ la_list *tlv_single_tag_parse(uint8_t typecode, uint8_t *buf, size_t tag_len, di
 
 	CAST_PTR(td, tlv_type_descriptor_t *, dict_search(tag_table, (int)typecode));
 	if(td == NULL) {
-		debug_print("Unknown type code %u\n", typecode);
+		debug_print(D_PROTO, "Unknown type code %u\n", typecode);
 		td = &tlv_DEF_unknown_tag;
 	}
 	ASSERT(td->parse != NULL);
@@ -106,17 +106,17 @@ la_list *tlv_parse(uint8_t *buf, size_t len, dict const *tag_table, size_t const
 
 		ptr += len_octets; len -= len_octets;
 		if(tag_len > len) {
-			debug_print("TLV param %02x truncated: tag_len=%zu buflen=%zu\n", typecode, tag_len, len);
+			debug_print(D_PROTO, "TLV param %02x truncated: tag_len=%zu buflen=%zu\n", typecode, tag_len, len);
 			return NULL;
 		} else if(UNLIKELY(tag_len == 0)) {
-			debug_print("TLV param %02x: bad length 0\n", typecode);
+			debug_print(D_PROTO, "TLV param %02x: bad length 0\n", typecode);
 			return NULL;
 		}
 		head = tlv_single_tag_parse(typecode, ptr, tag_len, tag_table, head);
 		ptr += tag_len; len -= tag_len;
 	}
 	if(len > 0) {
-		debug_print("Warning: %zu unparsed octets left at end of TLV list\n", len);
+		debug_print(D_PROTO, "Warning: %zu unparsed octets left at end of TLV list\n", len);
 	}
 	return head;
 }
@@ -215,7 +215,7 @@ TLV_PARSER(tlv_uint32_msbfirst_parse) {
 }
 
 TLV_FORMATTER(tlv_uint_format_text) {
-	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %lu\n",
+	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %u\n",
 		label, *(uint32_t *)data);
 }
 

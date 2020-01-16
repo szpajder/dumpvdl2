@@ -1,7 +1,7 @@
 /*
- *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
+ *  This file is a part of dumpvdl2
  *
- *  Copyright (c) 2017-2019 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -78,7 +78,7 @@ int ppm_error, char* settings, char* gains_param) {
 		}
 		for(size_t i = 0; i < gains.size; i++) {
 			SoapySDRDevice_setGainElement(sdr, SOAPY_SDR_RX, 0, gains.keys[i], atof(gains.vals[i]));
-			debug_print("Set gain %s to %.2f\n", gains.keys[i], atof(gains.vals[i]));
+			debug_print(D_SDR, "Set gain %s to %.2f\n", gains.keys[i], atof(gains.vals[i]));
 			double gain_value = SoapySDRDevice_getGainElement(sdr, SOAPY_SDR_RX, 0, gains.keys[i]);
 			fprintf(stderr, "Gain element %s set to %.2f dB\n", gains.keys[i], gain_value);
 
@@ -123,7 +123,7 @@ int ppm_error, char* settings, char* gains_param) {
 		}
 		for(size_t i = 0; i < settings_param.size; i++) {
 			SoapySDRDevice_writeSetting(sdr, settings_param.keys[i], settings_param.vals[i]);
-			debug_print("Set param %s to %s\n", settings_param.keys[i], settings_param.vals[i]);
+			debug_print(D_SDR, "Set param %s to %s\n", settings_param.keys[i], settings_param.vals[i]);
 			char *setting_value = SoapySDRDevice_readSetting(sdr, settings_param.keys[i]);
 			fprintf(stderr, "Setting %s is %s => %s\n", settings_param.keys[i], setting_value,
 				(strcmp(settings_param.vals[i], setting_value) == 0) ? "done" : "failed");
@@ -169,7 +169,7 @@ int ppm_error, char* settings, char* gains_param) {
 		} else {
 			int counth = SOAPYSDR_BUFSIZE * SOAPYSDR_BUFCNT * sizeof(short) - ring_index;
 			int buffer_index = 0;
-			for(int i = 0; i < counth / sizeof(short); i++) {
+			for(int i = 0; i < counth / (int)sizeof(short); i++) {
 				// copy low / high part
 				ring_buffer[ring_index++] = buffer[buffer_index] & 0xff;
 				ring_buffer[ring_index++] = (buffer[buffer_index] >> 8) & 0xff;
@@ -177,7 +177,7 @@ int ppm_error, char* settings, char* gains_param) {
 			}
 			int countl = iq_count * sizeof(short) - counth;
 			ring_index = 0;
-			for(int i = 0; i< countl / sizeof(short); i++) {
+			for(int i = 0; i < countl / (int)sizeof(short); i++) {
 				// copy low / high part
 				ring_buffer[ring_index++] = buffer[buffer_index] & 0xff;
 				ring_buffer[ring_index++] = (buffer[buffer_index] >> 8) & 0xff;
@@ -194,7 +194,7 @@ int ppm_error, char* settings, char* gains_param) {
 				for(int i = 0; i< buf_elem_size; i++) {
 			// copy low / high part
 					send_buffer[send_index++] = ring_buffer[last_send_index++];
-					if(last_send_index >= SOAPYSDR_BUFSIZE * SOAPYSDR_BUFCNT * sizeof(short)) {
+					if(last_send_index >= SOAPYSDR_BUFSIZE * SOAPYSDR_BUFCNT * (long)sizeof(short)) {
 						last_send_index = 0;
 					}
 				}
