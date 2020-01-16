@@ -1,5 +1,40 @@
 # NEWS
 
+## Version 1.8.0 (2020-01-16):
+* Support for ATN-B2 Automatic Dependent Surveillance-Contract (ADS-C)
+  version  2.
+* Support for automatic reassembly of multiblock ACARS messages, MIAM file
+  transfers and fragmented X.25 packets. Contents of reassembled messages is now
+  logged in one piece and passed upwards to decoders of higher layer protocols /
+  applications. Thanks to this, many large messages which so far were decoded
+  partially and logged with "Unparseable ... PDU" errors due to fragmentation,
+  are now decoded correctly. StatsD metrics for monitoring reassembly engine
+  performance have been added.
+* Logged messages may be enriched with ground stations details read from a text
+  file in MultiPSK GS format. Look up `--gs-file` and `--addrinfo` options in
+  README.md and dumpvdl2 usage text for more details.
+* Logged messages may be enriched with aircraft details read from a Basestation
+  SQLite database. SQLite3 library must be installed prior to compiling dumpvdl2
+  in order for this feature to be enabled. Look up `--bs-db` and `--addrinfo`
+  options in README.md and dumpvdl2 usage text for more details. Database
+  entries are cached in memory. There are new StatsD metrics for monitoring
+  performance and utilization of the cache.
+* New `--prettify-xml` option enables pretty-printing of XML documents carried
+  in ACARS and MIAM CORE messages. The purpose is to improve readability. If
+  enabled, XML content will be printed as multiline text with proper indentation.
+  This requires libacars built with libxml2 support.
+* ACARS sublabel and MFI fields are now stripped from message text and logged as
+  separate fields (if present).
+* When compiled with debugging support, dumpvdl2 now has a new `--debug` command
+  line option allowing configurable verbosity of debug messages. No debug output
+  is produced by default. Refer to README.md for more details.
+* Added `extras` subdirectory to the source tree. Additional content related to
+  dumpvdl2 will be stored here. Currently bundled extras are: multitail color
+  scheme for dumpvdl2 log files and vdl2grep script for grepping dumpvdl2 log
+  files.
+* Bug fixes, code cleanups.
+* libacars version 2.0.0 or later is now required to compile and run dumpvdl2.
+
 ## Version 1.7.1 (2019-11-11):
 * Fixed an issue where a truncated or corrupted ICAO APDU could cause a
   crash in ASN.1 decoder.
