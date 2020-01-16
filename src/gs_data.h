@@ -1,5 +1,5 @@
 /*
- *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
+ *  This file is a part of dumpvdl2
  *
  *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
