@@ -36,10 +36,14 @@
 static void update_msg_type(uint32_t *msg_type, la_proto_node *root) {
 	la_proto_node *node = la_proto_tree_find_acars(root);
 	if(node == NULL) {
-		debug_print(D_PROTO, "proto tree contains no ACARS message");
+		debug_print(D_PROTO, "proto tree contains no ACARS message\n");
 		return;
 	}
 	CAST_PTR(amsg, la_acars_msg *, node->data);
+	if(amsg->err == true) {
+		debug_print(D_PROTO, "amsg->err is true, skipping\n");
+		return;
+	}
 	if(strlen(amsg->txt) > 0) {
 		debug_print(D_PROTO, "MSGFLT_ACARS_DATA\n");
 		*msg_type |= MSGFLT_ACARS_DATA;
