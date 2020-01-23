@@ -1,5 +1,12 @@
 # NEWS
 
+## Version 1.8.1 (2020-01-23):
+* Fix a bug where an unparseable ACARS message could cause the program to crash
+* Add a little bit of optimization when compiling with debugging enabled. Debug
+  builds are now compiled with -Og flag rather than -O0. This makes debugging on
+  a Raspberry Pi feasible - when -O0 was used, CPU usage was often too high and
+  caused loss of samples and reduced decoding success rate.
+
 ## Version 1.8.0 (2020-01-16):
 * Support for ATN-B2 Automatic Dependent Surveillance-Contract (ADS-C)
   version  2.

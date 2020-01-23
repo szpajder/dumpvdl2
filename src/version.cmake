@@ -1,12 +1,15 @@
 execute_process(COMMAND git describe --always --tags --dirty
-		OUTPUT_VARIABLE GIT_VERSION_
+		OUTPUT_VARIABLE GIT_VERSION
 		ERROR_QUIET
 		OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-if ("${GIT_VERSION_}" STREQUAL "")
+if ("${GIT_VERSION}" STREQUAL "")
 	set(VERSION "char const * const DUMPVDL2_VERSION=\"${DUMPVDL2_VERSION}\";\n")
+elseif("${GIT_VERSION}" MATCHES ".+-g(.+)")
+	set(VERSION "char const * const DUMPVDL2_VERSION=\"${DUMPVDL2_VERSION}-${CMAKE_MATCH_1}\";\n")
+elseif("${GIT_VERSION}" MATCHES "v(.+)")
+	set(VERSION "char const * const DUMPVDL2_VERSION=\"${CMAKE_MATCH_1}\";\n")
 else()
-	string(REGEX REPLACE ".*-g" "" GIT_VERSION ${GIT_VERSION_})
 	set(VERSION "char const * const DUMPVDL2_VERSION=\"${DUMPVDL2_VERSION}-${GIT_VERSION}\";\n")
 endif()
 
