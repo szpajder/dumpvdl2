@@ -1,5 +1,11 @@
 # NEWS
 
+## Version 1.8.2 (2020-01-27):
+* Fix another crash opportunity due to missing sanity check on unparseable ACARS
+  messages.
+* Fix ACARS output to Planeplotter. Only first three characters of Message
+  Serial Number (MSN) field were sent instead of all four.
+
 ## Version 1.8.1 (2020-01-23):
 * Fix a bug where an unparseable ACARS message could cause the program to crash
 * Add a little bit of optimization when compiling with debugging enabled. Debug
