@@ -79,10 +79,12 @@ static void update_statsd_acars_metrics(la_msg_dir msg_dir, la_proto_node *root)
 	};
 	la_proto_node *node = la_proto_tree_find_acars(root);
 	if(node == NULL) {
-		debug_print(D_PROTO, "proto tree contains no ACARS message");
 		return;
 	}
 	CAST_PTR(amsg, la_acars_msg *, node->data);
+	if(amsg->err == true) {
+		return;
+	}
 	CAST_PTR(metric, char *, dict_search(reasm_status_counter_names, amsg->reasm_status));
 	if(metric == NULL) {
 		return;
@@ -116,6 +118,9 @@ void acars_output_pp(la_proto_node *tree) {
 		return;
 	}
 	la_acars_msg *msg = acars_node->data;
+	if(msg->err == true) {
+		return;
+	}
 	char *txt = strdup(msg->txt);
 	for(char *ptr = txt; *ptr != 0; ptr++) {
 		if (*ptr == '\n' || *ptr == '\r') {
