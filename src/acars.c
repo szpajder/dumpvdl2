@@ -128,8 +128,9 @@ void acars_output_pp(la_proto_node *tree) {
 		}
 	}
 	la_vstring *vstr = la_vstring_new();
-	la_vstring_append_sprintf(vstr, "AC%1c %7s %1c %2s %1c %4s %6s %s",
-		msg->mode, msg->reg, msg->ack, msg->label, msg->block_id, msg->msg_num, msg->flight_id, txt);
+	la_vstring_append_sprintf(vstr, "AC%1c %7s %1c %2s %1c %3s%c %6s %s",
+		msg->mode, msg->reg, msg->ack, msg->label, msg->block_id,
+		msg->msg_num, msg->msg_num_seq, msg->flight_id, txt);
 
 	if(write(pp_sockfd, vstr->str, vstr->len) < 0) {
 		debug_print(D_OUTPUT, "write(pp_sockfd) error: %s", strerror(errno));
