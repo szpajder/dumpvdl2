@@ -565,7 +565,7 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_Latitude) {
 		);
 		break;
 	case LatitudeType_PR_latitudeDMS:
-		LA_ISPRINTF(vstr, indent, "%s:   %02ld %02ld'%02ld\" %s\n",
+		LA_ISPRINTF(vstr, indent, "%s:   %02ld %02ld' %02ld\" %s\n",
 			label,
 			lat->latitudeType.choice.latitudeDMS.latitudeWholeDegrees,
 			lat->latitudeType.choice.latitudeDMS.latlonWholeMinutes,
@@ -602,7 +602,7 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_Longitude) {
 		);
 		break;
 	case LongitudeType_PR_longitudeDMS:
-		LA_ISPRINTF(vstr, indent, "%s: %03ld %02ld'%02ld\" %s\n",
+		LA_ISPRINTF(vstr, indent, "%s: %03ld %02ld' %02ld\" %s\n",
 			label,
 			lon->longitudeType.choice.longitudeDMS.longitudeWholeDegrees,
 			lon->longitudeType.choice.longitudeDMS.latLonWholeMinutes,
@@ -845,7 +845,7 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Latitude) {
 	CAST_PTR(lat, ADSv2Latitude_t *, sptr);
 	long const ldir = lat->direction;
 	char const *ldir_name = value2enum(&asn_DEF_LatitudeDirection, ldir);
-	LA_ISPRINTF(vstr, indent, "%s:  %02ld %02ld'%03.1f\" %s\n",
+	LA_ISPRINTF(vstr, indent, "%s:  %02ld %02ld' %04.1f\" %s\n",
 		label,
 		lat->degrees,
 		lat->minutes,
@@ -859,7 +859,7 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Longitude) {
 	CAST_PTR(lon, ADSv2Longitude_t *, sptr);
 	long const ldir = lon->direction;
 	char const *ldir_name = value2enum(&asn_DEF_LongitudeDirection, ldir);
-	LA_ISPRINTF(vstr, indent, "%s: %03ld %02ld'%03.1f\" %s\n",
+	LA_ISPRINTF(vstr, indent, "%s: %03ld %02ld' %04.1f\" %s\n",
 		label,
 		lon->degrees,
 		lon->minutes,
