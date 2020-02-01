@@ -20,6 +20,7 @@
 #include <stdlib.h>			// atof(), free()
 #include <string.h>			// strcmp()
 #include <unistd.h>			// _exit(), usleep()
+#include <SoapySDR/Version.h>   // SOAPY_SDR_API_VERSION
 #include <SoapySDR/Types.h>		// SoapySDRKwargs_*
 #include <SoapySDR/Device.h>		// SoapySDRStream, SoapySDRDevice_*
 #include <SoapySDR/Formats.h>		// SOAPY_SDR_CS16, SoapySDR_formatToSize()
@@ -139,7 +140,11 @@ int ppm_error, char* settings, char* gains_param) {
 	sbuf = XCALLOC(SOAPYSDR_BUFSIZE, sizeof(float));
 
 	SoapySDRStream *rxStream;
+#if SOAPY_SDR_API_VERSION < 0x00080000
 	if(SoapySDRDevice_setupStream(sdr, &rxStream, SOAPY_SDR_RX, SOAPY_SDR_CS16, NULL, 0, NULL) != 0) {
+#else
+	if((rxStream = SoapySDRDevice_setupStream(sdr, SOAPY_SDR_RX, SOAPY_SDR_CS16, NULL, 0, NULL)) == NULL) {
+#endif
 		fprintf(stderr, "setupStream failed: %s\n", SoapySDRDevice_lastError());
 		_exit(1);
 	}
