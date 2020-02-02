@@ -508,8 +508,15 @@ la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	} else {
 // Long-Form SPDUs are not used in the ATN, hence this must be a NULL encoding of Session
 // Layer and Presentation Layer, ie. only user data field is present without any header.
-// Decode it as Fully-encoded-data.
+// Try decoding it as Fully-encoded-data first
 		decode_fully_encoded_data(icao_apdu, ptr, remaining, msg_type);
+		if(icao_apdu->type != NULL) {
+			goto end;
+		}
+// If it failed, then try decoding as X.227 ACSE APDU as a last resort.
+// A notable example of ACSE APDUs carried in COTP user data field without
+// X.225 SPDU header are CPDLC Aborts carried in COTP DR TPDUs.
+		decode_ulcs_acse(icao_apdu, ptr, remaining, msg_type);
 		if(icao_apdu->type == NULL) {
 			goto fail;
 		}

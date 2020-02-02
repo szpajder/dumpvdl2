@@ -462,15 +462,12 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 // user data is allowed in this PDU; if it's there, try to parse it
 		ptr += li; remaining -= li;
 		if(remaining > 0) {
-			if(pdu->code == COTP_TPDU_DR) {
-				if(remaining == 1 && ptr[0] <= SPM_DISC_REASON_MAX) {
-					// special case - single-byte user-data field in DR contains
-					// Session Protocol Machine disconnect reason code (X.225 6.6.4)
+			if(pdu->code == COTP_TPDU_DR && remaining == 1) {
+// special case - single-byte user-data field in DR contains Session Protocol Machine
+// disconnect reason code (X.225 6.6.4)
+				if(ptr[0] <= SPM_DISC_REASON_MAX) {
 					pdu->x225_xport_disc_reason = (int16_t)ptr[0];
 				} else {
-					// DR user data is not guaranteed to be delivered, so ICAO PDUs
-					// shouldn't be here. Just show the payload in raw in order not
-					// to clutter the output with "Unparseable ICAO APDU" messages.
 					r.next_node = unknown_proto_pdu_new(ptr, remaining);
 				}
 			} else {
