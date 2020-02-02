@@ -292,7 +292,8 @@ void unknown_proto_format_text(la_vstring * const vstr, void const * const data,
 	if(ostring-> buf == NULL || ostring->len == 0) {
 		return;
 	}
-	octet_string_format_text(vstr, ostring, indent);
+	LA_ISPRINTF(vstr, indent, "Data (%zu bytes):\n", ostring->len);
+	octet_string_format_text(vstr, ostring, indent+1);
 	EOL(vstr);
 }
 
