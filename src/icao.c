@@ -437,63 +437,6 @@ fed_cleanup:
 	return;
 }
 
-la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	NEW(icao_apdu_t, icao_apdu);
-	la_proto_node *node = la_proto_node_new();
-	node->td = &proto_DEF_icao_apdu;
-	node->data = icao_apdu;
-	node->next = NULL;
-
-	icao_apdu->err = true;		// fail-safe default
-	if(len < 1) {
-		debug_print(D_PROTO, "APDU too short (len: %u)\n", len);
-		goto fail;
-	}
-	uint8_t *ptr = buf;
-	uint32_t remaining = len;
-// Check if it's a X.225 Amdt 1 (1997) Short-form SPDU.
-// All SPDU types have the 8-th bit of SI&P field (the first octet) set to 1.
-	if((ptr[0] & 0x80) != 0) {
-		if(remaining < 3) {
-			debug_print(D_PROTO, "Short-form SPDU too short (len: %u < 3)\n", len);
-			goto fail;
-		}
-		icao_apdu->spdu_id = ptr[0] & 0xf8;
-		icao_apdu->spdu_special_data = ptr[0] & 0x3;
-// The next octet shall then contain a X.226 Amdt 1 (1997) Presentation layer protocol
-// control information. We only care about two least significant bits, which carry
-// encoding information - 0x2 indicates ASN.1 encoded with Packed Encoding Rules
-// Unaligned (X.691)
-		if((ptr[1] & 3) != 2) {
-			debug_print(D_PROTO, "Unknown PPDU payload encoding: %u\n", ptr[1] & 3);
-			goto fail;
-		}
-		ptr += 2; remaining -= 2;
-// Decode as ICAO Doc 9705 / X.227 ACSE APDU
-		decode_ulcs_acse(icao_apdu, ptr, remaining, msg_type);
-		if(icao_apdu->type == NULL) {
-			goto fail;
-		}
-	} else {
-// Long-Form SPDUs are not used in the ATN, hence this must be a NULL encoding of Session
-// Layer and Presentation Layer, ie. only user data field is present without any header.
-// Decode it as Fully-encoded-data.
-		if(remaining < 1) {
-			debug_print(D_PROTO, "NULL SPDU too short (len: %u < 1)\n", len);
-			goto fail;
-		}
-		decode_fully_encoded_data(icao_apdu, ptr, remaining, msg_type);
-		if(icao_apdu->type == NULL) {
-			goto fail;
-		}
-	}
-	icao_apdu->err = false;
-	return node;
-fail:
-	node->next = unknown_proto_pdu_new(buf, len);
-	return node;
-}
-
 #define X225_SPDU_SCN  0xe8
 #define X225_SPDU_SAC  0xf0
 #define X225_SPDU_SACC 0xd8
@@ -508,6 +451,76 @@ static dict const x225_spdu_names[] = {
 	{ X225_SPDU_SRFC, "Short Refuse Continue" },
 	{ 0, NULL }
 };
+
+la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+	NEW(icao_apdu_t, icao_apdu);
+	la_proto_node *node = la_proto_node_new();
+	node->td = &proto_DEF_icao_apdu;
+	node->data = icao_apdu;
+	node->next = NULL;
+
+	icao_apdu->err = true;		// fail-safe default
+	if(len < 1) {
+		debug_print(D_PROTO, "APDU too short (len: %u)\n", len);
+		goto fail;
+	}
+	uint8_t *ptr = buf;
+	uint32_t remaining = len;
+
+	// Check if it's a X.225 Amdt 1 (1997) Short-form SPDU.
+	// All SPDU types have the 8-th bit of SI&P field (the first octet) set to 1.
+	uint8_t spdu_id = ptr[0] & 0xf8;
+	if((spdu_id & 0x80) != 0) {
+		if(dict_search(x225_spdu_names, spdu_id) == NULL) {
+			debug_print(D_PROTO, "Unknown SPDU type 0x%02x\n", spdu_id);
+			goto fail;
+		}
+		// p-bit must be 0, as SPDU parameters are not supported in the ATN
+		// (Doc 9880 2.4.5.2.2)
+		if(ptr[0] & 4) {
+			debug_print(D_PROTO, "Unexpected p-bit value 1\n");
+			goto fail;
+		}
+		icao_apdu->spdu_special_data = ptr[0] & 0x3;
+		icao_apdu->spdu_id = spdu_id;
+		ptr++; remaining--;
+		if(remaining < 1) {
+			goto end;
+		}
+
+// The next octet shall then contain a X.226 Amdt 1 (1997) Presentation layer protocol
+// control information. We only care about two least significant bits, which carry
+// encoding information - 0x2 indicates ASN.1 encoded with Packed Encoding Rules
+// Unaligned (X.691)
+		if((ptr[0] & 3) != 2) {
+			debug_print(D_PROTO, "Unknown PPDU payload encoding: %u\n", ptr[1] & 3);
+			goto fail;
+		}
+		ptr++; remaining--;
+		if(remaining < 1) {
+			goto end;
+		}
+		// Decode as ICAO Doc 9705 / X.227 ACSE APDU
+		decode_ulcs_acse(icao_apdu, ptr, remaining, msg_type);
+		if(icao_apdu->type == NULL) {
+			goto fail;
+		}
+	} else {
+// Long-Form SPDUs are not used in the ATN, hence this must be a NULL encoding of Session
+// Layer and Presentation Layer, ie. only user data field is present without any header.
+// Decode it as Fully-encoded-data.
+		decode_fully_encoded_data(icao_apdu, ptr, remaining, msg_type);
+		if(icao_apdu->type == NULL) {
+			goto fail;
+		}
+	}
+end:
+	icao_apdu->err = false;
+	return node;
+fail:
+	node->next = unknown_proto_pdu_new(buf, len);
+	return node;
+}
 
 void icao_apdu_format_text(la_vstring *vstr, void const * const data, int indent) {
 	ASSERT(vstr != NULL);
@@ -534,17 +547,20 @@ void icao_apdu_format_text(la_vstring *vstr, void const * const data, int indent
 				(icao_apdu->spdu_special_data & 2 ? "release" : "retain"));
 		}
 	}
-	if(icao_apdu->data != NULL && icao_apdu->type != NULL) {
-		if(Config.dump_asn1 == true) {
-			LA_ISPRINTF(vstr, indent, "ASN.1 dump:\n");
-			// asn_fprint does not indent the first line
-			LA_ISPRINTF(vstr, indent + 1, "");
-			asn_sprintf(vstr, icao_apdu->type, icao_apdu->data, indent + 2);
-		}
-		asn1_output_icao_as_text(vstr, icao_apdu->type, icao_apdu->data, indent);
-	} else {
-		LA_ISPRINTF(vstr, indent, "%s: <empty PDU>\n", icao_apdu->type->name);
+	if(icao_apdu->type == NULL) {   // No user data in SPDU, so no decoding was attempted
+		return;
 	}
+	if(icao_apdu->data == NULL) {
+		LA_ISPRINTF(vstr, indent, "%s: <empty PDU>\n", icao_apdu->type->name);
+		return;
+	}
+	if(Config.dump_asn1 == true) {
+		LA_ISPRINTF(vstr, indent, "ASN.1 dump:\n");
+		// asn_fprint does not indent the first line
+		LA_ISPRINTF(vstr, indent + 1, "");
+		asn_sprintf(vstr, icao_apdu->type, icao_apdu->data, indent + 2);
+	}
+	asn1_output_icao_as_text(vstr, icao_apdu->type, icao_apdu->data, indent);
 }
 
 void icao_apdu_destroy(void *data) {
