@@ -22,7 +22,7 @@
 #include <string.h>             // strcmp
 #include <unistd.h>             // _exit, usleep
 #include <mirsdrapi-rsp.h>
-#include "dumpvdl2.h"           // sbuf
+#include "dumpvdl2.h"           // sbuf, Config
 #include "sdrplay.h"
 
 static int initialized = 0;
@@ -213,7 +213,9 @@ void sdrplay_init(vdl2_state_t * const ctx, char * const dev, char * const anten
 	}
 	fprintf(stderr, "Using SDRPlay API version %.3f\n", ver);
 #ifdef DEBUG
-	mir_sdr_DebugEnable(1);
+	if(Config.debug_filter & D_SDR) {
+		mir_sdr_DebugEnable(1);
+	}
 #endif
 	int devIdx = sdrplay_verbose_device_search(dev, &hw_type);
 	if(devIdx < 0) {
