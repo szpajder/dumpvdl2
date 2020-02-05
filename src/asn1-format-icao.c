@@ -17,28 +17,28 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <gmodule.h>				// GByteArray
-#include <libacars/vstring.h>			// la_vstring, LA_ISPRINTF()
-#include "asn1/ATCDownlinkMessage.h"		// ATCDownlinkMessage_t and dependencies
-#include "asn1/ATCUplinkMessage.h"		// ATCUplinkMessage_t and dependencies
-#include "asn1/CMAircraftMessage.h"		// asn_DEF_AircraftMessage
-#include "asn1/CMContactRequest.h"		// asn_DEF_CMContactRequest
-#include "asn1/CMGroundMessage.h"		// asn_DEF_CMGroundMessage
-#include "asn1/ProtectedAircraftPDUs.h"		// asn_DEF_ProtectedAircraftPDUs
-#include "asn1/ProtectedGroundPDUs.h"		// asn_DEF_ProtectedGroundPDUs
-#include "asn1/ADSAircraftPDU.h"		// asn_DEF_ADSAircraftPDU
-#include "asn1/ADSAircraftPDUs.h"		// asn_DEF_ADSAircraftPDUs
-#include "asn1/ADSAccept.h"			// asn_DEF_ADSAccept
-#include "asn1/ADSGroundPDU.h"			// asn_DEF_ADSGroundPDU
-#include "asn1/ADSGroundPDUs.h"			// asn_DEF_ADSGroundPDUs
-#include "asn1/ADSNonCompliance.h"		// asn_DEF_ADSNonCompliance
-#include "asn1/ADSPositiveAcknowledgement.h"	// asn_DEF_ADSPositiveAcknowledgement
-#include "asn1/ADSRequestContract.h"		// asn_DEF_ADSRequestContract
-#include "asn1/ADSReject.h"			// asn_DEF_ADSReject
-#include "asn1/ADSReport.h"			// asn_DEF_ADSReport
-#include "dumpvdl2.h"				// XCALLOC, dict_search()
-#include "asn1-util.h"				// asn_formatter_t, asn1_output()
-#include "asn1-format-common.h"			// common formatters and helper functions
+#include <gmodule.h>                            // GByteArray
+#include <libacars/vstring.h>                   // la_vstring, LA_ISPRINTF()
+#include "asn1/ATCDownlinkMessage.h"            // ATCDownlinkMessage_t and dependencies
+#include "asn1/ATCUplinkMessage.h"              // ATCUplinkMessage_t and dependencies
+#include "asn1/CMAircraftMessage.h"             // asn_DEF_AircraftMessage
+#include "asn1/CMContactRequest.h"              // asn_DEF_CMContactRequest
+#include "asn1/CMGroundMessage.h"               // asn_DEF_CMGroundMessage
+#include "asn1/ProtectedAircraftPDUs.h"         // asn_DEF_ProtectedAircraftPDUs
+#include "asn1/ProtectedGroundPDUs.h"           // asn_DEF_ProtectedGroundPDUs
+#include "asn1/ADSAircraftPDU.h"                // asn_DEF_ADSAircraftPDU
+#include "asn1/ADSAircraftPDUs.h"               // asn_DEF_ADSAircraftPDUs
+#include "asn1/ADSAccept.h"                     // asn_DEF_ADSAccept
+#include "asn1/ADSGroundPDU.h"                  // asn_DEF_ADSGroundPDU
+#include "asn1/ADSGroundPDUs.h"                 // asn_DEF_ADSGroundPDUs
+#include "asn1/ADSNonCompliance.h"              // asn_DEF_ADSNonCompliance
+#include "asn1/ADSPositiveAcknowledgement.h"    // asn_DEF_ADSPositiveAcknowledgement
+#include "asn1/ADSRequestContract.h"            // asn_DEF_ADSRequestContract
+#include "asn1/ADSReject.h"                     // asn_DEF_ADSReject
+#include "asn1/ADSReport.h"                     // asn_DEF_ADSReport
+#include "dumpvdl2.h"                           // XCALLOC, dict_search()
+#include "asn1-util.h"                          // asn_formatter_t, asn1_output()
+#include "asn1-format-common.h"                 // common formatters and helper functions
 
 // forward declaration
 void asn1_output_icao_as_text(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
@@ -509,12 +509,12 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_Code) {
 	CAST_PTR(code, Code_t *, sptr);
 	long **cptr = code->list.array;
 	LA_ISPRINTF(vstr, indent, "%s: %ld%ld%ld%ld\n",
-		label,
-		*cptr[0],
-		*cptr[1],
-		*cptr[2],
-		*cptr[3]
-	);
+			label,
+			*cptr[0],
+			*cptr[1],
+			*cptr[2],
+			*cptr[3]
+			);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTime) {
@@ -523,8 +523,8 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTime) {
 	Date_t *d = &dtg->date;
 	Time_t *t = &dtg->time;
 	LA_ISPRINTF(vstr, indent, "%s: %04ld-%02ld-%02ld %02ld:%02ld\n", label,
-		d->year, d->month, d->day,
-		t->hours, t->minutes);
+			d->year, d->month, d->day,
+			t->hours, t->minutes);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTimeGroup) {
@@ -533,8 +533,8 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTimeGroup) {
 	Date_t *d = &dtg->date;
 	Timehhmmss_t *t = &dtg->timehhmmss;
 	LA_ISPRINTF(vstr, indent, "%s: %04ld-%02ld-%02ld %02ld:%02ld:%02ld\n", label,
-		d->year, d->month, d->day,
-		t->hoursminutes.hours, t->hoursminutes.minutes, t->seconds);
+			d->year, d->month, d->day,
+			t->hoursminutes.hours, t->hoursminutes.minutes, t->seconds);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Time) {
@@ -549,34 +549,34 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_Latitude) {
 	long const ldir = lat->latitudeDirection;
 	char const *ldir_name = value2enum(&asn_DEF_LatitudeDirection, ldir);
 	switch(lat->latitudeType.present) {
-	case LatitudeType_PR_latitudeDegrees:
-		LA_ISPRINTF(vstr, indent, "%s:   %02ld %s\n",
-			label,
-			lat->latitudeType.choice.latitudeDegrees,
-			ldir_name
-		);
-		break;
-	case LatitudeType_PR_latitudeDegreesMinutes:
-		LA_ISPRINTF(vstr, indent, "%s:   %02ld %05.2f' %s\n",
-			label,
-			lat->latitudeType.choice.latitudeDegreesMinutes.latitudeWholeDegrees,
-			lat->latitudeType.choice.latitudeDegreesMinutes.minutesLatLon / 100.0,
-			ldir_name
-		);
-		break;
-	case LatitudeType_PR_latitudeDMS:
-		LA_ISPRINTF(vstr, indent, "%s:   %02ld %02ld' %02ld\" %s\n",
-			label,
-			lat->latitudeType.choice.latitudeDMS.latitudeWholeDegrees,
-			lat->latitudeType.choice.latitudeDMS.latlonWholeMinutes,
-			lat->latitudeType.choice.latitudeDMS.secondsLatLon,
-			ldir_name
-		);
-		break;
-	case LatitudeType_PR_NOTHING:
-	default:
-		LA_ISPRINTF(vstr, indent, "%s: none\n", label);
-		break;
+		case LatitudeType_PR_latitudeDegrees:
+			LA_ISPRINTF(vstr, indent, "%s:   %02ld %s\n",
+					label,
+					lat->latitudeType.choice.latitudeDegrees,
+					ldir_name
+					);
+			break;
+		case LatitudeType_PR_latitudeDegreesMinutes:
+			LA_ISPRINTF(vstr, indent, "%s:   %02ld %05.2f' %s\n",
+					label,
+					lat->latitudeType.choice.latitudeDegreesMinutes.latitudeWholeDegrees,
+					lat->latitudeType.choice.latitudeDegreesMinutes.minutesLatLon / 100.0,
+					ldir_name
+					);
+			break;
+		case LatitudeType_PR_latitudeDMS:
+			LA_ISPRINTF(vstr, indent, "%s:   %02ld %02ld' %02ld\" %s\n",
+					label,
+					lat->latitudeType.choice.latitudeDMS.latitudeWholeDegrees,
+					lat->latitudeType.choice.latitudeDMS.latlonWholeMinutes,
+					lat->latitudeType.choice.latitudeDMS.secondsLatLon,
+					ldir_name
+					);
+			break;
+		case LatitudeType_PR_NOTHING:
+		default:
+			LA_ISPRINTF(vstr, indent, "%s: none\n", label);
+			break;
 	}
 }
 
@@ -586,34 +586,34 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_Longitude) {
 	long const ldir = lon->longitudeDirection;
 	char const *ldir_name = value2enum(&asn_DEF_LongitudeDirection, ldir);
 	switch(lon->longitudeType.present) {
-	case LongitudeType_PR_longitudeDegrees:
-		LA_ISPRINTF(vstr, indent, "%s: %03ld %s\n",
-			label,
-			lon->longitudeType.choice.longitudeDegrees,
-			ldir_name
-		);
-		break;
-	case LongitudeType_PR_longitudeDegreesMinutes:
-		LA_ISPRINTF(vstr, indent, "%s: %03ld %05.2f' %s\n",
-			label,
-			lon->longitudeType.choice.longitudeDegreesMinutes.longitudeWholeDegrees,
-			lon->longitudeType.choice.longitudeDegreesMinutes.minutesLatLon / 100.0,
-			ldir_name
-		);
-		break;
-	case LongitudeType_PR_longitudeDMS:
-		LA_ISPRINTF(vstr, indent, "%s: %03ld %02ld' %02ld\" %s\n",
-			label,
-			lon->longitudeType.choice.longitudeDMS.longitudeWholeDegrees,
-			lon->longitudeType.choice.longitudeDMS.latLonWholeMinutes,
-			lon->longitudeType.choice.longitudeDMS.secondsLatLon,
-			ldir_name
-		);
-		break;
-	case LongitudeType_PR_NOTHING:
-	default:
-		LA_ISPRINTF(vstr, indent, "%s: none\n", label);
-		break;
+		case LongitudeType_PR_longitudeDegrees:
+			LA_ISPRINTF(vstr, indent, "%s: %03ld %s\n",
+					label,
+					lon->longitudeType.choice.longitudeDegrees,
+					ldir_name
+					);
+			break;
+		case LongitudeType_PR_longitudeDegreesMinutes:
+			LA_ISPRINTF(vstr, indent, "%s: %03ld %05.2f' %s\n",
+					label,
+					lon->longitudeType.choice.longitudeDegreesMinutes.longitudeWholeDegrees,
+					lon->longitudeType.choice.longitudeDegreesMinutes.minutesLatLon / 100.0,
+					ldir_name
+					);
+			break;
+		case LongitudeType_PR_longitudeDMS:
+			LA_ISPRINTF(vstr, indent, "%s: %03ld %02ld' %02ld\" %s\n",
+					label,
+					lon->longitudeType.choice.longitudeDMS.longitudeWholeDegrees,
+					lon->longitudeType.choice.longitudeDMS.latLonWholeMinutes,
+					lon->longitudeType.choice.longitudeDMS.secondsLatLon,
+					ldir_name
+					);
+			break;
+		case LongitudeType_PR_NOTHING:
+		default:
+			LA_ISPRINTF(vstr, indent, "%s: none\n", label);
+			break;
 	}
 }
 
@@ -688,33 +688,33 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_RejectDetails) {
 		LA_ISPRINTF(vstr, indent, "%s: ", label);
 	}
 	switch(det->present) {
-        case RejectDetails_PR_aDS_service_unavailable:
-		la_vstring_append_sprintf(vstr, "ADS service unavailable\n");
-		break;
-        case RejectDetails_PR_undefined_reason:
-		la_vstring_append_sprintf(vstr, "undefined reason\n");
-		break;
-        case RejectDetails_PR_maximum_capacity_exceeded:
-		la_vstring_append_sprintf(vstr, "max. capacity exceeded\n");
-		break;
-        case RejectDetails_PR_reserved:
-		la_vstring_append_sprintf(vstr, "(reserved)\n");
-		break;
-        case RejectDetails_PR_waypoint_in_request_not_on_the_route:
-		la_vstring_append_sprintf(vstr, "requested waypoint not on the route\n");
-		break;
-        case RejectDetails_PR_aDS_contract_not_supported:
-		la_vstring_append_sprintf(vstr, "ADS contract not supported\n");
-		break;
-        case RejectDetails_PR_noneOfReportTypesSupported:
-		la_vstring_append_sprintf(vstr, "none of report types supported\n");
-		break;
-        case RejectDetails_PR_noneOfEventTypesSupported:
-		la_vstring_append_sprintf(vstr, "none of event types supported\n");
-		break;
-	case RejectDetails_PR_NOTHING:
-	default:
-		la_vstring_append_sprintf(vstr, "none\n");
+		case RejectDetails_PR_aDS_service_unavailable:
+			la_vstring_append_sprintf(vstr, "ADS service unavailable\n");
+			break;
+		case RejectDetails_PR_undefined_reason:
+			la_vstring_append_sprintf(vstr, "undefined reason\n");
+			break;
+		case RejectDetails_PR_maximum_capacity_exceeded:
+			la_vstring_append_sprintf(vstr, "max. capacity exceeded\n");
+			break;
+		case RejectDetails_PR_reserved:
+			la_vstring_append_sprintf(vstr, "(reserved)\n");
+			break;
+		case RejectDetails_PR_waypoint_in_request_not_on_the_route:
+			la_vstring_append_sprintf(vstr, "requested waypoint not on the route\n");
+			break;
+		case RejectDetails_PR_aDS_contract_not_supported:
+			la_vstring_append_sprintf(vstr, "ADS contract not supported\n");
+			break;
+		case RejectDetails_PR_noneOfReportTypesSupported:
+			la_vstring_append_sprintf(vstr, "none of report types supported\n");
+			break;
+		case RejectDetails_PR_noneOfEventTypesSupported:
+			la_vstring_append_sprintf(vstr, "none of event types supported\n");
+			break;
+		case RejectDetails_PR_NOTHING:
+		default:
+			la_vstring_append_sprintf(vstr, "none\n");
 	}
 }
 
@@ -722,16 +722,16 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ReportingRate) {
 	UNUSED(td);
 	CAST_PTR(rate, ReportingRate_t *, sptr);
 	switch(rate->present) {
-	case ReportingRate_PR_reporting_time_seconds_scale:
-		_format_INTEGER_with_unit(vstr, label, td,
-			&rate->choice.reporting_time_seconds_scale, indent, " sec", 1, 0);
-		break;
-	case ReportingRate_PR_reporting_time_minutes_scale:
-		_format_INTEGER_with_unit(vstr, label, td,
-			&rate->choice.reporting_time_minutes_scale, indent, " min", 1, 0);
-		break;
-	default:
-		break;
+		case ReportingRate_PR_reporting_time_seconds_scale:
+			_format_INTEGER_with_unit(vstr, label, td,
+					&rate->choice.reporting_time_seconds_scale, indent, " sec", 1, 0);
+			break;
+		case ReportingRate_PR_reporting_time_minutes_scale:
+			_format_INTEGER_with_unit(vstr, label, td,
+					&rate->choice.reporting_time_minutes_scale, indent, " min", 1, 0);
+			break;
+		default:
+			break;
 	}
 }
 
@@ -784,8 +784,8 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_LongTsap) {
 
 	LA_ISPRINTF(vstr, indent, "%s: ", label);
 	octet_string_with_ascii_format_text(vstr,
-		&(octet_string_t){ .buf = tmparray->data, .len = tmparray->len },
-		0);
+			&(octet_string_t){ .buf = tmparray->data, .len = tmparray->len },
+			0);
 	EOL(vstr);
 	g_byte_array_free(tmparray, TRUE);
 }
@@ -797,8 +797,8 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ShortTsap) {
 	tmparray = _stringify_ShortTsap(tmparray, tsap);
 	LA_ISPRINTF(vstr, indent, "%s: ", label);
 	octet_string_with_ascii_format_text(vstr,
-		&(octet_string_t){ .buf = tmparray->data, .len = tmparray->len },
-		0);
+			&(octet_string_t){ .buf = tmparray->data, .len = tmparray->len },
+			0);
 	EOL(vstr);
 	g_byte_array_free(tmparray, TRUE);
 }
@@ -827,8 +827,8 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2DateTimeGroup) {
 	Date_t *d = &dtg->date;
 	Timesec_t *t = &dtg->time;
 	LA_ISPRINTF(vstr, indent, "%s: %04ld-%02ld-%02ld %02ld:%02ld:%02ld\n", label,
-		d->year, d->month, d->day,
-		t->hours, t->minutes, t->seconds);
+			d->year, d->month, d->day,
+			t->hours, t->minutes, t->seconds);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EstimatedPositionUncertainty) {
@@ -846,12 +846,12 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Latitude) {
 	long const ldir = lat->direction;
 	char const *ldir_name = value2enum(&asn_DEF_LatitudeDirection, ldir);
 	LA_ISPRINTF(vstr, indent, "%s:  %02ld %02ld' %04.1f\" %s\n",
-		label,
-		lat->degrees,
-		lat->minutes,
-		lat->seconds / 10.0,
-		ldir_name
-	);
+			label,
+			lat->degrees,
+			lat->minutes,
+			lat->seconds / 10.0,
+			ldir_name
+			);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Longitude) {
@@ -860,19 +860,19 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Longitude) {
 	long const ldir = lon->direction;
 	char const *ldir_name = value2enum(&asn_DEF_LongitudeDirection, ldir);
 	LA_ISPRINTF(vstr, indent, "%s: %03ld %02ld' %04.1f\" %s\n",
-		label,
-		lon->degrees,
-		lon->minutes,
-		lon->seconds / 10.0,
-		ldir_name
-	);
+			label,
+			lon->degrees,
+			lon->minutes,
+			lon->seconds / 10.0,
+			ldir_name
+			);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSAircraftPDUs) {
 	UNUSED(td);
 	UNUSED(label);
 	CAST_PTR(apdus, ADSAircraftPDUs_t *, sptr);
-// Omit the timestamp for brevity, print the PDU only
+	// Omit the timestamp for brevity, print the PDU only
 	asn1_output_icao_as_text(vstr, &asn_DEF_ADSAircraftPDU, &apdus->adsAircraftPdu, indent);
 }
 
@@ -910,7 +910,7 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSGroundPDUs) {
 	UNUSED(td);
 	UNUSED(label);
 	CAST_PTR(apdus, ADSGroundPDUs_t *, sptr);
-// Omit the timestamp for brevity, print the PDU only
+	// Omit the timestamp for brevity, print the PDU only
 	asn1_output_icao_as_text(vstr, &asn_DEF_ADSGroundPDU, &apdus->adsGroundPdu, indent);
 }
 
@@ -990,7 +990,7 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalType) {
 }
 
 static asn_formatter_t const asn1_icao_formatter_table[] = {
-// atn-b1_cpdlc-v1.asn1
+	// atn-b1_cpdlc-v1.asn1
 	{ .type = &asn_DEF_AircraftAddress, .format = &asn1_format_any, .label = "Aircraft address" },
 	{ .type = &asn_DEF_AirInitiatedApplications, .format = &asn1_format_SEQUENCE_OF_icao, .label = "Air-initiated applications" },
 	{ .type = &asn_DEF_AirOnlyInitiatedApplications, .format = &asn1_format_SEQUENCE_OF_icao, .label = "Air-only-initiated applications" },
@@ -1204,7 +1204,7 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_WindSpeed, .format = &asn1_format_CHOICE_icao, .label = NULL },
 	{ .type = &asn_DEF_WindSpeedEnglish, .format = &asn1_format_SpeedEnglish, .label = "Wind speed" },
 	{ .type = &asn_DEF_WindSpeedMetric, .format = &asn1_format_SpeedMetric, .label = "Wind speed" },
-// atn-b1_cm.asn1
+	// atn-b1_cm.asn1
 	{ .type = &asn_DEF_APAddress, .format = &asn1_format_CHOICE_icao, .label = "AP Address" },
 	{ .type = &asn_DEF_AEQualifier, .format = &asn1_format_any, .label = "Application Entity Qualifier" },
 	{ .type = &asn_DEF_AEQualifierVersion, .format = &asn1_format_SEQUENCE_icao, .label = NULL },
@@ -1227,7 +1227,7 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_RDP, .format = &asn1_format_any, .label = "RDP" },
 	{ .type = &asn_DEF_ShortTsap, .format = &asn1_format_ShortTsap, .label = "Short TSAP" },
 	{ .type = &asn_DEF_VersionNumber, .format = &asn1_format_any, .label = "Version number" },
-// atn-b1_pmadsc.asn1
+	// atn-b1_pmadsc.asn1
 	{ .type = &asn_DEF_ADSAircraftPDU, .format = &asn1_format_CHOICE_icao, .label = NULL },
 	{ .type = &asn_DEF_ADSAircraftPDUs, .format = &asn1_format_ADSAircraftPDUs, .label = NULL },
 	{ .type = &asn_DEF_ADSGroundPDU, .format = &asn1_format_CHOICE_icao, .label = NULL },
@@ -1240,7 +1240,7 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_RejectReason, .format = &asn1_format_ENUM, .label = "Reject reason" },
 	{ .type = &asn_DEF_RequestType, .format = &asn1_format_ENUM, .label = "Request type" },
 	{ .type = &asn_DEF_UserAbortReason, .format = &asn1_format_ENUM, .label = "ADS-C v2 User Abort" },
-// atn-b2_adsc_v2.asn1
+	// atn-b2_adsc_v2.asn1
 	{ .type = &asn_DEF_AAISAvailability, .format = &asn1_format_any, .label = "AAIS available" },
 	{ .type = &asn_DEF_ADSAccept, .format = &asn1_format_CHOICE_icao, .label = "ADS-C v2 Contract Request Accept" },
 	{ .type = &asn_DEF_ADSDataReport, .format = &asn1_format_SEQUENCE_icao, .label = "Report data" },

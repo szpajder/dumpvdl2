@@ -18,8 +18,8 @@
  */
 #include <stdint.h>
 #include <stdbool.h>
-#include <libacars/libacars.h>		// la_proto_node
-#include <libacars/list.h>		// la_list
+#include <libacars/libacars.h>  // la_proto_node
+#include <libacars/list.h>      // la_list
 #include "config.h"
 #include "x25.h"
 
@@ -29,7 +29,7 @@
 #define CLNP_NDPU_ERP 0x1e
 #define CLNP_NDPU_ERQ 0x1f
 
-#define CLNP_MIN_LEN 9		// length of the fixed part of the header
+#define CLNP_MIN_LEN 9          // length of the fixed part of the header
 typedef struct {
 	uint8_t pid;
 	uint8_t len;
@@ -46,24 +46,24 @@ typedef struct {
 	uint8_t ms:1;
 	uint8_t sp:1;
 #endif
-	uint8_t seg_len[2];	// not using uint16_t to avoid padding and to match PDU octet layout
+	uint8_t seg_len[2];         // not using uint16_t to avoid padding and to match PDU octet layout
 	uint8_t cksum[2];
 } clnp_hdr_t;
 
 typedef struct {
-// fixed part
+	// fixed part
 	clnp_hdr_t *hdr;
-// options
+	// options
 	la_list *options;
-// address part
+	// address part
 	octet_string_t src_nsap, dst_nsap;
-// decoded fields from fixed part
+	// decoded fields from fixed part
 	float lifetime_sec;
 	uint16_t seg_len;
 	uint16_t cksum;
-// segmentation part
+	// segmentation part
 	uint16_t pdu_id, seg_off, total_init_pdu_len;
-// error flags
+	// error flags
 	bool err;
 } clnp_pdu_t;
 

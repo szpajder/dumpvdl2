@@ -17,14 +17,14 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "asn1/asn_application.h"	// asn_TYPE_descriptor_t, asn_sprintf
-#include "asn1/INTEGER.h"		// asn_INTEGER_enum_map_t
-#include "asn1/constr_CHOICE.h"		// _fetch_present_idx()
-#include "asn1/asn_SET_OF.h"		// _A_CSET_FROM_VOID()
-#include "asn1/BIT_STRING.h"		// BIT_STRING_t;
-#include <libacars/vstring.h>		// la_vstring, LA_ISPRINTF()
-#include "asn1-util.h"			// ASN1_FORMATTER_PROTOTYPE
-#include "dumpvdl2.h"			// CAST_PTR, dict_search()
+#include "asn1/asn_application.h"   // asn_TYPE_descriptor_t, asn_sprintf
+#include "asn1/INTEGER.h"           // asn_INTEGER_enum_map_t
+#include "asn1/constr_CHOICE.h"     // _fetch_present_idx()
+#include "asn1/asn_SET_OF.h"        // _A_CSET_FROM_VOID()
+#include "asn1/BIT_STRING.h"        // BIT_STRING_t;
+#include <libacars/vstring.h>       // la_vstring, LA_ISPRINTF()
+#include "asn1-util.h"              // ASN1_FORMATTER_PROTOTYPE
+#include "dumpvdl2.h"               // CAST_PTR, dict_search()
 
 char const *value2enum(asn_TYPE_descriptor_t *td, long const value) {
 	if(td == NULL) return NULL;
@@ -34,14 +34,14 @@ char const *value2enum(asn_TYPE_descriptor_t *td, long const value) {
 }
 
 void _format_INTEGER_with_unit(la_vstring *vstr, char const * const label, asn_TYPE_descriptor_t *td,
-	void const *sptr, int indent, char const * const unit, double multiplier, int decimal_places) {
+		void const *sptr, int indent, char const * const unit, double multiplier, int decimal_places) {
 	UNUSED(td);
 	CAST_PTR(val, long *, sptr);
 	LA_ISPRINTF(vstr, indent, "%s: %.*f%s\n", label, decimal_places, (double)(*val) * multiplier, unit);
 }
 
 void _format_CHOICE(la_vstring *vstr, char const * const label, dict const * const choice_labels,
-	asn1_output_fun_t cb, asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
+		asn1_output_fun_t cb, asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
 
 	CAST_PTR(specs, asn_CHOICE_specifics_t *, td->specifics);
 	int present = _fetch_present_idx(sptr, specs->pres_offset, specs->pres_size);
@@ -79,7 +79,7 @@ void _format_CHOICE(la_vstring *vstr, char const * const label, dict const * con
 }
 
 void _format_SEQUENCE(la_vstring *vstr, char const * const label, asn1_output_fun_t cb,
-	asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
+		asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
 	if(label != NULL) {
 		LA_ISPRINTF(vstr, indent, "%s:\n", label);
 		indent++;
@@ -101,7 +101,7 @@ void _format_SEQUENCE(la_vstring *vstr, char const * const label, asn1_output_fu
 }
 
 void _format_SEQUENCE_OF(la_vstring *vstr, char const * const label, asn1_output_fun_t cb,
-	asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
+		asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
 	if(label != NULL) {
 		LA_ISPRINTF(vstr, indent, "%s:\n", label);
 		indent++;
@@ -121,7 +121,7 @@ void _format_SEQUENCE_OF(la_vstring *vstr, char const * const label, asn1_output
 // dict indices are bit numbers from 0 to bit_stream_len-1
 // Bit 0 is the MSB of the first octet in the buffer.
 void _format_BIT_STRING(la_vstring *vstr, char const * const label, dict const * const bit_labels,
-void const *sptr, int indent) {
+		void const *sptr, int indent) {
 	CAST_PTR(bs, BIT_STRING_t *, sptr);
 	debug_print(D_PROTO_DETAIL, "buf len: %d bits_unused: %d\n", bs->size, bs->bits_unused);
 	uint32_t val = 0;
@@ -131,7 +131,7 @@ void const *sptr, int indent) {
 
 	if(len > (int)sizeof(val)) {
 		debug_print(D_PROTO, "bit stream too long (%d octets), truncating to %zu octets\n",
-			len, sizeof(val));
+				len, sizeof(val));
 		truncated = len - sizeof(val);
 		len = sizeof(val);
 		bits_unused = 0;
@@ -142,7 +142,7 @@ void const *sptr, int indent) {
 	for(int i = 0; i < len; val = (val << 8) | bs->buf[i++])
 		;
 	debug_print(D_PROTO_DETAIL, "val: 0x%08x\n", val);
-	val &= (~0u << bits_unused);	// zeroize unused bits
+	val &= (~0u << bits_unused);    // zeroize unused bits
 	if(val == 0) {
 		la_vstring_append_sprintf(vstr, "none\n");
 		goto end;
@@ -153,7 +153,7 @@ void const *sptr, int indent) {
 		uint32_t shift = (uint32_t)ptr->id;
 		if((val >> shift) & 1) {
 			la_vstring_append_sprintf(vstr, "%s%s",
-				(first ? "" : ", "), (char *)ptr->val);
+					(first ? "" : ", "), (char *)ptr->val);
 			first = false;
 		}
 	}
@@ -161,8 +161,8 @@ void const *sptr, int indent) {
 end:
 	if(truncated > 0) {
 		LA_ISPRINTF(vstr, indent,
-		"-- Warning: bit string too long (%d bits), truncated to %d bits\n",
-		bs->size * 8 - bs->bits_unused, len * 8);
+				"-- Warning: bit string too long (%d bits), truncated to %d bits\n",
+				bs->size * 8 - bs->bits_unused, len * 8);
 	}
 }
 

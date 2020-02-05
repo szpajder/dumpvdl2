@@ -16,12 +16,12 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <errno.h>		// errno
-#include <stdio.h>		// fprintf, fopen, fscanf, fclose, perror
-#include <string.h>		// strerror
-#include <libacars/hash.h>	// la_hash_*
-#include "dumpvdl2.h"		// debug_print
-#include "gs_data.h"		// gs_data_entry
+#include <errno.h>          // errno
+#include <stdio.h>          // fprintf, fopen, fscanf, fclose, perror
+#include <string.h>         // strerror
+#include <libacars/hash.h>  // la_hash_*
+#include "dumpvdl2.h"       // debug_print
+#include "gs_data.h"        // gs_data_entry
 
 static la_hash *gs_data = NULL;
 
@@ -74,7 +74,7 @@ int gs_data_import(char const *file) {
 			goto fail;
 		}
 		debug_print(D_CACHE, "%d: addr: '%06X' apt_code: '%s' details: '%s' location: '%s'\n",
-			cnt, addr, airport_code, details, location);
+				cnt, addr, airport_code, details, location);
 		NEW(uint32_t, key);
 		NEW(gs_data_entry, entry);
 		*key = addr;

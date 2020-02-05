@@ -19,33 +19,34 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <glib.h>
-#include <libacars/libacars.h>		// la_proto_node
+#include <libacars/libacars.h>      // la_proto_node
 
 // These defines apply to upper nibble of the TPDU code only
-#define COTP_TPDU_CR	0xe0
-#define COTP_TPDU_CC	0xd0
-#define COTP_TPDU_DR	0x80
-#define COTP_TPDU_DC	0xc0
-#define COTP_TPDU_DT	0xf0
-#define COTP_TPDU_ED	0x10
-#define COTP_TPDU_AK	0x60
-#define COTP_TPDU_EA	0x20
-#define COTP_TPDU_RJ	0x50
-#define COTP_TPDU_ER	0x70
+#define COTP_TPDU_CR    0xe0
+#define COTP_TPDU_CC    0xd0
+#define COTP_TPDU_DR    0x80
+#define COTP_TPDU_DC    0xc0
+#define COTP_TPDU_DT    0xf0
+#define COTP_TPDU_ED    0x10
+#define COTP_TPDU_AK    0x60
+#define COTP_TPDU_EA    0x20
+#define COTP_TPDU_RJ    0x50
+#define COTP_TPDU_ER    0x70
 
 typedef struct {
 	la_list *variable_part_params;
-	uint32_t tpdu_seq;	// TPDU sequence number (valid for DT, ED, AK)
+	uint32_t tpdu_seq;              /* TPDU sequence number (valid for DT, ED, AK) */
 	uint16_t src_ref, dst_ref;
-	uint16_t credit;	// (credit for AK, RJ, initial credit for CR, CC)
+	uint16_t credit;                /* Credit for AK, RJ, initial credit for CR, CC */
 	int16_t x225_xport_disc_reason;
 	uint8_t code;
-	uint8_t roa;		// Request of Acknowledgment (valid for DT)
-	uint8_t eot;		// last fragment of TSDU (valid for DT, ED)
-	uint8_t	options;	// Option flags (valid for CR)
-// protocol class for CR/CC, disconnect reason for DR, reject cause for ER
-	uint8_t class_or_disc_reason;
-	bool extended;		// TPDU format - normal or extended
+	uint8_t roa;                    /* Request of Acknowledgment (valid for DT) */
+	uint8_t eot;                    /* Last fragment of TSDU (valid for DT, ED) */
+	uint8_t options;                /* Option flags (valid for CR) */
+
+	uint8_t class_or_disc_reason;   /* Protocol class for CR/CC, disconnect reason for DR,
+                                       reject cause for ER */
+	bool extended;                  /* TPDU format - normal or extended */
 	bool err;
 } cotp_pdu_t;
 

@@ -8,10 +8,10 @@
 
 /* General purpose RS codec, 8-bit symbols */
 int decode_rs_char(void *rs,unsigned char *data,int *eras_pos,
-		   int no_eras);
+		int no_eras);
 void *init_rs_char(int symsize,int gfpoly,
-		   int fcr,int prim,int nroots,
-		   int pad);
+		int fcr,int prim,int nroots,
+		int pad);
 void free_rs_char(void *rs);
 
 #endif /* _FEC_H_ */

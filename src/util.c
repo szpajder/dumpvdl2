@@ -17,21 +17,21 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdio.h>
-#include <stdarg.h>	// va_list, etc
+#include <stdarg.h>                 // va_list, etc
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
-#include <libacars/libacars.h>		// la_proto_node, la_type_descriptor
-#include <libacars/vstring.h>		// la_vstring, la_isprintf_multiline_text()
+#include <libacars/libacars.h>      // la_proto_node, la_type_descriptor
+#include <libacars/vstring.h>       // la_vstring, la_isprintf_multiline_text()
 #include "dumpvdl2.h"
 
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func) {
 	void *ptr = calloc(nmemb, size);
 	if(ptr == NULL) {
 		fprintf(stderr, "%s:%d: %s(): calloc(%zu, %zu) failed: %s\n",
-			file, line, func, nmemb, size, strerror(errno));
+				file, line, func, nmemb, size, strerror(errno));
 		_exit(1);
 	}
 	return ptr;
@@ -41,7 +41,7 @@ void *xrealloc(void *ptr, size_t size, const char *file, const int line, const c
 	ptr = realloc(ptr, size);
 	if(ptr == NULL) {
 		fprintf(stderr, "%s:%d: %s(): realloc(%zu) failed: %s\n",
-			file, line, func, size, strerror(errno));
+				file, line, func, size, strerror(errno));
 		_exit(1);
 	}
 	return ptr;
@@ -71,7 +71,7 @@ static char *fmt_hexstring(uint8_t *data, uint16_t len) {
 		*ptr++ = ' ';
 	}
 	if(ptr != buf)
-		ptr[-1] = '\0';		// trim trailing space
+		ptr[-1] = '\0';         // trim trailing space
 	return buf;
 }
 
@@ -109,7 +109,7 @@ void bitfield_format_text(la_vstring *vstr, uint8_t *buf, size_t len, dict const
 	for(dict const *ptr = d; ptr->val != NULL; ptr++) {
 		if((val & (uint32_t)ptr->id) == (uint32_t)ptr->id) {
 			la_vstring_append_sprintf(vstr, "%s%s",
-				(first ? "" : ", "), (char *)ptr->val);
+					(first ? "" : ", "), (char *)ptr->val);
 			first = false;
 		}
 	}
@@ -117,13 +117,13 @@ void bitfield_format_text(la_vstring *vstr, uint8_t *buf, size_t len, dict const
 
 uint32_t extract_uint32_msbfirst(uint8_t const * const data) {
 	ASSERT(data != NULL);
-	return	((uint32_t)data[0] << 24) | ((uint32_t)data[1] << 16) |
+	return ((uint32_t)data[0] << 24) | ((uint32_t)data[1] << 16) |
 		((uint32_t)data[2] << 8) | (uint32_t)data[3];
 }
 
 uint16_t extract_uint16_msbfirst(uint8_t const * const data) {
 	ASSERT(data != NULL);
-	return	((uint16_t)data[0] << 8) | (uint16_t)data[1];
+	return ((uint16_t)data[0] << 8) | (uint16_t)data[1];
 }
 
 octet_string_t *octet_string_new(void *buf, size_t len) {
@@ -146,7 +146,7 @@ int octet_string_parse(uint8_t *buf, size_t len, octet_string_t *result) {
 	}
 	result->buf = buf;
 	result->len = buflen;
-	return 1 + buflen;	// total number of consumed octets
+	return 1 + buflen;  // total number of consumed octets
 }
 
 void octet_string_format_text(la_vstring * const vstr, void const * const data, int indent) {
@@ -207,7 +207,7 @@ size_t slurp_hexstring(char* string, uint8_t **buf) {
 		} else if (c >= 'A' && c <= 'F') {
 			value = (10 + (c - 'A'));
 		} else if (c >= 'a' && c <= 'f') {
-			 value = (10 + (c - 'a'));
+			value = (10 + (c - 'a'));
 		} else {
 			debug_print(D_PROTO, "stopped at invalid char %u at pos %zu\n", c, i);
 			return i/2;
@@ -226,10 +226,10 @@ char *hexdump(uint8_t *data, size_t len) {
 	if((len & 0xf) != 0) {
 		rows++;
 	}
-	size_t rowlen = 16 * 2 + 16;		// 32 hex digits + 16 spaces per row
-	rowlen += 16;				// ASCII characters per row
-	rowlen += 10;				// extra space for separators
-	size_t alloc_size = rows * rowlen + 1;	// terminating NULL
+	size_t rowlen = 16 * 2 + 16;            // 32 hex digits + 16 spaces per row
+	rowlen += 16;                           // ASCII characters per row
+	rowlen += 10;                           // extra space for separators
+	size_t alloc_size = rows * rowlen + 1;  // terminating NULL
 	char *buf = XCALLOC(alloc_size, sizeof(char));
 	char *ptr = buf;
 	size_t i = 0, j = 0;
@@ -287,8 +287,8 @@ void unknown_proto_format_text(la_vstring * const vstr, void const * const data,
 	ASSERT(indent >= 0);
 
 	CAST_PTR(ostring, octet_string_t *, data);
-// fmt_hexstring also checks this conditon, but when it hits, it prints "empty" or "none",
-// which we want to avoid here
+	// fmt_hexstring also checks this conditon, but when it hits, it prints "empty" or "none",
+	// which we want to avoid here
 	if(ostring-> buf == NULL || ostring->len == 0) {
 		return;
 	}

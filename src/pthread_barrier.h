@@ -34,24 +34,24 @@ extern "C" {
 #endif
 
 #if !defined(PTHREAD_BARRIER_SERIAL_THREAD)
-# define PTHREAD_BARRIER_SERIAL_THREAD	(1)
+#define PTHREAD_BARRIER_SERIAL_THREAD (1)
 #endif
 
-typedef struct {
-} pthread_barrierattr_t;
+	typedef struct {
+	} pthread_barrierattr_t;
 
-typedef struct {
-	pthread_mutex_t mutex;
-	pthread_cond_t cond;
-	unsigned int limit;
-	unsigned int count;
-	unsigned int phase;
-} pthread_barrier_t;
+	typedef struct {
+		pthread_mutex_t mutex;
+		pthread_cond_t cond;
+		unsigned int limit;
+		unsigned int count;
+		unsigned int phase;
+	} pthread_barrier_t;
 
-int pthread_barrier_init(pthread_barrier_t *restrict barrier,
-	const pthread_barrierattr_t *restrict attr, unsigned int count);
+	int pthread_barrier_init(pthread_barrier_t *restrict barrier,
+			const pthread_barrierattr_t *restrict attr, unsigned int count);
 
-int pthread_barrier_wait(pthread_barrier_t *barrier);
+	int pthread_barrier_wait(pthread_barrier_t *barrier);
 
 #ifdef  __cplusplus
 }

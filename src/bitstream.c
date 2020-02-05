@@ -43,7 +43,8 @@ void bitstream_destroy(bitstream_t *bs) {
 	XFREE(bs);
 }
 
-int bitstream_append_msbfirst(bitstream_t *bs, const uint8_t *v, const uint32_t numbytes, const uint32_t numbits) {
+int bitstream_append_msbfirst(bitstream_t *bs, const uint8_t *v,
+		const uint32_t numbytes, const uint32_t numbits) {
 	if(bs->end + numbits * numbytes > bs->len)
 		return -1;
 	for(uint32_t i = 0; i < numbytes; i++) {
@@ -54,9 +55,10 @@ int bitstream_append_msbfirst(bitstream_t *bs, const uint8_t *v, const uint32_t 
 	return 0;
 }
 
-int bitstream_append_lsbfirst(bitstream_t *bs, const uint8_t *bytes, const uint32_t numbytes, const uint32_t numbits) {
+int bitstream_append_lsbfirst(bitstream_t *bs, const uint8_t *bytes,
+		const uint32_t numbytes, const uint32_t numbits) {
 	if(bs->end + numbits * numbytes > bs->len)
-		 return -1;
+		return -1;
 	for(uint32_t i = 0; i < numbytes; i++) {
 		uint8_t t = bytes[i];
 		for(uint32_t j = 0; j < numbits; j++)
@@ -65,9 +67,10 @@ int bitstream_append_lsbfirst(bitstream_t *bs, const uint8_t *bytes, const uint3
 	return 0;
 }
 
-int bitstream_read_lsbfirst(bitstream_t *bs, uint8_t *bytes, const uint32_t numbytes, const uint32_t numbits) {
+int bitstream_read_lsbfirst(bitstream_t *bs, uint8_t *bytes,
+		const uint32_t numbytes, const uint32_t numbits) {
 	if(bs->start + numbits * numbytes > bs->end)
-		 return -1;
+		return -1;
 	for(uint32_t i = 0; i < numbytes; i++) {
 		bytes[i] = 0x00;
 		for(uint32_t j = 0; j < numbits; j++) {
@@ -77,7 +80,8 @@ int bitstream_read_lsbfirst(bitstream_t *bs, uint8_t *bytes, const uint32_t numb
 	return 0;
 }
 
-int bitstream_read_word_msbfirst(bitstream_t *bs, uint32_t *ret, const uint32_t numbits) {
+int bitstream_read_word_msbfirst(bitstream_t *bs, uint32_t *ret,
+		const uint32_t numbits) {
 	if(bs->start + numbits > bs->end)
 		return -1;
 	*ret = 0;
@@ -109,20 +113,20 @@ restart:
 	ones = 0;
 	bitstream_reset(dst);
 	for(i = src->start, j = 0; i < src->end; i++, src->start++) {
-		if(src->buf[i] == 0x0 && ones == 5) {		// stuffed 0 bit - skip it
+		if(src->buf[i] == 0x0 && ones == 5) {   // stuffed 0 bit - skip it
 			ones = 0;
 			continue;
 		} else if(src->buf[i] == 0x1) {
 			ones++;
-			if(ones > 6) {				// 7 ones - invalid bit sequence
+			if(ones > 6) {                      // 7 ones - invalid bit sequence
 				debug_print(D_BURST_DETAIL, "Invalid bit stuffing sequence\n");
 				return -1;
 			}
 		}
 		dst->buf[j] = src->buf[i];
 		if(src->buf[i] == 0x0) {
-			if(ones == 6) {				// frame boundary flag (0x7e)
-				if(j == 7) {			// move past the initial flag
+			if(ones == 6) {                     // frame boundary flag (0x7e)
+				if(j == 7) {                    // move past the initial flag
 					src->start++;
 					debug_print(D_BURST_DETAIL, "Initial flag found, restarting\n");
 					goto restart;
@@ -131,7 +135,7 @@ restart:
 						debug_print(D_BURST_DETAIL, "Invalid bit sequence - 6 ones at the start of the stream\n");
 						return -1;
 					}
-					dst->end = j - 7;	// remove trailing flag from the result
+					dst->end = j - 7;           // remove trailing flag from the result
 					src->start++;
 					break;
 				}
@@ -141,20 +145,20 @@ restart:
 		j++; dst->end++;
 	}
 	debug_print(D_BURST_DETAIL, "dst len: %u, next src read at %u, remaining src length: %u\n",
-		dst->end - dst->start, src->start, src->end - src->start);
+			dst->end - dst->start, src->start, src->end - src->start);
 	return (src->start < src->end ? 1 : 0);
 }
 
 uint32_t reverse(uint32_t v, int numbits) {
-	uint32_t r = v; // r will be reversed bits of v; first get LSB of v
-	int s = sizeof(v) * CHAR_BIT - 1; // extra shift needed at end
+	uint32_t r = v;                         // r will be reversed bits of v; first get LSB of v
+	int s = sizeof(v) * CHAR_BIT - 1;       // extra shift needed at end
 
 	for (v >>= 1; v; v >>= 1) {
 		r <<= 1;
 		r |= v & 1;
 		s--;
 	}
-	r <<= s; // shift when v's highest bits are zero
+	r <<= s;                                // shift when v's highest bits are zero
 	r >>= 32 - numbits;
 	return r;
 }

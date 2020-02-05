@@ -19,8 +19,8 @@
 
 #ifndef _ATN_H
 #define _ATN_H 1
-#include "dumpvdl2.h"			// dict, octet_string
-#include "tlv.h"			// TLV_PARSER, TLV_FORMATTER
+#include "dumpvdl2.h"       // dict, octet_string
+#include "tlv.h"            // TLV_PARSER, TLV_FORMATTER
 
 #define ATN_TRAFFIC_TYPES_ALL 0x1f
 #define ATSC_TRAFFIC_CLASSES_ALL 0xff

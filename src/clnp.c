@@ -18,32 +18,32 @@
  */
 #include <stdio.h>
 #include <stdint.h>
-#include <string.h>			// strdup()
-#include <libacars/libacars.h>		// la_proto_node
-#include <libacars/vstring.h>		// la_vstring
+#include <string.h>                 // strdup()
+#include <libacars/libacars.h>      // la_proto_node
+#include <libacars/vstring.h>       // la_vstring
 #include "dumpvdl2.h"
 #include "tlv.h"
 #include "clnp.h"
-#include "esis.h"			// esis_pdu_parse()
-#include "idrp.h"			// idrp_pdu_parse()
-#include "cotp.h"			// cotp_concatenated_pdu_parse()
-#include "atn.h"			// atn_sec_label_parse, atn_sec_label_format_text
+#include "esis.h"                   // esis_pdu_parse()
+#include "idrp.h"                   // idrp_pdu_parse()
+#include "cotp.h"                   // cotp_concatenated_pdu_parse()
+#include "atn.h"                    // atn_sec_label_parse, atn_sec_label_format_text
 
 static la_proto_node *parse_clnp_pdu_payload(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	if(len == 0) {
 		return NULL;
 	}
 	switch(*buf) {
-	case SN_PROTO_ESIS:
-		return esis_pdu_parse(buf, len, msg_type);
-	case SN_PROTO_IDRP:
-		return idrp_pdu_parse(buf, len, msg_type);
-	case SN_PROTO_CLNP:
-		debug_print(D_PROTO, "CLNP inside CLNP? Bailing out to avoid loop\n");
-		break;
-	default:
-// assume X.224 COTP TPDU
-		return cotp_concatenated_pdu_parse(buf, len, msg_type);
+		case SN_PROTO_ESIS:
+			return esis_pdu_parse(buf, len, msg_type);
+		case SN_PROTO_IDRP:
+			return idrp_pdu_parse(buf, len, msg_type);
+		case SN_PROTO_CLNP:
+			debug_print(D_PROTO, "CLNP inside CLNP? Bailing out to avoid loop\n");
+			break;
+		default:
+			// assume X.224 COTP TPDU
+			return cotp_concatenated_pdu_parse(buf, len, msg_type);
 	}
 	return unknown_proto_pdu_new(buf, len);
 }
@@ -59,7 +59,7 @@ TLV_PARSER(clnp_security_parse);
 TLV_FORMATTER(clnp_error_code_format_text);
 
 static dict const clnp_options[] = {
-// Doc 9705, 5.7.6.3.2.4.10
+	// Doc 9705, 5.7.6.3.2.4.10
 	{
 		.id = 0x05,
 		.val = &(tlv_type_descriptor_t){
@@ -69,7 +69,7 @@ static dict const clnp_options[] = {
 			.destroy = NULL
 		}
 	},
-// Standard X.233 options
+	// Standard X.233 options
 	{
 		.id = 0xc3,
 		.val = &(tlv_type_descriptor_t){
@@ -77,7 +77,7 @@ static dict const clnp_options[] = {
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_single_octet_format_text,
 			.destroy = NULL
-		 },
+		},
 	},
 	{
 		.id = 0xc1,
@@ -95,7 +95,7 @@ static dict const clnp_options[] = {
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
-		 },
+		},
 	},
 	{
 		.id = 0xc5,
@@ -104,7 +104,7 @@ static dict const clnp_options[] = {
 			.parse = clnp_security_parse,
 			.format_text = atn_sec_label_format_text,
 			.destroy = atn_sec_label_destroy
-		 },
+		},
 	},
 	{
 		.id = 0xc6,
@@ -113,7 +113,7 @@ static dict const clnp_options[] = {
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
-		 },
+		},
 	},
 	{
 		.id = 0xc8,
@@ -122,7 +122,7 @@ static dict const clnp_options[] = {
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
-		 },
+		},
 	},
 	{
 		.id = 0xcb,
@@ -131,7 +131,7 @@ static dict const clnp_options[] = {
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
-		 },
+		},
 	},
 	{
 		.id = 0xcc,
@@ -140,7 +140,7 @@ static dict const clnp_options[] = {
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
 			.destroy = NULL
-		 },
+		},
 	},
 	{
 		.id = 0xcd,
@@ -149,7 +149,7 @@ static dict const clnp_options[] = {
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_single_octet_format_text,
 			.destroy = NULL
-		 },
+		},
 	},
 	{
 		.id = 0x0,
@@ -165,7 +165,7 @@ la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	node->data = pdu;
 	node->next = NULL;
 
-	pdu->err = true;	// fail-safe default
+	pdu->err = true;    // fail-safe default
 	uint8_t *ptr = buf;
 	uint32_t remaining = len;
 	if(remaining < CLNP_MIN_LEN) {
@@ -209,7 +209,7 @@ la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	ptr += ret; remaining -= ret;
 	debug_print(D_PROTO_DETAIL, "src NET: consumed %d octets, remaining: %u\n", ret, remaining);
 
-	if(hdr->sp != 0) {	// segmentation part is present
+	if(hdr->sp != 0) {  // segmentation part is present
 		if(remaining < 6) {
 			debug_print(D_PROTO, "segmentation part truncated: len %u < required 6\n", remaining);
 			goto fail;
@@ -230,12 +230,12 @@ la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		}
 	}
 
-// If this is an Error Report NPDU, the data part contains a header (and possibly some data)
-// of the NPDU which caused the error, so we re-run CLNP parser here.
+	// If this is an Error Report NPDU, the data part contains a header (and possibly some data)
+	// of the NPDU which caused the error, so we re-run CLNP parser here.
 	if(pdu->hdr->type == CLNP_NDPU_ER) {
 		node->next = clnp_pdu_parse(buf + hdr->len, len - hdr->len, msg_type);
 	} else {
-// Otherwise process as a normal CLNP payload.
+		// Otherwise process as a normal CLNP payload.
 		node->next = parse_clnp_pdu_payload(buf + hdr->len, len - hdr->len, msg_type);
 	}
 	pdu->err = false;
@@ -306,9 +306,9 @@ TLV_PARSER(clnp_security_parse) {
 	if(len < 1) {
 		return NULL;
 	}
-// The first octet contains security format code (X.233, 7.5.3).
-// In ATN its value is always 0xC0 (= globally unique security field).
-// ATN Security Label goes after that.
+	// The first octet contains security format code (X.233, 7.5.3).
+	// In ATN its value is always 0xC0 (= globally unique security field).
+	// ATN Security Label goes after that.
 	return atn_sec_label_parse(typecode, buf + 1, len - 1);
 }
 
@@ -349,11 +349,11 @@ void clnp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 
 	LA_ISPRINTF(vstr, indent, "Lifetime: %.1f sec\n", pdu->lifetime_sec);
 	LA_ISPRINTF(vstr, indent, "Flags:%s%s%s\n",
-		pdu->hdr->sp ? " SP" : "",
-		pdu->hdr->ms ? " MS" : "",
-		pdu->hdr->er ? " E/R" : "");
-//	LA_ISPRINTF(vstr, indent, "Segment length: %u\n", pdu->seg_len);
-//	LA_ISPRINTF(vstr, indent, "Checksum: %x\n", pdu->cksum);
+			pdu->hdr->sp ? " SP" : "",
+			pdu->hdr->ms ? " MS" : "",
+			pdu->hdr->er ? " E/R" : "");
+	// LA_ISPRINTF(vstr, indent, "Segment length: %u\n", pdu->seg_len);
+	// LA_ISPRINTF(vstr, indent, "Checksum: %x\n", pdu->cksum);
 
 	if(pdu->hdr->sp != 0) {
 		LA_ISPRINTF(vstr, indent, "%s", "Segmentation:\n");
@@ -390,7 +390,7 @@ la_type_descriptor const proto_DEF_clnp_pdu = {
 /**********************************
  * Compressed CLNP NPDU decoder
  **********************************/
-//
+
 // Forward declaration
 la_type_descriptor const proto_DEF_clnp_compressed_init_data_pdu;
 
@@ -401,7 +401,7 @@ la_proto_node *clnp_compressed_init_data_pdu_parse(uint8_t *buf, uint32_t len, u
 	node->data = pdu;
 	node->next = NULL;
 
-	pdu->err = true;			// fail-safe default
+	pdu->err = true;    // fail-safe default
 	if(len < CLNP_COMPRESSED_INIT_MIN_LEN) {
 		debug_print(D_PROTO, "Too short (len %u < min len %u)\n", len, CLNP_COMPRESSED_INIT_MIN_LEN);
 		goto fail;
@@ -410,11 +410,11 @@ la_proto_node *clnp_compressed_init_data_pdu_parse(uint8_t *buf, uint32_t len, u
 	uint32_t hdrlen = CLNP_COMPRESSED_INIT_MIN_LEN;
 	CAST_PTR(hdr, clnp_compressed_init_data_pdu_hdr_t *, buf);
 	pdu->hdr = hdr;
-	if(hdr->exp != 0) hdrlen += 1;		// EXP flag = 1 means localRef/B octet is present
-	if(hdr->type & 1) hdrlen += 2;		// odd PDU type means PDU identifier is present
+	if(hdr->exp != 0) hdrlen += 1;  // EXP flag = 1 means localRef/B octet is present
+	if(hdr->type & 1) hdrlen += 2;  // odd PDU type means PDU identifier is present
 
 	debug_print(D_PROTO, "hdrlen: %u type: %02x prio: %02x lifetime: %02x flags: %02x exp: %d lref_a: %02x\n",
-		hdrlen, hdr->type, hdr->priority, hdr->lifetime, hdr->flags.val, hdr->exp, hdr->lref_a);
+			hdrlen, hdr->type, hdr->priority, hdr->lifetime, hdr->flags.val, hdr->exp, hdr->lref_a);
 
 	if(len < hdrlen) {
 		debug_print(D_PROTO, "header truncated: buf_len %u < hdr_len %u\n", len, hdrlen);
@@ -456,7 +456,7 @@ void clnp_compressed_init_data_pdu_format_text(la_vstring * const vstr, void con
 	LA_ISPRINTF(vstr, indent, "%s", "X.233 CLNP Data (compressed header):\n");
 	indent++;
 	LA_ISPRINTF(vstr, indent, "LRef: 0x%x Prio: %u Lifetime: %u Flags: 0x%02x\n",
-		pdu->lref, pdu->hdr->priority, pdu->hdr->lifetime, pdu->hdr->flags.val);
+			pdu->lref, pdu->hdr->priority, pdu->hdr->lifetime, pdu->hdr->flags.val);
 	if(pdu->pdu_id_present) {
 		LA_ISPRINTF(vstr, indent, "PDU Id: %u\n", pdu->pdu_id);
 	}

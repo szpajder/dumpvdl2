@@ -18,11 +18,11 @@
  */
 
 #include <stdint.h>
-#include <search.h>			// lfind()
-#include <libacars/vstring.h>		// la_vstring
-#include "asn1/asn_application.h"	// asn_TYPE_descriptor_t
-#include "dumpvdl2.h"			// debug_print(D_PROTO, )
-#include "asn1-util.h"			// asn_formatter_table
+#include <search.h>                 // lfind()
+#include <libacars/vstring.h>       // la_vstring
+#include "asn1/asn_application.h"   // asn_TYPE_descriptor_t
+#include "dumpvdl2.h"               // debug_print(D_PROTO, )
+#include "asn1-util.h"              // asn_formatter_table
 
 static int compare_fmtr(const void *k, const void *m) {
 	CAST_PTR(memb, asn_formatter_t *, m);
@@ -38,7 +38,7 @@ int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, i
 	}
 	if(rval.consumed < (size_t)size) {
 		debug_print(D_PROTO, "uper_decode_complete left %zd unparsed octets\n",
-			(size_t)size - rval.consumed);
+				(size_t)size - rval.consumed);
 		return (int)((size_t)size - rval.consumed);
 	}
 #ifdef DEBUG
@@ -50,15 +50,15 @@ int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, i
 }
 
 void asn1_output(la_vstring *vstr, asn_formatter_t const * const asn1_formatter_table,
-	size_t asn1_formatter_table_len, asn_TYPE_descriptor_t *td, const void *sptr, int indent) {
+		size_t asn1_formatter_table_len, asn_TYPE_descriptor_t *td, const void *sptr, int indent) {
 	if(td == NULL || sptr == NULL) return;
 	asn_formatter_t *formatter = lfind(td, asn1_formatter_table, &asn1_formatter_table_len,
-		sizeof(asn_formatter_t), &compare_fmtr);
+			sizeof(asn_formatter_t), &compare_fmtr);
 	if(formatter != NULL) {
 		(*formatter->format)(vstr, formatter->label, td, sptr, indent);
 	} else {
 		LA_ISPRINTF(vstr, indent, "-- Formatter for type %s not found, ASN.1 dump follows:\n", td->name);
-		LA_ISPRINTF(vstr, indent, "%s", "");	// asn_sprintf does not indent the first line
+		LA_ISPRINTF(vstr, indent, "%s", "");    // asn_sprintf does not indent the first line
 		asn_sprintf(vstr, td, sptr, indent+1);
 		LA_ISPRINTF(vstr, indent, "%s", "-- ASN.1 dump end\n");
 	}

@@ -76,7 +76,7 @@ static int rtl_verbose_device_search(char *s) {
 	device = (int)strtol(s, &s2, 0);
 	if (s2[0] == '\0' && device >= 0 && device < device_count) {
 		fprintf(stderr, "Using device %d: %s\n",
-			device, rtlsdr_get_device_name((uint32_t)device));
+				device, rtlsdr_get_device_name((uint32_t)device));
 		return device;
 	}
 	/* does string exact match a serial */
@@ -86,7 +86,7 @@ static int rtl_verbose_device_search(char *s) {
 			continue;}
 		device = i;
 		fprintf(stderr, "Using device %d: %s\n",
-			device, rtlsdr_get_device_name((uint32_t)device));
+				device, rtlsdr_get_device_name((uint32_t)device));
 		return device;
 	}
 	/* does string prefix match a serial */
@@ -96,7 +96,7 @@ static int rtl_verbose_device_search(char *s) {
 			continue;}
 		device = i;
 		fprintf(stderr, "Using device %d: %s\n",
-			device, rtlsdr_get_device_name((uint32_t)device));
+				device, rtlsdr_get_device_name((uint32_t)device));
 		return device;
 	}
 	/* does string suffix match a serial */
@@ -109,7 +109,7 @@ static int rtl_verbose_device_search(char *s) {
 			continue;}
 		device = i;
 		fprintf(stderr, "Using device %d: %s\n",
-			device, rtlsdr_get_device_name((uint32_t)device));
+				device, rtlsdr_get_device_name((uint32_t)device));
 		return device;
 	}
 	fprintf(stderr, "No matching devices found.\n");
@@ -162,11 +162,11 @@ void rtl_init(vdl2_state_t *ctx, char *dev, int freq, float gain, int correction
 		r |= rtlsdr_set_tuner_gain(rtl, ngain);
 		if (r < 0) {
 			fprintf(stderr, "Failed to set gain to %0.2f for device #%d: error %d\n",
-				(float)ngain / 10.f, device, r);
+					(float)ngain / 10.f, device, r);
 			_exit(1);
 		} else
 			fprintf(stderr, "Device #%d: gain set to %0.2f dB\n", device,
-				(float)rtlsdr_get_tuner_gain(rtl) / 10.f);
+					(float)rtlsdr_get_tuner_gain(rtl) / 10.f);
 	}
 
 	r = rtlsdr_set_agc_mode(rtl, 0);

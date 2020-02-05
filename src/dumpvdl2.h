@@ -23,23 +23,23 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>		// abort()
+#include <stdlib.h>             // abort()
 #include <sys/time.h>
-#include <pthread.h>		// pthread_t, pthread_barrier_t
-#include <libacars/libacars.h>	// la_proto_node
-#include <libacars/vstring.h>	// la_vstring
+#include <pthread.h>            // pthread_t, pthread_barrier_t
+#include <libacars/libacars.h>  // la_proto_node
+#include <libacars/vstring.h>   // la_vstring
 #include "config.h"
 #ifndef HAVE_PTHREAD_BARRIERS
 #include "pthread_barrier.h"
 #endif
 
-#define RS_K 249				// Reed-Solomon vector length (bytes)
-#define RS_N 255				// Reed-Solomon codeword length (bytes)
-#define TRLEN 17				// transmission length field length (bits)
-#define HDRFECLEN 5				// CRC field length (bits)
+#define RS_K 249                // Reed-Solomon vector length (bytes)
+#define RS_N 255                // Reed-Solomon codeword length (bytes)
+#define TRLEN 17                // transmission length field length (bits)
+#define HDRFECLEN 5             // CRC field length (bits)
 #define HEADER_LEN (3 + TRLEN + HDRFECLEN)
 #define PREAMBLE_SYMS 16
-#define SYNC_BUFLEN (PREAMBLE_SYMS * SPS)	// length of look-behind buffer used for frame syncing
+#define SYNC_BUFLEN (PREAMBLE_SYMS * SPS)    // length of look-behind buffer used for frame syncing
 #define SPS 10
 #define BPS 3
 #define SYMBOL_RATE 10500
@@ -50,107 +50,107 @@
 #define SDR_AUTO_GAIN -100.0f
 
 // long command line options
-#define __OPT_CENTERFREQ		 1
-#define __OPT_DAILY			 2
-#define __OPT_HOURLY			 3
-#define __OPT_OUTPUT_FILE		 4
-#define __OPT_IQ_FILE			 5
-#define __OPT_OVERSAMPLE		 6
-#define __OPT_SAMPLE_FORMAT		 7
+#define __OPT_CENTERFREQ              1
+#define __OPT_DAILY                   2
+#define __OPT_HOURLY                  3
+#define __OPT_OUTPUT_FILE             4
+#define __OPT_IQ_FILE                 5
+#define __OPT_OVERSAMPLE              6
+#define __OPT_SAMPLE_FORMAT           7
 
 #ifdef WITH_MIRISDR
-#define __OPT_MIRISDR			 8
-#define __OPT_HW_TYPE			 9
-#define __OPT_USB_MODE			10
+#define __OPT_MIRISDR                 8
+#define __OPT_HW_TYPE                 9
+#define __OPT_USB_MODE               10
 #endif
 
 #ifdef WITH_RTLSDR
-#define __OPT_RTLSDR			11
+#define __OPT_RTLSDR                 11
 #endif
 
 #if defined WITH_MIRISDR || defined WITH_RTLSDR || defined WITH_SOAPYSDR
-#define __OPT_GAIN			12
+#define __OPT_GAIN                   12
 #endif
 
 #if defined WITH_MIRISDR || defined WITH_RTLSDR || defined WITH_SDRPLAY || defined WITH_SOAPYSDR
-#define __OPT_CORRECTION		13
+#define __OPT_CORRECTION             13
 #endif
 
 #ifdef WITH_STATSD
-#define __OPT_STATSD			14
+#define __OPT_STATSD                 14
 #endif
-#define __OPT_MSG_FILTER		15
-#define __OPT_OUTPUT_ACARS_PP		16
-#define __OPT_UTC			17
-#define __OPT_RAW_FRAMES		18
-#define __OPT_DUMP_ASN1			19
-#define __OPT_EXTENDED_HEADER		20
-#define __OPT_DECODE_FRAGMENTS		21
-#define __OPT_GS_FILE			22
+#define __OPT_MSG_FILTER             15
+#define __OPT_OUTPUT_ACARS_PP        16
+#define __OPT_UTC                    17
+#define __OPT_RAW_FRAMES             18
+#define __OPT_DUMP_ASN1              19
+#define __OPT_EXTENDED_HEADER        20
+#define __OPT_DECODE_FRAGMENTS       21
+#define __OPT_GS_FILE                22
 #ifdef WITH_SQLITE
-#define __OPT_BS_DB			23
+#define __OPT_BS_DB                  23
 #endif
-#define __OPT_ADDRINFO_VERBOSITY	24
-#define __OPT_PRETTIFY_XML		25
+#define __OPT_ADDRINFO_VERBOSITY     24
+#define __OPT_PRETTIFY_XML           25
 
 #ifdef WITH_SDRPLAY
-#define __OPT_SDRPLAY			80
-#define __OPT_ANTENNA			81
-#define __OPT_BIAST			82
-#define __OPT_NOTCH_FILTER		83
-#define __OPT_AGC			84
-#define __OPT_GR			85
-#define __OPT_TUNER			86
+#define __OPT_SDRPLAY                80
+#define __OPT_ANTENNA                81
+#define __OPT_BIAST                  82
+#define __OPT_NOTCH_FILTER           83
+#define __OPT_AGC                    84
+#define __OPT_GR                     85
+#define __OPT_TUNER                  86
 #endif
 
 #ifdef WITH_SOAPYSDR
-#define __OPT_SOAPYSDR			90
-#define __OPT_DEVICE_SETTINGS		91
-#define __OPT_SOAPY_ANTENNA		92
-#define __OPT_SOAPY_GAIN		93
+#define __OPT_SOAPYSDR               90
+#define __OPT_DEVICE_SETTINGS        91
+#define __OPT_SOAPY_ANTENNA          92
+#define __OPT_SOAPY_GAIN             93
 #endif
 
-#define __OPT_VERSION			98
-#define __OPT_HELP			99
+#define __OPT_VERSION                98
+#define __OPT_HELP                   99
 #ifdef DEBUG
-#define __OPT_DEBUG			100
+#define __OPT_DEBUG                 100
 #endif
 
 // message filters
-#define MSGFLT_ALL			(~0)
-#define MSGFLT_NONE			(0)
-#define MSGFLT_SRC_GND			(1 <<  0)
-#define MSGFLT_SRC_AIR			(1 <<  1)
-#define MSGFLT_AVLC_S			(1 <<  2)
-#define MSGFLT_AVLC_U			(1 <<  3)
-#define MSGFLT_AVLC_I			(1 <<  4)
-#define MSGFLT_ACARS_NODATA		(1 <<  5)
-#define MSGFLT_ACARS_DATA		(1 <<  6)
-#define MSGFLT_XID_NO_GSIF		(1 <<  7)
-#define MSGFLT_XID_GSIF			(1 <<  8)
-#define MSGFLT_X25_CONTROL		(1 <<  9)
-#define MSGFLT_X25_DATA			(1 << 10)
-#define MSGFLT_IDRP_NO_KEEPALIVE	(1 << 11)
-#define MSGFLT_IDRP_KEEPALIVE		(1 << 12)
-#define MSGFLT_ESIS			(1 << 13)
-#define MSGFLT_CM			(1 << 14)
-#define MSGFLT_CPDLC			(1 << 15)
-#define MSGFLT_ADSC			(1 << 16)
+#define MSGFLT_ALL                  (~0)
+#define MSGFLT_NONE                 (0)
+#define MSGFLT_SRC_GND              (1 <<  0)
+#define MSGFLT_SRC_AIR              (1 <<  1)
+#define MSGFLT_AVLC_S               (1 <<  2)
+#define MSGFLT_AVLC_U               (1 <<  3)
+#define MSGFLT_AVLC_I               (1 <<  4)
+#define MSGFLT_ACARS_NODATA         (1 <<  5)
+#define MSGFLT_ACARS_DATA           (1 <<  6)
+#define MSGFLT_XID_NO_GSIF          (1 <<  7)
+#define MSGFLT_XID_GSIF             (1 <<  8)
+#define MSGFLT_X25_CONTROL          (1 <<  9)
+#define MSGFLT_X25_DATA             (1 << 10)
+#define MSGFLT_IDRP_NO_KEEPALIVE    (1 << 11)
+#define MSGFLT_IDRP_KEEPALIVE       (1 << 12)
+#define MSGFLT_ESIS                 (1 << 13)
+#define MSGFLT_CM                   (1 << 14)
+#define MSGFLT_CPDLC                (1 << 15)
+#define MSGFLT_ADSC                 (1 << 16)
 
 // debug message classes
-#define D_ALL				(~0)
-#define D_NONE				(0)
-#define D_SDR				(1 <<  0)
-#define D_DEMOD				(1 <<  1)
-#define D_DEMOD_DETAIL			(1 <<  2)
-#define D_BURST				(1 <<  3)
-#define D_BURST_DETAIL			(1 <<  4)
-#define D_PROTO				(1 <<  5)
-#define D_PROTO_DETAIL			(1 <<  6)
-#define D_STATS				(1 <<  7)
-#define D_CACHE				(1 <<  8)
-#define D_OUTPUT			(1 <<  9)
-#define D_MISC				(1 << 31)
+#define D_ALL                       (~0)
+#define D_NONE                      (0)
+#define D_SDR                       (1 <<  0)
+#define D_DEMOD                     (1 <<  1)
+#define D_DEMOD_DETAIL              (1 <<  2)
+#define D_BURST                     (1 <<  3)
+#define D_BURST_DETAIL              (1 <<  4)
+#define D_PROTO                     (1 <<  5)
+#define D_PROTO_DETAIL              (1 <<  6)
+#define D_STATS                     (1 <<  7)
+#define D_CACHE                     (1 <<  8)
+#define D_OUTPUT                    (1 <<  9)
+#define D_MISC                      (1 << 31)
 
 typedef struct {
 	char *token;
@@ -180,7 +180,7 @@ typedef struct {
 #define nop() do {} while (0)
 
 #ifdef __GNUC__
-#define LIKELY(x) (__builtin_expect(!!(x),1))
+#define LIKELY(x)   (__builtin_expect(!!(x),1))
 #define UNLIKELY(x) (__builtin_expect(!!(x),0))
 #else
 #define LIKELY(x) (x)
@@ -193,13 +193,13 @@ typedef struct {
 #define PRETTY_FUNCTION ""
 #endif
 
-#define ASSERT_se(expr)			\
-	do {					\
-		if (UNLIKELY(!(expr))) {	\
-			fprintf(stderr, "Assertion '%s' failed at %s:%u, function %s(). Aborting.\n", \
-				#expr , __FILE__, __LINE__, PRETTY_FUNCTION); \
-			abort();		\
-		}				\
+#define ASSERT_se(expr) \
+	do { \
+		if (UNLIKELY(!(expr))) { \
+			fprintf(stderr, "Assertion '%s' failed at %s:%u, function %s(). Aborting.\n", #expr, \
+					__FILE__, __LINE__, PRETTY_FUNCTION); \
+				abort(); \
+		} \
 	} while (0)
 
 #ifdef NDEBUG
@@ -210,24 +210,24 @@ typedef struct {
 
 #ifdef DEBUG
 #define debug_print(debug_class, fmt, ...) \
-do { \
-	if(Config.debug_filter & debug_class) { \
-		fprintf(stderr, "%s(): " fmt, __func__, ##__VA_ARGS__); \
-	} \
-} while (0)
+				do { \
+					if(Config.debug_filter & debug_class) { \
+						fprintf(stderr, "%s(): " fmt, __func__, ##__VA_ARGS__); \
+					} \
+				} while (0)
 
 #define debug_print_buf_hex(debug_class, buf, len, fmt, ...) \
-do { \
-	if(Config.debug_filter & debug_class) { \
-		fprintf(stderr, "%s(): " fmt, __func__, ##__VA_ARGS__); \
-		fprintf(stderr, "%s(): ", __func__); \
-		for(size_t zz = 0; zz < (len); zz++) { \
-			fprintf(stderr, "%02x ", buf[zz]); \
-			if(zz && (zz+1) % 32 == 0) fprintf(stderr, "\n%s(): ", __func__); \
-		} \
-		fprintf(stderr, "\n"); \
-	} \
-} while(0)
+				do { \
+					if(Config.debug_filter & debug_class) { \
+						fprintf(stderr, "%s(): " fmt, __func__, ##__VA_ARGS__); \
+						fprintf(stderr, "%s(): ", __func__); \
+						for(size_t zz = 0; zz < (len); zz++) { \
+							fprintf(stderr, "%02x ", buf[zz]); \
+							if(zz && (zz+1) % 32 == 0) fprintf(stderr, "\n%s(): ", __func__); \
+						} \
+						fprintf(stderr, "\n"); \
+					} \
+				} while(0)
 #else
 #define debug_print(debug_class, fmt, ...) nop()
 #define debug_print_buf_hex(debug_class, buf, len, fmt, ...) nop()

@@ -21,14 +21,14 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>			// strftime, gmtime, localtime
+#include <time.h>                   // strftime, gmtime, localtime
 #include <math.h>
 #include <unistd.h>
 #include <glib.h>
-#include <libacars/libacars.h>		// la_type_descriptor, la_proto_node
-#include <libacars/vstring.h>		// la_vstring
-#include <libacars/reassembly.h>	// la_reasm_ctx_new()
-#include "config.h"			// IS_BIG_ENDIAN
+#include <libacars/libacars.h>      // la_type_descriptor, la_proto_node
+#include <libacars/vstring.h>       // la_vstring
+#include <libacars/reassembly.h>    // la_reasm_ctx_new()
+#include "config.h"                 // IS_BIG_ENDIAN
 #include "dumpvdl2.h"
 #include "avlc.h"
 #include "ac_data.h"
@@ -37,8 +37,8 @@
 #include "acars.h"
 #include "x25.h"
 
-#define MIN_AVLC_LEN	11
-#define GOOD_FCS	0xF0B8u
+#define MIN_AVLC_LEN    11
+#define GOOD_FCS        0xF0B8u
 
 #ifdef IS_BIG_ENDIAN
 #define BSHIFT 0
@@ -92,18 +92,18 @@ typedef union {
 #define U_MFUNC(lcf) ((lcf).U.mfunc & 0x3b)
 #define U_PF(lcf) (((lcf).U.mfunc >> 2) & 0x1)
 
-#define UI	0x00
-#define DM	0x03
-#define DISC	0x10
-#define UA	0x18
-#define FRMR	0x21
-#define XID	0x2b
-#define TEST	0x38
+#define UI      0x00
+#define DM      0x03
+#define DISC    0x10
+#define UA      0x18
+#define FRMR    0x21
+#define XID     0x2b
+#define TEST    0x38
 
-#define ADDRTYPE_AIRCRAFT	1
-#define ADDRTYPE_GS_ADM		4
-#define ADDRTYPE_GS_DEL		5
-#define ADDRTYPE_ALL		7
+#define ADDRTYPE_AIRCRAFT   1
+#define ADDRTYPE_GS_ADM     4
+#define ADDRTYPE_GS_DEL     5
+#define ADDRTYPE_ALL        7
 
 #define IS_AIRCRAFT(addr) ((addr).a_addr.type == ADDRTYPE_AIRCRAFT)
 #define IS_GS(addr) ((addr).a_addr.type == ADDRTYPE_GS_ADM || (addr).a_addr.type == ADDRTYPE_GS_DEL)
@@ -175,7 +175,7 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 	debug_print(D_PROTO, "Frame %d: len=%u\n", q->idx, len);
 	debug_print_buf_hex(D_PROTO_DETAIL, buf, len, "Frame data:\n");
 
-// FCS check
+	// FCS check
 	uint16_t fcs = crc16_ccitt(buf, len, 0xFFFFu);
 	debug_print(D_PROTO_DETAIL, "Check FCS: %04x\n", fcs);
 	if(fcs == GOOD_FCS) {
@@ -203,41 +203,41 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 	ptr += 4; len -= 4;
 
 	switch(frame->src.a_addr.type) {
-	case ADDRTYPE_AIRCRAFT:
-		*msg_type |= MSGFLT_SRC_AIR;
-#ifdef WITH_STATSD
-		switch(frame->dst.a_addr.type) {
-		case ADDRTYPE_GS_ADM:
-		case ADDRTYPE_GS_DEL:
-			statsd_increment_per_channel(q->freq, "avlc.msg.air2gnd");
-			break;
 		case ADDRTYPE_AIRCRAFT:
-			statsd_increment_per_channel(q->freq, "avlc.msg.air2air");
-			break;
-		case ADDRTYPE_ALL:
-			statsd_increment_per_channel(q->freq, "avlc.msg.air2all");
-			break;
-		}
+			*msg_type |= MSGFLT_SRC_AIR;
+#ifdef WITH_STATSD
+			switch(frame->dst.a_addr.type) {
+				case ADDRTYPE_GS_ADM:
+				case ADDRTYPE_GS_DEL:
+					statsd_increment_per_channel(q->freq, "avlc.msg.air2gnd");
+					break;
+				case ADDRTYPE_AIRCRAFT:
+					statsd_increment_per_channel(q->freq, "avlc.msg.air2air");
+					break;
+				case ADDRTYPE_ALL:
+					statsd_increment_per_channel(q->freq, "avlc.msg.air2all");
+					break;
+			}
 #endif
-		break;
-	case ADDRTYPE_GS_ADM:
-	case ADDRTYPE_GS_DEL:
-		*msg_type |= MSGFLT_SRC_GND;
-#ifdef WITH_STATSD
-		switch(frame->dst.a_addr.type) {
-		case ADDRTYPE_AIRCRAFT:
-			statsd_increment_per_channel(q->freq, "avlc.msg.gnd2air");
 			break;
 		case ADDRTYPE_GS_ADM:
 		case ADDRTYPE_GS_DEL:
-			statsd_increment_per_channel(q->freq, "avlc.msg.gnd2gnd");
-			break;
-		case ADDRTYPE_ALL:
-			statsd_increment_per_channel(q->freq, "avlc.msg.gnd2all");
-			break;
-		}
+			*msg_type |= MSGFLT_SRC_GND;
+#ifdef WITH_STATSD
+			switch(frame->dst.a_addr.type) {
+				case ADDRTYPE_AIRCRAFT:
+					statsd_increment_per_channel(q->freq, "avlc.msg.gnd2air");
+					break;
+				case ADDRTYPE_GS_ADM:
+				case ADDRTYPE_GS_DEL:
+					statsd_increment_per_channel(q->freq, "avlc.msg.gnd2gnd");
+					break;
+				case ADDRTYPE_ALL:
+					statsd_increment_per_channel(q->freq, "avlc.msg.gnd2all");
+					break;
+			}
 #endif
-		break;
+			break;
 	}
 
 	frame->lcf.val = *ptr++;
@@ -253,13 +253,13 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 		} else {
 			node->next = unknown_proto_pdu_new(ptr, len);
 		}
-	} else { 	// IS_I(frame->lcf) == true
+	} else {     // IS_I(frame->lcf) == true
 		*msg_type |= MSGFLT_AVLC_I;
 		if(len > 3 && ptr[0] == 0xff && ptr[1] == 0xff && ptr[2] == 0x01) {
 			node->next = parse_acars(ptr + 3, len - 3, msg_type, reasm_ctx, q->burst_timestamp);
 		} else {
 			node->next = x25_parse(ptr, len, msg_type, reasm_ctx, q->burst_timestamp,
-				frame->src.a_addr.addr, frame->dst.a_addr.addr);
+					frame->src.a_addr.addr, frame->dst.a_addr.addr);
 		}
 	}
 	return node;
@@ -271,21 +271,21 @@ static void addrinfo_format_as_text(la_vstring *vstr, int indent, avlc_addr_t co
 			ac_data_entry *ac = ac_data_entry_lookup(addr.a_addr.addr);
 			if(Config.addrinfo_verbosity == ADDRINFO_TERSE) {
 				la_vstring_append_sprintf(vstr, " [%s]",
-					ac && ac->registration ? ac->registration : "-"
-				);
+						ac && ac->registration ? ac->registration : "-"
+						);
 			} else if(Config.addrinfo_verbosity == ADDRINFO_NORMAL) {
 				LA_ISPRINTF(vstr, indent, "AC info: %s, %s, %s\n",
-					ac && ac->registration ? ac->registration : "-",
-					ac && ac->icaotypecode ? ac->icaotypecode : "-",
-					ac && ac->operatorflagcode ? ac->operatorflagcode : "-"
-				);
+						ac && ac->registration ? ac->registration : "-",
+						ac && ac->icaotypecode ? ac->icaotypecode : "-",
+						ac && ac->operatorflagcode ? ac->operatorflagcode : "-"
+						);
 			} else if(Config.addrinfo_verbosity == ADDRINFO_VERBOSE) {
 				LA_ISPRINTF(vstr, indent, "AC info: %s, %s, %s, %s\n",
-					ac && ac->registration ? ac->registration : "-",
-					ac && ac->manufacturer ? ac->manufacturer : "-",
-					ac && ac->type ? ac->type : "-",
-					ac && ac->registeredowners ? ac->registeredowners : "-"
-				);
+						ac && ac->registration ? ac->registration : "-",
+						ac && ac->manufacturer ? ac->manufacturer : "-",
+						ac && ac->type ? ac->type : "-",
+						ac && ac->registeredowners ? ac->registeredowners : "-"
+						);
 			}
 		}
 	} else if(IS_GS(addr)) {
@@ -293,17 +293,17 @@ static void addrinfo_format_as_text(la_vstring *vstr, int indent, avlc_addr_t co
 			gs_data_entry *gs = gs_data_entry_lookup(addr.a_addr.addr);
 			if(Config.addrinfo_verbosity == ADDRINFO_TERSE) {
 				la_vstring_append_sprintf(vstr, " [%s]",
-					gs && gs->airport_code ? gs->airport_code : "-"
-				);
+						gs && gs->airport_code ? gs->airport_code : "-"
+						);
 			} else if(Config.addrinfo_verbosity == ADDRINFO_NORMAL) {
 				LA_ISPRINTF(vstr, indent, "GS info: %s, %s\n",
-					gs && gs->airport_code ? gs->airport_code : "-",
-					gs && gs->location ? gs->location : "-"
-				);
+						gs && gs->airport_code ? gs->airport_code : "-",
+						gs && gs->location ? gs->location : "-"
+						);
 			} else if(Config.addrinfo_verbosity == ADDRINFO_VERBOSE) {
 				LA_ISPRINTF(vstr, indent, "GS info: %s\n",
-					gs && gs->details ? gs->details : "-"
-				);
+						gs && gs->details ? gs->details : "-"
+						);
 			}
 		}
 	}
@@ -318,16 +318,16 @@ void avlc_format_text(la_vstring * const vstr, void const * const data, int inde
 
 	char ftime[30];
 	strftime(ftime, sizeof(ftime), "%F %T %Z",
-		(Config.utc == true ? gmtime(&f->q->burst_timestamp.tv_sec) : localtime(&f->q->burst_timestamp.tv_sec)));
+			(Config.utc == true ? gmtime(&f->q->burst_timestamp.tv_sec) : localtime(&f->q->burst_timestamp.tv_sec)));
 	float sig_pwr_dbfs = 10.0f * log10f(f->q->frame_pwr);
 	float nf_pwr_dbfs = 20.0f * log10f(f->q->mag_nf + 0.001f);
 	LA_ISPRINTF(vstr, indent, "[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB] [%.1f ppm]",
-		ftime, (float)f->q->freq / 1e+6, sig_pwr_dbfs, nf_pwr_dbfs, sig_pwr_dbfs-nf_pwr_dbfs,
-		f->q->ppm_error);
+			ftime, (float)f->q->freq / 1e+6, sig_pwr_dbfs, nf_pwr_dbfs, sig_pwr_dbfs-nf_pwr_dbfs,
+			f->q->ppm_error);
 
 	if(Config.extended_header == true) {
 		la_vstring_append_sprintf(vstr, " [S:%d] [L:%u] [F:%d] [#%u]",
-			 f->q->synd_weight, f->q->datalen_octets, f->q->num_fec_corrections, f->num);
+			 	f->q->synd_weight, f->q->datalen_octets, f->q->num_fec_corrections, f->num);
 	}
 	EOL(vstr);
 
@@ -336,29 +336,29 @@ void avlc_format_text(la_vstring * const vstr, void const * const data, int inde
 	}
 
 	LA_ISPRINTF(vstr, indent, "%06X (%s, %s)",
-		f->src.a_addr.addr,
-		addrtype_descr[f->src.a_addr.type],
-		status_ag_descr[f->dst.a_addr.status]	// A/G
-	);
-// Print extra info about source and/or destination?
-// TERSE verbosity level is printed inline.
+			f->src.a_addr.addr,
+			addrtype_descr[f->src.a_addr.type],
+			status_ag_descr[f->dst.a_addr.status]   // A/G
+			);
+	// Print extra info about source and/or destination?
+	// TERSE verbosity level is printed inline.
 	if(Config.addrinfo_verbosity == ADDRINFO_TERSE) {
 		addrinfo_format_as_text(vstr, indent, f->src);
 	}
 
 	la_vstring_append_sprintf(vstr, " -> %06X (%s)",
-		f->dst.a_addr.addr,
-		addrtype_descr[f->dst.a_addr.type]
-	);
+			f->dst.a_addr.addr,
+			addrtype_descr[f->dst.a_addr.type]
+			);
 	if(Config.addrinfo_verbosity == ADDRINFO_TERSE) {
 		addrinfo_format_as_text(vstr, indent, f->dst);
 	}
 	la_vstring_append_sprintf(vstr, ": %s\n",
-		status_cr_descr[f->src.a_addr.status]	// C/R
-	);
+			status_cr_descr[f->src.a_addr.status]   // C/R
+			);
 
-// Print extra info about source and/or destination?
-// Verbosity levels above TERSE are printed as separate lines.
+	// Print extra info about source and/or destination?
+	// Verbosity levels above TERSE are printed as separate lines.
 	if(Config.addrinfo_verbosity > ADDRINFO_TERSE) {
 		addrinfo_format_as_text(vstr, indent, f->src);
 		addrinfo_format_as_text(vstr, indent, f->dst);
@@ -366,13 +366,13 @@ void avlc_format_text(la_vstring * const vstr, void const * const data, int inde
 
 	if(IS_S(f->lcf)) {
 		LA_ISPRINTF(vstr, indent, "AVLC type: S (%s) P/F: %x rseq: %x\n",
-			S_cmd[f->lcf.S.sfunc], f->lcf.S.pf, f->lcf.S.recv_seq);
+				S_cmd[f->lcf.S.sfunc], f->lcf.S.pf, f->lcf.S.recv_seq);
 	} else if(IS_U(f->lcf)) {
 		LA_ISPRINTF(vstr, indent, "AVLC type: U (%s) P/F: %x\n",
-			U_cmd[U_MFUNC(f->lcf)], U_PF(f->lcf));
-	} else {	// IS_I == true
+				U_cmd[U_MFUNC(f->lcf)], U_PF(f->lcf));
+	} else {    // IS_I == true
 		LA_ISPRINTF(vstr, indent, "AVLC type: I sseq: %x rseq: %x poll: %x\n",
-			f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
+				f->lcf.I.send_seq, f->lcf.I.recv_seq, f->lcf.I.poll);
 	}
 }
 

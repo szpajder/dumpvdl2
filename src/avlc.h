@@ -19,10 +19,10 @@
 #ifndef _AVLC_H
 #define _AVLC_H 1
 #include <stdint.h>
-#include <sys/time.h>			// struct timeval
-#include <glib.h>			// GAsyncQueue
-#include <libacars/reassembly.h>	// la_reasm_ctx
-#include "config.h"			// IS_BIG_ENDIAN
+#include <sys/time.h>               // struct timeval
+#include <glib.h>                   // GAsyncQueue
+#include <libacars/reassembly.h>    // la_reasm_ctx
+#include "config.h"                 // IS_BIG_ENDIAN
 
 typedef union {
 	uint32_t val;

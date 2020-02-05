@@ -17,21 +17,21 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <stdio.h>			// fprintf
-#include <stdlib.h>			// calloc, strtol
-#include <string.h>			// strcmp
-#include <unistd.h>			// _exit, usleep
+#include <stdio.h>              // fprintf
+#include <stdlib.h>             // calloc, strtol
+#include <string.h>             // strcmp
+#include <unistd.h>             // _exit, usleep
 #include <mirsdrapi-rsp.h>
-#include "dumpvdl2.h"			// sbuf
+#include "dumpvdl2.h"           // sbuf
 #include "sdrplay.h"
 
 static int initialized = 0;
 
-#define NUM_LNA_STATES	10	// Max number of LNA states of all hw types
+#define NUM_LNA_STATES 10       // Max number of LNA states of all hw types
 static int lnaGRtables[NUM_HW_TYPES][NUM_LNA_STATES] = {
-	[HW_RSP1]  = { 0, 24, 19, 43, 0, 0, 0, 0, 0, 0 },
-	[HW_RSP2]  = { 0, 10, 15, 21, 24, 34, 39, 45, 64, 0 },
-	[HW_RSP1A] = { 0, 6, 12, 18, 20, 26, 32, 38, 57, 62 },
+	[HW_RSP1]   = { 0, 24, 19, 43, 0, 0, 0, 0, 0, 0 },
+	[HW_RSP2]   = { 0, 10, 15, 21, 24, 34, 39, 45, 64, 0 },
+	[HW_RSP1A]  = { 0, 6, 12, 18, 20, 26, 32, 38, 57, 62 },
 	[HW_RSPDUO] = { 0, 6, 12, 18, 20, 26, 32, 38, 57, 62 }
 };
 static int num_lnaGRs[NUM_HW_TYPES] = {
@@ -48,7 +48,7 @@ static char *hw_descr[NUM_HW_TYPES] = {
 };
 
 static void sdrplay_streamCallback(short *xi, short *xq, unsigned int firstSampleNum, int grChanged,
-int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, unsigned int hwRemoved, void *cbContext) {
+		int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, unsigned int hwRemoved, void *cbContext) {
 	UNUSED(firstSampleNum);
 	UNUSED(grChanged);
 	UNUSED(rfChanged);
@@ -62,12 +62,12 @@ int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, unsig
 		return;
 	}
 	unsigned char *dptr = SDRPlay->sdrplay_data;
-// data_index counts samples
-// numSamples counts I/Q sample pairs
+	// data_index counts samples
+	// numSamples counts I/Q sample pairs
 	end = SDRPlay->data_index + (numSamples * 2);
 	count2 = end - (ASYNC_BUF_SIZE * ASYNC_BUF_NUMBER);
-	if(count2 < 0) count2 = 0;			// count2 is samples wrapping around to start of buf
-	count1 = (numSamples * 2) - count2;		// count1 is samples fitting before the end of buf
+	if(count2 < 0) count2 = 0;              // count2 is samples wrapping around to start of buf
+	count1 = (numSamples * 2) - count2;     // count1 is samples fitting before the end of buf
 
 	// flag is set if this packet takes us past a multiple of ASYNC_BUF_SIZE
 	new_buf_flag = (SDRPlay->data_index / ASYNC_BUF_SIZE == end / ASYNC_BUF_SIZE ? 0 : 1);
@@ -86,7 +86,7 @@ int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, unsig
 	SDRPlay->data_index += count1;
 
 	if(SDRPlay->data_index >= ASYNC_BUF_SIZE * ASYNC_BUF_NUMBER) {
-		SDRPlay->data_index = 0;	// pointer back to start of buffer */
+		SDRPlay->data_index = 0;            // pointer back to start of buffer
 	}
 
 	// insert remaining samples at the start of the buffer
@@ -103,7 +103,7 @@ int rfChanged, int fsChanged, unsigned int numSamples, unsigned int reset, unsig
 
 	// send ASYNC_BUF_SIZE samples downstream, if available
 	if(new_buf_flag) {
-		/* go back by one buffer length, then round down further to start of buffer */
+		// go back by one buffer length, then round down further to start of buffer
 		end = SDRPlay->data_index - ASYNC_BUF_SIZE;
 		if(end < 0) end += ASYNC_BUF_SIZE * ASYNC_BUF_NUMBER;
 		end -= end % ASYNC_BUF_SIZE;
@@ -140,10 +140,10 @@ static int sdrplay_verbose_device_search(char * const dev, sdrplay_hw_type *hw_t
 	fprintf(stderr, "\nFound %d device(s):\n", numDevs);
 	for(unsigned int i = 0; i < numDevs; i++) {
 		fprintf(stderr, "  %s %u:  SN: %s\n",
-			devices[i].devAvail ? "        " : "(in use)",
-			i,
-			devices[i].SerNo != NULL ? devices[i].SerNo : "<none>"
-		);
+				devices[i].devAvail ? "        " : "(in use)",
+				i,
+				devices[i].SerNo != NULL ? devices[i].SerNo : "<none>"
+			   );
 	}
 	fprintf(stderr, "\n");
 
@@ -184,21 +184,21 @@ dev_found:
 		*hw_type = HW_RSP1A;
 	} else {
 		fprintf(stderr, "Selected device #%d is unsupported: hardware version %d\n",
-			devIdx, devices[devIdx].hwVer);
+				devIdx, devices[devIdx].hwVer);
 		return -1;
 	}
 
 	fprintf(stderr, "Selected device #%d (type: %s SN: %s)\n",
-		devIdx,
-		hw_descr[*hw_type],
-		(devices[devIdx].SerNo != NULL ? devices[devIdx].SerNo : "unknown")
-	);
+			devIdx,
+			hw_descr[*hw_type],
+			(devices[devIdx].SerNo != NULL ? devices[devIdx].SerNo : "unknown")
+		   );
 	return devIdx;
 }
 
 void sdrplay_init(vdl2_state_t * const ctx, char * const dev, char * const antenna,
-uint32_t const freq, int const gr, int const ppm_error, int const enable_biast,
-int const enable_notch_filter, int enable_agc, int tuner) {
+		uint32_t const freq, int const gr, int const ppm_error, int const enable_biast,
+		int const enable_notch_filter, int enable_agc, int tuner) {
 	UNUSED(ctx);
 
 	mir_sdr_ErrT err;
@@ -317,7 +317,7 @@ int const enable_notch_filter, int enable_agc, int tuner) {
 
 	int gRdBsystem = gr;
 	if(gr == SDR_AUTO_GAIN) {
-		gRdBsystem = MIN_IF_GR;		// too low, but we enable AGC, which shall correct this
+		gRdBsystem = MIN_IF_GR;     // too low, but we enable AGC, which shall correct this
 	}
 	int gRdb = 0;
 	int lna_state = -1;
@@ -330,7 +330,7 @@ int const enable_notch_filter, int enable_agc, int tuner) {
 			gRdb = gRdBsystem - lnaGRtables[hw_type][i];
 			lna_state = i;
 			fprintf(stderr, "Selected IF gain reduction: %d dB, LNA gain reduction: %d dB\n",
-				gRdb, lnaGRtables[hw_type][i]);
+					gRdb, lnaGRtables[hw_type][i]);
 			break;
 		}
 	}
@@ -339,7 +339,7 @@ int const enable_notch_filter, int enable_agc, int tuner) {
 		int min_gr = MIN_IF_GR + lnaGRtables[hw_type][0];
 		int max_gr = MAX_IF_GR + lnaGRtables[hw_type][num_lnaGRs[hw_type]-1];
 		if(hw_type == HW_RSP1A) {
-			max_gr += MIXER_GR;	// other RSP types have mixer GR included in the highest LNA state
+			max_gr += MIXER_GR;     // other RSP types have mixer GR included in the highest LNA state
 		}
 		fprintf(stderr, "Gain reduction value is out of range (min=%d max=%d)\n", min_gr, max_gr);
 		_exit(1);
@@ -349,15 +349,15 @@ int const enable_notch_filter, int enable_agc, int tuner) {
 	int sdrplaySamplesPerPacket = 0;
 
 	err = mir_sdr_StreamInit (&gRdb, (double)SDRPLAY_RATE/1e6, (double)freq/1e6, mir_sdr_BW_1_536, mir_sdr_IF_Zero,
-		lna_state, &gRdBsystem, mir_sdr_USE_RSP_SET_GR, &sdrplaySamplesPerPacket,
-		sdrplay_streamCallback, sdrplay_gainCallback, &SDRPlay);
+			lna_state, &gRdBsystem, mir_sdr_USE_RSP_SET_GR, &sdrplaySamplesPerPacket,
+			sdrplay_streamCallback, sdrplay_gainCallback, &SDRPlay);
 	if(err != mir_sdr_Success) {
 		fprintf(stderr, "Unable to initialize RSP stream, error %d\n", err);
 		_exit(1);
 	}
 	initialized = 1;
 	debug_print(D_SDR, "Stream initialized (sdrplaySamplesPerPacket=%d gRdB=%d gRdBsystem=%d)\n",
-		sdrplaySamplesPerPacket, gRdb, gRdBsystem);
+			sdrplaySamplesPerPacket, gRdb, gRdBsystem);
 
 	// If no GR has been specified, enable AGC with a default set point (unless configured otherwise)
 	if(gr == SDR_AUTO_GAIN && enable_agc == 0) {

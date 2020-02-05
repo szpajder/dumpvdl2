@@ -17,20 +17,20 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define _GNU_SOURCE		// for sincosf
-#include <assert.h>		// assert
-#include <math.h>		// expf, sincosf, sinf, tanf, sqrtf, powf, M_PI
-#include <stdlib.h>		// calloc
-#include <string.h>		// memset
-#include "config.h"		// SINCOSF
-#include "chebyshev.h"		// MAX_POLES, MAX_RIPPLE
-#include "dumpvdl2.h"		// debug_print, XCALLOC
+#define _GNU_SOURCE         // for sincosf
+#include <assert.h>         // assert
+#include <math.h>           // expf, sincosf, sinf, tanf, sqrtf, powf, M_PI
+#include <stdlib.h>         // calloc
+#include <string.h>         // memset
+#include "config.h"         // SINCOSF
+#include "chebyshev.h"      // MAX_POLES, MAX_RIPPLE
+#include "dumpvdl2.h"       // debug_print, XCALLOC
 #define LP_BSIZE (MAX_POLES + 3)
 
 // Based on "The Scientist and Engineer's Guide to Digital Signal Processing"
 // Steven W. Smith, Ph.D.
 static void chebyshev_lpf_calc_pole(int const p, float const cutoff_freq, float const ripple,
-				int const npoles, float * const AA, float * const BB) {
+		int const npoles, float * const AA, float * const BB) {
 	float rp, ip;
 	SINCOSF(M_PI/(2 * npoles) + (p-1) * M_PI / npoles, &ip, &rp);
 	rp = -rp;
@@ -64,7 +64,8 @@ static void chebyshev_lpf_calc_pole(int const p, float const cutoff_freq, float 
 	BB[2] = (-(k * k) - y1 * k + y2) / d;
 }
 
-void chebyshev_lpf_init(float const cutoff_freq, float const ripple, int const npoles, float **Aptr, float **Bptr) {
+void chebyshev_lpf_init(float const cutoff_freq, float const ripple, int const npoles,
+		float **Aptr, float **Bptr) {
 	assert(npoles > 0);
 	assert(npoles <= MAX_POLES);
 	assert((npoles & 1) == 0);
