@@ -85,7 +85,6 @@ void asn1_pdu_format_text(la_vstring *vstr, void const * const data, int indent)
 		asn_sprintf(vstr, pdu->type, pdu->data, indent + 2);
 	}
 	ASSERT(pdu->formatter_table_text != NULL);
-	ASSERT(pdu->formatter_table_text_len > 0);
 	asn1_output(vstr, pdu->formatter_table_text, pdu->formatter_table_text_len,
 			pdu->type, pdu->data, indent);
 }
