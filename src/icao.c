@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <libacars/libacars.h>          // la_proto_node
+#include <libacars/libacars.h>          // la_proto_node, la_type_descriptor
 #include <libacars/vstring.h>           // la_vstring
 #include "asn1/BIT_STRING.h"
 #include "asn1/ACSE-apdu.h"
@@ -40,7 +40,7 @@
 #include "asn1/ADSPositiveAcknowledgement.h"
 #include "asn1/ADSRequestContract.h"
 #include "dumpvdl2.h"
-#include "asn1-util.h"                  // asn1_decode_as(), asn1_pdu_destroy(), asn1_pdu_t
+#include "asn1-util.h"                  // asn1_decode_as(), asn1_pdu_destroy(), asn1_pdu_t, proto_DEF_asn1_pdu
 #include "asn1-format-icao.h"           // asn1_*_formatter_table, asn1_*_formatter_table_len
 #include "icao.h"
 
@@ -49,7 +49,6 @@
 
 // Forward declarations
 la_type_descriptor const proto_DEF_x225_spdu;
-la_type_descriptor const proto_DEF_asn1_pdu;
 
 /********************************************************************************
   * ICAO applications
@@ -352,11 +351,6 @@ end:
 	node->next = NULL;
 	return node;
 }
-
-la_type_descriptor const proto_DEF_asn1_pdu = {
-	.format_text    = asn1_pdu_format_text,
-	.destroy        = asn1_pdu_destroy
-};
 
 /********************************************************************************
   * ICAO Doc 9705 ULCS / X.227 ACSE

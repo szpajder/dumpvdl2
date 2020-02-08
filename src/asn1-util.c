@@ -100,3 +100,8 @@ void asn1_pdu_destroy(void *data) {
 	}
 	XFREE(data);
 }
+
+la_type_descriptor const proto_DEF_asn1_pdu = {
+	.format_text    = asn1_pdu_format_text,
+	.destroy        = asn1_pdu_destroy
+};

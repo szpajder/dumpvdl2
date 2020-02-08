@@ -20,6 +20,7 @@
 #ifndef _ASN1_UTIL_H
 #define _ASN1_UTIL_H
 #include <stdint.h>                 // uint8_t
+#include <libacars/libacars.h>      // la_type_descriptor
 #include "asn1/constr_TYPE.h"       // asn_TYPE_descriptor_t
 
 typedef struct {
@@ -41,6 +42,7 @@ typedef struct {
 	void x(la_vstring *vstr, char const * const label, asn_TYPE_descriptor_t *td, void const *sptr, int indent)
 
 // asn1-util.c
+extern la_type_descriptor const proto_DEF_asn1_pdu;
 int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, int size);
 void asn1_output(la_vstring *vstr, asn_formatter_t const * const asn1_formatter_table,
 		size_t asn1_formatter_table_len, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
