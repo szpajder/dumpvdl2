@@ -24,10 +24,18 @@
 typedef struct {
 	asn_TYPE_descriptor_t *type;
 	void *data;
+} ulcs_acse_apdu_t;
+
+// TODO: deduplicate with ulcs_acse_apdu_t
+typedef struct {
+	asn_TYPE_descriptor_t *type;
+	void *data;
+} asn1_pdu_t;
+
+typedef struct {
 	uint8_t spdu_id;
 	uint8_t spdu_special_data;
-	bool err;
-} icao_apdu_t;
+} x225_spdu_t;
 
 // app-type values for ATN applications
 #define ICAO_APP_TYPE_ADS	0
