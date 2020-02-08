@@ -64,6 +64,32 @@ void asn1_output(la_vstring *vstr, asn_formatter_t const * const asn1_formatter_
 	}
 }
 
+// text formatter for la_proto_nodes containing asn1_pdu_t data
+void asn1_pdu_format_text(la_vstring *vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+	ASSERT(indent >= 0);
+
+	CAST_PTR(pdu, asn1_pdu_t *, data);
+	if(pdu->type == NULL) {   // No user data in APDU, so no decoding was attempted
+		return;
+	}
+	if(pdu->data == NULL) {
+		LA_ISPRINTF(vstr, indent, "%s: <empty PDU>\n", pdu->type->name);
+		return;
+	}
+	if(Config.dump_asn1 == true) {
+		LA_ISPRINTF(vstr, indent, "ASN.1 dump:\n");
+		// asn_fprint does not indent the first line
+		LA_ISPRINTF(vstr, indent + 1, "");
+		asn_sprintf(vstr, pdu->type, pdu->data, indent + 2);
+	}
+	ASSERT(pdu->formatter_table_text != NULL);
+	ASSERT(pdu->formatter_table_text_len > 0);
+	asn1_output(vstr, pdu->formatter_table_text, pdu->formatter_table_text_len,
+			pdu->type, pdu->data, indent);
+}
+
 // a destructor for la_proto_nodes containing asn1_pdu_t data
 void asn1_pdu_destroy(void *data) {
 	if(data == NULL) {

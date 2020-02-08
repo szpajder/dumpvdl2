@@ -345,37 +345,17 @@ static la_proto_node *arbitrary_payload_parse(AE_qualifier_form2_t app_type,
 	XFREE(pdu);
 	return NULL;        // the caller will turn this into unknown_proto_pdu
 end:
+	pdu->formatter_table_text = asn1_icao_formatter_table;
+	pdu->formatter_table_text_len = asn1_icao_formatter_table_len;
 	node = la_proto_node_new();
 	node->td = &proto_DEF_asn1_pdu;
 	node->data = pdu;
 	node->next = NULL;
 	return node;
 }
-// TODO: deduplicate with ulcs_acse_format_text
-void arbitrary_payload_format_text(la_vstring *vstr, void const * const data, int indent) {
-	ASSERT(vstr != NULL);
-	ASSERT(data);
-	ASSERT(indent >= 0);
-
-	CAST_PTR(apdu, asn1_pdu_t *, data);
-	if(apdu->type == NULL) {   // No user data in APDU, so no decoding was attempted
-		return;
-	}
-	if(apdu->data == NULL) {
-		LA_ISPRINTF(vstr, indent, "%s: <empty PDU>\n", apdu->type->name);
-		return;
-	}
-	if(Config.dump_asn1 == true) {
-		LA_ISPRINTF(vstr, indent, "ASN.1 dump:\n");
-		// asn_fprint does not indent the first line
-		LA_ISPRINTF(vstr, indent + 1, "");
-		asn_sprintf(vstr, apdu->type, apdu->data, indent + 2);
-	}
-	asn1_output_icao_as_text(vstr, apdu->type, apdu->data, indent);
-}
 
 la_type_descriptor const proto_DEF_asn1_pdu = {
-	.format_text    = arbitrary_payload_format_text,
+	.format_text    = asn1_pdu_format_text,
 	.destroy        = asn1_pdu_destroy
 };
 

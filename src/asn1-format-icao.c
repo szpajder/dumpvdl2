@@ -989,7 +989,7 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalType) {
 	_format_BIT_STRING(vstr, label, VerticalType_bit_labels, sptr, indent);
 }
 
-static asn_formatter_t const asn1_icao_formatter_table[] = {
+asn_formatter_t const asn1_icao_formatter_table[] = {
 	// atn-b1_cpdlc-v1.asn1
 	{ .type = &asn_DEF_AircraftAddress, .format = &asn1_format_any, .label = "Aircraft address" },
 	{ .type = &asn_DEF_AirInitiatedApplications, .format = &asn1_format_SEQUENCE_OF_icao, .label = "Air-initiated applications" },
@@ -1428,8 +1428,8 @@ static asn_formatter_t const asn1_icao_formatter_table[] = {
 	{ .type = &asn_DEF_WindQualityFlag, .format = &asn1_format_ENUM, .label = "Wind quality flag" },
 };
 
-static size_t asn1_icao_formatter_table_len = sizeof(asn1_icao_formatter_table) / sizeof(asn_formatter_t);
-
+size_t asn1_icao_formatter_table_len = sizeof(asn1_icao_formatter_table) / sizeof(asn_formatter_t);
+// TODO: replace with a generic function
 void asn1_output_icao_as_text(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *sptr, int indent) {
 	asn1_output(vstr, asn1_icao_formatter_table, asn1_icao_formatter_table_len, td, sptr, indent);
 }

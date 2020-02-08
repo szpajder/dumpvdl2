@@ -33,6 +33,8 @@ typedef void (*asn1_output_fun_t)(la_vstring *, asn_TYPE_descriptor_t *, const v
 typedef struct {
 	asn_TYPE_descriptor_t *type;
 	void *data;
+	asn_formatter_t const *formatter_table_text;
+	size_t formatter_table_text_len;
 } asn1_pdu_t;
 
 #define ASN1_FORMATTER_PROTOTYPE(x) \
@@ -42,6 +44,7 @@ typedef struct {
 int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, int size);
 void asn1_output(la_vstring *vstr, asn_formatter_t const * const asn1_formatter_table,
 		size_t asn1_formatter_table_len, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
+void asn1_pdu_format_text(la_vstring *vstr, void const * const data, int indent);
 void asn1_pdu_destroy(void *data);
 
 #endif // _ASN1_UTIL_H
