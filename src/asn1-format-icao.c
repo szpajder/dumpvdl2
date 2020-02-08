@@ -1433,3 +1433,8 @@ size_t asn1_icao_formatter_table_len = sizeof(asn1_icao_formatter_table) / sizeo
 void asn1_output_icao_as_text(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *sptr, int indent) {
 	asn1_output(vstr, asn1_icao_formatter_table, asn1_icao_formatter_table_len, td, sptr, indent);
 }
+
+asn_formatter_t const asn1_acse_formatter_table[] = {
+};
+
+size_t asn1_acse_formatter_table_len = sizeof(asn1_acse_formatter_table) / sizeof(asn_formatter_t);

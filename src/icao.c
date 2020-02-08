@@ -41,7 +41,7 @@
 #include "asn1/ADSRequestContract.h"
 #include "dumpvdl2.h"
 #include "asn1-util.h"                  // asn1_decode_as(), asn1_pdu_destroy(), asn1_pdu_t
-#include "asn1-format-icao.h"           // asn1_output_icao_as_text()
+#include "asn1-format-icao.h"           // asn1_*_formatter_table, asn1_*_formatter_table_len
 #include "icao.h"
 
 #define ACSE_APDU_TYPE_MATCHES(type, value) ((type) == (value) || (type) == ACSE_apdu_PR_NOTHING)
@@ -49,7 +49,6 @@
 
 // Forward declarations
 la_type_descriptor const proto_DEF_x225_spdu;
-la_type_descriptor const proto_DEF_acse_apdu;
 la_type_descriptor const proto_DEF_asn1_pdu;
 
 /********************************************************************************
@@ -379,9 +378,11 @@ static la_proto_node *ulcs_acse_parse(uint8_t *buf, uint32_t len, uint32_t *msg_
 	}
 #endif
 
-	NEW(asn1_pdu_t, ulcs_acse_apdu);
-	ulcs_acse_apdu->data = acse_apdu;
-	ulcs_acse_apdu->type = &asn_DEF_ACSE_apdu;
+	NEW(asn1_pdu_t, apdu);
+	apdu->data = acse_apdu;
+	apdu->type = &asn_DEF_ACSE_apdu;
+	apdu->formatter_table_text = asn1_acse_formatter_table;
+	apdu->formatter_table_text_len = asn1_acse_formatter_table_len;
 
 	AE_qualifier_form2_t ae_qualifier = ICAO_APP_TYPE_UNKNOWN;
 	Association_information_t *user_info = NULL;
@@ -431,40 +432,14 @@ static la_proto_node *ulcs_acse_parse(uint8_t *buf, uint32_t len, uint32_t *msg_
 	}
 end:
 	node = la_proto_node_new();
-	node->td = &proto_DEF_acse_apdu;
-	node->data = ulcs_acse_apdu;
+	node->td = &proto_DEF_asn1_pdu;
+	node->data = apdu;
 	node->next = next_node;
 	return node;
 fail:
 	ASN_STRUCT_FREE(asn_DEF_ACSE_apdu, acse_apdu);
 	return NULL;        // the caller will convert this to unknown_proto_pdu
 }
-
-void ulcs_acse_format_text(la_vstring *vstr, void const * const data, int indent) {
-	ASSERT(vstr != NULL);
-	ASSERT(data);
-	ASSERT(indent >= 0);
-
-	CAST_PTR(apdu, asn1_pdu_t *, data);
-	if(apdu->type == NULL) {   // No user data in APDU, so no decoding was attempted
-		return;
-	}
-	if(apdu->data == NULL) {
-		LA_ISPRINTF(vstr, indent, "%s: <empty PDU>\n", apdu->type->name);
-		return;
-	}
-	if(Config.dump_asn1 == true) {
-		LA_ISPRINTF(vstr, indent, "ASN.1 dump:\n");
-		// asn_fprint does not indent the first line
-		LA_ISPRINTF(vstr, indent + 1, "");
-		asn_sprintf(vstr, apdu->type, apdu->data, indent + 2);
-	}
-}
-
-la_type_descriptor const proto_DEF_acse_apdu = {
-	.format_text    = ulcs_acse_format_text,
-	.destroy        = asn1_pdu_destroy
-};
 
 static la_proto_node *fully_encoded_data_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	Fully_encoded_data_t *fed = NULL;
