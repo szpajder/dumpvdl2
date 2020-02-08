@@ -22,17 +22,6 @@
 #include "asn1/constr_TYPE.h"
 
 typedef struct {
-	asn_TYPE_descriptor_t *type;
-	void *data;
-} ulcs_acse_apdu_t;
-
-// TODO: deduplicate with ulcs_acse_apdu_t
-typedef struct {
-	asn_TYPE_descriptor_t *type;
-	void *data;
-} asn1_pdu_t;
-
-typedef struct {
 	uint8_t spdu_id;
 	uint8_t spdu_special_data;
 } x225_spdu_t;

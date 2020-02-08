@@ -63,3 +63,15 @@ void asn1_output(la_vstring *vstr, asn_formatter_t const * const asn1_formatter_
 		LA_ISPRINTF(vstr, indent, "%s", "-- ASN.1 dump end\n");
 	}
 }
+
+// a destructor for la_proto_nodes containing asn1_pdu_t data
+void asn1_pdu_destroy(void *data) {
+	if(data == NULL) {
+		return;
+	}
+	CAST_PTR(pdu, asn1_pdu_t *, data);
+	if(pdu->type != NULL) {
+		pdu->type->free_struct(pdu->type, pdu->data, 0);
+	}
+	XFREE(data);
+}

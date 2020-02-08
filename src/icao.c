@@ -40,7 +40,7 @@
 #include "asn1/ADSPositiveAcknowledgement.h"
 #include "asn1/ADSRequestContract.h"
 #include "dumpvdl2.h"
-#include "asn1-util.h"                  // asn1_decode_as()
+#include "asn1-util.h"                  // asn1_decode_as(), asn1_pdu_destroy(), asn1_pdu_t
 #include "asn1-format-icao.h"           // asn1_output_icao_as_text()
 #include "icao.h"
 
@@ -374,20 +374,9 @@ void arbitrary_payload_format_text(la_vstring *vstr, void const * const data, in
 	asn1_output_icao_as_text(vstr, apdu->type, apdu->data, indent);
 }
 
-void arbitrary_payload_destroy(void *data) {
-	if(data == NULL) {
-		return;
-	}
-	CAST_PTR(pdu, asn1_pdu_t *, data);
-	if(pdu->type != NULL) {
-		pdu->type->free_struct(pdu->type, pdu->data, 0);
-	}
-	XFREE(data);
-}
-
 la_type_descriptor const proto_DEF_asn1_pdu = {
 	.format_text    = arbitrary_payload_format_text,
-	.destroy        = arbitrary_payload_destroy
+	.destroy        = asn1_pdu_destroy
 };
 
 /********************************************************************************
@@ -410,7 +399,7 @@ static la_proto_node *ulcs_acse_parse(uint8_t *buf, uint32_t len, uint32_t *msg_
 	}
 #endif
 
-	NEW(ulcs_acse_apdu_t, ulcs_acse_apdu);
+	NEW(asn1_pdu_t, ulcs_acse_apdu);
 	ulcs_acse_apdu->data = acse_apdu;
 	ulcs_acse_apdu->type = &asn_DEF_ACSE_apdu;
 
@@ -476,7 +465,7 @@ void ulcs_acse_format_text(la_vstring *vstr, void const * const data, int indent
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(apdu, ulcs_acse_apdu_t *, data);
+	CAST_PTR(apdu, asn1_pdu_t *, data);
 	if(apdu->type == NULL) {   // No user data in APDU, so no decoding was attempted
 		return;
 	}
@@ -492,20 +481,9 @@ void ulcs_acse_format_text(la_vstring *vstr, void const * const data, int indent
 	}
 }
 
-void ulcs_acse_destroy(void *data) {
-	if(data == NULL) {
-		return;
-	}
-	CAST_PTR(apdu, ulcs_acse_apdu_t *, data);
-	if(apdu->type != NULL) {
-		apdu->type->free_struct(apdu->type, apdu->data, 0);
-	}
-	XFREE(data);
-}
-
 la_type_descriptor const proto_DEF_acse_apdu = {
 	.format_text    = ulcs_acse_format_text,
-	.destroy        = ulcs_acse_destroy
+	.destroy        = asn1_pdu_destroy
 };
 
 static la_proto_node *fully_encoded_data_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
