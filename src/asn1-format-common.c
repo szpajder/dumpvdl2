@@ -40,6 +40,17 @@ void _format_INTEGER_with_unit(la_vstring *vstr, char const * const label, asn_T
 	LA_ISPRINTF(vstr, indent, "%s: %.*f%s\n", label, decimal_places, (double)(*val) * multiplier, unit);
 }
 
+void _format_INTEGER_as_ENUM(la_vstring *vstr, char const * const label, dict const * const value_labels,
+		void const *sptr, int indent) {
+	CAST_PTR(val, long *, sptr);
+	char *val_label = dict_search(value_labels, (int)(*val));
+	if(val_label != NULL) {
+		LA_ISPRINTF(vstr, indent, "%s: %s\n", label, val_label);
+	} else {
+		LA_ISPRINTF(vstr, indent, "%s: %ld (unknown)\n", label, *val);
+	}
+}
+
 void _format_CHOICE(la_vstring *vstr, char const * const label, dict const * const choice_labels,
 		asn1_output_fun_t cb, asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
 

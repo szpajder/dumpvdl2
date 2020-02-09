@@ -25,6 +25,8 @@
 char const *value2enum(asn_TYPE_descriptor_t *td, long const value);
 void _format_INTEGER_with_unit(la_vstring *vstr, char const * const label, asn_TYPE_descriptor_t *td,
 		void const *sptr, int indent, char const * const unit, double multiplier, int decimal_places);
+void _format_INTEGER_as_ENUM(la_vstring *vstr, char const * const label, dict const * const value_labels,
+		void const *sptr, int indent);
 void _format_CHOICE(la_vstring *vstr, char const * const label, dict const * const choice_labels,
 		asn1_output_fun_t cb, asn_TYPE_descriptor_t *td, void const *sptr, int indent);
 void _format_SEQUENCE(la_vstring *vstr, char const * const label, asn1_output_fun_t cb,
