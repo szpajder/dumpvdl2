@@ -19,8 +19,11 @@
 
 #include <gmodule.h>                            // GByteArray
 #include <libacars/vstring.h>                   // la_vstring, LA_ISPRINTF()
+#include "asn1/ACSE-apdu.h"                     // asn_DEF_ACSE_apdu
+#include "asn1/ABRT-source.h"                   // ABRT_source_*
 #include "asn1/ATCDownlinkMessage.h"            // ATCDownlinkMessage_t and dependencies
 #include "asn1/ATCUplinkMessage.h"              // ATCUplinkMessage_t and dependencies
+#include "asn1/Associate-result.h"              // Associate_result_*
 #include "asn1/CMAircraftMessage.h"             // asn_DEF_AircraftMessage
 #include "asn1/CMContactRequest.h"              // asn_DEF_CMContactRequest
 #include "asn1/CMGroundMessage.h"               // asn_DEF_CMGroundMessage
@@ -36,12 +39,42 @@
 #include "asn1/ADSRequestContract.h"            // asn_DEF_ADSRequestContract
 #include "asn1/ADSReject.h"                     // asn_DEF_ADSReject
 #include "asn1/ADSReport.h"                     // asn_DEF_ADSReport
+#include "asn1/Release-request-reason.h"        // Release_request_reason_*
+#include "asn1/Release-response-reason.h"       // Release_response_reason_*
 #include "dumpvdl2.h"                           // XCALLOC, dict_search()
 #include "asn1-util.h"                          // asn_formatter_t, asn1_output()
 #include "asn1-format-common.h"                 // common formatters and helper functions
 
-// forward declaration
+// forward declarations
 void asn1_output_icao_as_text(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
+void asn1_output_acse_as_text(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
+
+static dict const Associate_result_labels[] = {
+	{ .id = Associate_result_accepted, .val = "accept" },
+	{ .id = Associate_result_rejected_permanent, .val = "reject (permanent)" },
+	{ .id = Associate_result_rejected_transient, .val = "reject (transient)" },
+	{ .id = 0, .val = NULL }
+};
+
+static dict const Release_request_reason_labels[] = {
+	{ .id = Release_request_reason_normal, .val = "normal" },
+	{ .id = Release_request_reason_urgent, .val = "urgent" },
+	{ .id = Release_request_reason_user_defined, .val = "user defined" },
+	{ .id = 0, .val = NULL }
+};
+
+static dict const Release_response_reason_labels[] = {
+	{ .id = Release_response_reason_normal, .val = "normal" },
+	{ .id = Release_response_reason_not_finished, .val = "not finished" },
+	{ .id = Release_response_reason_user_defined, .val = "user defined" },
+	{ .id = 0, .val = NULL }
+};
+
+static dict const ABRT_source_labels[] = {
+	{ .id = ABRT_source_acse_service_user, .val = "user" },
+	{ .id = ABRT_source_acse_service_provider, .val = "provider" },
+	{ .id = 0, .val = NULL }
+};
 
 static dict const ATCUplinkMsgElementId_labels[] = {
 	{ ATCUplinkMsgElementId_PR_uM0NULL, "UNABLE" },
@@ -483,6 +516,34 @@ static GByteArray *_stringify_ShortTsap(GByteArray *array, ShortTsap_t *tsap) {
 /************************
  * ASN.1 type formatters
  ************************/
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_acse) {
+	_format_SEQUENCE(vstr, label, &asn1_output_acse_as_text, td, sptr, indent);
+}
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_CHOICE_acse) {
+	_format_CHOICE(vstr, label, NULL, &asn1_output_acse_as_text, td, sptr, indent);
+}
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_Associate_result) {
+	UNUSED(td);
+	_format_INTEGER_as_ENUM(vstr, label, Associate_result_labels, sptr, indent);
+}
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_Release_request_reason) {
+	UNUSED(td);
+	_format_INTEGER_as_ENUM(vstr, label, Release_request_reason_labels, sptr, indent);
+}
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_Release_response_reason) {
+	UNUSED(td);
+	_format_INTEGER_as_ENUM(vstr, label, Release_response_reason_labels, sptr, indent);
+}
+
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_ABRT_source) {
+	UNUSED(td);
+	_format_INTEGER_as_ENUM(vstr, label, ABRT_source_labels, sptr, indent);
+}
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_CHOICE_icao) {
 	_format_CHOICE(vstr, label, NULL, &asn1_output_icao_as_text, td, sptr, indent);
@@ -1429,12 +1490,50 @@ asn_formatter_t const asn1_icao_formatter_table[] = {
 };
 
 size_t asn1_icao_formatter_table_len = sizeof(asn1_icao_formatter_table) / sizeof(asn_formatter_t);
-// TODO: replace with a generic function
+
 void asn1_output_icao_as_text(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *sptr, int indent) {
 	asn1_output(vstr, asn1_icao_formatter_table, asn1_icao_formatter_table_len, td, sptr, indent);
 }
 
 asn_formatter_t const asn1_acse_formatter_table[] = {
+	{ .type = &asn_DEF_AARE_apdu, .format = asn1_format_SEQUENCE_acse, .label = "X.227 ACSE Associate Response" },
+	{ .type = &asn_DEF_AARQ_apdu, .format = asn1_format_SEQUENCE_acse, .label = "X.227 ACSE Associate Request" },
+	{ .type = &asn_DEF_ABRT_apdu, .format = asn1_format_SEQUENCE_acse, .label = "X.227 ACSE Abort" },
+	{ .type = &asn_DEF_ABRT_diagnostic, .format = asn1_format_ENUM, .label = "Cause" },
+	{ .type = &asn_DEF_ABRT_source  , .format = asn1_format_ABRT_source, .label = "Source" },
+	{ .type = &asn_DEF_ACSE_apdu, .format = asn1_format_CHOICE_acse, .label = NULL },
+	{ .type = &asn_DEF_AE_qualifier, .format = asn1_format_CHOICE_acse, .label = NULL },
+	{ .type = &asn_DEF_AE_qualifier_form2, .format = asn1_format_any, .label = "AE qualifier" },
+	{ .type = &asn_DEF_AP_title, .format = asn1_format_CHOICE_acse, .label = NULL },
+	{ .type = &asn_DEF_AP_title_form2, .format = asn1_format_any, .label = "AP title" },
+	{ .type = &asn_DEF_Application_context_name, .format = asn1_format_any, .label = "Application context name" },
+	{ .type = &asn_DEF_Associate_result , .format = asn1_format_Associate_result, .label = "Associate result" },
+	{ .type = &asn_DEF_Release_request_reason , .format = asn1_format_Release_request_reason, .label = "Reason" },
+	{ .type = &asn_DEF_Release_response_reason , .format = asn1_format_Release_response_reason, .label = "Reason" },
+	{ .type = &asn_DEF_RLRE_apdu, .format = asn1_format_SEQUENCE_acse, .label = "X.227 ACSE Release Response" },
+	{ .type = &asn_DEF_RLRQ_apdu, .format = asn1_format_SEQUENCE_acse, .label = "X.227 ACSE Release Request" },
+	// Supported in ATN ULCS, but not included in text output
+	{ .type = &asn_DEF_ACSE_requirements  , .format = asn1_format_NULL, .label = NULL },
+	{ .type = &asn_DEF_Associate_source_diagnostic , .format = asn1_format_NULL, .label = NULL },
+	{ .type = &asn_DEF_Association_information, .format = asn1_format_NULL, .label = NULL },
+	{ .type = &asn_DEF_Authentication_value , .format = asn1_format_NULL, .label = NULL }
+	// Not supported in ATN ULCS
+	// { .type = &asn_DEF_AE_invocation_identifier, .format = asn1_format_NULL, .label = NULL },
+	// { .type = &asn_DEF_AE_qualifier_form1, .format = asn1_format_NULL, .label = NULL },
+	// { .type = &asn_DEF_AP_invocation_identifier, .format = asn1_format_NULL, .label = NULL },
+	// { .type = &asn_DEF_AP_title_form1, .format = asn1_format_NULL, .label = NULL },
+	// { .type = &asn_DEF_Application_context_name_list, .format = asn1_format_NULL, .label = NULL },
+	// { .type = &asn_DEF_AttributeTypeAndValue, .format = asn1_format_NULL, .label = NULL },
+	// { .type = &asn_DEF_EXTERNALt, .format = asn1_format_NULL, .label = NULL },
+	// { .type = &asn_DEF_Implementation_data, .format = asn1_format_NULL, .label = NULL },
+	// { .type = &asn_DEF_Mechanism_name, .format = asn1_format_NULL, .label = NULL },
+	// { .type = &asn_DEF_Name, .format = asn1_format_NULL, .label = NULL },
+	// { .type = &asn_DEF_RDNSequence , .format = asn1_format_NULL, .label = NULL },
+	// { .type = &asn_DEF_RelativeDistinguishedName, .format = asn1_format_NULL, .label = NULL },
 };
 
 size_t asn1_acse_formatter_table_len = sizeof(asn1_acse_formatter_table) / sizeof(asn_formatter_t);
+
+void asn1_output_acse_as_text(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *sptr, int indent) {
+	asn1_output(vstr, asn1_acse_formatter_table, asn1_acse_formatter_table_len, td, sptr, indent);
+}
