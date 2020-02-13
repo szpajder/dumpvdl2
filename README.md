@@ -2,7 +2,7 @@
 
 dumpvdl2 is a VDL Mode 2 message decoder and protocol analyzer.
 
-Current stable version: 1.8.2 (released January 27, 2020)
+Current stable version: 1.9.0 (released February 13, 2020)
 
 ## Features
 
@@ -31,16 +31,18 @@ Current stable version: 1.8.2 (released January 27, 2020)
 ![dumpvdl2 screenshot](example.png?raw=true)
 
 ## Supported protocols
-- AVLC (Aviation Link Control)
+- Aviation Link Control (AVLC)
 - ACARS over AVLC
-- ISO 8208 (X.25)
-- ISO 8473 CLNP (Connectionless Network Protocol)
-- ISO 9542 ES-IS (End System to Intermediate System)
-- ISO 10747 IDRP (Inter-Domain Routing Protocol)
-- ISO 8073 COTP (Connection Oriented Transport Protocol)
-- ATN-B1 CM (Context Management)
-- ATN-B1 CPDLC (Controller-Pilot Data Link Communications) version 1
-- ATN-B2 ADS-C (Automatic Dependent Surveillance - Contract) version 2
+- ISO 8208 / X.25 DTE-DCE Interface
+- ISO 8473 / X.233 Connectionless Network Protocol (CLNP)
+- ISO 8073 / X.224 Connection Oriented Transport Protocol (COTP)
+- ISO 8327 / X.225 Session Protocol
+- ISO 8650 / X.227 Association Control Service Element (ACSE)
+- ISO 9542 End System to Intermediate System (ES-IS)
+- ISO 10747 Inter-Domain Routing Protocol (IDRP)
+- ATN-B1 Context Management
+- ATN-B1 Controller-Pilot Data Link Communications, version 1 (CPDLC)
+- ATN-B2 Automatic Dependent Surveillance - Contract, version 2 (ADS-C)
 - All applications and protocols handled by libacars library (full list [here](https://github.com/szpajder/libacars/blob/master/README.md#supported-message-types))
 
 ## Installation

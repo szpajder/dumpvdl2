@@ -1,5 +1,15 @@
 # NEWS
 
+## Version 1.9.0 (2020-02-13):
+* Added decoder for ISO 8650 / X.227 Association Control Service (ACSE).
+* Improved decoder for ISO 8327 / X.225 Session Protocol.
+* Restructured code of ATN applications decoder. The previous implementation
+  was a little messy and was unable to handle a few uncommon types of messages
+  (like ACSE Abort PDU with no payload).  This should bring the number of
+  undecoded ATN messages down to zero.
+* Enable debugging output from SDRPlay driver only if `--debug sdr` option is used.
+* Fix formatting of geo coordinates in ADS-C v2 messages.
+
 ## Version 1.8.2 (2020-01-27):
 * Fix another crash opportunity due to missing sanity check on unparseable ACARS
   messages.
