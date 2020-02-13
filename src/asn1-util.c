@@ -18,11 +18,11 @@
  */
 
 #include <stdint.h>
-#include <search.h>			// lfind()
-#include <libacars/vstring.h>		// la_vstring
-#include "asn1/asn_application.h"	// asn_TYPE_descriptor_t
-#include "dumpvdl2.h"			// debug_print(D_PROTO, )
-#include "asn1-util.h"			// asn_formatter_table
+#include <search.h>                 // lfind()
+#include <libacars/vstring.h>       // la_vstring
+#include "asn1/asn_application.h"   // asn_TYPE_descriptor_t
+#include "dumpvdl2.h"               // debug_print(D_PROTO, )
+#include "asn1-util.h"              // asn_formatter_table
 
 static int compare_fmtr(const void *k, const void *m) {
 	CAST_PTR(memb, asn_formatter_t *, m);
@@ -38,7 +38,7 @@ int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, i
 	}
 	if(rval.consumed < (size_t)size) {
 		debug_print(D_PROTO, "uper_decode_complete left %zd unparsed octets\n",
-			(size_t)size - rval.consumed);
+				(size_t)size - rval.consumed);
 		return (int)((size_t)size - rval.consumed);
 	}
 #ifdef DEBUG
@@ -50,16 +50,58 @@ int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, i
 }
 
 void asn1_output(la_vstring *vstr, asn_formatter_t const * const asn1_formatter_table,
-	size_t asn1_formatter_table_len, asn_TYPE_descriptor_t *td, const void *sptr, int indent) {
+		size_t asn1_formatter_table_len, asn_TYPE_descriptor_t *td, const void *sptr, int indent) {
 	if(td == NULL || sptr == NULL) return;
 	asn_formatter_t *formatter = lfind(td, asn1_formatter_table, &asn1_formatter_table_len,
-		sizeof(asn_formatter_t), &compare_fmtr);
+			sizeof(asn_formatter_t), &compare_fmtr);
 	if(formatter != NULL) {
 		(*formatter->format)(vstr, formatter->label, td, sptr, indent);
 	} else {
 		LA_ISPRINTF(vstr, indent, "-- Formatter for type %s not found, ASN.1 dump follows:\n", td->name);
-		LA_ISPRINTF(vstr, indent, "%s", "");	// asn_sprintf does not indent the first line
+		LA_ISPRINTF(vstr, indent, "%s", "");    // asn_sprintf does not indent the first line
 		asn_sprintf(vstr, td, sptr, indent+1);
 		LA_ISPRINTF(vstr, indent, "%s", "-- ASN.1 dump end\n");
 	}
 }
+
+// text formatter for la_proto_nodes containing asn1_pdu_t data
+void asn1_pdu_format_text(la_vstring *vstr, void const * const data, int indent) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+	ASSERT(indent >= 0);
+
+	CAST_PTR(pdu, asn1_pdu_t *, data);
+	if(pdu->type == NULL) {   // No user data in APDU, so no decoding was attempted
+		return;
+	}
+	if(pdu->data == NULL) {
+		LA_ISPRINTF(vstr, indent, "%s: <empty PDU>\n", pdu->type->name);
+		return;
+	}
+	if(Config.dump_asn1 == true) {
+		LA_ISPRINTF(vstr, indent, "ASN.1 dump:\n");
+		// asn_fprint does not indent the first line
+		LA_ISPRINTF(vstr, indent + 1, "");
+		asn_sprintf(vstr, pdu->type, pdu->data, indent + 2);
+	}
+	ASSERT(pdu->formatter_table_text != NULL);
+	asn1_output(vstr, pdu->formatter_table_text, pdu->formatter_table_text_len,
+			pdu->type, pdu->data, indent);
+}
+
+// a destructor for la_proto_nodes containing asn1_pdu_t data
+void asn1_pdu_destroy(void *data) {
+	if(data == NULL) {
+		return;
+	}
+	CAST_PTR(pdu, asn1_pdu_t *, data);
+	if(pdu->type != NULL) {
+		pdu->type->free_struct(pdu->type, pdu->data, 0);
+	}
+	XFREE(data);
+}
+
+la_type_descriptor const proto_DEF_asn1_pdu = {
+	.format_text    = asn1_pdu_format_text,
+	.destroy        = asn1_pdu_destroy
+};

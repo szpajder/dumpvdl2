@@ -22,12 +22,9 @@
 #include "asn1/constr_TYPE.h"
 
 typedef struct {
-	asn_TYPE_descriptor_t *type;
-	void *data;
 	uint8_t spdu_id;
 	uint8_t spdu_special_data;
-	bool err;
-} icao_apdu_t;
+} x225_spdu_t;
 
 // app-type values for ATN applications
 #define ICAO_APP_TYPE_ADS	0

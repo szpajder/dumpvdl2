@@ -20,12 +20,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <libacars/libacars.h>	// la_proto_node, la_proto_node_new()
-#include <libacars/vstring.h>	// la_vstring
-#include "config.h"		// IS_BIG_ENDIAN
-#include "dumpvdl2.h"		// dict_search()
+#include <libacars/libacars.h>      // la_proto_node, la_proto_node_new()
+#include <libacars/vstring.h>       // la_vstring
+#include "config.h"                 // IS_BIG_ENDIAN
+#include "dumpvdl2.h"               // dict_search()
 #include "tlv.h"
-#include "avlc.h"		// avlc_addr_t
+#include "avlc.h"                   // avlc_addr_t
 #include "xid.h"
 
 /***************************************************************************
@@ -33,12 +33,12 @@
  **************************************************************************/
 la_type_descriptor const proto_DEF_XID_msg;
 
-#define XID_FMT_ID		0x82
-#define XID_GID_PUBLIC		0x80
-#define XID_GID_PRIVATE		0xF0
-#define XID_MIN_GROUPLEN	3		// group_id + group_len (0)
-#define XID_MIN_LEN (1 + 2 * XID_MIN_GROUPLEN)	// XID fmt + empty pub group + empty priv group
-#define XID_PARAM_CONN_MGMT	1
+#define XID_FMT_ID              0x82
+#define XID_GID_PUBLIC          0x80
+#define XID_GID_PRIVATE         0xF0
+#define XID_MIN_GROUPLEN        3                   // group_id + group_len (0)
+#define XID_MIN_LEN (1 + 2 * XID_MIN_GROUPLEN)      // XID fmt + empty pub group + empty priv group
+#define XID_PARAM_CONN_MGMT     1
 
 struct xid_descr {
 	char *name;
@@ -54,22 +54,22 @@ struct xid_descr {
 // connection mgmt parameter - h and r are forced to 1 in this case
 // Reference: ICAO 9776, Table 5.12
 static const struct xid_descr xid_names[16] = {
-	{ "", "" },
-	{ "XID_CMD_LCR", "Link Connection Refused" },
-	{ "XID_CMD_HO", "Handoff Request / Broadcast Handoff" },
-	{ "GSIF", "Ground Station Information Frame" },
-	{ "XID_CMD_LE", "Link Establishment" },
-	{ "", "" },
-	{ "XID_CMD_HO", "Handoff Initiation" },
-	{ "XID_CMD_LPM", "Link Parameter Modification" },
-	{ "", "" },
-	{ "", "" },
-	{ "", "" },
-	{ "", "" },
-	{ "XID_RSP_LE", "Link Establishment Response" },
-	{ "XID_RSP_LCR", "Link Connection Refused Response" },
-	{ "XID_RSP_HO", "Handoff Response" },
-	{ "XID_RSP_LPM", "Link Parameter Modification Response" }
+	{ "",               "" },
+	{ "XID_CMD_LCR",    "Link Connection Refused" },
+	{ "XID_CMD_HO",     "Handoff Request / Broadcast Handoff" },
+	{ "GSIF",           "Ground Station Information Frame" },
+	{ "XID_CMD_LE",     "Link Establishment" },
+	{ "",               "" },
+	{ "XID_CMD_HO",     "Handoff Initiation" },
+	{ "XID_CMD_LPM",    "Link Parameter Modification" },
+	{ "",               "" },
+	{ "",               "" },
+	{ "",               "" },
+	{ "",               "" },
+	{ "XID_RSP_LE",     "Link Establishment Response" },
+	{ "XID_RSP_LCR",    "Link Connection Refused Response" },
+	{ "XID_RSP_HO",     "Handoff Response" },
+	{ "XID_RSP_LPM",    "Link Parameter Modification Response" }
 };
 
 /***************************************************************************
@@ -129,7 +129,7 @@ TLV_FORMATTER(xid_seq_format_text) {
 
 	CAST_PTR(xidseq, uint8_t *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: seq: %u retry: %u\n",
-		label, *xidseq & 0x7, *xidseq >> 4);
+			label, *xidseq & 0x7, *xidseq >> 4);
 }
 
 /***************************************************************************
@@ -168,7 +168,7 @@ vdl2_frequency_t parse_freq(uint8_t const * const buf) {
 	float frequency = (float)freq_khz / 1000.f;
 	return (vdl2_frequency_t){
 		.modulations = modulations,
-		.frequency = frequency
+			.frequency = frequency
 	};
 }
 
@@ -348,7 +348,7 @@ TLV_FORMATTER(lcr_cause_format_text) {
 	CAST_PTR(c, lcr_cause_t *, data);
 	CAST_PTR(cause_descr, char *, dict_search(lcr_causes, c->cause));
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: 0x%02x (%s)\n",
-		label, c->cause, cause_descr ? cause_descr : "unknown");
+			label, c->cause, cause_descr ? cause_descr : "unknown");
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Delay: %u\n", c->delay);
 	if(c->additional_data.buf != NULL) {
 		LA_ISPRINTF(ctx->vstr, ctx->indent+1, "%s: ", "Additional data");
@@ -826,7 +826,7 @@ la_proto_node *xid_parse(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uin
 	node->data = msg;
 	node->next = NULL;
 
-	msg->err = true;		// fail-safe default
+	msg->err = true;    // fail-safe default
 	if(len < XID_MIN_LEN) {
 		debug_print(D_PROTO, "XID too short\n");
 		goto end;
@@ -845,30 +845,30 @@ la_proto_node *xid_parse(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uin
 		ptr += 2; remaining -= 2;
 		if(grouplen > len) {
 			debug_print(D_PROTO, "XID group %02x truncated: grouplen=%u buflen=%u\n", gid,
-				grouplen, remaining);
+					grouplen, remaining);
 			goto end;
 		}
 		switch(gid) {
-		case XID_GID_PUBLIC:
-			if(msg->pub_params != NULL) {
-				debug_print(D_PROTO, "Duplicate XID group 0x%02x\n", XID_GID_PUBLIC);
-				goto end;
-			}
-			msg->pub_params = tlv_parse(ptr, grouplen, xid_pub_params, 1);
-			break;
-		case XID_GID_PRIVATE:
-			if(msg->vdl_params != NULL) {
-				debug_print(D_PROTO, "Duplicate XID group 0x%02x\n", XID_GID_PRIVATE);
-				goto end;
-			}
-			msg->vdl_params = tlv_parse(ptr, grouplen, xid_vdl_params, 1);
-			break;
-		default:
-			debug_print(D_PROTO, "Unknown XID Group ID 0x%x, ignored\n", gid);
+			case XID_GID_PUBLIC:
+				if(msg->pub_params != NULL) {
+					debug_print(D_PROTO, "Duplicate XID group 0x%02x\n", XID_GID_PUBLIC);
+					goto end;
+				}
+				msg->pub_params = tlv_parse(ptr, grouplen, xid_pub_params, 1);
+				break;
+			case XID_GID_PRIVATE:
+				if(msg->vdl_params != NULL) {
+					debug_print(D_PROTO, "Duplicate XID group 0x%02x\n", XID_GID_PRIVATE);
+					goto end;
+				}
+				msg->vdl_params = tlv_parse(ptr, grouplen, xid_vdl_params, 1);
+				break;
+			default:
+				debug_print(D_PROTO, "Unknown XID Group ID 0x%x, ignored\n", gid);
 		}
 		ptr += grouplen; remaining -= grouplen;
 	}
-// pub_params are optional, vdl_params are mandatory
+	// pub_params are optional, vdl_params are mandatory
 	if(msg->vdl_params == NULL) {
 		debug_print(D_PROTO, "Incomplete XID message\n");
 		goto end;
@@ -877,9 +877,9 @@ la_proto_node *xid_parse(uint8_t cr, uint8_t pf, uint8_t *buf, uint32_t len, uin
 		debug_print(D_PROTO, "Warning: %u unparsed octets left at end of XID message\n", remaining);
 		node->next = unknown_proto_pdu_new(ptr, remaining);
 	}
-// find connection management parameter to figure out the XID type
+	// find connection management parameter to figure out the XID type
 	conn_mgmt_t cm = {
-		.val = 0xff		// default dummy value
+		.val = 0xff // default dummy value
 	};
 	tlv_tag_t *tmp = tlv_list_search(msg->vdl_params, XID_PARAM_CONN_MGMT);
 	if(tmp != NULL) {
@@ -914,7 +914,7 @@ void xid_format_text(la_vstring * const vstr, void const * const data, int inden
 	}
 	LA_ISPRINTF(vstr, indent, "XID: %s\n", xid_names[msg->type].description);
 	indent++;
-// pub_params are optional, vdl_params are mandatory
+	// pub_params are optional, vdl_params are mandatory
 	if(msg->pub_params) {
 		LA_ISPRINTF(vstr, indent, "%s", "Public params:\n");
 		tlv_list_format_text(vstr, msg->pub_params, indent+1);

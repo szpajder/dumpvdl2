@@ -23,7 +23,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <statsd/statsd-client.h>
-#include <libacars/libacars.h>		// la_msg_dir
+#include <libacars/libacars.h>      // la_msg_dir
 #include "dumpvdl2.h"
 
 #define STATSD_NAMESPACE "dumpvdl2"
@@ -65,14 +65,14 @@ static char const *counters_per_channel[] = {
 static char const *counters_per_msgdir[] = {
 	"acars.reasm.unknown",
 	"acars.reasm.complete",
-//	"acars.reasm.in_progress",	// we report final reasm states only
+	// "acars.reasm.in_progress",   // we report final reasm states only
 	"acars.reasm.skipped",
 	"acars.reasm.duplicate",
 	"acars.reasm.out_of_seq",
 	"acars.reasm.invalid_args",
 	"x25.reasm.unknown",
 	"x25.reasm.complete",
-//	"x25.reasm.in_progress",	// we report final reasm states only
+	// "x25.reasm.in_progress",     // we report final reasm states only
 	"x25.reasm.skipped",
 	"x25.reasm.duplicate",
 	"x25.reasm.out_of_seq",
@@ -183,7 +183,7 @@ void statsd_timing_delta_per_channel_send(uint32_t const freq, char *timer, stru
 	gettimeofday(&te, NULL);
 	if(te.tv_sec < ts.tv_sec || (te.tv_sec == ts.tv_sec && te.tv_usec < ts.tv_usec)) {
 		debug_print(D_STATS, "timediff is negative: ts.tv_sec=%lu ts.tv_usec=%lu te.tv_sec=%lu te.tv_usec=%lu\n",
-			ts.tv_sec, ts.tv_usec, te.tv_sec, te.tv_usec);
+				ts.tv_sec, ts.tv_usec, te.tv_sec, te.tv_usec);
 		return;
 	}
 	tdiff = ((te.tv_sec - ts.tv_sec) * 1000000UL + te.tv_usec - ts.tv_usec) / 1000;

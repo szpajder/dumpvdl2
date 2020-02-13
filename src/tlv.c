@@ -17,9 +17,9 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdlib.h>
-#include <libacars/list.h>		// la_list
-#include <libacars/vstring.h>		// la_vstring
-#include "dumpvdl2.h"			// XCALLOC, XFREE
+#include <libacars/list.h>          // la_list
+#include <libacars/vstring.h>       // la_vstring
+#include "dumpvdl2.h"               // XCALLOC, XFREE
 #include "tlv.h"
 
 // Forward declarations
@@ -82,7 +82,7 @@ reparse:
 	parsed = td->parse(typecode, buf, tag_len);
 	if(parsed == NULL) {
 		td = &tlv_DEF_unparseable_tag;
-// tlv_unparseable_tag_parse() does not return NULL, so we don't expect a loop here
+		// tlv_unparseable_tag_parse() does not return NULL, so we don't expect a loop here
 		goto reparse;
 	}
 	return tlv_list_append(list, typecode, td, parsed);
@@ -93,7 +93,7 @@ la_list *tlv_parse(uint8_t *buf, size_t len, dict const *tag_table, size_t const
 	ASSERT(tag_table != NULL);
 	la_list *head = NULL;
 	uint8_t *ptr = buf;
-	size_t tlv_min_tag_len = 1 + len_octets;	/* type code + <len_octets> length field + empty data field */
+	size_t tlv_min_tag_len = 1 + len_octets;    // type code + <len_octets> length field + empty data field
 	size_t tag_len;
 	while(len >= tlv_min_tag_len) {
 		uint8_t typecode = *ptr;
@@ -173,9 +173,9 @@ TLV_FORMATTER(tlv_octet_string_as_ascii_format_text) {
 TLV_FORMATTER(tlv_single_octet_format_text) {
 	CAST_PTR(octet, octet_string_t *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
-// We expect this octet string to have a length of 1 - if this is the case,
-// print it in hex with 0x prefix. Otherwise print is as octet string
-// without the prefix, for brevity.
+	// We expect this octet string to have a length of 1 - if this is the case,
+	// print it in hex with 0x prefix. Otherwise print is as octet string
+	// without the prefix, for brevity.
 	if(LIKELY(octet->len == 1)) {
 		la_vstring_append_sprintf(ctx->vstr, "0x");
 	}
@@ -216,7 +216,7 @@ TLV_PARSER(tlv_uint32_msbfirst_parse) {
 
 TLV_FORMATTER(tlv_uint_format_text) {
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %u\n",
-		label, *(uint32_t *)data);
+			label, *(uint32_t *)data);
 }
 
 // No-op parser and formatter
@@ -225,7 +225,7 @@ TLV_PARSER(tlv_parser_noop) {
 	UNUSED(typecode);
 	UNUSED(buf);
 	UNUSED(len);
-// Have to return something free()'able to indicate a success
+	// Have to return something free()'able to indicate a success
 	return XCALLOC(1, 1);
 }
 

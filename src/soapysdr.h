@@ -16,7 +16,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "dumpvdl2.h"			// vdl2_state_t
+#include "dumpvdl2.h"               // vdl2_state_t
 
 #define SOAPYSDR_BUFSIZE (32*16384)
 #define SOAPYSDR_BUFCNT 15
@@ -26,5 +26,5 @@
 
 // soapysdr.c
 void soapysdr_init(vdl2_state_t *ctx, char *dev, char *antenna, int freq,
-	float gain, int correction, char *settings, char *gains);
+		float gain, int correction, char *settings, char *gains);
 void soapysdr_cancel();

@@ -20,9 +20,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <libacars/libacars.h>	// la_type_descriptor, la_proto_node
-#include <libacars/vstring.h>	// la_vstring, LA_ISPRINTF()
-#include "atn.h"		// atn_traffic_types, atsc_traffic_classes
+#include <libacars/libacars.h>      // la_type_descriptor, la_proto_node
+#include <libacars/vstring.h>       // la_vstring, LA_ISPRINTF()
+#include "atn.h"                    // atn_traffic_types, atsc_traffic_classes
 #include "esis.h"
 #include "dumpvdl2.h"
 #include "tlv.h"
@@ -43,7 +43,7 @@ TLV_PARSER(esis_subnet_caps_parse) {
 	NEW(esis_subnet_caps_t, ret);
 	ret->atn_traffic_types = buf[0];
 	ret->atsc_traffic_classes_present = false;
-	if(buf[0] & 1 && len > 1) {	/* ATS traffic allowed - next octet is present and contains ATSC classes */
+	if(buf[0] & 1 && len > 1) {     // ATS traffic allowed - next octet is present and contains ATSC classes
 		ret->atsc_traffic_classes = buf[1];
 		ret->atsc_traffic_classes_present = true;
 	}
@@ -76,9 +76,9 @@ TLV_FORMATTER(esis_subnet_caps_format_text) {
 }
 
 static const dict esis_pdu_types[] = {
-	{ ESIS_PDU_TYPE_ESH,	"ES Hello" },
-	{ ESIS_PDU_TYPE_ISH,	"IS Hello" },
-	{ 0,			NULL }
+	{ ESIS_PDU_TYPE_ESH,    "ES Hello" },
+	{ ESIS_PDU_TYPE_ISH,    "IS Hello" },
+	{ 0,                    NULL }
 };
 
 static const dict esis_options[] = {
@@ -100,7 +100,7 @@ static const dict esis_options[] = {
 			.destroy = NULL
 		}
 	},
-/* QoS Maintenance not used in ATN (ICAO 9705 Table 5.8-2) */
+	/* QoS Maintenance not used in ATN (ICAO 9705 Table 5.8-2) */
 	{
 		.id = 0x81,
 		.val = &(tlv_type_descriptor_t){
@@ -132,7 +132,7 @@ la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	node->data = pdu;
 	node->next = NULL;
 
-	pdu->err = true;		// fail-safe default
+	pdu->err = true;        // fail-safe default
 	uint8_t *ptr = buf;
 	uint32_t remaining = len;
 	if(remaining < ESIS_HDR_LEN) {
@@ -146,7 +146,7 @@ la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	}
 	pdu->holdtime = ((uint16_t)hdr->holdtime[0] << 8) | ((uint16_t)hdr->holdtime[1]);
 	debug_print(D_PROTO, "pid: %02x len: %u type: %u holdtime: %u\n",
-		hdr->pid, hdr->len, hdr->type, pdu->holdtime);
+			hdr->pid, hdr->len, hdr->type, pdu->holdtime);
 	if(remaining < hdr->len) {
 		debug_print(D_PROTO, "Too short (len %u < PDU len %u)\n", remaining, hdr->len);
 		goto end;
@@ -160,19 +160,19 @@ la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	}
 	ptr += ret; remaining -= ret;
 	switch(hdr->type) {
-	case ESIS_PDU_TYPE_ESH:
-	case ESIS_PDU_TYPE_ISH:
-		if(remaining > 0) {
-			pdu->options = tlv_parse(ptr, remaining, esis_options, 1);
-			if(pdu->options == NULL) {
-				debug_print(D_PROTO, "tlv_parse failed when parsing options\n");
-				goto end;
+		case ESIS_PDU_TYPE_ESH:
+		case ESIS_PDU_TYPE_ISH:
+			if(remaining > 0) {
+				pdu->options = tlv_parse(ptr, remaining, esis_options, 1);
+				if(pdu->options == NULL) {
+					debug_print(D_PROTO, "tlv_parse failed when parsing options\n");
+					goto end;
+				}
 			}
-		}
-		break;
-	default:
-		debug_print(D_PROTO, "Unknown PDU type 0x%02x\n", hdr->type);
-		goto end;
+			break;
+		default:
+			debug_print(D_PROTO, "Unknown PDU type 0x%02x\n", hdr->type);
+			goto end;
 	}
 	pdu->hdr = hdr;
 	*msg_type |= MSGFLT_ESIS;
@@ -199,12 +199,12 @@ static void esis_pdu_format_text(la_vstring * const vstr, void const * const dat
 	indent++;
 
 	switch(hdr->type) {
-	case ESIS_PDU_TYPE_ESH:
-		LA_ISPRINTF(vstr, indent, "%s", "SA : ");
-		break;
-	case ESIS_PDU_TYPE_ISH:
-		LA_ISPRINTF(vstr, indent, "%s", "NET: ");
-		break;
+		case ESIS_PDU_TYPE_ESH:
+			LA_ISPRINTF(vstr, indent, "%s", "SA : ");
+			break;
+		case ESIS_PDU_TYPE_ISH:
+			LA_ISPRINTF(vstr, indent, "%s", "NET: ");
+			break;
 	}
 	octet_string_with_ascii_format_text(vstr, &pdu->net_addr, 0);
 	EOL(vstr);

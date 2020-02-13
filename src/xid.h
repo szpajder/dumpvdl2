@@ -17,20 +17,20 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdint.h>
-#include <libacars/libacars.h>		// la_proto_node
-#include <libacars/list.h>		// la_list
+#include <libacars/libacars.h>  // la_proto_node
+#include <libacars/list.h>      // la_list
 
 enum xid_types {
-	XID_CMD_LCR = 1,
-	XID_CMD_HO_REQ = 2,
-	GSIF = 3,
-	XID_CMD_LE = 4,
-	XID_CMD_HO_INIT = 6,
-	XID_CMD_LPM = 7,
-	XID_RSP_LE = 12,
-	XID_RSP_LCR = 13,
-	XID_RSP_HO = 14,
-	XID_RSP_LPM = 15
+	XID_CMD_LCR     =  1,
+	XID_CMD_HO_REQ  =  2,
+	GSIF            =  3,
+	XID_CMD_LE      =  4,
+	XID_CMD_HO_INIT =  6,
+	XID_CMD_LPM     =  7,
+	XID_RSP_LE      = 12,
+	XID_RSP_LCR     = 13,
+	XID_RSP_HO      = 14,
+	XID_RSP_LPM     = 15
 };
 
 

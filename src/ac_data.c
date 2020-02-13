@@ -19,17 +19,17 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include "config.h"		// WITH_SQLITE
+#include "config.h"         // WITH_SQLITE
 #include "dumpvdl2.h"
-#include "ac_data.h"		// ac_data_entry
+#include "ac_data.h"        // ac_data_entry
 
 #ifdef WITH_SQLITE
 #include <stdbool.h>
-#include <string.h>		// strdup
-#include <time.h>		// time_t, time()
-#include <libacars/hash.h>	// la_hash_*
+#include <string.h>         // strdup
+#include <time.h>           // time_t, time()
+#include <libacars/hash.h>  // la_hash_*
 #include <sqlite3.h>
-#include "gs_data.h"		// uint_hash, uint_compare
+#include "gs_data.h"        // uint_hash, uint_compare
 
 static la_hash *ac_data_cache = NULL;
 static time_t last_gc_time = 0L;
@@ -121,10 +121,10 @@ static int ac_data_entry_from_db(uint32_t const addr, ac_data_entry **result) {
 		rc = SQLITE_OK;
 		statsd_increment("ac_data.db.hits");
 		if(result == NULL) {
-// The caller only wants the result code, not the data
+			// The caller only wants the result code, not the data
 			return rc;
 		}
-// Create positive cache entry
+		// Create positive cache entry
 		NEW(ac_data_entry, e);
 		char const *field = NULL;
 		if((field = (char *)sqlite3_column_text(stmt, 0)) != NULL) e->registration = strdup(field);
@@ -136,9 +136,9 @@ static int ac_data_entry_from_db(uint32_t const addr, ac_data_entry **result) {
 		ac_data_cache_entry_create(addr, e);
 		*result = e;
 	} else if(rc == SQLITE_DONE) {
-// Create negative cache entry
+		// Create negative cache entry
 		ac_data_cache_entry_create(addr, NULL);
-// Empty result is not an error
+		// Empty result is not an error
 		rc = SQLITE_OK;
 		statsd_increment("ac_data.db.misses");
 		if(result != NULL) {
@@ -163,7 +163,7 @@ ac_data_entry *ac_data_entry_lookup(uint32_t addr) {
 		return NULL;
 	}
 
-// Periodic cache expiration
+	// Periodic cache expiration
 	time_t now = time(NULL);
 	if(last_gc_time + AC_CACHE_GC_INTERVAL <= now) {
 		int expired_cnt = la_hash_foreach_remove(ac_data_cache, is_cache_entry_expired, &now);
@@ -185,7 +185,7 @@ ac_data_entry *ac_data_entry_lookup(uint32_t addr) {
 			return ce->ac_data;
 		}
 	}
-// Cache entry missing or expired. Fetch it from DB.
+	// Cache entry missing or expired. Fetch it from DB.
 	statsd_increment("ac_data.cache.misses");
 	ac_data_entry *e = NULL;
 	if(ac_data_entry_from_db(addr, &e) == SQLITE_OK) {

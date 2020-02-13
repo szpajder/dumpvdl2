@@ -30,7 +30,7 @@
 #define __unused __attribute__((unused))
 
 int pthread_barrier_init(pthread_barrier_t *restrict barrier,
-const pthread_barrierattr_t *restrict attr __unused, unsigned count) {
+		const pthread_barrierattr_t *restrict attr __unused, unsigned count) {
 	if (count == 0) {
 		errno = EINVAL;
 		return -1;

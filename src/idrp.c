@@ -21,14 +21,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
-#include <libacars/libacars.h>		// la_proto_node
-#include <libacars/vstring.h>		// la_vstring
-#include <libacars/list.h>		// la_list
+#include <libacars/libacars.h>  // la_proto_node
+#include <libacars/vstring.h>   // la_vstring
+#include <libacars/list.h>      // la_list
 #include "idrp.h"
 #include "dumpvdl2.h"
 #include "tlv.h"
-#include "atn.h"			// atn_sec_label_parse, atn_sec_label_format_text
-#include "x25.h"			// SN_PROTO_CLNP
+#include "atn.h"                // atn_sec_label_parse, atn_sec_label_format_text
+#include "x25.h"                // SN_PROTO_CLNP
 
 // Forward declarations
 la_type_descriptor const proto_DEF_idrp_pdu;
@@ -36,13 +36,13 @@ static tlv_type_descriptor_t tlv_DEF_idrp_attr_no_value;
 static tlv_type_descriptor_t tlv_DEF_idrp_ribatt;
 
 static dict const bispdu_types[] = {
-	{ .id = BISPDU_TYPE_OPEN,	.val = "Open" },
-	{ .id = BISPDU_TYPE_UPDATE,	.val = "Update" },
-	{ .id = BISPDU_TYPE_ERROR,	.val = "Error" },
-	{ .id = BISPDU_TYPE_KEEPALIVE,	.val = "Keepalive" },
-	{ .id = BISPDU_TYPE_CEASE,	.val = "Cease" },
-	{ .id = BISPDU_TYPE_RIBREFRESH,	.val = "RIB Refresh" },
-	{ .id = 0,			.val = NULL }
+	{ .id = BISPDU_TYPE_OPEN,       .val = "Open" },
+	{ .id = BISPDU_TYPE_UPDATE,     .val = "Update" },
+	{ .id = BISPDU_TYPE_ERROR,      .val = "Error" },
+	{ .id = BISPDU_TYPE_KEEPALIVE,  .val = "Keepalive" },
+	{ .id = BISPDU_TYPE_CEASE,      .val = "Cease" },
+	{ .id = BISPDU_TYPE_RIBREFRESH, .val = "RIB Refresh" },
+	{ .id = 0,                      .val = NULL }
 };
 
 static dict const open_pdu_errors[] = {
@@ -191,7 +191,7 @@ TLV_PARSER(rd_path_segment_parse) {
 		}
 		if(len < rdi_len) {
 			debug_print(D_PROTO, "RDI truncated: remaining: %zu < rdi_len: %u\n",
-				len, rdi_len);
+					len, rdi_len);
 			goto fail;
 		}
 		rdi_list = la_list_append(rdi_list, octet_string_new(buf, len));
@@ -442,7 +442,7 @@ TLV_FORMATTER(idrp_attr_no_value_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-// Find the attribute label and print it to indicate its presence in RIB-Att)
+	// Find the attribute label and print it to indicate its presence in RIB-Att)
 	CAST_PTR(typecode, uint8_t *, data);
 	CAST_PTR(td, tlv_type_descriptor_t *, dict_search(path_attributes, *typecode));
 	if(td != NULL) {
@@ -471,8 +471,8 @@ static attr_parse_result_t parse_idrp_ribatt(uint8_t *buf, uint32_t len) {
 		uint8_t typecode = buf[0];
 		buf++; consumed++; len--;
 		if(typecode == 11 || typecode == 14) {
-// Locally Defined Qos and Security are encoded as full TLVs. Extract the length
-// field and run the standard tag parser for them.
+			// Locally Defined Qos and Security are encoded as full TLVs. Extract the length
+			// field and run the standard tag parser for them.
 			if(len < 2) {
 				goto fail;
 			}
@@ -480,19 +480,19 @@ static attr_parse_result_t parse_idrp_ribatt(uint8_t *buf, uint32_t len) {
 			buf += 2; consumed += 2; len -= 2;
 			if(tag_len > len) {
 				debug_print(D_PROTO, "Tag %d: parameter truncated: tag_len=%zu buflen=%u\n",
-					typecode, tag_len, len);
+						typecode, tag_len, len);
 				goto fail;
 			}
 			attr_list = tlv_single_tag_parse(typecode, buf, tag_len,
-				path_attributes, attr_list);
+					path_attributes, attr_list);
 			buf += tag_len; consumed += tag_len; len -= tag_len;
 		} else {
-// Other attributes are encoded as value only.
-// Can't store a NULL value in tlv_tag_t, so just store the typecode as value
+			// Other attributes are encoded as value only.
+			// Can't store a NULL value in tlv_tag_t, so just store the typecode as value
 			NEW(uint8_t, u);
 			*u = typecode;
 			attr_list = tlv_list_append(attr_list, typecode,
-				&tlv_DEF_idrp_attr_no_value, u);
+					&tlv_DEF_idrp_attr_no_value, u);
 		}
 		i++;
 	}
@@ -503,8 +503,8 @@ fail:
 }
 
 typedef struct {
-	uint8_t num;		// RIBAtt index number
-	la_list *attr_list;	// Attributes
+	uint8_t num;        // RIBAtt index number
+	la_list *attr_list; // Attributes
 } idrp_ribatt_t;
 
 static attr_parse_result_t parse_idrp_ribatts_set(uint8_t *buf, uint32_t len) {
@@ -586,7 +586,7 @@ static attr_parse_result_t parse_idrp_confed_ids(uint8_t *buf, uint32_t len) {
 		buf++; consumed++; len--;
 		if(len < confed_id_len) {
 			debug_print(D_PROTO, "Truncated Confed ID #%d: len %u < confed_id_len %u\n",
-				i, len, confed_id_len);
+					i, len, confed_id_len);
 			goto fail;
 		}
 		confed_id_list = la_list_append(confed_id_list, octet_string_new(buf, confed_id_len));
@@ -622,8 +622,8 @@ static int parse_idrp_open_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 	pdu->open_src_rdi.buf = buf;
 	buf += pdu->open_src_rdi.len; consumed += pdu->open_src_rdi.len; len -= pdu->open_src_rdi.len;
 	attr_parse_result_t result = parse_idrp_ribatts_set(buf, len);
-// FIXME: don't fail catastrophically on unparseable RibAttsSet.
-// We can still print most of the dissected packet in this case.
+	// FIXME: don't fail catastrophically on unparseable RibAttsSet.
+	// We can still print most of the dissected packet in this case.
 	if(result.consumed < 0) {
 		return -1;
 	}
@@ -678,7 +678,7 @@ static attr_parse_result_t parse_nlri_list(uint8_t *buf, uint32_t len) {
 		buf += 2; consumed += 2; len -= 2;
 		if(len < proto_len) {
 			debug_print(D_PROTO, "Protocol field truncated: len %u < proto_len %u\n",
-				len, proto_len);
+					len, proto_len);
 			goto fail;
 		}
 		nlri->proto.buf = buf;
@@ -686,8 +686,8 @@ static attr_parse_result_t parse_nlri_list(uint8_t *buf, uint32_t len) {
 		buf += proto_len; consumed += proto_len; len -= proto_len;
 
 		nlri->is_clnp = (nlri->proto_type == 1
-			&& nlri->proto.len == 1
-			&& nlri->proto.buf[0] == SN_PROTO_CLNP);
+				&& nlri->proto.len == 1
+				&& nlri->proto.buf[0] == SN_PROTO_CLNP);
 
 		uint16_t addr_len = extract_uint16_msbfirst(buf);
 		buf += 2; consumed += 2; len -= 2;
@@ -697,7 +697,7 @@ static attr_parse_result_t parse_nlri_list(uint8_t *buf, uint32_t len) {
 		}
 		if(len < addr_len) {
 			debug_print(D_PROTO, "Addr_info field truncated: len %u < addr_len %u\n",
-				len, addr_len);
+					len, addr_len);
 			goto fail;
 		}
 		if(nlri->is_clnp) {
@@ -747,8 +747,8 @@ static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 			debug_print(D_PROTO, "Path attributes field truncated: len %u < expected %u\n", len, total_attrib_len);
 			return -1;
 		}
-		while(total_attrib_len > 4) {				// flag + typecode + length
-// buf[0] is flag - not too interesting, so skip it
+		while(total_attrib_len > 4) {   // flag + typecode + length
+			// buf[0] is flag - not too interesting, so skip it
 			uint8_t typecode = buf[1];
 			buf += 2; consumed += 2; len -= 2; total_attrib_len -= 2;
 			uint16_t alen = extract_uint16_msbfirst(buf);
@@ -758,21 +758,21 @@ static int parse_idrp_update_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 				return -1;
 			}
 			pdu->path_attributes = tlv_single_tag_parse(typecode, buf, alen,
-				path_attributes, pdu->path_attributes);
+					path_attributes, pdu->path_attributes);
 			buf += alen; consumed += alen; len -= alen; total_attrib_len -= alen;
 		}
 		if(total_attrib_len > 0) {
 			debug_print(D_PROTO, "total_attrib_len disagrees with length of the attributes: (%u octets left)\n",
-				total_attrib_len);
+					total_attrib_len);
 			return -1;
 		}
 	}
 	attr_parse_result_t result = parse_nlri_list(buf, len);
 	if(result.consumed >= 0) {
-		pdu->nlri_list = result.list;	// may be NULL for empty NLRI list - this is harmless
+		pdu->nlri_list = result.list;   // may be NULL for empty NLRI list - this is harmless
 		consumed += result.consumed;
 	} else {
-// NLRI parser failed - store NLRI field as octet_string to be printed in raw
+		// NLRI parser failed - store NLRI field as octet_string to be printed in raw
 		pdu->data = octet_string_new(buf, len);
 		consumed += len;
 	}
@@ -791,8 +791,8 @@ static int parse_idrp_error_pdu(idrp_pdu_t *pdu, uint8_t *buf, uint32_t len) {
 
 	debug_print(D_PROTO, "code=%u subcode=%u\n", err_code, err_subcode);
 	if(err_code == BISPDU_ERR_FSM) {
-// upper nibble of subcode contains BISPDU type which this error PDU is related to.
-// lower nibble contains current FSM state
+		// upper nibble of subcode contains BISPDU type which this error PDU is related to.
+		// lower nibble contains current FSM state
 		pdu->err_fsm_bispdu_type = err_subcode >> 4;
 		pdu->err_fsm_state = err_subcode & 0xf;
 	}
@@ -810,7 +810,7 @@ la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	node->data = pdu;
 	node->next = NULL;
 
-	pdu->err = true;	// fail-safe default
+	pdu->err = true;    // fail-safe default
 	if(len < BISPDU_HDR_LEN) {
 		debug_print(D_PROTO, "Too short (len %u < min len %u)\n", len, BISPDU_HDR_LEN);
 		goto end;
@@ -820,7 +820,7 @@ la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	CAST_PTR(hdr, idrp_hdr_t *, ptr);
 	uint16_t pdu_len = extract_uint16_msbfirst(hdr->len);
 	debug_print(D_PROTO, "pid: %02x len: %u type: %u seq: %u ack: %u coff: %u cavail: %u\n",
-		hdr->pid, pdu_len, hdr->type, ntohl(hdr->seq), ntohl(hdr->ack), hdr->coff, hdr->cavail);
+			hdr->pid, pdu_len, hdr->type, ntohl(hdr->seq), ntohl(hdr->ack), hdr->coff, hdr->cavail);
 	debug_print_buf_hex(D_PROTO_DETAIL, hdr->validation, 16, "Validation:\n");
 	if(remaining < pdu_len) {
 		debug_print(D_PROTO, "Too short (len %u < PDU len %u)\n", remaining, pdu_len);
@@ -830,25 +830,25 @@ la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	debug_print(D_PROTO, "skipping %u hdr octets, %u octets remaining\n", BISPDU_HDR_LEN, remaining);
 	int result = 0;
 	switch(hdr->type) {
-	case BISPDU_TYPE_OPEN:
-		result = parse_idrp_open_pdu(pdu, ptr, pdu_len);
-		break;
-	case BISPDU_TYPE_UPDATE:
-		result = parse_idrp_update_pdu(pdu, ptr, pdu_len);
-		break;
-	case BISPDU_TYPE_ERROR:
-		result = parse_idrp_error_pdu(pdu, ptr, pdu_len);
-		break;
-	case BISPDU_TYPE_KEEPALIVE:
-	case BISPDU_TYPE_CEASE:
-		break;
-	case BISPDU_TYPE_RIBREFRESH:
-		break;
-	default:
-		debug_print(D_PROTO, "Unknown BISPDU type 0x%02x\n", hdr->type);
-		result = -1;
+		case BISPDU_TYPE_OPEN:
+			result = parse_idrp_open_pdu(pdu, ptr, pdu_len);
+			break;
+		case BISPDU_TYPE_UPDATE:
+			result = parse_idrp_update_pdu(pdu, ptr, pdu_len);
+			break;
+		case BISPDU_TYPE_ERROR:
+			result = parse_idrp_error_pdu(pdu, ptr, pdu_len);
+			break;
+		case BISPDU_TYPE_KEEPALIVE:
+		case BISPDU_TYPE_CEASE:
+			break;
+		case BISPDU_TYPE_RIBREFRESH:
+			break;
+		default:
+			debug_print(D_PROTO, "Unknown BISPDU type 0x%02x\n", hdr->type);
+			result = -1;
 	}
-	if(result < 0) {		// unparseable PDU
+	if(result < 0) {    // unparseable PDU
 		goto end;
 	}
 	ptr += result; remaining -= result;
@@ -881,13 +881,13 @@ static void idrp_error_format_text(la_vstring *vstr, idrp_pdu_t *pdu, int indent
 		LA_ISPRINTF(vstr, indent, "Subcode: %u (unknown)\n", pdu->err_subcode);
 		goto print_err_payload;
 	}
-	if(pdu->err_code == BISPDU_ERR_FSM) {	// special case
+	if(pdu->err_code == BISPDU_ERR_FSM) {   // special case
 		CAST_PTR(bispdu_name, char *, dict_search(bispdu_types, pdu->err_fsm_bispdu_type));
 		CAST_PTR(fsm_state_name, char *, dict_search(FSM_states, pdu->err_fsm_state));
 		LA_ISPRINTF(vstr, indent, "Erroneous BISPDU type: %s\n",
-			bispdu_name ? bispdu_name : "unknown");
+				bispdu_name ? bispdu_name : "unknown");
 		LA_ISPRINTF(vstr, indent, "FSM state: %s\n",
-			fsm_state_name ? fsm_state_name : "unknown");
+				fsm_state_name ? fsm_state_name : "unknown");
 	} else {
 		CAST_PTR(subcode, char *, dict_search(err->subcodes, pdu->err_subcode));
 		LA_ISPRINTF(vstr, indent, "Subcode: %u (%s)\n", pdu->err_subcode, subcode ? subcode : "unknown");
@@ -913,86 +913,86 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 	idrp_hdr_t *hdr = pdu->hdr;
 	CAST_PTR(bispdu_name, char *, dict_search(bispdu_types, hdr->type));
 	LA_ISPRINTF(vstr, indent, "IDRP %s: seq: %u ack: %u credit_offered: %u credit_avail: %u\n",
-		bispdu_name, ntohl(hdr->seq), ntohl(hdr->ack), hdr->coff, hdr->cavail);
+			bispdu_name, ntohl(hdr->seq), ntohl(hdr->ack), hdr->coff, hdr->cavail);
 	indent++;
 	switch(pdu->hdr->type) {
-	case BISPDU_TYPE_OPEN:
-		LA_ISPRINTF(vstr, indent, "Hold Time: %u seconds\n", pdu->open_holdtime);
-		LA_ISPRINTF(vstr, indent, "Max. PDU size: %u octets\n", pdu->open_max_pdu_size);
-		{
-			LA_ISPRINTF(vstr, indent, "%s: ", "Source RDI");
-			octet_string_with_ascii_format_text(vstr, &pdu->open_src_rdi, 0);
-			EOL(vstr);
-			LA_ISPRINTF(vstr, indent, "%s:\n", "RIB Attribute Set");
-			if(pdu->ribatts_set != NULL) {
-				tlv_list_format_text(vstr, pdu->ribatts_set, indent+1);
-			}
-			if(pdu->confed_ids != NULL) {
-				LA_ISPRINTF(vstr, indent, "%s:\n", "Confederation IDs");
-				indent++;
-				for(la_list *p = pdu->confed_ids; p != NULL; p = p->next) {
-					octet_string_with_ascii_format_text(vstr, p->data, indent);
+		case BISPDU_TYPE_OPEN:
+			LA_ISPRINTF(vstr, indent, "Hold Time: %u seconds\n", pdu->open_holdtime);
+			LA_ISPRINTF(vstr, indent, "Max. PDU size: %u octets\n", pdu->open_max_pdu_size);
+			{
+				LA_ISPRINTF(vstr, indent, "%s: ", "Source RDI");
+				octet_string_with_ascii_format_text(vstr, &pdu->open_src_rdi, 0);
+				EOL(vstr);
+				LA_ISPRINTF(vstr, indent, "%s:\n", "RIB Attribute Set");
+				if(pdu->ribatts_set != NULL) {
+					tlv_list_format_text(vstr, pdu->ribatts_set, indent+1);
+				}
+				if(pdu->confed_ids != NULL) {
+					LA_ISPRINTF(vstr, indent, "%s:\n", "Confederation IDs");
+					indent++;
+					for(la_list *p = pdu->confed_ids; p != NULL; p = p->next) {
+						octet_string_with_ascii_format_text(vstr, p->data, indent);
+						EOL(vstr);
+					}
+					indent--;
+				}
+				CAST_PTR(auth_mech_name, char *, dict_search(auth_mechs, pdu->auth_mech));
+				LA_ISPRINTF(vstr, indent, "Auth mechanism: %s\n",
+						auth_mech_name ? auth_mech_name : "unknown");
+				if(pdu->auth_data.buf != NULL && pdu->auth_data.len > 0) {
+					LA_ISPRINTF(vstr, indent, "%s: ", "Auth data");
+					octet_string_format_text(vstr, &pdu->auth_data, 0);
 					EOL(vstr);
+				}
+			}
+			break;
+		case BISPDU_TYPE_UPDATE:
+			if(pdu->withdrawn_routes != NULL) {
+				LA_ISPRINTF(vstr, indent, "%s", "Withdrawn Routes:\n");
+				indent++;
+				for(la_list *p = pdu->withdrawn_routes; p != NULL; p = p->next) {
+					LA_ISPRINTF(vstr, indent, "ID: %u\n", *(uint32_t *)(p->data));
 				}
 				indent--;
 			}
-			CAST_PTR(auth_mech_name, char *, dict_search(auth_mechs, pdu->auth_mech));
-			LA_ISPRINTF(vstr, indent, "Auth mechanism: %s\n",
-				auth_mech_name ? auth_mech_name : "unknown");
-			if(pdu->auth_data.buf != NULL && pdu->auth_data.len > 0) {
-				LA_ISPRINTF(vstr, indent, "%s: ", "Auth data");
-				octet_string_format_text(vstr, &pdu->auth_data, 0);
-				EOL(vstr);
+			if(pdu->path_attributes != NULL) {
+				tlv_list_format_text(vstr, pdu->path_attributes, indent);
 			}
-		}
-		break;
-	case BISPDU_TYPE_UPDATE:
-		if(pdu->withdrawn_routes != NULL) {
-			LA_ISPRINTF(vstr, indent, "%s", "Withdrawn Routes:\n");
-			indent++;
-			for(la_list *p = pdu->withdrawn_routes; p != NULL; p = p->next) {
-				LA_ISPRINTF(vstr, indent, "ID: %u\n", *(uint32_t *)(p->data));
-			}
-			indent--;
-		}
-		if(pdu->path_attributes != NULL) {
-			tlv_list_format_text(vstr, pdu->path_attributes, indent);
-		}
 
-		if(pdu->nlri_list != NULL) {
-			la_list *n = pdu->nlri_list;
-			while(n != NULL) {
-				LA_ISPRINTF(vstr, indent, "%s:\n", "Reachability info");
-				indent++;
-				CAST_PTR(dest, idrp_nlri_t *, n->data);
-				if(dest->is_clnp) {
-					LA_ISPRINTF(vstr, indent, "%s\n", "Protocol: CLNP");
-					LA_ISPRINTF(vstr, indent, "Prefix length: %u\n", dest->prefix_len);
-				} else {
-					LA_ISPRINTF(vstr, indent, "%s", "Protocol: ");
-					octet_string_format_text(vstr, &dest->proto, 0);
+			if(pdu->nlri_list != NULL) {
+				la_list *n = pdu->nlri_list;
+				while(n != NULL) {
+					LA_ISPRINTF(vstr, indent, "%s:\n", "Reachability info");
+					indent++;
+					CAST_PTR(dest, idrp_nlri_t *, n->data);
+					if(dest->is_clnp) {
+						LA_ISPRINTF(vstr, indent, "%s\n", "Protocol: CLNP");
+						LA_ISPRINTF(vstr, indent, "Prefix length: %u\n", dest->prefix_len);
+					} else {
+						LA_ISPRINTF(vstr, indent, "%s", "Protocol: ");
+						octet_string_format_text(vstr, &dest->proto, 0);
+						EOL(vstr);
+					}
+					LA_ISPRINTF(vstr, indent, "%s: ", "Dest. address prefix");
+					octet_string_with_ascii_format_text(vstr, &dest->prefix, 0);
 					EOL(vstr);
+					indent--;
+					n = la_list_next(n);
 				}
-				LA_ISPRINTF(vstr, indent, "%s: ", "Dest. address prefix");
-				octet_string_with_ascii_format_text(vstr, &dest->prefix, 0);
+			} else if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
+				LA_ISPRINTF(vstr, indent, "%s\n", "-- Unparseable NLRI");
+				octet_string_with_ascii_format_text(vstr, pdu->data, indent+1);
 				EOL(vstr);
-				indent--;
-				n = la_list_next(n);
 			}
-		} else if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
-			LA_ISPRINTF(vstr, indent, "%s\n", "-- Unparseable NLRI");
-			octet_string_with_ascii_format_text(vstr, pdu->data, indent+1);
-			EOL(vstr);
-		}
-		break;
-	case BISPDU_TYPE_ERROR:
-		idrp_error_format_text(vstr, pdu, indent);
-		break;
-	case BISPDU_TYPE_KEEPALIVE:
-	case BISPDU_TYPE_CEASE:
-		break;
-	case BISPDU_TYPE_RIBREFRESH:
-		break;
+			break;
+		case BISPDU_TYPE_ERROR:
+			idrp_error_format_text(vstr, pdu, indent);
+			break;
+		case BISPDU_TYPE_KEEPALIVE:
+		case BISPDU_TYPE_CEASE:
+			break;
+		case BISPDU_TYPE_RIBREFRESH:
+			break;
 	}
 }
 

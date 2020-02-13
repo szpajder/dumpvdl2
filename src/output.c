@@ -16,7 +16,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define _POSIX_C_SOURCE 201112L	/* getaddrinfo */
+#define _POSIX_C_SOURCE 201112L     // getaddrinfo
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,8 +26,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <libacars/libacars.h>		// la_proto_node, la_proto_tree_format_text()
-#include <libacars/vstring.h>		// la_vstring
+#include <libacars/libacars.h>      // la_proto_node, la_proto_tree_format_text()
+#include <libacars/vstring.h>       // la_vstring
 #include "dumpvdl2.h"
 
 int pp_sockfd = 0;
@@ -52,7 +52,7 @@ static int open_outfile() {
 		char suffix[16];
 		if(Config.hourly == true) {
 			fmt = "_%Y%m%d_%H";
-		} else {	// Config.daily == true
+		} else {                   // Config.daily == true
 			fmt = "_%Y%m%d";
 		}
 		tlen = strftime(suffix, sizeof(suffix), fmt, &current_tm);
@@ -149,7 +149,7 @@ static int rotate_outfile() {
 		localtime_r(&t, &new_tm);
 	}
 	if((Config.hourly == true && new_tm.tm_hour != current_tm.tm_hour) ||
-		(Config.daily == true && new_tm.tm_mday != current_tm.tm_mday)) {
+			(Config.daily == true && new_tm.tm_mday != current_tm.tm_mday)) {
 		fclose(outf);
 		return open_outfile();
 	}

@@ -72,7 +72,7 @@ static int mirisdr_verbose_device_search(char *s) {
 	device = (int)strtol(s, &s2, 0);
 	if (s2[0] == '\0' && device >= 0 && device < device_count) {
 		fprintf(stderr, "Using device %d: %s\n",
-			device, mirisdr_get_device_name((uint32_t)device));
+				device, mirisdr_get_device_name((uint32_t)device));
 		return device;
 	}
 	/* does string exact match a serial */
@@ -82,7 +82,7 @@ static int mirisdr_verbose_device_search(char *s) {
 			continue;}
 		device = i;
 		fprintf(stderr, "Using device %d: %s\n",
-			device, mirisdr_get_device_name((uint32_t)device));
+				device, mirisdr_get_device_name((uint32_t)device));
 		return device;
 	}
 	/* does string prefix match a serial */
@@ -92,7 +92,7 @@ static int mirisdr_verbose_device_search(char *s) {
 			continue;}
 		device = i;
 		fprintf(stderr, "Using device %d: %s\n",
-			device, mirisdr_get_device_name((uint32_t)device));
+				device, mirisdr_get_device_name((uint32_t)device));
 		return device;
 	}
 	/* does string suffix match a serial */
@@ -105,28 +105,29 @@ static int mirisdr_verbose_device_search(char *s) {
 			continue;}
 		device = i;
 		fprintf(stderr, "Using device %d: %s\n",
-			device, mirisdr_get_device_name((uint32_t)device));
+				device, mirisdr_get_device_name((uint32_t)device));
 		return device;
 	}
 	fprintf(stderr, "No matching devices found.\n");
 	return -1;
 }
 
-void mirisdr_init(vdl2_state_t *ctx, char *dev, int flavour, uint32_t freq, float gain, int freq_offset, int usb_xfer_mode) {
+void mirisdr_init(vdl2_state_t *ctx, char *dev, int flavour, uint32_t freq, float gain,
+		int freq_offset, int usb_xfer_mode) {
 	UNUSED(ctx);
 	int r;
 
 	mirisdr_hw_flavour_t hw_flavour;
 	switch(flavour) {
-	case 0:
-		hw_flavour = MIRISDR_HW_DEFAULT;
-		break;
-	case 1:
-		hw_flavour = MIRISDR_HW_SDRPLAY;
-		break;
-	default:
-		fprintf(stderr, "Unknown device variant %u\n", flavour);
-		_exit(1);
+		case 0:
+			hw_flavour = MIRISDR_HW_DEFAULT;
+			break;
+		case 1:
+			hw_flavour = MIRISDR_HW_SDRPLAY;
+			break;
+		default:
+			fprintf(stderr, "Unknown device variant %u\n", flavour);
+			_exit(1);
 	}
 	int device = mirisdr_verbose_device_search(dev);
 	if(device < 0)
@@ -180,11 +181,11 @@ void mirisdr_init(vdl2_state_t *ctx, char *dev, int flavour, uint32_t freq, floa
 		r |= mirisdr_set_tuner_gain(mirisdr, ngain);
 		if (r < 0) {
 			fprintf(stderr, "Failed to set gain to %d for device #%d: error %d\n",
-				ngain, device, r);
+					ngain, device, r);
 			_exit(1);
 		} else
 			fprintf(stderr, "Device #%d: gain set to %d dB\n", device,
-				mirisdr_get_tuner_gain(mirisdr));
+					mirisdr_get_tuner_gain(mirisdr));
 	}
 
 	r = mirisdr_set_sample_format(mirisdr, "252_S16");

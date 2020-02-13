@@ -16,11 +16,11 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "libacars/list.h"		// la_list
-#include "dumpvdl2.h"			// dict
+#include "libacars/list.h"  // la_list
+#include "dumpvdl2.h"       // dict
 #include "tlv.h"
-#include "config.h"			// IS_BIG_ENDIAN
-#include "atn.h"			// ATN_TRAFFIC_TYPES_ALL, ATSC_TRAFFIC_CLASSES_ALL
+#include "config.h"         // IS_BIG_ENDIAN
+#include "atn.h"            // ATN_TRAFFIC_TYPES_ALL, ATSC_TRAFFIC_CLASSES_ALL
 
 typedef struct {
 	octet_string_t sec_rid;
@@ -78,24 +78,24 @@ TLV_PARSER(atn_traffic_type_parse) {
 	t->category = CAT_UNKNOWN;
 	t->policy = buf[0] & 0x1f;
 	switch(buf[0] >> 5) {
-	case 0:
-		t->type = TT_ATN_OPER,
-		t->category = CAT_ATSC;
-		break;
-	case 1:
-// exception :/
-		if(buf[0] == 0x30) {
-			t->type = TT_ATN_ADMIN;
+		case 0:
+			t->type = TT_ATN_OPER,
+				t->category = CAT_ATSC;
+			break;
+		case 1:
+			// exception :/
+			if(buf[0] == 0x30) {
+				t->type = TT_ATN_ADMIN;
+				t->category = CAT_NONE;
+			} else {
+				t->type = TT_ATN_OPER;
+				t->category = CAT_AOC;
+			}
+			break;
+		case 3:
+			t->type = TT_ATN_SYS_MGMT;
 			t->category = CAT_NONE;
-		} else {
-			t->type = TT_ATN_OPER;
-			t->category = CAT_AOC;
-		}
-		break;
-	case 3:
-		t->type = TT_ATN_SYS_MGMT;
-		t->category = CAT_NONE;
-		break;
+			break;
 	}
 	return t;
 }
@@ -125,7 +125,7 @@ TLV_FORMATTER(atn_traffic_type_format_text) {
 	ctx->indent++;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "Type: %s\n", type ? type : "unknown");
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "Category: %s\n", category ? category : "unknown");
-// TODO: stringify all policies according to 9705, Table 5.6-1
+	// TODO: stringify all policies according to 9705, Table 5.6-1
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "Route policy: 0x%02x\n", t->policy);
 	ctx->indent--;
 }
@@ -206,7 +206,7 @@ TLV_FORMATTER(atn_sec_class_format_text) {
 	CAST_PTR(t, uint8_t *, data);
 	CAST_PTR(class, char *, dict_search(security_classes, *t));
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %s\n",
-		label, class ? class : "unassigned");
+			label, class ? class : "unassigned");
 }
 
 dict const atn_security_tags[] = {
@@ -228,8 +228,8 @@ dict const atn_security_tags[] = {
 			.destroy = NULL
 		}
 	},
-// Supported ATSC classes TLV uses a typecode of 6 or 7,
-// depending on whether non-ATSC traffic is allowed on the route or not.
+	// Supported ATSC classes TLV uses a typecode of 6 or 7,
+	// depending on whether non-ATSC traffic is allowed on the route or not.
 	{
 		.id = 0x6,
 		.val = &(tlv_type_descriptor_t){
@@ -266,11 +266,11 @@ dict const atn_security_tags[] = {
 static la_list *atn_sec_info_parse(uint8_t *buf, size_t len) {
 	ASSERT(buf != NULL);
 	la_list *l = NULL;
-// In ATN all security tag names have a length of 1, hence we may
-// treat the single-byte name as a dict index and parse the whole
-// tag set as TLV. If we encounter a tag name length other than 1,
-// this method won't work, so we return NULL to indicate parsing error.
-	while(len >= 3) {	// tag set name len + tag set name + tag set len + 0-length sec tag
+	// In ATN all security tag names have a length of 1, hence we may
+	// treat the single-byte name as a dict index and parse the whole
+	// tag set as TLV. If we encounter a tag name length other than 1,
+	// this method won't work, so we return NULL to indicate parsing error.
+	while(len >= 3) {   // tag set name len + tag set name + tag set len + 0-length sec tag
 		if(buf[0] != 1) {
 			debug_print(D_PROTO, "Unsupported tag set name length %u\n", buf[0]);
 			goto fail;
@@ -281,7 +281,7 @@ static la_list *atn_sec_info_parse(uint8_t *buf, size_t len) {
 		buf += 2; len -= 2;
 		if(len < tagset_len) {
 			debug_print(D_PROTO, "tagset 0x%02u truncated: len %zu < tagset_len %u\n",
-				tagset_name, len, tagset_len);
+					tagset_name, len, tagset_len);
 			goto fail;
 		}
 		l = tlv_single_tag_parse(tagset_name, buf, tagset_len, atn_security_tags, l);

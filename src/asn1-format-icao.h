@@ -17,8 +17,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <libacars/vstring.h>		// la_vstring
-#include "asn1/constr_TYPE.h"		// asn_TYPE_descriptor_t
+#include "asn1-util.h"                          // asn_formatter_t
 
 // asn1-format-icao.c
-void asn1_output_icao_as_text(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
+extern asn_formatter_t const asn1_icao_formatter_table[];
+extern size_t asn1_icao_formatter_table_len;
+extern asn_formatter_t const asn1_acse_formatter_table[];
+extern size_t asn1_acse_formatter_table_len;
