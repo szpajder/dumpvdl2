@@ -41,6 +41,9 @@
 #ifdef WITH_SDRPLAY
 #include "sdrplay.h"
 #endif
+#ifdef WITH_SDRPLAY3
+#include "sdrplay3.h"
+#endif
 #ifdef WITH_SOAPYSDR
 #include "soapysdr.h"
 #endif
@@ -67,6 +70,9 @@ void sighandler(int sig) {
 #endif
 #ifdef WITH_SDRPLAY
 	sdrplay_cancel();
+#endif
+#ifdef WITH_SDRPLAY
+	sdrplay3_cancel();
 #endif
 #ifdef WITH_SOAPYSDR
 	soapysdr_cancel();
@@ -171,8 +177,12 @@ void usage() {
 			"    dumpvdl2 [output_options] --mirisdr <device_id> [mirisdr_options] [<freq_1> [<freq_2> [...]]]\n"
 #endif
 #ifdef WITH_SDRPLAY
-			"SDRPLAY RSP receiver:\n"
+			"SDRPLAY RSP receiver (using API version 2):\n"
 			"    dumpvdl2 [output_options] --sdrplay <device_id> [sdrplay_options] [<freq_1> [<freq_2> [...]]]\n"
+#endif
+#ifdef WITH_SDRPLAY
+			"SDRPLAY RSP receiver (using API version 3):\n"
+			"    dumpvdl2 [output_options] --sdrplay3 <device_id> [sdrplay3_options] [<freq_1> [<freq_2> [...]]]\n"
 #endif
 #ifdef WITH_SOAPYSDR
 			"SOAPYSDR compatible receiver:\n"
@@ -237,6 +247,19 @@ void usage() {
 			"    --centerfreq <center_frequency>             Set center frequency in Hz (default: auto)\n"
 			"    --antenna <A/B>                             RSP2 antenna port selection (default: A)\n"
 			"    --biast <0/1>                               RSP2 Bias-T control: 0 - off (default), 1 - on\n"
+			"    --notch-filter <0/1>                        RSP2/1a/duo AM/FM/bcast notch filter control: 0 - off (default), 1 - on\n"
+			"    --tuner <1/2>                               RSPduo tuner selection: (default: 1)\n"
+#endif
+#ifdef WITH_SDRPLAY3
+			"\n"
+			"sdrplay3_options:\n"
+			"    --sdrplay3 <device_id>                      Use SDRPlay RSP device with specified ID or serial number (default: ID=0)\n"
+			"    --gr <gr>                                   Set system gain reduction, in dB, positive (-100 = enables AGC)\n"
+			"    --agc <set point in dBFS>                   Automatic Gain Control set point in dBFS, negative\n"
+			"    --correction <correction>                   Set freq correction (ppm)\n"
+			"    --centerfreq <center_frequency>             Set center frequency in Hz (default: auto)\n"
+			"    --antenna <A/B>                             RSP2 antenna port selection (default: A)\n"
+			"    --biast <0/1>                               RSP2/1a/duo Bias-T control: 0 - off (default), 1 - on\n"
 			"    --notch-filter <0/1>                        RSP2/1a/duo AM/FM/bcast notch filter control: 0 - off (default), 1 - on\n"
 			"    --tuner <1/2>                               RSPduo tuner selection: (default: 1)\n"
 #endif
@@ -413,7 +436,7 @@ int main(int argc, char **argv) {
 	int num_channels = 0;
 	enum input_types input = INPUT_UNDEF;
 	enum sample_formats sample_fmt = SFMT_UNDEF;
-#if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SOAPYSDR
+#if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR
 	char *device = NULL;
 	float gain = SDR_AUTO_GAIN;
 	int correction = 0;
@@ -422,7 +445,7 @@ int main(int argc, char **argv) {
 	int mirisdr_hw_flavour = 0;
 	int mirisdr_usb_xfer_mode = 0;
 #endif
-#ifdef WITH_SDRPLAY
+#if defined WITH_SDRPLAY || defined WITH_SDRPLAY3
 	char* sdrplay_antenna = "A";
 	int sdrplay_biast = 0;
 	int sdrplay_notch_filter = 0;
@@ -464,6 +487,11 @@ int main(int argc, char **argv) {
 #endif
 #ifdef WITH_SDRPLAY
 		{ "sdrplay",            required_argument,  NULL,   __OPT_SDRPLAY },
+#endif
+#ifdef WITH_SDRPLAY3
+		{ "sdrplay3",           required_argument,  NULL,   __OPT_SDRPLAY3 },
+#endif
+#if defined WITH_SDRPLAY || defined WITH_SDRPLAY3
 		{ "antenna",            required_argument,  NULL,   __OPT_ANTENNA },
 		{ "biast",              required_argument,  NULL,   __OPT_BIAST },
 		{ "notch-filter",       required_argument,  NULL,   __OPT_NOTCH_FILTER },
@@ -483,7 +511,7 @@ int main(int argc, char **argv) {
 #if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SOAPYSDR
 		{ "gain",               required_argument,  NULL,   __OPT_GAIN },
 #endif
-#if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SOAPYSDR
+#if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR
 		{ "correction",         required_argument,  NULL,   __OPT_CORRECTION },
 #endif
 #ifdef WITH_STATSD
@@ -600,6 +628,15 @@ int main(int argc, char **argv) {
 				input = INPUT_SDRPLAY;
 				oversample = SDRPLAY_OVERSAMPLE;
 				break;
+#endif
+#ifdef WITH_SDRPLAY3
+			case __OPT_SDRPLAY3:
+				device = optarg;
+				input = INPUT_SDRPLAY3;
+				oversample = SDRPLAY3_OVERSAMPLE;
+				break;
+#endif
+#if defined WITH_SDRPLAY || defined WITH_SDRPLAY3
 			case __OPT_ANTENNA:
 				sdrplay_antenna = strdup(optarg);
 				break;
@@ -647,7 +684,7 @@ int main(int argc, char **argv) {
 				gain = atof(optarg);
 				break;
 #endif
-#if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SOAPYSDR
+#if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR
 			case __OPT_CORRECTION:
 				correction = atoi(optarg);
 				break;
@@ -810,6 +847,12 @@ int main(int argc, char **argv) {
 #ifdef WITH_SDRPLAY
 		case INPUT_SDRPLAY:
 			sdrplay_init(&ctx, device, sdrplay_antenna, centerfreq, sdrplay_gr, correction,
+					sdrplay_biast, sdrplay_notch_filter, sdrplay_agc, sdrplay_tuner);
+			break;
+#endif
+#ifdef WITH_SDRPLAY3
+		case INPUT_SDRPLAY3:
+			sdrplay3_init(&ctx, device, sdrplay_antenna, centerfreq, sdrplay_gr, correction,
 					sdrplay_biast, sdrplay_notch_filter, sdrplay_agc, sdrplay_tuner);
 			break;
 #endif

@@ -72,7 +72,7 @@
 #define __OPT_GAIN                   12
 #endif
 
-#if defined WITH_MIRISDR || defined WITH_RTLSDR || defined WITH_SDRPLAY || defined WITH_SOAPYSDR
+#if defined WITH_MIRISDR || defined WITH_RTLSDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR
 #define __OPT_CORRECTION             13
 #endif
 
@@ -95,6 +95,11 @@
 
 #ifdef WITH_SDRPLAY
 #define __OPT_SDRPLAY                80
+#endif
+#ifdef WITH_SDRPLAY3
+#define __OPT_SDRPLAY3               89
+#endif
+#if defined WITH_SDRPLAY || defined WITH_SDRPLAY3
 #define __OPT_ANTENNA                81
 #define __OPT_BIAST                  82
 #define __OPT_NOTCH_FILTER           83
@@ -258,6 +263,9 @@ enum input_types {
 #endif
 #ifdef WITH_SDRPLAY
 	INPUT_SDRPLAY,
+#endif
+#ifdef WITH_SDRPLAY3
+	INPUT_SDRPLAY3,
 #endif
 #ifdef WITH_SOAPYSDR
 	INPUT_SOAPYSDR,
