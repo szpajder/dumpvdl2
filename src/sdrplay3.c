@@ -24,7 +24,6 @@
 #include "dumpvdl2.h"           // sbuf, Config
 #include "sdrplay3.h"            // SDRPLAY3_OVERSAMPLE
 
-#define SDRPLAY3_MIXER_GR                   19
 #define SDRPLAY3_ASYNC_BUF_NUMBER           15
 #define SDRPLAY3_ASYNC_BUF_SIZE             (32*16384) // 512k shorts
 #define SDRPLAY3_RATE (SYMBOL_RATE * SPS * SDRPLAY3_OVERSAMPLE)
@@ -48,21 +47,6 @@ typedef enum {
 
 static int initialized = 0;
 
-#define NUM_LNA_STATES 10       // Max number of LNA states of all hw types
-static int lnaGRtables[NUM_HW_TYPES][NUM_LNA_STATES] = {
-	[HW_RSP1]   = { 0, 24, 19, 43, 0, 0, 0, 0, 0, 0 },
-	[HW_RSP2]   = { 0, 10, 15, 21, 24, 34, 39, 45, 64, 0 },
-	[HW_RSP1A]  = { 0, 6, 12, 18, 20, 26, 32, 38, 57, 62 },
-	[HW_RSPDUO] = { 0, 6, 12, 18, 20, 26, 32, 38, 57, 62 }
-// TODO: RSPdx
-};
-static int num_lnaGRs[NUM_HW_TYPES] = {
-	[HW_RSP1] = 4,
-	[HW_RSP2] = 9,
-	[HW_RSP1A] = 10,
-	[HW_RSPDUO] = 10
-// TODO: RSPdx
-};
 static char *hw_descr[NUM_HW_TYPES] = {
 	[HW_RSP1] = "RSP1",
 	[HW_RSP2] = "RSP2",
@@ -235,8 +219,9 @@ dev_found:
 }
 
 void sdrplay3_init(vdl2_state_t * const ctx, char * const dev, char * const antenna,
-		double const freq, int const gr, double const freq_correction_ppm, int const enable_biast,
-		int const enable_notch_filter, int const enable_dab_notch_filter, int agc_set_point, int tuner) {
+		double const freq, int const ifgr, int const lna_state, double const freq_correction_ppm,
+		int const enable_biast, int const enable_notch_filter, int const enable_dab_notch_filter,
+		int agc_set_point, int tuner) {
 	UNUSED(ctx);
 
 	sdrplay_api_ErrT err;
@@ -378,42 +363,15 @@ void sdrplay3_init(vdl2_state_t * const ctx, char * const dev, char * const ante
 		}
 	}
 
-	int gRdBsystem = gr;    // FIXME: no longer needed
-	if(gr == SDR_AUTO_GAIN) {
-		gRdBsystem = sdrplay_api_NORMAL_MIN_GR;     // too low, but we enable AGC, which shall correct this
+	if(ifgr < 0 || lna_state < 0) {
 		chParams->ctrlParams.agc.setPoint_dBfs = agc_set_point < 0 ? agc_set_point : SDRPLAY3_DEFAULT_AGC_SETPOINT;
 		chParams->ctrlParams.agc.enable = sdrplay_api_AGC_5HZ;
 		fprintf(stderr, "Enabling AGC with set point at %d dBFS\n", chParams->ctrlParams.agc.setPoint_dBfs);
-	} else {    // AGC disabled, gain reduction configured manually
-		int gRdB = 0;
-		int lna_state = -1;
-
-		// Find the correct LNA state setting using LNA Gr table
-		// Start from lowest LNA Gr
-		for (int i = 0; i < num_lnaGRs[hw_type]; i++) {
-			// Can requested gain reduction be reached with this LNA Gr?
-			if((gRdBsystem >= lnaGRtables[hw_type][i] + sdrplay_api_NORMAL_MIN_GR) && (gRdBsystem <= lnaGRtables[hw_type][i] + MAX_BB_GR)) {
-				gRdB = gRdBsystem - lnaGRtables[hw_type][i];
-				lna_state = i;
-				fprintf(stderr, "Selected IF gain reduction: %d dB, RF gain reduction: %d dB\n",
-						gRdB, lnaGRtables[hw_type][i]);
-				break;
-			}
-		}
-		// Bail out on impossible gain reduction setting
-		if(lna_state < 0) {
-			int min_gr = sdrplay_api_NORMAL_MIN_GR + lnaGRtables[hw_type][0];
-			int max_gr = MAX_BB_GR + lnaGRtables[hw_type][num_lnaGRs[hw_type]-1];
-			if(hw_type == HW_RSP1A) {
-				max_gr += SDRPLAY3_MIXER_GR;     // other RSP types have mixer GR included in the highest LNA state
-			}
-			fprintf(stderr, "Gain reduction value is out of range (min=%d max=%d)\n", min_gr, max_gr);
-			goto fail;
-		}
+	} else {    // AGC disabled, IFGR and LNAstate configured manually
 		fprintf(stderr, "Disabling AGC\n");
 		chParams->ctrlParams.agc.enable = sdrplay_api_AGC_DISABLE;
-		fprintf(stderr, "Setting gain: GR=%d LNAState=%d\n", gRdB, lna_state);
-		chParams->tunerParams.gain.gRdB = gRdB;
+		fprintf(stderr, "Setting gain reduction components: IFGR=%d LNAState=%d\n", ifgr, lna_state);
+		chParams->tunerParams.gain.gRdB = ifgr;
 		chParams->tunerParams.gain.LNAstate = lna_state;
 	}
 

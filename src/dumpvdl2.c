@@ -254,7 +254,9 @@ void usage() {
 			"\n"
 			"sdrplay3_options:\n"
 			"    --sdrplay3 <device_id>                      Use SDRPlay RSP device with specified ID or serial number (default: ID=0)\n"
-			"    --gr <gr>                                   Set system gain reduction, in dB, positive (if omitted, auto gain is enabled)\n"
+			"    --ifgr <IF_gain_reduction>                  Set IF gain reduction, in dB, positive (if omitted, auto gain is enabled)\n"
+			"    --lna-state <LNA_state>                     Set LNA state, non-negative, higher state = higher gain reduction\n"
+			"                                                (if omitted, auto gain is enabled)\n"
 			"    --agc <AGC_set_point>                       Auto gain set point in dBFS, negative (default: -30)\n"
 			"    --correction <correction>                   Set freq correction (ppm)\n"
 			"    --centerfreq <center_frequency>             Set center frequency in Hz (default: auto)\n"
@@ -452,10 +454,14 @@ int main(int argc, char **argv) {
 	int sdrplay_notch_filter = 0;
 	int sdrplay_tuner = 1;
 	int sdrplay_agc = 0;
+#endif
+#ifdef WITH_SDRPLAY
 	int sdrplay_gr = SDR_AUTO_GAIN;
 #endif
 #ifdef WITH_SDRPLAY3
 	int sdrplay3_dab_notch_filter = 0;
+	int sdrplay3_ifgr = SDR_AUTO_GAIN;
+	int sdrplay3_lna_state = SDR_AUTO_GAIN;
 #endif
 #ifdef WITH_SOAPYSDR
 	char *soapysdr_settings = NULL;
@@ -491,20 +497,20 @@ int main(int argc, char **argv) {
 #endif
 #ifdef WITH_SDRPLAY
 		{ "sdrplay",            required_argument,  NULL,   __OPT_SDRPLAY },
+		{ "gr",                 required_argument,  NULL,   __OPT_GR },
 #endif
 #ifdef WITH_SDRPLAY3
 		{ "sdrplay3",           required_argument,  NULL,   __OPT_SDRPLAY3 },
+		{ "ifgr",               required_argument,  NULL,   __OPT_SDRPLAY3_IFGR },
+		{ "lna-state",          required_argument,  NULL,   __OPT_SDRPLAY3_LNA_STATE },
+		{ "dab-notch-filter",   required_argument,  NULL,   __OPT_SDRPLAY3_DAB_NOTCH_FILTER },
 #endif
 #if defined WITH_SDRPLAY || defined WITH_SDRPLAY3
 		{ "antenna",            required_argument,  NULL,   __OPT_ANTENNA },
 		{ "biast",              required_argument,  NULL,   __OPT_BIAST },
 		{ "notch-filter",       required_argument,  NULL,   __OPT_NOTCH_FILTER },
 		{ "agc",                required_argument,  NULL,   __OPT_AGC },
-		{ "gr",                 required_argument,  NULL,   __OPT_GR },
 		{ "tuner",              required_argument,  NULL,   __OPT_TUNER },
-#endif
-#ifdef WITH_SDRPLAY3
-		{ "dab-notch-filter",   required_argument,  NULL,   __OPT_SDRPLAY3_DAB_NOTCH_FILTER },
 #endif
 #ifdef WITH_SOAPYSDR
 		{ "soapysdr",           required_argument,  NULL,   __OPT_SOAPYSDR },
@@ -635,12 +641,24 @@ int main(int argc, char **argv) {
 				input = INPUT_SDRPLAY;
 				oversample = SDRPLAY_OVERSAMPLE;
 				break;
+			case __OPT_GR:
+				sdrplay_gr = atoi(optarg);
+				break;
 #endif
 #ifdef WITH_SDRPLAY3
 			case __OPT_SDRPLAY3:
 				device = optarg;
 				input = INPUT_SDRPLAY3;
 				oversample = SDRPLAY3_OVERSAMPLE;
+				break;
+			case __OPT_SDRPLAY3_IFGR:
+				sdrplay3_ifgr = atoi(optarg);
+				break;
+			case __OPT_SDRPLAY3_LNA_STATE:
+				sdrplay3_lna_state = atoi(optarg);
+				break;
+			case __OPT_SDRPLAY3_DAB_NOTCH_FILTER:
+				sdrplay3_dab_notch_filter = atoi(optarg);
 				break;
 #endif
 #if defined WITH_SDRPLAY || defined WITH_SDRPLAY3
@@ -656,16 +674,8 @@ int main(int argc, char **argv) {
 			case __OPT_AGC:
 				sdrplay_agc = atoi(optarg);
 				break;
-			case __OPT_GR:
-				sdrplay_gr = atoi(optarg);
-				break;
 			case __OPT_TUNER:
 				sdrplay_tuner = atoi(optarg);
-				break;
-#endif
-#ifdef WITH_SDRPLAY3
-			case __OPT_SDRPLAY3_DAB_NOTCH_FILTER:
-				sdrplay3_dab_notch_filter = atoi(optarg);
 				break;
 #endif
 #ifdef WITH_SOAPYSDR
@@ -864,7 +874,7 @@ int main(int argc, char **argv) {
 #endif
 #ifdef WITH_SDRPLAY3
 		case INPUT_SDRPLAY3:
-			sdrplay3_init(&ctx, device, sdrplay_antenna, centerfreq, sdrplay_gr, correction,
+			sdrplay3_init(&ctx, device, sdrplay_antenna, centerfreq, sdrplay3_ifgr, sdrplay3_lna_state, correction,
 					sdrplay_biast, sdrplay_notch_filter, sdrplay3_dab_notch_filter, sdrplay_agc, sdrplay_tuner);
 			break;
 #endif

@@ -96,18 +96,20 @@
 #ifdef WITH_SDRPLAY3
 #define __OPT_SDRPLAY3               70
 #define __OPT_SDRPLAY3_DAB_NOTCH_FILTER      71
+#define __OPT_SDRPLAY3_IFGR          72
+#define __OPT_SDRPLAY3_LNA_STATE     73
 #endif
 
 #ifdef WITH_SDRPLAY
 #define __OPT_SDRPLAY                80
+#define __OPT_GR                     86
 #endif
 #if defined WITH_SDRPLAY || defined WITH_SDRPLAY3
 #define __OPT_ANTENNA                81
 #define __OPT_BIAST                  82
 #define __OPT_NOTCH_FILTER           83
 #define __OPT_AGC                    84
-#define __OPT_GR                     85
-#define __OPT_TUNER                  86
+#define __OPT_TUNER                  85
 #endif
 
 #ifdef WITH_SOAPYSDR
