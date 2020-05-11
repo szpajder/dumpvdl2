@@ -19,7 +19,7 @@
  */
 #include <stdint.h>                         // uint32_t
 #include "dumpvdl2.h"                       // vdl2_state_t
-#define SDRPLAY_DEFAULT_AGC_SETPOINT    -35
+#define SDRPLAY_DEFAULT_AGC_SETPOINT    -30
 #define SDRPLAY_OVERSAMPLE               20
 
 void sdrplay_init(vdl2_state_t * const ctx, char * const dev, char * const antenna,
