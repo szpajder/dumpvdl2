@@ -93,11 +93,13 @@
 #define __OPT_ADDRINFO_VERBOSITY     24
 #define __OPT_PRETTIFY_XML           25
 
+#ifdef WITH_SDRPLAY3
+#define __OPT_SDRPLAY3               70
+#define __OPT_SDRPLAY3_DAB_NOTCH_FILTER      71
+#endif
+
 #ifdef WITH_SDRPLAY
 #define __OPT_SDRPLAY                80
-#endif
-#ifdef WITH_SDRPLAY3
-#define __OPT_SDRPLAY3               89
 #endif
 #if defined WITH_SDRPLAY || defined WITH_SDRPLAY3
 #define __OPT_ANTENNA                81

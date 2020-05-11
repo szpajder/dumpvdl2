@@ -261,6 +261,7 @@ void usage() {
 			"    --antenna <A/B>                             RSP2 antenna port selection (default: A)\n"
 			"    --biast <0/1>                               RSP2/1a/duo Bias-T control: 0 - off (default), 1 - on\n"
 			"    --notch-filter <0/1>                        RSP2/1a/duo AM/FM/bcast notch filter control: 0 - off (default), 1 - on\n"
+			"    --dab-notch-filter <0/1>                    RSP1a/duo DAB notch filter control: 0 - off (default), 1 - on\n"
 			"    --tuner <1/2>                               RSPduo tuner selection: (default: 1)\n"
 #endif
 #ifdef WITH_SOAPYSDR
@@ -453,6 +454,9 @@ int main(int argc, char **argv) {
 	int sdrplay_agc = 0;
 	int sdrplay_gr = SDR_AUTO_GAIN;
 #endif
+#ifdef WITH_SDRPLAY3
+	int sdrplay3_dab_notch_filter = 0;
+#endif
 #ifdef WITH_SOAPYSDR
 	char *soapysdr_settings = NULL;
 	char *soapysdr_antenna = NULL;
@@ -498,6 +502,9 @@ int main(int argc, char **argv) {
 		{ "agc",                required_argument,  NULL,   __OPT_AGC },
 		{ "gr",                 required_argument,  NULL,   __OPT_GR },
 		{ "tuner",              required_argument,  NULL,   __OPT_TUNER },
+#endif
+#ifdef WITH_SDRPLAY3
+		{ "dab-notch-filter",   required_argument,  NULL,   __OPT_SDRPLAY3_DAB_NOTCH_FILTER },
 #endif
 #ifdef WITH_SOAPYSDR
 		{ "soapysdr",           required_argument,  NULL,   __OPT_SOAPYSDR },
@@ -654,6 +661,11 @@ int main(int argc, char **argv) {
 				break;
 			case __OPT_TUNER:
 				sdrplay_tuner = atoi(optarg);
+				break;
+#endif
+#ifdef WITH_SDRPLAY3
+			case __OPT_SDRPLAY3_DAB_NOTCH_FILTER:
+				sdrplay3_dab_notch_filter = atoi(optarg);
 				break;
 #endif
 #ifdef WITH_SOAPYSDR
@@ -853,7 +865,7 @@ int main(int argc, char **argv) {
 #ifdef WITH_SDRPLAY3
 		case INPUT_SDRPLAY3:
 			sdrplay3_init(&ctx, device, sdrplay_antenna, centerfreq, sdrplay_gr, correction,
-					sdrplay_biast, sdrplay_notch_filter, sdrplay_agc, sdrplay_tuner);
+					sdrplay_biast, sdrplay_notch_filter, sdrplay3_dab_notch_filter, sdrplay_agc, sdrplay_tuner);
 			break;
 #endif
 #ifdef WITH_SOAPYSDR

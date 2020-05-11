@@ -236,7 +236,7 @@ dev_found:
 
 void sdrplay3_init(vdl2_state_t * const ctx, char * const dev, char * const antenna,
 		double const freq, int const gr, double const freq_correction_ppm, int const enable_biast,
-		int const enable_notch_filter, int agc_set_point, int tuner) {
+		int const enable_notch_filter, int const enable_dab_notch_filter, int agc_set_point, int tuner) {
 	UNUSED(ctx);
 
 	sdrplay_api_ErrT err;
@@ -353,7 +353,10 @@ void sdrplay3_init(vdl2_state_t * const ctx, char * const dev, char * const ante
 			devParams->devParams->rsp1aParams.rfNotchEnable = 1;
 			fprintf(stderr, "RSP1A: Enabling notch filter\n");
 		}
-		// TODO: DAB notch support
+		if(enable_dab_notch_filter) {
+			devParams->devParams->rsp1aParams.rfDabNotchEnable = 1;
+			fprintf(stderr, "RSP1A: Enabling DAB notch filter\n");
+		}
 	} else if(hw_type == HW_RSPDUO) {
 		if(tuner != 1) {
 			// FIXME: add tuner 2 support
@@ -366,10 +369,13 @@ void sdrplay3_init(vdl2_state_t * const ctx, char * const dev, char * const ante
 			fprintf(stderr, "RSPduo: Enabling Bias-T\n");
 		}
 		if(enable_notch_filter) {
-			chParams->rsp2TunerParams.rfNotchEnable = 1;
+			chParams->rspDuoTunerParams.rfNotchEnable = 1;
 			fprintf(stderr, "RSPduo: Enabling notch filter\n");
 		}
-		// TODO: DAB notch support
+		if(enable_dab_notch_filter) {
+			chParams->rspDuoTunerParams.rfNotchEnable = 1;
+			fprintf(stderr, "RSPduo: Enabling DAB notch filter\n");
+		}
 	}
 
 	int gRdBsystem = gr;    // FIXME: no longer needed
