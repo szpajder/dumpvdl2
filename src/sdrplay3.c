@@ -381,9 +381,7 @@ void sdrplay3_init(vdl2_state_t * const ctx, char * const dev, char * const ante
 	int gRdBsystem = gr;    // FIXME: no longer needed
 	if(gr == SDR_AUTO_GAIN) {
 		gRdBsystem = sdrplay_api_NORMAL_MIN_GR;     // too low, but we enable AGC, which shall correct this
-		if(agc_set_point != 0) {
-			chParams->ctrlParams.agc.setPoint_dBfs = agc_set_point;
-		}
+		chParams->ctrlParams.agc.setPoint_dBfs = agc_set_point < 0 ? agc_set_point : SDRPLAY3_DEFAULT_AGC_SETPOINT;
 		chParams->ctrlParams.agc.enable = sdrplay_api_AGC_5HZ;
 		fprintf(stderr, "Enabling AGC with set point at %d dBFS\n", chParams->ctrlParams.agc.setPoint_dBfs);
 	} else {    // AGC disabled, gain reduction configured manually
