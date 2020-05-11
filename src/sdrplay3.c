@@ -22,11 +22,12 @@
 #include <unistd.h>             // _exit, usleep
 #include <sdrplay_api.h>
 #include "dumpvdl2.h"           // sbuf, Config
-#include "sdrplay3.h"            // SDRPLAY3_OVERSAMPLE
+#include "sdrplay3.h"           // SDRPLAY3_OVERSAMPLE
 
 #define SDRPLAY3_ASYNC_BUF_NUMBER           15
 #define SDRPLAY3_ASYNC_BUF_SIZE             (32*16384) // 512k shorts
 #define SDRPLAY3_RATE (SYMBOL_RATE * SPS * SDRPLAY3_OVERSAMPLE)
+#define SDRPLAY3_DEFAULT_AGC_SETPOINT       -30
 
 typedef struct {
 	void *context;

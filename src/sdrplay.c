@@ -31,6 +31,7 @@
 #define ASYNC_BUF_NUMBER         15
 #define ASYNC_BUF_SIZE           (32*16384) // 512k shorts
 #define SDRPLAY_RATE (SYMBOL_RATE * SPS * SDRPLAY_OVERSAMPLE)
+#define SDRPLAY_DEFAULT_AGC_SETPOINT    -30
 
 typedef struct {
 	void *context;
