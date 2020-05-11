@@ -25,6 +25,28 @@
 #include "dumpvdl2.h"           // sbuf, Config
 #include "sdrplay.h"
 
+#define MAX_IF_GR                59         // Upper limit of IF GR
+#define MIN_IF_GR                20         // Lower limit of IF GR (in normal IF GR range)
+#define MIXER_GR                 19
+#define ASYNC_BUF_NUMBER         15
+#define ASYNC_BUF_SIZE           (32*16384) // 512k shorts
+#define SDRPLAY_RATE (SYMBOL_RATE * SPS * SDRPLAY_OVERSAMPLE)
+
+typedef struct {
+	void *context;
+	unsigned char *sdrplay_data;
+	int data_index;
+} sdrplay_ctx_t;
+
+typedef enum {
+	HW_UNKNOWN      = 0,
+	HW_RSP1         = 1,
+	HW_RSP2         = 2,
+	HW_RSP1A        = 3,
+	HW_RSPDUO       = 4
+} sdrplay_hw_type;
+#define NUM_HW_TYPES 5
+
 static int initialized = 0;
 
 #define NUM_LNA_STATES 10       // Max number of LNA states of all hw types
@@ -363,7 +385,7 @@ void sdrplay_init(vdl2_state_t * const ctx, char * const dev, char * const anten
 
 	// If no GR has been specified, enable AGC with a default set point (unless configured otherwise)
 	if(gr == SDR_AUTO_GAIN && enable_agc == 0) {
-		enable_agc = DEFAULT_AGC_SETPOINT;
+		enable_agc = SDRPLAY_DEFAULT_AGC_SETPOINT;
 	}
 
 	if(enable_agc != 0) {
@@ -374,7 +396,7 @@ void sdrplay_init(vdl2_state_t * const ctx, char * const dev, char * const anten
 		}
 		fprintf(stderr, "AGC activated with set point at %d dBFS\n", enable_agc);
 	} else {
-		err = mir_sdr_AgcControl(mir_sdr_AGC_DISABLE, DEFAULT_AGC_SETPOINT, 0, 0, 0, 0, 0);
+		err = mir_sdr_AgcControl(mir_sdr_AGC_DISABLE, SDRPLAY_DEFAULT_AGC_SETPOINT, 0, 0, 0, 0, 0);
 		if(err != mir_sdr_Success) {
 			fprintf(stderr, "Unable to deactivate AGC, error %d\n", err);
 			_exit(1);
