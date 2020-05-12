@@ -449,7 +449,7 @@ int main(int argc, char **argv) {
 	int mirisdr_usb_xfer_mode = 0;
 #endif
 #if defined WITH_SDRPLAY || defined WITH_SDRPLAY3
-	char* sdrplay_antenna = "A";
+	char *sdrplay_antenna = NULL;
 	int sdrplay_biast = 0;
 	int sdrplay_notch_filter = 0;
 	int sdrplay_tuner = 1;

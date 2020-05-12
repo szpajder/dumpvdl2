@@ -157,6 +157,100 @@ static void sdrplay3_eventCallback(sdrplay_api_EventT eventId, sdrplay_api_Tuner
 	}
 }
 
+static void sdrplay3_set_biast(sdrplay_api_DeviceParamsT * const devParams,
+		sdrplay_api_RxChannelParamsT * const chParams, uint8_t const hwVer) {
+	UNUSED(devParams);
+	switch(hwVer) {
+		case SDRPLAY_RSP1_ID:
+			fprintf(stderr, "%s: Not enabling Bias-T: feature not supported\n",
+					get_hw_descr(hwVer));
+			return;
+		case SDRPLAY_RSP2_ID:
+			chParams->rsp2TunerParams.biasTEnable = 1;
+			break;
+		case SDRPLAY_RSP1A_ID:
+			chParams->rsp1aTunerParams.biasTEnable = 1;
+			break;
+		case SDRPLAY_RSPduo_ID:
+			chParams->rspDuoTunerParams.biasTEnable = 1;
+			break;
+		default:
+			fprintf(stderr, "Not enabling Bias-T: unknown device type %u\n", hwVer);
+			return;
+	}
+	fprintf(stderr, "%s: Enabling Bias-T\n", get_hw_descr(hwVer));
+}
+
+static void sdrplay3_set_notch_filter(sdrplay_api_DeviceParamsT * const devParams,
+		sdrplay_api_RxChannelParamsT * const chParams, uint8_t const hwVer) {
+	switch(hwVer) {
+		case SDRPLAY_RSP1_ID:
+			fprintf(stderr, "%s: Not enabling notch filter: feature not supported\n",
+					get_hw_descr(hwVer));
+			return;
+		case SDRPLAY_RSP2_ID:
+			chParams->rsp2TunerParams.rfNotchEnable = 1;
+			break;
+		case SDRPLAY_RSP1A_ID:
+			devParams->devParams->rsp1aParams.rfNotchEnable = 1;
+			break;
+		case SDRPLAY_RSPduo_ID:
+			chParams->rspDuoTunerParams.rfNotchEnable = 1;
+			break;
+		default:
+			fprintf(stderr, "Not enabling notch filter: unknown device type %u\n", hwVer);
+			return;
+	}
+	fprintf(stderr, "%s: Enabling notch filter\n", get_hw_descr(hwVer));
+}
+
+static void sdrplay3_set_dab_notch_filter(sdrplay_api_DeviceParamsT * const devParams,
+		sdrplay_api_RxChannelParamsT * const chParams, uint8_t const hwVer) {
+	switch(hwVer) {
+		case SDRPLAY_RSP1_ID:
+		case SDRPLAY_RSP2_ID:
+			fprintf(stderr, "%s: Not enabling DAB notch filter: feature not supported\n",
+					get_hw_descr(hwVer));
+			return;
+		case SDRPLAY_RSP1A_ID:
+			devParams->devParams->rsp1aParams.rfDabNotchEnable = 1;
+			break;
+		case SDRPLAY_RSPduo_ID:
+			chParams->rspDuoTunerParams.rfDabNotchEnable = 1;
+			break;
+		default:
+			fprintf(stderr, "Not enabling DAB notch filter: unknown device type %u\n", hwVer);
+			return;
+	}
+	fprintf(stderr, "%s: Enabling DAB notch filter\n", get_hw_descr(hwVer));
+}
+
+static void sdrplay3_select_antenna(sdrplay_api_DeviceParamsT * const devParams,
+		sdrplay_api_RxChannelParamsT * const chParams, uint8_t const hwVer, char const *antenna) {
+	UNUSED(devParams);
+	switch(hwVer) {
+		case SDRPLAY_RSP2_ID:
+			if(strcmp(antenna, "A") == 0) {
+				chParams->rsp2TunerParams.antennaSel = sdrplay_api_Rsp2_ANTENNA_A;
+			} else if(strcmp(antenna, "B") == 0) {
+				chParams->rsp2TunerParams.antennaSel = sdrplay_api_Rsp2_ANTENNA_B;
+			} else {
+				fprintf(stderr, "%s: Invalid antenna port specified\n", get_hw_descr(hwVer));
+				return;
+			}
+			break;
+		case SDRPLAY_RSP1_ID:
+		case SDRPLAY_RSP1A_ID:
+		case SDRPLAY_RSPduo_ID:
+			fprintf(stderr, "%s: Cannot select antenna port: feature not supported\n",
+					get_hw_descr(hwVer));
+			return;
+		default:
+			fprintf(stderr, "Cannot select antenna port: unknown device type %u\n", hwVer);
+			return;
+	}
+	fprintf(stderr, "%s: Selecting antenna port %s\n", get_hw_descr(hwVer), antenna);
+}
 
 static int sdrplay3_verbose_device_search(char *dev, sdrplay_api_DeviceT const *devices,
 		uint32_t const dev_cnt) {
@@ -287,57 +381,25 @@ void sdrplay3_init(vdl2_state_t * const ctx, char * const dev, char * const ante
 	chParams->tunerParams.ifType = sdrplay_api_IF_Zero;
 	chParams->tunerParams.rfFreq.rfHz = freq;
 
-	if(device->hwVer == SDRPLAY_RSP2_ID) {
-		if(enable_biast) {
-			chParams->rsp2TunerParams.biasTEnable = 1;
-			fprintf(stderr, "RSP2: Enabling Bias-T\n");
-		}
-		if(strcmp(antenna, "A") == 0) {
-			chParams->rsp2TunerParams.antennaSel = sdrplay_api_Rsp2_ANTENNA_A;
-		} else if(strcmp(antenna, "B") == 0) {
-			chParams->rsp2TunerParams.antennaSel = sdrplay_api_Rsp2_ANTENNA_B;
-		} else {
-			fprintf(stderr, "RSP2: Invalid antenna port specified\n");
-			goto fail;
-		}
-		fprintf(stderr, "RSP2: Selecting antenna port %s\n", antenna);
-
-		if(enable_notch_filter) {
-			chParams->rsp2TunerParams.rfNotchEnable = 1;
-			fprintf(stderr, "RSP2: Enabling notch filter\n");
-		}
-	} else if(device->hwVer == SDRPLAY_RSP1A_ID) {
-		if(enable_biast) {
-			chParams->rsp1aTunerParams.biasTEnable = 1;
-			fprintf(stderr, "RSP1A: Enabling Bias-T\n");
-		}
-		if(enable_notch_filter) {
-			devParams->devParams->rsp1aParams.rfNotchEnable = 1;
-			fprintf(stderr, "RSP1A: Enabling notch filter\n");
-		}
-		if(enable_dab_notch_filter) {
-			devParams->devParams->rsp1aParams.rfDabNotchEnable = 1;
-			fprintf(stderr, "RSP1A: Enabling DAB notch filter\n");
-		}
-	} else if(device->hwVer == SDRPLAY_RSPduo_ID) {
+	if(enable_biast) {
+		sdrplay3_set_biast(devParams, chParams, device->hwVer);
+	}
+	if(enable_notch_filter) {
+		sdrplay3_set_notch_filter(devParams, chParams, device->hwVer);
+	}
+	if(enable_dab_notch_filter) {
+		sdrplay3_set_dab_notch_filter(devParams, chParams, device->hwVer);
+	}
+	if(antenna != NULL) {
+		sdrplay3_select_antenna(devParams, chParams, device->hwVer, antenna);
+	}
+	if(device->hwVer == SDRPLAY_RSPduo_ID) {
 		if(tuner != 1) {
 			// FIXME: add tuner 2 support
 			fprintf(stderr, "RSPduo: tuner %d not supported\n", tuner);
 			goto fail;
 		}
 		fprintf(stderr, "RSPduo: Selecting tuner %d\n", tuner);
-		if(enable_biast) {
-			chParams->rspDuoTunerParams.biasTEnable = 1;
-			fprintf(stderr, "RSPduo: Enabling Bias-T\n");
-		}
-		if(enable_notch_filter) {
-			chParams->rspDuoTunerParams.rfNotchEnable = 1;
-			fprintf(stderr, "RSPduo: Enabling notch filter\n");
-		}
-		if(enable_dab_notch_filter) {
-			chParams->rspDuoTunerParams.rfNotchEnable = 1;
-			fprintf(stderr, "RSPduo: Enabling DAB notch filter\n");
-		}
 	}
 
 	if(ifgr < 0 || lna_state < 0) {
