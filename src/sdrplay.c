@@ -161,7 +161,7 @@ static int sdrplay_verbose_device_search(char * const dev, sdrplay_hw_type *hw_t
 	}
 
 	fprintf(stderr, "\nFound %d device(s):\n", numDevs);
-	for(unsigned int i = 0; i < numDevs; i++) {
+	for(uint32_t i = 0; i < numDevs; i++) {
 		fprintf(stderr, "  %s %u:  SN: %s\n",
 				devices[i].devAvail ? "        " : "(in use)",
 				i,
@@ -173,13 +173,13 @@ static int sdrplay_verbose_device_search(char * const dev, sdrplay_hw_type *hw_t
 	// Does the string look like a raw ID number?
 	char *endptr = dev;
 	long num = strtol(dev, &endptr, 0);
-	if(endptr[0] == '\0' && num >= 0 && num < numDevs) {
-		devIdx = (unsigned int)num;
+	if(endptr[0] == '\0' && num >= 0 && (uint32_t)num < numDevs) {
+		devIdx = (int)num;
 		goto dev_found;
 	}
 
 	// Does the string match a serial number?
-	for (unsigned int i = 0; i < numDevs; i++) {
+	for (uint32_t i = 0; i < numDevs; i++) {
 		if(devices[i].SerNo == NULL) {
 			continue;
 		} else if(strcmp(dev, devices[i].SerNo) != 0) {

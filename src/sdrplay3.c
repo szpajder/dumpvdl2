@@ -36,8 +36,6 @@ typedef struct {
 	int data_index;
 } sdrplay3_ctx_t;
 
-static int initialized = 0;
-
 static char *get_hw_descr(int const hw_id) {
 	static dict const hw_descr[] = {
 		{ .id = SDRPLAY_RSP1_ID, .val = "RSP1" },
@@ -48,7 +46,7 @@ static char *get_hw_descr(int const hw_id) {
 		// TODO: RSPdx
 	};
 	char *ret = dict_search(hw_descr, hw_id);
-	return ret ? ret : "unknown device";
+	return ret ? ret : "<unknown>";
 };
 
 static void sdrplay3_streamCallback(short *xi, short *xq, sdrplay_api_StreamCbParamsT *params,
@@ -167,13 +165,13 @@ static int sdrplay3_verbose_device_search(char *dev, sdrplay_api_DeviceT const *
 		return -1;
 	}
 	fprintf(stderr, "\nFound %d device(s):\n", dev_cnt);
-	for(unsigned int i = 0; i < dev_cnt; i++) {
+	for(uint32_t i = 0; i < dev_cnt; i++) {
 		fprintf(stderr, "  %u: Type: %s SN: %s\n", i, get_hw_descr(devices[i].hwVer), devices[i].SerNo);
 	}
 	fprintf(stderr, "\n");
 
 	// Does the string match a serial number?
-	for (unsigned int i = 0; i < dev_cnt; i++) {
+	for (uint32_t i = 0; i < dev_cnt; i++) {
 		if(strcmp(dev, devices[i].SerNo) != 0) {
 			continue;
 		}
@@ -184,8 +182,8 @@ static int sdrplay3_verbose_device_search(char *dev, sdrplay_api_DeviceT const *
 	// Does the string look like a raw ID number?
 	char *endptr = dev;
 	long num = strtol(dev, &endptr, 0);
-	if(endptr[0] == '\0' && num >= 0 && num < dev_cnt) {
-		devIdx = (unsigned int)num;
+	if(endptr[0] == '\0' && num >= 0 && (uint32_t)num < dev_cnt) {
+		devIdx = (int)num;
 		goto dev_found;
 	}
 
@@ -374,7 +372,6 @@ void sdrplay3_init(vdl2_state_t * const ctx, char * const dev, char * const ante
 		fprintf(stderr, "Unable to initialize sample stream: %s\n", sdrplay_api_GetErrorString(err));
 		goto fail;
 	}
-	initialized = 1;
 	debug_print(D_SDR, "Stream initialized (sdrplaySamplesPerPacket=%d)\n",
 			devParams->devParams->samplesPerPkt);
 
@@ -403,6 +400,5 @@ fail:
 }
 
 void sdrplay3_cancel() {
-//	if(initialized) {
-//	}
+	// NO-OP - sdrplay3_init will release the device after do_exit flag is raised.
 }
