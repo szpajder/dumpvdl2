@@ -42,8 +42,8 @@ static char *get_hw_descr(int const hw_id) {
 		{ .id = SDRPLAY_RSP2_ID, .val = "RSP2" },
 		{ .id = SDRPLAY_RSP1A_ID, .val = "RSP1A" },
 		{ .id = SDRPLAY_RSPduo_ID, .val = "RSPduo" },
+		{ .id = SDRPLAY_RSPdx_ID, .val = "RSPdx" },
 		{ .id = 0, .val = NULL }
-		// TODO: RSPdx
 	};
 	char *ret = dict_search(hw_descr, hw_id);
 	return ret ? ret : "<unknown>";
@@ -159,7 +159,6 @@ static void sdrplay3_eventCallback(sdrplay_api_EventT eventId, sdrplay_api_Tuner
 
 static void sdrplay3_set_biast(sdrplay_api_DeviceParamsT * const devParams,
 		sdrplay_api_RxChannelParamsT * const chParams, uint8_t const hwVer) {
-	UNUSED(devParams);
 	switch(hwVer) {
 		case SDRPLAY_RSP1_ID:
 			fprintf(stderr, "%s: Not enabling Bias-T: feature not supported\n",
@@ -173,6 +172,9 @@ static void sdrplay3_set_biast(sdrplay_api_DeviceParamsT * const devParams,
 			break;
 		case SDRPLAY_RSPduo_ID:
 			chParams->rspDuoTunerParams.biasTEnable = 1;
+			break;
+		case SDRPLAY_RSPdx_ID:
+			devParams->devParams->rspDxParams.biasTEnable = 1;
 			break;
 		default:
 			fprintf(stderr, "Not enabling Bias-T: unknown device type %u\n", hwVer);
@@ -197,6 +199,9 @@ static void sdrplay3_set_notch_filter(sdrplay_api_DeviceParamsT * const devParam
 		case SDRPLAY_RSPduo_ID:
 			chParams->rspDuoTunerParams.rfNotchEnable = 1;
 			break;
+		case SDRPLAY_RSPdx_ID:
+			devParams->devParams->rspDxParams.rfNotchEnable = 1;
+			break;
 		default:
 			fprintf(stderr, "Not enabling notch filter: unknown device type %u\n", hwVer);
 			return;
@@ -217,6 +222,9 @@ static void sdrplay3_set_dab_notch_filter(sdrplay_api_DeviceParamsT * const devP
 			break;
 		case SDRPLAY_RSPduo_ID:
 			chParams->rspDuoTunerParams.rfDabNotchEnable = 1;
+			break;
+		case SDRPLAY_RSPdx_ID:
+			devParams->devParams->rspDxParams.rfDabNotchEnable = 1;
 			break;
 		default:
 			fprintf(stderr, "Not enabling DAB notch filter: unknown device type %u\n", hwVer);
@@ -245,6 +253,18 @@ static void sdrplay3_select_antenna(sdrplay_api_DeviceParamsT * const devParams,
 			fprintf(stderr, "%s: Cannot select antenna port: feature not supported\n",
 					get_hw_descr(hwVer));
 			return;
+		case SDRPLAY_RSPdx_ID:
+			if(strcmp(antenna, "A") == 0) {
+				devParams->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_A;
+			} else if(strcmp(antenna, "B") == 0) {
+				devParams->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_B;
+			} else if(strcmp(antenna, "C") == 0) {
+				devParams->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_C;
+			} else {
+				fprintf(stderr, "%s: Invalid antenna port specified\n", get_hw_descr(hwVer));
+				return;
+			}
+			break;
 		default:
 			fprintf(stderr, "Cannot select antenna port: unknown device type %u\n", hwVer);
 			return;

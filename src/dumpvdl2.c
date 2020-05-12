@@ -246,7 +246,7 @@ void usage() {
 			"    --correction <correction>                   Set freq correction (ppm)\n"
 			"    --centerfreq <center_frequency>             Set center frequency in Hz (default: auto)\n"
 			"    --antenna <A/B>                             RSP2 antenna port selection (default: A)\n"
-			"    --biast <0/1>                               RSP2 Bias-T control: 0 - off (default), 1 - on\n"
+			"    --biast <0/1>                               RSP2/1a/duo Bias-T control: 0 - off (default), 1 - on\n"
 			"    --notch-filter <0/1>                        RSP2/1a/duo AM/FM/bcast notch filter control: 0 - off (default), 1 - on\n"
 			"    --tuner <1/2>                               RSPduo tuner selection: (default: 1)\n"
 #endif
@@ -260,10 +260,10 @@ void usage() {
 			"    --agc <AGC_set_point>                       Auto gain set point in dBFS, negative (default: -30)\n"
 			"    --correction <correction>                   Set freq correction (ppm)\n"
 			"    --centerfreq <center_frequency>             Set center frequency in Hz (default: auto)\n"
-			"    --antenna <A/B>                             RSP2 antenna port selection (default: A)\n"
-			"    --biast <0/1>                               RSP2/1a/duo Bias-T control: 0 - off (default), 1 - on\n"
-			"    --notch-filter <0/1>                        RSP2/1a/duo AM/FM/bcast notch filter control: 0 - off (default), 1 - on\n"
-			"    --dab-notch-filter <0/1>                    RSP1a/duo DAB notch filter control: 0 - off (default), 1 - on\n"
+			"    --antenna <A/B/C>                           RSP2/dx antenna port selection (default: A)\n"
+			"    --biast <0/1>                               RSP2/1a/duo/dx Bias-T control: 0 - off (default), 1 - on\n"
+			"    --notch-filter <0/1>                        RSP2/1a/duo/dx AM/FM/bcast notch filter control: 0 - off (default), 1 - on\n"
+			"    --dab-notch-filter <0/1>                    RSP1a/duo/dx DAB notch filter control: 0 - off (default), 1 - on\n"
 			"    --tuner <1/2>                               RSPduo tuner selection: (default: 1)\n"
 #endif
 #ifdef WITH_SOAPYSDR
