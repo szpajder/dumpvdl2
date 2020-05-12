@@ -36,24 +36,19 @@ typedef struct {
 	int data_index;
 } sdrplay3_ctx_t;
 
-typedef enum {
-	HW_UNKNOWN      = 0,
-	HW_RSP1         = 1,
-	HW_RSP2         = 2,
-	HW_RSP1A        = 3,
-	HW_RSPDUO       = 4
-// TODO: RSPdx
-} sdrplay3_hw_type;
-#define NUM_HW_TYPES 5
-
 static int initialized = 0;
 
-static char *hw_descr[NUM_HW_TYPES] = {
-	[HW_RSP1] = "RSP1",
-	[HW_RSP2] = "RSP2",
-	[HW_RSP1A] = "RSP1A",
-	[HW_RSPDUO] = "RSPduo"
-// TODO: RSPdx
+static char *get_hw_descr(int const hw_id) {
+	static dict const hw_descr[] = {
+		{ .id = SDRPLAY_RSP1_ID, .val = "RSP1" },
+		{ .id = SDRPLAY_RSP2_ID, .val = "RSP2" },
+		{ .id = SDRPLAY_RSP1A_ID, .val = "RSP1A" },
+		{ .id = SDRPLAY_RSPduo_ID, .val = "RSPduo" },
+		{ .id = 0, .val = NULL }
+		// TODO: RSPdx
+	};
+	char *ret = dict_search(hw_descr, hw_id);
+	return ret ? ret : "unknown device";
 };
 
 static void sdrplay3_streamCallback(short *xi, short *xq, sdrplay_api_StreamCbParamsT *params,
@@ -166,15 +161,14 @@ static void sdrplay3_eventCallback(sdrplay_api_EventT eventId, sdrplay_api_Tuner
 
 
 static int sdrplay3_verbose_device_search(char *dev, sdrplay_api_DeviceT const *devices,
-		uint32_t const dev_cnt, sdrplay3_hw_type * const hw_type) {
-	*hw_type = HW_UNKNOWN;
+		uint32_t const dev_cnt) {
 	int devIdx = -1;
 	if(dev == NULL) {
 		return -1;
 	}
 	fprintf(stderr, "\nFound %d device(s):\n", dev_cnt);
 	for(unsigned int i = 0; i < dev_cnt; i++) {
-		fprintf(stderr, "  %u:  SN: %s\n", i, devices[i].SerNo);
+		fprintf(stderr, "  %u: Type: %s SN: %s\n", i, get_hw_descr(devices[i].hwVer), devices[i].SerNo);
 	}
 	fprintf(stderr, "\n");
 
@@ -199,23 +193,8 @@ static int sdrplay3_verbose_device_search(char *dev, sdrplay_api_DeviceT const *
 	return -1;
 
 dev_found:
-	if(devices[devIdx].hwVer == 1) {
-		*hw_type = HW_RSP1;
-	} else if(devices[devIdx].hwVer == 2) {
-		*hw_type = HW_RSP2;
-	} else if(devices[devIdx].hwVer == 3) {
-		*hw_type = HW_RSPDUO;
-	} else if(devices[devIdx].hwVer > 253) {
-		*hw_type = HW_RSP1A;
-// TODO: RSPdx
-	} else {
-		fprintf(stderr, "Selected device #%d is unsupported: hardware version %d\n",
-				devIdx, devices[devIdx].hwVer);
-		return -1;
-	}
-
 	fprintf(stderr, "Selected device #%d (type: %s SN: %s)\n",
-			devIdx, hw_descr[*hw_type], devices[devIdx].SerNo);
+			devIdx, get_hw_descr(devices[devIdx].hwVer), devices[devIdx].SerNo);
 	return devIdx;
 }
 
@@ -228,7 +207,6 @@ void sdrplay3_init(vdl2_state_t * const ctx, char * const dev, char * const ante
 	sdrplay_api_ErrT err;
 	float ver = 1.0f;
 	sdrplay3_ctx_t SDRPlay;
-	sdrplay3_hw_type hw_type = HW_UNKNOWN;
 
 	err = sdrplay_api_Open();
 	if (err != sdrplay_api_Success) {
@@ -272,7 +250,7 @@ void sdrplay3_init(vdl2_state_t * const ctx, char * const dev, char * const ante
 		goto unlock_and_fail;
 	}
 
-	int dev_idx = sdrplay3_verbose_device_search(dev, devices, dev_cnt, &hw_type);
+	int dev_idx = sdrplay3_verbose_device_search(dev, devices, dev_cnt);
 	if(dev_idx < 0) {
 		goto unlock_and_fail;
 	}
@@ -311,7 +289,7 @@ void sdrplay3_init(vdl2_state_t * const ctx, char * const dev, char * const ante
 	chParams->tunerParams.ifType = sdrplay_api_IF_Zero;
 	chParams->tunerParams.rfFreq.rfHz = freq;
 
-	if(hw_type == HW_RSP2) {
+	if(device->hwVer == SDRPLAY_RSP2_ID) {
 		if(enable_biast) {
 			chParams->rsp2TunerParams.biasTEnable = 1;
 			fprintf(stderr, "RSP2: Enabling Bias-T\n");
@@ -330,7 +308,7 @@ void sdrplay3_init(vdl2_state_t * const ctx, char * const dev, char * const ante
 			chParams->rsp2TunerParams.rfNotchEnable = 1;
 			fprintf(stderr, "RSP2: Enabling notch filter\n");
 		}
-	} else if(hw_type == HW_RSP1A) {
+	} else if(device->hwVer == SDRPLAY_RSP1A_ID) {
 		if(enable_biast) {
 			chParams->rsp1aTunerParams.biasTEnable = 1;
 			fprintf(stderr, "RSP1A: Enabling Bias-T\n");
@@ -343,7 +321,7 @@ void sdrplay3_init(vdl2_state_t * const ctx, char * const dev, char * const ante
 			devParams->devParams->rsp1aParams.rfDabNotchEnable = 1;
 			fprintf(stderr, "RSP1A: Enabling DAB notch filter\n");
 		}
-	} else if(hw_type == HW_RSPDUO) {
+	} else if(device->hwVer == SDRPLAY_RSPduo_ID) {
 		if(tuner != 1) {
 			// FIXME: add tuner 2 support
 			fprintf(stderr, "RSPduo: tuner %d not supported\n", tuner);
