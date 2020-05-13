@@ -414,12 +414,25 @@ void sdrplay3_init(vdl2_state_t * const ctx, char * const dev, char * const ante
 		sdrplay3_select_antenna(devParams, chParams, device->hwVer, antenna);
 	}
 	if(device->hwVer == SDRPLAY_RSPduo_ID) {
-		if(tuner != 1) {
-			// FIXME: add tuner 2 support
-			fprintf(stderr, "RSPduo: tuner %d not supported\n", tuner);
+		debug_print(D_SDR, "RSPduo: available modes: 0x%x\n", device->rspDuoMode);
+		if((device->rspDuoMode & sdrplay_api_RspDuoMode_Master) == 0) {
+			fprintf(stderr, "%s: Master device not available\n", get_hw_descr(device->hwVer));
+			fprintf(stderr, "This device can only be used in single tuner mode\n");
 			goto fail;
 		}
-		fprintf(stderr, "RSPduo: Selecting tuner %d\n", tuner);
+		device->rspDuoMode = sdrplay_api_RspDuoMode_Single_Tuner;
+		switch(tuner) {
+			case 1:
+				device->tuner = sdrplay_api_Tuner_A;
+				break;
+			case 2:
+				device->tuner = sdrplay_api_Tuner_B;
+				break;
+			default:
+				fprintf(stderr, "%s: Invalid tuner specified\n", get_hw_descr(device->hwVer));
+				return;
+		}
+		fprintf(stderr, "%s: Using tuner %d\n", get_hw_descr(device->hwVer), tuner);
 	}
 
 	if(ifgr < 0 || lna_state < 0) {
