@@ -395,8 +395,6 @@ void sdrplay3_init(vdl2_state_t * const ctx, char * const dev, char * const ante
 	devParams->devParams->ppm = freq_correction_ppm;
 
 	sdrplay_api_RxChannelParamsT *chParams = devParams->rxChannelA;
-	// FIXME: bandwidth should be configurable and the default should be lower
-	// as VDL2 channels often fit within 0.5 MHz of spectrum.
 	chParams->tunerParams.bwType = sdrplay_api_BW_1_536;
 	chParams->tunerParams.ifType = sdrplay_api_IF_Zero;
 	chParams->tunerParams.rfFreq.rfHz = freq;
