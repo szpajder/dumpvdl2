@@ -22,6 +22,7 @@
 #cmakedefine WITH_RTLSDR
 #cmakedefine WITH_MIRISDR
 #cmakedefine WITH_SDRPLAY
+#cmakedefine WITH_SDRPLAY3
 #cmakedefine WITH_SOAPYSDR
 #cmakedefine WITH_STATSD
 #cmakedefine WITH_SQLITE

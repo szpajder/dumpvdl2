@@ -1,0 +1,52 @@
+if(NOT LIBSDRPLAY3_FOUND)
+  # pkg_check_modules (LIBSDRPLAY3_PKG libsdrplay)
+
+  IF(WIN32)
+	  GET_FILENAME_COMPONENT(SDRPLAY3_API_DIR "[HKEY_LOCAL_MACHINE\\SOFTWARE\\SDRplay\\API;Install_Dir]" ABSOLUTE)
+
+     if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+		MESSAGE( "64 bit compiler detected" )
+		SET( EX_PLATFORM 64 )
+		SET( EX_PLATFORM_NAME "x64" )
+	else( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+		MESSAGE( "32 bit compiler detected" )
+		SET( EX_PLATFORM 32 )
+		SET( EX_PLATFORM_NAME "x86" )
+	endif( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+
+	  find_path(LIBSDRPLAY3_INCLUDE_DIRS NAMES sdrplay_api.h
+		PATHS
+		"${SDRPLAY3_API_DIR}/inc"
+	  )
+
+	  find_library(LIBSDRPLAY3_LIBRARIES NAMES mir_sdr_api.lib
+		PATHS
+		"${SDRPLAY3_API_DIR}/${EX_PLATFORM_NAME}"
+	  )
+  ELSE()
+	   find_path(LIBSDRPLAY3_INCLUDE_DIRS NAMES sdrplay_api.h
+		PATHS
+		/usr/include
+		/usr/local/include
+	  )
+
+	  find_library(LIBSDRPLAY3_LIBRARIES NAMES sdrplay_api
+		PATHS
+		/usr/lib
+		/usr/local/lib
+	  )
+  ENDIF()
+  # ${LIBSDRPLAY3_PKG_INCLUDE_DIRS}
+  # ${LIBSDRPLAY3_PKG_LIBRARY_DIRS}
+
+if(LIBSDRPLAY3_INCLUDE_DIRS AND LIBSDRPLAY3_LIBRARIES)
+  set(LIBSDRPLAY3_FOUND TRUE CACHE INTERNAL "libsdrplay v3 found")
+  message(STATUS "Found libsdrplay v3: ${LIBSDRPLAY3_INCLUDE_DIRS}, ${LIBSDRPLAY3_LIBRARIES}")
+else(LIBSDRPLAY3_INCLUDE_DIRS AND LIBSDRPLAY3_LIBRARIES)
+  set(LIBSDRPLAY3_FOUND FALSE CACHE INTERNAL "libsdrplay v3 found")
+  message(STATUS "libsdrplay v3 not found.")
+endif(LIBSDRPLAY3_INCLUDE_DIRS AND LIBSDRPLAY3_LIBRARIES)
+
+#mark_as_advanced(LIBSDRPLAY3_LIBRARIES LIBSDRPLAY3_INCLUDE_DIRS)
+
+endif(NOT LIBSDRPLAY3_FOUND)

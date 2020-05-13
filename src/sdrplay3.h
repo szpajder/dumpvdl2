@@ -17,11 +17,15 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#ifndef _SDRPLAY3_H
+#define _SDRPLAY3_H
 #include <stdint.h>                         // uint32_t
 #include "dumpvdl2.h"                       // vdl2_state_t
-#define SDRPLAY_OVERSAMPLE               20
+#define SDRPLAY3_OVERSAMPLE                  20
 
-void sdrplay_init(vdl2_state_t * const ctx, char * const dev, char * const antenna,
-		uint32_t const freq, int const gr, int const ppm_error, int const enable_biast,
-		int const enable_notch_filter, int enable_agc, int tuner);
-void sdrplay_cancel();
+void sdrplay3_init(vdl2_state_t * const ctx, char * const dev, char * const antenna,
+		double const freq, int const ifgr, int const lna_state, double const freq_correction_ppm,
+		int const enable_biast, int const enable_notch_filter, int const enable_dab_notch_filter,
+		int agc_set_point, int tuner);
+void sdrplay3_cancel();
+#endif // !_SDRPLAY3_H
