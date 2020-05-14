@@ -92,6 +92,7 @@
 #endif
 #define __OPT_ADDRINFO_VERBOSITY     24
 #define __OPT_PRETTIFY_XML           25
+#define __OPT_MILLISECONDS           26
 
 #ifdef WITH_SDRPLAY3
 #define __OPT_SDRPLAY3               70
@@ -179,7 +180,7 @@ typedef struct {
 	uint32_t debug_filter;
 #endif
 	uint32_t msg_filter;
-	bool hourly, daily, utc;
+	bool hourly, daily, utc, milliseconds;
 	bool output_raw_frames, dump_asn1, extended_header, decode_fragments;
 	bool ac_addrinfo_db_available;
 	bool gs_addrinfo_db_available;

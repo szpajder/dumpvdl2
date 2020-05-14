@@ -204,6 +204,7 @@ void usage() {
 			"    --hourly                                    Rotate output file hourly\n"
 			"    --daily                                     Rotate output file daily\n"
 			"    --utc                                       Use UTC timestamps in output and file names\n"
+			"    --milliseconds                              Print milliseconds in timestamps\n"
 			"    --raw-frames                                Output AVLC payload as raw bytes\n"
 			"    --dump-asn1                                 Output full ASN.1 structure of CM and CPDLC messages\n"
 			"    --extended-header                           Output additional fields in message header\n"
@@ -474,6 +475,7 @@ int main(int argc, char **argv) {
 		{ "daily",              no_argument,        NULL,   __OPT_DAILY },
 		{ "hourly",             no_argument,        NULL,   __OPT_HOURLY },
 		{ "utc",                no_argument,        NULL,   __OPT_UTC },
+		{ "milliseconds",       no_argument,        NULL,   __OPT_MILLISECONDS },
 		{ "raw-frames",         no_argument,        NULL,   __OPT_RAW_FRAMES },
 		{ "dump-asn1",          no_argument,        NULL,   __OPT_DUMP_ASN1 },
 		{ "extended-header",    no_argument,        NULL,   __OPT_EXTENDED_HEADER },
@@ -580,6 +582,9 @@ int main(int argc, char **argv) {
 				break;
 			case __OPT_UTC:
 				Config.utc = true;
+				break;
+			case __OPT_MILLISECONDS:
+				Config.milliseconds = true;
 				break;
 			case __OPT_RAW_FRAMES:
 				Config.output_raw_frames = true;

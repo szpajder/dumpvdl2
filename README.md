@@ -518,6 +518,8 @@ Then you may run dumpvdl2 on any remote machine with :
 - Add `--utc` option if you prefer UTC timestamps rather than local timezone in
   output and filenames.
 
+- Add `--milliseconds` to print timestamps with millisecond resolution.
+
 - Add `--raw-frames` option to display payload of AVLC frames in raw hex for
   debugging purposes.
 
