@@ -71,7 +71,7 @@ void sighandler(int sig) {
 #ifdef WITH_SDRPLAY
 	sdrplay_cancel();
 #endif
-#ifdef WITH_SDRPLAY
+#ifdef WITH_SDRPLAY3
 	sdrplay3_cancel();
 #endif
 #ifdef WITH_SOAPYSDR
@@ -180,7 +180,7 @@ void usage() {
 			"SDRPLAY RSP receiver (using API version 2):\n"
 			"    dumpvdl2 [output_options] --sdrplay <device_id> [sdrplay_options] [<freq_1> [<freq_2> [...]]]\n"
 #endif
-#ifdef WITH_SDRPLAY
+#ifdef WITH_SDRPLAY3
 			"SDRPLAY RSP receiver (using API version 3):\n"
 			"    dumpvdl2 [output_options] --sdrplay3 <device_id> [sdrplay3_options] [<freq_1> [<freq_2> [...]]]\n"
 #endif
