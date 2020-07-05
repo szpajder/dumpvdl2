@@ -1,5 +1,18 @@
 # NEWS
 
+## Version 1.10.0 (2020-07-05):
+* Added support for SDRPlay API version 3 which is required for new devices
+  (notably RSPdx). API version 2 is still supported, however it will probably
+  be removed in a future release. It is possible to have both versions
+  installed simultaneously and to choose which one to use at runtime. See
+  README.md for details.
+* Added `--milliseconds` option which enables printing timestamps in message
+  headers up to a millisecond precision. Note that the arrival timestamp is
+  stored per VDL2 burst, not per VDL2 message. Since a VDL2 burst may contains
+  more than one VDL2 message, all messages extracted from a single burst will
+  still have exactly the same timestamp value, regardless of whether
+  millisecond precision has been enabled or not.
+
 ## Version 1.9.0 (2020-02-13):
 * Added decoder for ISO 8650 / X.227 Association Control Service (ACSE).
 * Improved decoder for ISO 8327 / X.225 Session Protocol.
