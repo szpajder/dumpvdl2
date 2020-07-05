@@ -49,7 +49,7 @@ sub grep_filehandle {
 	my $dir = DIR_UNKNOWN;
 	my @msg = ();
 	while(<$fh>) {
-		if(/^\[\d{4}-\d\d-\d\d \d\d:\d\d:\d\d / && @msg > 0) {
+		if(/^\[\d{4}-\d\d-\d\d \d\d:\d\d:\d\d(?:\.\d{3})? / && @msg > 0) {
 			print_if_matches(\@msg, $dir, $print, $dont_print);
 			$print = $dont_print = 0; @msg = (); $dir = DIR_UNKNOWN;
 		}

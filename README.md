@@ -11,7 +11,7 @@ Current stable version: 1.9.0 (released February 13, 2020)
 - Supports following SDR hardware:
   - RTLSDR (via [rtl-sdr library](http://osmocom.org/projects/sdr/wiki/rtl-sdr))
   - Mirics SDR (via [libmirisdr-4](https://github.com/f4exb/libmirisdr-4))
-  - SDRPlay RSP, (native support through [official API](http://www.sdrplay.com/docs/SDRplay_SDR_API_Specification.pdf))
+  - SDRPlay RSP (native support through official driver version 2 and 3)
   - SoapySDR (via [soapy-sdr project](https://github.com/pothosware/SoapySDR/wiki))
   - reads prerecorded IQ data from file
 - Decodes up to 8 VDL2 channels simultaneously
@@ -153,8 +153,10 @@ sudo cp $HOME/libmirisdr-4/mirisdr.rules /etc/udev/rules.d/mirisdr.rules
 Download and install API/hardware driver package from
 http://www.sdrplay.com/downloads/.  Make sure you have selected the right
 hardware platform before downloading, otherwise the installer will fail.
-Version 3 of the driver is not supported in dumpvdl2 - please use version 2 (as
-of January 2020, the latest version is 2.13).
+dumpvdl2 supports both version 2 and 3 of the driver. Version 3 is needed
+for newer devices (like RSPdx). Older hardware works with both versions.
+You can have both versions installed simultaneously and choose either one
+when running the program.
 
 #### SoapySDR support (optional)
 
@@ -222,7 +224,8 @@ the process `cmake` displays a short configuration summary, like this:
 -- - SDR drivers:
 --   - librtsdr:                requested: ON, enabled: TRUE
 --   - mirisdr:                 requested: ON, enabled: TRUE
---   - sdrplay:                 requested: ON, enabled: TRUE
+--   - sdrplay v2:              requested: ON, enabled: TRUE
+--   - sdrplay v3:              requested: ON, enabled: TRUE
 --   - soapysdr:                requested: ON, enabled: TRUE
 -- - Other options:
 --   - Etsy StatsD:             requested: ON, enabled: TRUE
@@ -355,9 +358,17 @@ is usually enough to rectify this problem. If it does not help, it might be that
 your Pi is overloaded or not powerful enough for the task. Try reducing the
 number of decoded VDL2 channels as a workaround.
 
-### SDRPLAY RSP native driver
+### SDRplay RSP native driver, version 2
 
-SDRPlay RSP native driver supports several advanced configuration options:
+In order to use SDRplay driver version 2, select the device with  `--sdrplay`
+option. The following devices are supported:
+
+- RSP1
+- RSP1A
+- RSP2
+- RSPduo
+
+The following advanced configuration options are available:
 
 - switching antenna ports (RSP2)
 - bias-T (RSP2, RSP1A)
@@ -375,7 +386,7 @@ The highest value depends on receiver type, but it's not that important, because
 in dumpvdl2 you will hardly be using a GR larger than 59 dB.
 
 Another way to go is to skip the `--gr` option altogether. This will enable
-Automatic Gain Control with a default set point of -35 dBFS, which shall
+Automatic Gain Control with a default set point of -30 dBFS, which shall
 converge to a reasonable gain reduction value in a couple of seconds after the
 program starts. AGC set point can be changed with `--agc` option, but treat this
 as an "expert mode" knob, which is hardly ever needed.
@@ -393,6 +404,44 @@ frequency correction to -1ppm:
 ```
 ./dumpvdl2 --sdrplay 35830222 --gr 40 --correction -1 --antenna A --biast 0 --notch-filter 1 136975000
 ```
+
+### SDRplay RSP native driver, version 3
+
+In order to use SDRplay driver version 3, select the device with  `--sdrplay3`
+option. The following devices are supported:
+
+- RSP1
+- RSP1A
+- RSP2
+- RSPduo
+- RSPdx
+
+The following advanced configuration options are available:
+
+- switching antenna ports (RSP2, RSPdx)
+- bias-T (RSP2, RSP1A, RSPdx)
+- notch filter for AM/FM broadcast bands (RSP2, RSP1A, RSPduo, RSPdx)
+- notch filter for DAB band (RSP1A, RSPduo, RSPdx)
+- tuner selection (RSPduo)
+- Automatic Gain Control
+
+Type `./dumpvdl2 --help` to find out all the options and their default values.
+
+When version 3 of the driver is used, dumpvdl2 allows controlling each gain
+reduction component separately. `--gr` option is not available - there are two
+options instead:
+
+- `--ifgr <value_in_dB>` - controls IF gain reduction (range: 20-59 dB)
+- `--lna-state <value>` - sets the gain reduction of the LNA (ie. the input RF
+  stage). The parameter is a non-negative integer from 0 (meaning: no gain
+  reduction) up to N, where N depends on the receiver type. The higher the
+  value, the higher the gain reduction (attenuation) in decibels. Refer to the
+  "Gain Reduction Tables" section in the [API documentation](https://www.sdrplay.com/docs/SDRplay_RSP_API_Release_Notes_V3.06.pdf) for a full list
+  of LNA states and their respective gain reductions for each receiver.
+
+if you want to set the gain reduction manually, specify both `--ifgr` and
+`--lna-state`. If either option is omitted, the other one will be ignored and
+AGC will be used instead.
 
 ### SoapySDR library
 
@@ -468,6 +517,8 @@ Then you may run dumpvdl2 on any remote machine with :
 
 - Add `--utc` option if you prefer UTC timestamps rather than local timezone in
   output and filenames.
+
+- Add `--milliseconds` to print timestamps with millisecond resolution.
 
 - Add `--raw-frames` option to display payload of AVLC frames in raw hex for
   debugging purposes.
