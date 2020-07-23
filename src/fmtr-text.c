@@ -18,22 +18,53 @@
  */
 
 #include <stdbool.h>
+#include <math.h>                       // round
+#include <time.h>                       // strftime, gmtime, localtime
 #include <libacars/libacars.h>          // la_proto_node
 #include <libacars/vstring.h>           // la_vstring
 #include "fmtr-text.h"
 #include "output-common.h"              // fmtr_descriptor_t
-#include "dumpvdl2.h"                   // octet_string_t
+#include "dumpvdl2.h"                   // octet_string_t, Config
 
 static bool fmtr_text_supports_data_type(fmtr_input_type_t type) {
 	return(type == (fmtr_input_type_t)OFMT_TEXT);
+}
+
+static la_vstring *format_timestamp(struct timeval const tv) {
+	struct tm *tmstruct = (Config.utc == true ? gmtime(&tv.tv_sec) : localtime(&tv.tv_sec));
+
+	char tbuf[30], tzbuf[8];
+	strftime(tbuf, sizeof(tbuf), "%F %T", tmstruct);
+	strftime(tzbuf, sizeof(tzbuf), "%Z", tmstruct);
+
+	la_vstring *vstr = la_vstring_new();
+	la_vstring_append_sprintf(vstr, "%s", tbuf);
+	if(Config.milliseconds == true) {
+		la_vstring_append_sprintf(vstr, ".%03d", (int)round(tv.tv_usec / 1000.0));
+	}
+	la_vstring_append_sprintf(vstr, " %s", tzbuf);
+	return vstr;
 }
 
 static octet_string_t *fmtr_text_format_decoded_msg(vdl2_msg_metadata *metadata, la_proto_node *root) {
 	ASSERT(metadata != NULL);
 	ASSERT(root != NULL);
 
-	// TODO: print metadata here rather than in avlc_format_text
-	la_vstring *vstr = la_proto_tree_format_text(NULL, root);
+	la_vstring *timestamp = format_timestamp(metadata->burst_timestamp);
+	la_vstring *vstr = la_vstring_new();
+
+	la_vstring_append_sprintf(vstr, "[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB] [%.1f ppm]",
+			timestamp->str, (float)metadata->freq / 1e+6, metadata->frame_pwr_dbfs, metadata->nf_pwr_dbfs,
+			metadata->frame_pwr_dbfs - metadata->nf_pwr_dbfs, metadata->ppm_error);
+	la_vstring_destroy(timestamp, true);
+
+	if(Config.extended_header == true) {
+		la_vstring_append_sprintf(vstr, " [S:%d] [L:%u] [F:%d] [#%u]",
+				metadata->synd_weight, metadata->datalen_octets, metadata->num_fec_corrections, metadata->idx);
+	}
+	EOL(vstr);
+
+	vstr = la_proto_tree_format_text(vstr, root);
 	octet_string_t *ret = octet_string_new(vstr->str, vstr->len + 1);     // +1 for NULL terminator
 	la_vstring_destroy(vstr, false);
 	return ret;

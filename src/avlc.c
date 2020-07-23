@@ -21,8 +21,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>                   // strftime, gmtime, localtime
-#include <math.h>
 #include <unistd.h>
 #include <glib.h>
 #include <libacars/libacars.h>      // la_type_descriptor, la_proto_node
@@ -309,41 +307,12 @@ static void addrinfo_format_as_text(la_vstring *vstr, int indent, avlc_addr_t co
 	}
 }
 
-static la_vstring *format_timestamp(struct timeval const tv) {
-	struct tm *tmstruct = (Config.utc == true ? gmtime(&tv.tv_sec) : localtime(&tv.tv_sec));
-
-	char tbuf[30], tzbuf[8];
-	strftime(tbuf, sizeof(tbuf), "%F %T", tmstruct);
-	strftime(tzbuf, sizeof(tzbuf), "%Z", tmstruct);
-
-	la_vstring *vstr = la_vstring_new();
-	la_vstring_append_sprintf(vstr, "%s", tbuf);
-	if(Config.milliseconds == true) {
-		la_vstring_append_sprintf(vstr, ".%03d", (int)round(tv.tv_usec / 1000.0));
-	}
-	la_vstring_append_sprintf(vstr, " %s", tzbuf);
-	return vstr;
-}
-
 void avlc_format_text(la_vstring * const vstr, void const * const data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
 	CAST_PTR(f, avlc_frame_t *, data);
-
-	la_vstring *timestamp = format_timestamp(f->q->metadata->burst_timestamp);
-
-	LA_ISPRINTF(vstr, indent, "[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB] [%.1f ppm]",
-			timestamp->str, (float)f->q->metadata->freq / 1e+6, f->q->metadata->frame_pwr_dbfs, f->q->metadata->nf_pwr_dbfs,
-			f->q->metadata->frame_pwr_dbfs - f->q->metadata->nf_pwr_dbfs, f->q->metadata->ppm_error);
-	la_vstring_destroy(timestamp, true);
-
-	if(Config.extended_header == true) {
-		la_vstring_append_sprintf(vstr, " [S:%d] [L:%u] [F:%d] [#%u]",
-				f->q->metadata->synd_weight, f->q->metadata->datalen_octets, f->q->metadata->num_fec_corrections, f->num);
-	}
-	EOL(vstr);
 
 	if(Config.output_raw_frames == true && f->q->len > 0) {
 		append_hexdump_with_indent(vstr, f->q->buf, f->q->len, indent+1);
