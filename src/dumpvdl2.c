@@ -96,6 +96,20 @@ static void setup_signals() {
 	sigaction(SIGTERM, &sigact, NULL);
 }
 
+static void pthread_barrier_new(pthread_barrier_t *barrier, unsigned count) {
+	int ret;
+	if((ret = pthread_barrier_init(barrier, NULL, count)) != 0) {
+		errno = ret;
+		perror("pthread_barrier_init failed");
+		_exit(2);
+	}
+}
+
+static void setup_barriers(vdl2_state_t *ctx) {
+	pthread_barrier_new(&demods_ready, ctx->num_channels+1);
+	pthread_barrier_new(&samples_ready, ctx->num_channels+1);
+}
+
 void start_thread(pthread_t *pth, void *(*start_routine)(void *), void *thread_ctx) {
 	int ret;
 	if((ret = pthread_create(pth, NULL, start_routine, thread_ctx) != 0)) {
@@ -105,22 +119,9 @@ void start_thread(pthread_t *pth, void *(*start_routine)(void *), void *thread_c
 	}
 }
 
-static void setup_threads(vdl2_state_t *ctx) {
-	int ret;
-	// FIXME: phread_barrier_new
-	if((ret = pthread_barrier_init(&demods_ready, NULL, ctx->num_channels+1)) != 0 ||
-			(ret = pthread_barrier_init(&samples_ready, NULL, ctx->num_channels+1)) != 0) {
-		errno = ret;
-		perror("pthread_barrier_init failed");
-		_exit(2);
-	}
-	// FIXME: start_thread
+static void start_demod_threads(vdl2_state_t *ctx) {
 	for(int i = 0; i < ctx->num_channels; i++) {
-		if((ret = pthread_create(&ctx->channels[i]->demod_thread, NULL, &process_samples, ctx->channels[i])) != 0) {
-			errno = ret;
-			perror("pthread_create failed");
-			_exit(2);
-		}
+		start_thread(&ctx->channels[i]->demod_thread, &process_samples, ctx->channels[i]);
 	}
 }
 
@@ -1007,8 +1008,8 @@ int main(int argc, char **argv) {
 	demod_sync_init();
 	start_all_output_threads(fmtr_list);
 	start_thread(&decoder_thread, avlc_decoder_thread, fmtr_list);
-	// FIXME: untangle this
-	setup_threads(&ctx);
+	setup_barriers(&ctx);
+	start_demod_threads(&ctx);
 	switch(input) {
 		case INPUT_FILE:
 			process_file(&ctx, infile, sample_fmt);
