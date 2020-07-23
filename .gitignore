@@ -2,3 +2,5 @@
 dumpvdl2
 build
 build-*
+.clangd
+compile_commands.json
