@@ -174,6 +174,7 @@ static void *out_file_thread(void *arg) {
 	if(out_file_init(self) < 0) {
 		goto fail;
 	}
+	ctx->enabled = true;
 	while(!do_exit) {
 		output_qentry_t *q = (output_qentry_t *)g_async_queue_pop(ctx->q);
 		ASSERT(q != NULL);
@@ -187,7 +188,7 @@ static void *out_file_thread(void *arg) {
 		output_qentry_destroy(q);
 	}
 fail:
-	// TODO: add support for output disabling
+	ctx->enabled = false;
 	fprintf(stderr, "output_file: could not write to '%s', output disabled\n", self->filename_prefix);
 	return NULL;
 }

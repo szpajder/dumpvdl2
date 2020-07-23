@@ -373,8 +373,13 @@ static void output_queue_push(void *data, void *ctx) {
 	CAST_PTR(output, output_instance_t *, data);
 	CAST_PTR(qentry, output_qentry_t *, ctx);
 
-	output_qentry_t *copy = output_qentry_copy(qentry);
-	g_async_queue_push(output->ctx->q, copy);
+	if(output->ctx->enabled) {
+		output_qentry_t *copy = output_qentry_copy(qentry);
+		g_async_queue_push(output->ctx->q, copy);
+		debug_print(D_OUTPUT, "dispatched %s output %p\n", output->td->name, output);
+	} else {
+		debug_print(D_OUTPUT, "%s output %p disabled, skipping\n", output->td->name, output);
+	}
 }
 
 void *avlc_decoder_thread(void *arg) {
