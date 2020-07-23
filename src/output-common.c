@@ -1,0 +1,144 @@
+/*
+ *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
+ *
+ *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <glib.h>               // g_async_queue_new
+#include "dumpvdl2.h"           // NEW, ASSERT
+#include "output-common.h"
+
+#include "fmtr-text.h"          // fmtr_DEF_text
+
+#include "output-file.h"        // out_DEF_file
+
+static dict const fmtr_intype_names[] = {
+	{ .id = FMTR_INTYPE_DECODED_FRAME,   .val = "decoded" },
+	{ .id = FMTR_INTYPE_RAW_FRAME,       .val = "raw" },
+	{ .id = FMTR_INTYPE_UNKNOWN,         .val = NULL }
+};
+
+// FIXME: move this to fmtr_descriptor_t
+static dict const outformat_names[] = {
+	{ .id = OFMT_TEXT,                  .val = "text" },
+	{ .id = OFMT_UNKNOWN,               .val = NULL }
+};
+
+static dict const fmtr_descriptors[] = {
+	{ .id = OFMT_TEXT,                  .val = &fmtr_DEF_text },
+	{ .id = OFMT_UNKNOWN,               .val = NULL }
+};
+
+static output_descriptor_t * output_descriptors[] = {
+	&out_DEF_file,
+	NULL
+};
+
+fmtr_input_type_t fmtr_input_type_from_string(char const * const str) {
+	// FIXME: convert this to dict_revsearch?
+	for (dict const *d = fmtr_intype_names; d->val != NULL; d++) {
+		if (!strcmp(str, (char *)d->val)) {
+			return d->id;
+		}
+	}
+	return FMTR_INTYPE_UNKNOWN;
+}
+
+fmtr_descriptor_t *fmtr_descriptor_get(output_format_t const fmt) {
+	return dict_search(fmtr_descriptors, fmt);
+}
+
+fmtr_instance_t *fmtr_instance_new(fmtr_descriptor_t *fmttd, fmtr_input_type_t intype) {
+	ASSERT(fmttd != NULL);
+	NEW(fmtr_instance_t, fmtr);
+	fmtr->td = fmttd;
+	fmtr->intype = intype;
+	fmtr->outputs = NULL;
+	return fmtr;
+}
+
+output_format_t output_format_from_string(char const * const str) {
+	// FIXME: convert this to dict_revsearch?
+	for (dict const *d = outformat_names; d->val != NULL; d++) {
+		if (!strcmp(str, (char *)d->val)) {
+			return d->id;
+		}
+	}
+	return OFMT_UNKNOWN;
+}
+
+output_descriptor_t *output_descriptor_get(char const * const output_name) {
+	if(output_name == NULL) {
+		return NULL;
+	}
+	for(output_descriptor_t **outd = output_descriptors; *outd != NULL; outd++) {
+		if(!strcmp(output_name, (*outd)->name)) {
+			return *outd;
+		}
+	}
+	return NULL;
+}
+
+output_instance_t *output_instance_new(output_descriptor_t *outtd, output_format_t format, void *priv) {
+	ASSERT(outtd != NULL);
+	NEW(output_ctx_t, ctx);
+	ctx->q = g_async_queue_new();
+	ctx->format = format;
+	ctx->priv = priv;
+	NEW(output_instance_t, output);
+	output->td = outtd;
+	output->ctx = ctx;
+	output->output_thread = XCALLOC(1, sizeof(pthread_t));
+	memset(output->output_thread, 0, sizeof(pthread_t));
+	return output;
+}
+
+output_qentry_t *output_qentry_copy(output_qentry_t const * const q) {
+	ASSERT(q != NULL);
+
+	NEW(output_qentry_t, copy);
+	copy->msg = octet_string_copy(q->msg);
+	copy->metadata = vdl2_msg_metadata_copy(q->metadata);
+	copy->format = q->format;
+	return copy;
+}
+
+void output_qentry_destroy(output_qentry_t *q) {
+	if(q == NULL) {
+		return;
+	}
+	octet_string_destroy(q->msg);
+	vdl2_msg_metadata_destroy(q->metadata);
+	XFREE(q);
+}
+
+vdl2_msg_metadata *vdl2_msg_metadata_copy(vdl2_msg_metadata const * const m) {
+	ASSERT(m != NULL);
+	NEW(vdl2_msg_metadata, copy);
+	memcpy(copy, m, sizeof(vdl2_msg_metadata));
+	if(m->station_id != NULL) {
+		copy->station_id = strdup(m->station_id);
+	}
+	return copy;
+}
+
+void vdl2_msg_metadata_destroy(vdl2_msg_metadata *m) {
+	if(m == NULL) {
+		return;
+	}
+	XFREE(m->station_id);
+	XFREE(m);
+}
