@@ -188,6 +188,25 @@ void octet_string_as_ascii_format_text(la_vstring * const vstr, void const * con
 	XFREE(replaced);
 }
 
+octet_string_t *octet_string_copy(octet_string_t const * const ostring) {
+	ASSERT(ostring != NULL);
+	NEW(octet_string_t, copy);
+	copy->len = ostring->len;
+	if(ostring->buf != NULL && ostring->len > 0) {
+		copy->buf = XCALLOC(copy->len, sizeof(uint8_t));
+		memcpy(copy->buf, ostring->buf, ostring->len);
+	}
+	return copy;
+}
+
+void octet_string_destroy(octet_string_t *ostring) {
+	if(ostring == NULL) {
+		return;
+	}
+	XFREE(ostring->buf);
+	XFREE(ostring);
+}
+
 size_t slurp_hexstring(char* string, uint8_t **buf) {
 	if(string == NULL)
 		return 0;
