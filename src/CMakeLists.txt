@@ -210,10 +210,14 @@ add_library (dumpvdl2_base OBJECT
 	demod.c
 	dumpvdl2.c
 	esis.c
+	fmtr-text.c
 	gs_data.c
 	icao.c
 	idrp.c
+	kvargs.c
 	output.c
+	output-common.c
+	output-file.c
 	rs.c
 	tlv.c
 	util.c

@@ -168,11 +168,11 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 	uint8_t *buf = q->buf;
 	uint32_t len = q->len;
 	if(len < MIN_AVLC_LEN) {
-		debug_print(D_PROTO, "Frame %d: too short (len=%u required=%d)\n", q->idx, len, MIN_AVLC_LEN);
-		statsd_increment_per_channel(q->freq, "avlc.errors.too_short");
+		debug_print(D_PROTO, "Frame %d: too short (len=%u required=%d)\n", q->metadata->idx, len, MIN_AVLC_LEN);
+		statsd_increment_per_channel(q->metadata->freq, "avlc.errors.too_short");
 		return NULL;
 	}
-	debug_print(D_PROTO, "Frame %d: len=%u\n", q->idx, len);
+	debug_print(D_PROTO, "Frame %d: len=%u\n", q->metadata->idx, len);
 	debug_print_buf_hex(D_PROTO_DETAIL, buf, len, "Frame data:\n");
 
 	// FCS check
@@ -180,11 +180,11 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 	debug_print(D_PROTO_DETAIL, "Check FCS: %04x\n", fcs);
 	if(fcs == GOOD_FCS) {
 		debug_print(D_PROTO, "FCS check OK\n");
-		statsd_increment_per_channel(q->freq, "avlc.frames.good");
+		statsd_increment_per_channel(q->metadata->freq, "avlc.frames.good");
 		len -= 2;
 	} else {
 		debug_print(D_PROTO, "FCS check failed\n");
-		statsd_increment_per_channel(q->freq, "avlc.errors.bad_fcs");
+		statsd_increment_per_channel(q->metadata->freq, "avlc.errors.bad_fcs");
 		return NULL;
 	}
 
@@ -196,7 +196,7 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 	frame->q = q;
 
 	uint8_t *ptr = buf;
-	frame->num = q->idx;
+	frame->num = q->metadata->idx;
 	frame->dst.val = parse_dlc_addr(ptr);
 	ptr += 4; len -= 4;
 	frame->src.val = parse_dlc_addr(ptr);
@@ -209,13 +209,13 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 			switch(frame->dst.a_addr.type) {
 				case ADDRTYPE_GS_ADM:
 				case ADDRTYPE_GS_DEL:
-					statsd_increment_per_channel(q->freq, "avlc.msg.air2gnd");
+					statsd_increment_per_channel(q->metadata->freq, "avlc.msg.air2gnd");
 					break;
 				case ADDRTYPE_AIRCRAFT:
-					statsd_increment_per_channel(q->freq, "avlc.msg.air2air");
+					statsd_increment_per_channel(q->metadata->freq, "avlc.msg.air2air");
 					break;
 				case ADDRTYPE_ALL:
-					statsd_increment_per_channel(q->freq, "avlc.msg.air2all");
+					statsd_increment_per_channel(q->metadata->freq, "avlc.msg.air2all");
 					break;
 			}
 #endif
@@ -226,14 +226,14 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 #ifdef WITH_STATSD
 			switch(frame->dst.a_addr.type) {
 				case ADDRTYPE_AIRCRAFT:
-					statsd_increment_per_channel(q->freq, "avlc.msg.gnd2air");
+					statsd_increment_per_channel(q->metadata->freq, "avlc.msg.gnd2air");
 					break;
 				case ADDRTYPE_GS_ADM:
 				case ADDRTYPE_GS_DEL:
-					statsd_increment_per_channel(q->freq, "avlc.msg.gnd2gnd");
+					statsd_increment_per_channel(q->metadata->freq, "avlc.msg.gnd2gnd");
 					break;
 				case ADDRTYPE_ALL:
-					statsd_increment_per_channel(q->freq, "avlc.msg.gnd2all");
+					statsd_increment_per_channel(q->metadata->freq, "avlc.msg.gnd2all");
 					break;
 			}
 #endif
@@ -256,9 +256,9 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 	} else {     // IS_I(frame->lcf) == true
 		*msg_type |= MSGFLT_AVLC_I;
 		if(len > 3 && ptr[0] == 0xff && ptr[1] == 0xff && ptr[2] == 0x01) {
-			node->next = parse_acars(ptr + 3, len - 3, msg_type, reasm_ctx, q->burst_timestamp);
+			node->next = parse_acars(ptr + 3, len - 3, msg_type, reasm_ctx, q->metadata->burst_timestamp);
 		} else {
-			node->next = x25_parse(ptr, len, msg_type, reasm_ctx, q->burst_timestamp,
+			node->next = x25_parse(ptr, len, msg_type, reasm_ctx, q->metadata->burst_timestamp,
 					frame->src.a_addr.addr, frame->dst.a_addr.addr);
 		}
 	}
@@ -332,18 +332,16 @@ void avlc_format_text(la_vstring * const vstr, void const * const data, int inde
 
 	CAST_PTR(f, avlc_frame_t *, data);
 
-	la_vstring *timestamp = format_timestamp(f->q->burst_timestamp);
+	la_vstring *timestamp = format_timestamp(f->q->metadata->burst_timestamp);
 
-	float sig_pwr_dbfs = 10.0f * log10f(f->q->frame_pwr);
-	float nf_pwr_dbfs = 20.0f * log10f(f->q->mag_nf + 0.001f);
 	LA_ISPRINTF(vstr, indent, "[%s] [%.3f] [%.1f/%.1f dBFS] [%.1f dB] [%.1f ppm]",
-			timestamp->str, (float)f->q->freq / 1e+6, sig_pwr_dbfs, nf_pwr_dbfs,
-			sig_pwr_dbfs-nf_pwr_dbfs, f->q->ppm_error);
+			timestamp->str, (float)f->q->metadata->freq / 1e+6, f->q->metadata->frame_pwr_dbfs, f->q->metadata->nf_pwr_dbfs,
+			f->q->metadata->frame_pwr_dbfs - f->q->metadata->nf_pwr_dbfs, f->q->metadata->ppm_error);
 	la_vstring_destroy(timestamp, true);
 
 	if(Config.extended_header == true) {
 		la_vstring_append_sprintf(vstr, " [S:%d] [L:%u] [F:%d] [#%u]",
-			 	f->q->synd_weight, f->q->datalen_octets, f->q->num_fec_corrections, f->num);
+				f->q->metadata->synd_weight, f->q->metadata->datalen_octets, f->q->metadata->num_fec_corrections, f->num);
 	}
 	EOL(vstr);
 

@@ -24,12 +24,14 @@
 #include <limits.h>
 #include <unistd.h>
 #include <glib.h>
+#include <math.h>                   // log10f
 #include <libacars/libacars.h>      // la_proto_node, la_proto_tree_destroy()
 #include <libacars/reassembly.h>    // la_reasm_ctx, la_reasm_ctx_new()
 #include "config.h"
 #ifdef WITH_STATSD
 #include <sys/time.h>
 #endif
+#include "output-common.h"
 #include "dumpvdl2.h"
 #include "avlc.h"                   // avlc_frame_qentry_t
 #include "acars.h"                  // acars_output_pp
@@ -158,23 +160,26 @@ static int deinterleave(uint8_t *in, uint32_t len, uint32_t rows, uint32_t cols,
 
 GAsyncQueue *frame_queue = NULL;
 
-static void enqueue_frame(vdl2_channel_t const * const v, int const frame_num, uint8_t *buf, size_t const len) {
+static void decoder_queue_push(vdl2_channel_t const *const v,
+		int const frame_num, uint8_t *buf,
+		size_t const len) {
 	NEW(avlc_frame_qentry_t, qentry);
 	qentry->buf = XCALLOC(len, sizeof(uint8_t));
 	memcpy(qentry->buf, buf, len);
 	qentry->len = len;
-	qentry->freq = v->freq;
-	qentry->frame_pwr = v->frame_pwr;
-	qentry->mag_nf = v->mag_nf;
-	qentry->ppm_error = v->ppm_error;
-	qentry->burst_timestamp.tv_sec = v->burst_timestamp.tv_sec;
-	qentry->burst_timestamp.tv_usec = v->burst_timestamp.tv_usec;
-	if(Config.extended_header == true) {
-		qentry->datalen_octets = v->datalen_octets;
-		qentry->synd_weight = synd_weight[v->syndrome];
-		qentry->num_fec_corrections = v->num_fec_corrections;
-		qentry->idx = frame_num;
-	}
+
+	NEW(vdl2_msg_metadata, metadata);
+	metadata->freq = v->freq;
+	metadata->frame_pwr_dbfs = 10.0f * log10f(v->frame_pwr);
+	metadata->nf_pwr_dbfs = 20.0f * log10f(v->mag_nf + 0.001f);
+	metadata->ppm_error = v->ppm_error;
+	metadata->burst_timestamp.tv_sec = v->burst_timestamp.tv_sec;
+	metadata->burst_timestamp.tv_usec = v->burst_timestamp.tv_usec;
+	metadata->datalen_octets = v->datalen_octets;
+	metadata->synd_weight = synd_weight[v->syndrome];
+	metadata->num_fec_corrections = v->num_fec_corrections;
+	metadata->idx = frame_num;
+	qentry->metadata = metadata;
 	g_async_queue_push(frame_queue, qentry);
 }
 
@@ -340,7 +345,7 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 					goto cleanup;
 				}
 				statsd_increment_per_channel(v->freq, "decoder.msg.good");
-				enqueue_frame(v, frame_cnt, data, frame_len_octets);
+				decoder_queue_push(v, frame_cnt, data, frame_len_octets);
 				frame_cnt++;
 				if(ret == 0) { // this was the last frame in this burst
 					break;
@@ -362,32 +367,78 @@ cleanup:
 	}
 }
 
+static void output_queue_push(void *data, void *ctx) {
+	ASSERT(data != NULL);
+	ASSERT(ctx != NULL);
+	CAST_PTR(output, output_instance_t *, data);
+	CAST_PTR(qentry, output_qentry_t *, ctx);
+
+	output_qentry_t *copy = output_qentry_copy(qentry);
+	g_async_queue_push(output->ctx->q, copy);
+}
+
 void *avlc_decoder_thread(void *arg) {
-	UNUSED(arg);
+	ASSERT(arg != NULL);
+	CAST_PTR(fmtr_list, la_list *, arg);
 	avlc_frame_qentry_t *q = NULL;
 	la_proto_node *root = NULL;
 	uint32_t msg_type = 0;
 
 	frame_queue = g_async_queue_new();
 	la_reasm_ctx *reasm_ctx = la_reasm_ctx_new();
+	enum {
+		DEC_NOT_DONE,
+		DEC_SUCCESS,
+		DEC_FAILURE
+	} decoding_status;
 	while(1) {
 		q = (avlc_frame_qentry_t *)g_async_queue_pop(frame_queue);
-		statsd_increment_per_channel(q->freq, "avlc.frames.processed");
-		msg_type = 0;
-		root = avlc_parse(q, &msg_type, reasm_ctx);
-		if(root == NULL) {
-			goto cleanup;
+		ASSERT(q->metadata != NULL);
+		statsd_increment_per_channel(q->metadata->freq, "avlc.frames.processed");
+
+		fmtr_instance_t *fmtr = NULL;
+		decoding_status = DEC_NOT_DONE;
+		for(la_list *p = fmtr_list; p != NULL; p = la_list_next(p)) {
+			fmtr = (fmtr_instance_t *)(p->data);
+			if(fmtr->intype == FMTR_INTYPE_DECODED_FRAME) {
+				// Decode the frame unless we've done it before
+				if(decoding_status == DEC_NOT_DONE) {
+					msg_type = 0;
+					root = avlc_parse(q, &msg_type, reasm_ctx);
+					if(root != NULL) {
+						decoding_status = DEC_SUCCESS;
+					} else {
+						decoding_status = DEC_FAILURE;
+						la_proto_tree_destroy(root);
+						root = NULL;
+					}
+				}
+				if(decoding_status == DEC_SUCCESS) {
+					if((msg_type & Config.msg_filter) == msg_type) {
+						debug_print(D_OUTPUT, "msg_type: %x msg_filter: %x (accepted)\n", msg_type, Config.msg_filter);
+						octet_string_t *serialized_msg = fmtr->td->format_decoded_msg(q->metadata, root);
+						ASSERT(serialized_msg != NULL);
+						output_qentry_t qentry = {
+							.msg = serialized_msg,
+							.metadata = q->metadata,
+							.format = fmtr->td->output_format
+						};
+						la_list_foreach(fmtr->outputs, output_queue_push, &qentry);
+						// output_queue_push makes a copy of serialized_msg, so it's safe to free it now
+						octet_string_destroy(serialized_msg);
+					} else {
+						debug_print(D_OUTPUT, "msg_type: %x msg_filter: %x (filtered out)\n", msg_type, Config.msg_filter);
+					}
+					// FIXME: convert to new output framework
+					acars_output_pp(root);
+				}
+			} else if(fmtr->intype == FMTR_INTYPE_RAW_FRAME) {
+				// TODO
+			}
 		}
-		if((msg_type & Config.msg_filter) == msg_type) {
-			debug_print(D_OUTPUT, "msg_type: %x msg_filter: %x (accepted)\n", msg_type, Config.msg_filter);
-			output_proto_tree(root);
-		} else {
-			debug_print(D_OUTPUT, "msg_type: %x msg_filter: %x (filtered out)\n", msg_type, Config.msg_filter);
-		}
-		acars_output_pp(root);
-cleanup:
 		la_proto_tree_destroy(root);
 		root = NULL;
+		XFREE(q->metadata);
 		XFREE(q->buf);
 		XFREE(q);
 	}

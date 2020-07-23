@@ -17,12 +17,13 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #ifndef _AVLC_H
-#define _AVLC_H 1
+#define _AVLC_H
 #include <stdint.h>
 #include <sys/time.h>               // struct timeval
 #include <glib.h>                   // GAsyncQueue
 #include <libacars/reassembly.h>    // la_reasm_ctx
 #include "config.h"                 // IS_BIG_ENDIAN
+#include "output-common.h"          // vdl2_msg_metadata
 
 typedef union {
 	uint32_t val;
@@ -40,16 +41,9 @@ typedef union {
 } avlc_addr_t;
 
 typedef struct {
+	vdl2_msg_metadata *metadata;
 	uint8_t *buf;
 	uint32_t len;
-	uint32_t freq;
-	uint32_t synd_weight;
-	uint32_t datalen_octets;
-	float frame_pwr, mag_nf;
-	float ppm_error;
-	int num_fec_corrections;
-	int idx;
-	struct timeval burst_timestamp;
 } avlc_frame_qentry_t;
 
 uint32_t parse_dlc_addr(uint8_t *buf);

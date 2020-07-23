@@ -27,8 +27,11 @@
 #include <errno.h>
 #include <libacars/libacars.h>  // LA_VERSION, la_config_set_bool()
 #include <libacars/acars.h>     // LA_ACARS_BEARER_VHF
+#include <libacars/list.h>      // la_list
 #include <pthread.h>
 #include "config.h"
+#include "kvargs.h"
+#include "output-common.h"
 #ifndef HAVE_PTHREAD_BARRIERS
 #include "pthread_barrier.h"
 #endif
@@ -93,19 +96,25 @@ static void setup_signals() {
 	sigaction(SIGTERM, &sigact, NULL);
 }
 
+void start_thread(pthread_t *pth, void *(*start_routine)(void *), void *thread_ctx) {
+	int ret;
+	if((ret = pthread_create(pth, NULL, start_routine, thread_ctx) != 0)) {
+		errno = ret;
+		perror("pthread_create failed");
+		_exit(2);
+	}
+}
+
 static void setup_threads(vdl2_state_t *ctx) {
 	int ret;
+	// FIXME: phread_barrier_new
 	if((ret = pthread_barrier_init(&demods_ready, NULL, ctx->num_channels+1)) != 0 ||
 			(ret = pthread_barrier_init(&samples_ready, NULL, ctx->num_channels+1)) != 0) {
 		errno = ret;
 		perror("pthread_barrier_init failed");
 		_exit(2);
 	}
-	if((ret = pthread_create(&decoder_thread, NULL, &avlc_decoder_thread, NULL) != 0)) {
-		errno = ret;
-		perror("pthread_create failed");
-		_exit(2);
-	}
+	// FIXME: start_thread
 	for(int i = 0; i < ctx->num_channels; i++) {
 		if((ret = pthread_create(&ctx->channels[i]->demod_thread, NULL, &process_samples, ctx->channels[i])) != 0) {
 			errno = ret;
@@ -113,6 +122,26 @@ static void setup_threads(vdl2_state_t *ctx) {
 			_exit(2);
 		}
 	}
+}
+
+void start_output_thread(void *p, void *ctx) {
+	UNUSED(ctx);
+	ASSERT(p != NULL);
+	CAST_PTR(output, output_instance_t *, p);
+	ASSERT(output->td->start_routine != NULL);
+	debug_print(D_OUTPUT, "starting thread for output %s\n", output->td->name);
+	start_thread(output->output_thread, output->td->start_routine, output->ctx);
+}
+
+void start_all_output_threads_for_fmtr(void *p, void *ctx) {
+	UNUSED(ctx);
+	ASSERT(p != NULL);
+	CAST_PTR(fmtr, fmtr_instance_t *, p);
+	la_list_foreach(fmtr->outputs, start_output_thread, NULL);
+}
+
+void start_all_output_threads(la_list *fmtr_list) {
+	la_list_foreach(fmtr_list, start_all_output_threads_for_fmtr, NULL);
 }
 
 static uint32_t calc_centerfreq(uint32_t *freq, int cnt, uint32_t source_rate) {
@@ -127,6 +156,143 @@ static uint32_t calc_centerfreq(uint32_t *freq, int cnt, uint32_t source_rate) {
 		return 0;
 	}
 	return freq_min + (freq_max - freq_min) / 2;
+}
+
+typedef struct {
+	char *output_spec_string;
+	char *intype, *outformat, *outtype;
+	kvargs *outopts;
+	char const *errstr;
+	bool err;
+} output_params;
+
+#define SCAN_FIELD_OR_FAIL(str, field_name, errstr) \
+	(field_name) = strsep(&(str), ":"); \
+	if((field_name)[0] == '\0') { \
+		(errstr) = "field_name is empty"; \
+		goto fail; \
+	} else if((str) == NULL) { \
+		(errstr) = "not enough fields"; \
+		goto fail; \
+	}
+
+output_params output_params_from_string(char *output_spec) {
+	output_params out_params = {
+		.intype = NULL, .outformat = NULL, .outtype = NULL, .outopts = NULL,
+		.errstr = NULL, .err = false
+	};
+
+	// We have to work on a copy of output_spec, because strsep() modifies its
+	// first argument. The copy gets stored in the returned out_params structure
+	// so that the caller can free it later.
+	debug_print(D_MISC, "output_spec: %s\n", output_spec);
+	out_params.output_spec_string = strdup(output_spec);
+	char *ptr = out_params.output_spec_string;
+
+	// output_spec format is: <input_type>:<output_format>:<output_type>:<output_options>
+	SCAN_FIELD_OR_FAIL(ptr, out_params.intype, out_params.errstr);
+	SCAN_FIELD_OR_FAIL(ptr, out_params.outformat, out_params.errstr);
+	SCAN_FIELD_OR_FAIL(ptr, out_params.outtype, out_params.errstr);
+	debug_print(D_MISC, "intype: %s outformat: %s outtype: %s\n",
+			out_params.intype, out_params.outformat, out_params.outtype);
+
+	debug_print(D_MISC, "kvargs input string: %s\n", ptr);
+	kvargs_parse_result outopts = kvargs_from_string(ptr);
+	if(outopts.err == 0) {
+		out_params.outopts = outopts.result;
+	} else {
+		out_params.errstr = kvargs_get_errstr(outopts.err);
+		goto fail;
+	}
+
+	out_params.outopts = outopts.result;
+	debug_print(D_MISC, "intype: %s outformat: %s outtype: %s\n",
+			out_params.intype, out_params.outformat, out_params.outtype);
+	goto end;
+fail:
+	XFREE(out_params.output_spec_string);
+	out_params.err = true;
+end:
+	return out_params;
+}
+
+fmtr_instance_t *find_fmtr_instance(la_list *fmtr_list, fmtr_descriptor_t *fmttd, fmtr_input_type_t intype) {
+	if(fmtr_list == NULL) {
+		return NULL;
+	}
+	for(la_list *p = fmtr_list; p != NULL; p = la_list_next(p)) {
+		CAST_PTR(fmtr, fmtr_instance_t *, p);
+		if(fmtr->td == fmttd && fmtr->intype == intype) {
+			return fmtr;
+		}
+	}
+	return NULL;
+}
+
+la_list *setup_output(la_list *fmtr_list, char *output_spec) {
+	output_params oparams = output_params_from_string(output_spec);
+	if(oparams.err == true) {
+		fprintf(stderr, "Could not parse output specifier '%s': %s\n", output_spec, oparams.errstr);
+		_exit(1);
+	}
+	debug_print(D_MISC, "intype: %s outformat: %s outtype: %s\n",
+			oparams.intype, oparams.outformat, oparams.outtype);
+
+	fmtr_input_type_t intype = fmtr_input_type_from_string(oparams.intype);
+	if(intype == FMTR_INTYPE_UNKNOWN) {
+		fprintf(stderr, "Data type '%s' is unknown\n", oparams.intype);
+		_exit(1);
+	}
+
+	output_format_t outfmt = output_format_from_string(oparams.outformat);
+	if(outfmt == OFMT_UNKNOWN) {
+		fprintf(stderr, "Output format '%s' is unknown\n", oparams.outformat);
+		_exit(1);
+	}
+
+	fmtr_descriptor_t *fmttd = fmtr_descriptor_get(outfmt);
+	ASSERT(fmttd != NULL);
+	fmtr_instance_t *fmtr = find_fmtr_instance(fmtr_list, fmttd, intype);
+	if(fmtr == NULL) {      // we haven't added this formatter to the list yet
+		if(!fmttd->supports_data_type(intype)) {
+			fprintf(stderr,
+					"Unsupported data_type:format combination: '%s:%s'\n",
+					oparams.intype, oparams.outformat);
+			_exit(1);
+		}
+		fmtr = fmtr_instance_new(fmttd, intype);
+		ASSERT(fmtr != NULL);
+		fmtr_list = la_list_append(fmtr_list, fmtr);
+	}
+
+	output_descriptor_t *otd = output_descriptor_get(oparams.outtype);
+	if(otd == NULL) {
+		fprintf(stderr, "Output type '%s' is unknown\n", oparams.outtype);
+		_exit(1);
+	}
+	if(!otd->supports_format(outfmt)) {
+		fprintf(stderr, "Unsupported format:output combination: '%s:%s'\n",
+				oparams.outtype, oparams.outformat);
+		_exit(1);
+	}
+
+	void *output_cfg = otd->configure(oparams.outopts);
+	if(output_cfg == NULL) {
+		fprintf(stderr, "Invalid output configuration\n");
+		_exit(1);
+	}
+
+	output_instance_t *output = output_instance_new(otd, outfmt, output_cfg);
+	ASSERT(output != NULL);
+	fmtr->outputs = la_list_append(fmtr->outputs, output);
+
+	// oparams is no longer needed after this point.
+	// No need to free intype, outformat and outtype fields, because they
+	// point into output_spec_string.
+	XFREE(oparams.output_spec_string);
+	kvargs_destroy(oparams.outopts);
+
+	return fmtr_list;
 }
 
 void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
@@ -192,7 +358,7 @@ void usage() {
 			"    dumpvdl2 [output_options] --iq-file <input_file> [file_options] [<freq_1> [<freq_2> [...]]]\n"
 			"\n"
 			"common options:\n"
-			"    <freq_1> [<freq_2> [...]]                   VDL2 channel frequences, in Hz (max %d simultaneous channels supported).\n"
+			"    <freq_1> [<freq_2> [...]]                   VDL2 channel frequencies, in Hz (max %d simultaneous channels supported).\n"
 			"                                                If omitted, will use VDL2 Common Signalling Channel (%u Hz)\n",
 		MAX_CHANNELS, CSC_FREQ
 			);
@@ -200,9 +366,7 @@ void usage() {
 	fprintf(stderr,
 			"\n"
 			"output_options:\n"
-			"    --output-file <output_file>                 Output decoded frames to <output_file> (default: stdout)\n"
-			"    --hourly                                    Rotate output file hourly\n"
-			"    --daily                                     Rotate output file daily\n"
+			"    --output <output_specifier>                 Output specification (default: " DEFAULT_OUTPUT ")\n"
 			"    --utc                                       Use UTC timestamps in output and file names\n"
 			"    --milliseconds                              Print milliseconds in timestamps\n"
 			"    --raw-frames                                Output AVLC payload as raw bytes\n"
@@ -440,6 +604,7 @@ int main(int argc, char **argv) {
 	int num_channels = 0;
 	enum input_types input = INPUT_UNDEF;
 	enum sample_formats sample_fmt = SFMT_UNDEF;
+	la_list *fmtr_list = NULL;
 #if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR
 	char *device = NULL;
 	float gain = SDR_AUTO_GAIN;
@@ -472,8 +637,6 @@ int main(int argc, char **argv) {
 	int opt;
 	struct option long_opts[] = {
 		{ "centerfreq",         required_argument,  NULL,   __OPT_CENTERFREQ },
-		{ "daily",              no_argument,        NULL,   __OPT_DAILY },
-		{ "hourly",             no_argument,        NULL,   __OPT_HOURLY },
 		{ "utc",                no_argument,        NULL,   __OPT_UTC },
 		{ "milliseconds",       no_argument,        NULL,   __OPT_MILLISECONDS },
 		{ "raw-frames",         no_argument,        NULL,   __OPT_RAW_FRAMES },
@@ -486,7 +649,7 @@ int main(int argc, char **argv) {
 		{ "bs-db",              required_argument,  NULL,   __OPT_BS_DB },
 #endif
 		{ "addrinfo",           required_argument,  NULL,   __OPT_ADDRINFO_VERBOSITY },
-		{ "output-file",        required_argument,  NULL,   __OPT_OUTPUT_FILE },
+		{ "output",             required_argument,  NULL,   __OPT_OUTPUT },
 		{ "iq-file",            required_argument,  NULL,   __OPT_IQ_FILE },
 		{ "oversample",         required_argument,  NULL,   __OPT_OVERSAMPLE },
 		{ "sample-format",      required_argument,  NULL,   __OPT_SAMPLE_FORMAT },
@@ -547,7 +710,7 @@ int main(int argc, char **argv) {
 #ifdef WITH_SQLITE
 	char *bs_db_file = NULL;
 #endif
-	char *infile = NULL, *outfile = NULL, *pp_addr = NULL;
+	char *infile = NULL, *pp_addr = NULL;
 	char *gs_file = NULL;
 
 	// Initialize default config
@@ -573,12 +736,6 @@ int main(int argc, char **argv) {
 					fprintf(stderr, "Unknown sample format\n");
 					_exit(1);
 				}
-				break;
-			case __OPT_HOURLY:
-				Config.hourly = true;
-				break;
-			case __OPT_DAILY:
-				Config.daily = true;
 				break;
 			case __OPT_UTC:
 				Config.utc = true;
@@ -716,8 +873,8 @@ int main(int argc, char **argv) {
 				correction = atoi(optarg);
 				break;
 #endif
-			case __OPT_OUTPUT_FILE:
-				outfile = strdup(optarg);
+			case __OPT_OUTPUT:
+				fmtr_list = setup_output(fmtr_list, optarg);
 				break;
 			case __OPT_OVERSAMPLE:
 				oversample = atoi(optarg);
@@ -770,15 +927,12 @@ int main(int argc, char **argv) {
 		freqs[0] = CSC_FREQ;
 	}
 
-	if(outfile == NULL) {
-		outfile = strdup("-");                  // output to stdout by default
-		Config.hourly = Config.daily = false;   // stdout is not rotateable - ignore silently
+// no --output given?
+	if(fmtr_list == NULL) {
+		fmtr_list = setup_output(fmtr_list, DEFAULT_OUTPUT);
 	}
-	if(outfile != NULL && Config.hourly == true && Config.daily == true) {
-		fprintf(stderr, "Options: -H and -D are exclusive\n");
-		fprintf(stderr, "Use --help for help\n");
-		_exit(1);
-	}
+	ASSERT(fmtr_list != NULL);
+
 	sample_rate = SYMBOL_RATE * SPS * oversample;
 	fprintf(stderr, "Sampling rate set to %u sps\n", sample_rate);
 	if(centerfreq == 0) {
@@ -839,10 +993,6 @@ int main(int argc, char **argv) {
 		}
 	}
 #endif
-	if(init_output_file(outfile) < 0) {
-		fprintf(stderr, "Failed to initialize output - aborting\n");
-		_exit(4);
-	}
 	if(pp_addr && init_pp(pp_addr) < 0) {
 		fprintf(stderr, "Failed to initialize output socket to Planeplotter - disabling it\n");
 		XFREE(pp_addr);
@@ -855,6 +1005,9 @@ int main(int argc, char **argv) {
 	sincosf_lut_init();
 	input_lpf_init(sample_rate);
 	demod_sync_init();
+	start_all_output_threads(fmtr_list);
+	start_thread(&decoder_thread, avlc_decoder_thread, fmtr_list);
+	// FIXME: untangle this
 	setup_threads(&ctx);
 	switch(input) {
 		case INPUT_FILE:

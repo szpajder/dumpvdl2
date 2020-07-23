@@ -53,7 +53,7 @@
 #define __OPT_CENTERFREQ              1
 #define __OPT_DAILY                   2
 #define __OPT_HOURLY                  3
-#define __OPT_OUTPUT_FILE             4
+#define __OPT_OUTPUT                  4
 #define __OPT_IQ_FILE                 5
 #define __OPT_OVERSAMPLE              6
 #define __OPT_SAMPLE_FORMAT           7
@@ -161,6 +161,9 @@
 #define D_CACHE                     (1 <<  8)
 #define D_OUTPUT                    (1 <<  9)
 #define D_MISC                      (1 << 31)
+
+// default output specification - decoded text output to stdout
+#define DEFAULT_OUTPUT "decoded:text:file:path=-"
 
 typedef struct {
 	char *token;
