@@ -422,15 +422,20 @@ void *avlc_decoder_thread(void *arg) {
 					if((msg_type & Config.msg_filter) == msg_type) {
 						debug_print(D_OUTPUT, "msg_type: %x msg_filter: %x (accepted)\n", msg_type, Config.msg_filter);
 						octet_string_t *serialized_msg = fmtr->td->format_decoded_msg(q->metadata, root);
-						ASSERT(serialized_msg != NULL);
-						output_qentry_t qentry = {
-							.msg = serialized_msg,
-							.metadata = q->metadata,
-							.format = fmtr->td->output_format
-						};
-						la_list_foreach(fmtr->outputs, output_queue_push, &qentry);
-						// output_queue_push makes a copy of serialized_msg, so it's safe to free it now
-						octet_string_destroy(serialized_msg);
+						// First check if the formatter actually returned something.
+						// A formatter might be suitable only for a particular message type. If this is the case.
+						// it will return NULL for all messages it cannot handle.
+						// An example is pp_acars which only deals with ACARS messages.
+						if(serialized_msg != NULL) {
+							output_qentry_t qentry = {
+								.msg = serialized_msg,
+								.metadata = q->metadata,
+								.format = fmtr->td->output_format
+							};
+							la_list_foreach(fmtr->outputs, output_queue_push, &qentry);
+							// output_queue_push makes a copy of serialized_msg, so it's safe to free it now
+							octet_string_destroy(serialized_msg);
+						}
 					} else {
 						debug_print(D_OUTPUT, "msg_type: %x msg_filter: %x (filtered out)\n", msg_type, Config.msg_filter);
 					}
