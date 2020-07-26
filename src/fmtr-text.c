@@ -27,7 +27,7 @@
 #include "dumpvdl2.h"                   // octet_string_t, Config
 
 static bool fmtr_text_supports_data_type(fmtr_input_type_t type) {
-	return(type == (fmtr_input_type_t)OFMT_TEXT);
+	return(type == FMTR_INTYPE_DECODED_FRAME);
 }
 
 static la_vstring *format_timestamp(struct timeval const tv) {
