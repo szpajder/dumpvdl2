@@ -24,6 +24,7 @@
 #include "fmtr-text.h"          // fmtr_DEF_text
 
 #include "output-file.h"        // out_DEF_file
+#include "output-udp.h"         // out_DEF_udp
 
 static dict const fmtr_intype_names[] = {
 	{ .id = FMTR_INTYPE_DECODED_FRAME,   .val = "decoded" },
@@ -44,6 +45,7 @@ static dict const fmtr_descriptors[] = {
 
 static output_descriptor_t * output_descriptors[] = {
 	&out_DEF_file,
+	&out_DEF_udp,
 	NULL
 };
 
