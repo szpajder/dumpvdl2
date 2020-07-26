@@ -51,8 +51,6 @@
 
 // long command line options
 #define __OPT_CENTERFREQ              1
-#define __OPT_DAILY                   2
-#define __OPT_HOURLY                  3
 #define __OPT_OUTPUT                  4
 #define __OPT_IQ_FILE                 5
 #define __OPT_OVERSAMPLE              6
@@ -80,7 +78,6 @@
 #define __OPT_STATSD                 14
 #endif
 #define __OPT_MSG_FILTER             15
-#define __OPT_OUTPUT_ACARS_PP        16
 #define __OPT_UTC                    17
 #define __OPT_RAW_FRAMES             18
 #define __OPT_DUMP_ASN1              19
@@ -355,13 +352,6 @@ uint16_t crc16_ccitt(uint8_t *data, uint32_t len, uint16_t crc_init);
 // rs.c
 int rs_init();
 int rs_verify(uint8_t *data, int fec_octets);
-
-// output.c
-extern int pp_sockfd;
-int init_output_file(char *file);
-int init_pp(char *pp_addr);
-void output_raw(uint8_t *buf, uint32_t len);
-void output_proto_tree(la_proto_node *root);
 
 // statsd.c
 #ifdef WITH_STATSD

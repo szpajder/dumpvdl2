@@ -216,7 +216,6 @@ add_library (dumpvdl2_base OBJECT
 	icao.c
 	idrp.c
 	kvargs.c
-	output.c
 	output-common.c
 	output-file.c
 	output-udp.c
