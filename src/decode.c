@@ -34,7 +34,6 @@
 #include "output-common.h"
 #include "dumpvdl2.h"
 #include "avlc.h"                   // avlc_frame_qentry_t
-#include "acars.h"                  // acars_output_pp
 
 // Reasonable limits for transmission lengths in bits
 // This is to avoid blocking the decoder in DEC_DATA for a long time
@@ -439,8 +438,6 @@ void *avlc_decoder_thread(void *arg) {
 					} else {
 						debug_print(D_OUTPUT, "msg_type: %x msg_filter: %x (filtered out)\n", msg_type, Config.msg_filter);
 					}
-					// FIXME: convert to new output framework
-					acars_output_pp(root);
 				}
 			} else if(fmtr->intype == FMTR_INTYPE_RAW_FRAME) {
 				// TODO

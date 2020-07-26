@@ -210,6 +210,7 @@ add_library (dumpvdl2_base OBJECT
 	demod.c
 	dumpvdl2.c
 	esis.c
+	fmtr-pp_acars.c
 	fmtr-text.c
 	gs_data.c
 	icao.c

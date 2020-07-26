@@ -36,7 +36,7 @@ typedef struct {
 } out_udp_ctx_t;
 
 static bool out_udp_supports_format(output_format_t format) {
-	return(format == OFMT_TEXT);
+	return(format == OFMT_TEXT || format == OFMT_PP_ACARS);
 }
 
 static void *out_udp_configure(kvargs *kv) {
@@ -93,6 +93,17 @@ int out_udp_init(out_udp_ctx_t *self) {
 	return 0;
 }
 
+static void out_udp_produce_pp_acars(out_udp_ctx_t *self, vdl2_msg_metadata *metadata, octet_string_t *msg) {
+	UNUSED(metadata);
+	ASSERT(msg != NULL);
+	ASSERT(self->sockfd != 0);
+	if(msg->len < 1) {
+		return;
+	}
+	if(write(self->sockfd, msg->buf, msg->len) < 0) {
+		debug_print(D_OUTPUT, "output_udp: error while writing to the network socket: %s", strerror(errno));
+	}
+}
 
 static void out_udp_produce_text(out_udp_ctx_t *self, vdl2_msg_metadata *metadata, octet_string_t *msg) {
 	UNUSED(metadata);
@@ -121,6 +132,8 @@ static void *out_udp_thread(void *arg) {
 		ASSERT(q != NULL);
 		if(q->format == OFMT_TEXT) {
 			out_udp_produce_text(self, q->metadata, q->msg);
+		} else if(q->format == OFMT_PP_ACARS) {
+			out_udp_produce_pp_acars(self, q->metadata, q->msg);
 		}
 		output_qentry_destroy(q);
 	}

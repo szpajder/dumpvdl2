@@ -52,7 +52,8 @@ typedef enum {
 // Output formats
 typedef enum {
 	OFMT_UNKNOWN    = 0,
-	OFMT_TEXT       = 1
+	OFMT_TEXT       = 1,
+	OFMT_PP_ACARS   = 2
 } output_format_t;
 
 typedef octet_string_t* (fmt_decoded_fun_t)(vdl2_msg_metadata *metadata, la_proto_node *root);

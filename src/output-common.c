@@ -22,6 +22,7 @@
 #include "output-common.h"
 
 #include "fmtr-text.h"          // fmtr_DEF_text
+#include "fmtr-pp_acars.h"      // fmtr_DEF_pp_acars
 
 #include "output-file.h"        // out_DEF_file
 #include "output-udp.h"         // out_DEF_udp
@@ -35,11 +36,13 @@ static dict const fmtr_intype_names[] = {
 // FIXME: move this to fmtr_descriptor_t
 static dict const outformat_names[] = {
 	{ .id = OFMT_TEXT,                  .val = "text" },
+	{ .id = OFMT_PP_ACARS,              .val = "pp_acars" },
 	{ .id = OFMT_UNKNOWN,               .val = NULL }
 };
 
 static dict const fmtr_descriptors[] = {
 	{ .id = OFMT_TEXT,                  .val = &fmtr_DEF_text },
+	{ .id = OFMT_PP_ACARS,              .val = &fmtr_DEF_pp_acars },
 	{ .id = OFMT_UNKNOWN,               .val = NULL }
 };
 
