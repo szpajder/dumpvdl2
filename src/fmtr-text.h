@@ -17,10 +17,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _FMT_TEXT_H
-#define _FMT_TEXT_H
+#ifndef _FMTR_TEXT_H
+#define _FMTR_TEXT_H
 #include "output-common.h"              // fmtr_descriptor_t
 
 extern fmtr_descriptor_t fmtr_DEF_text;
 
-#endif // ! _FMT_TEXT_H
+#endif // ! _FMTR_TEXT_H
