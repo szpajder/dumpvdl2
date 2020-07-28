@@ -127,6 +127,7 @@ static void *out_udp_thread(void *arg) {
 		goto fail;
 	}
 	ctx->enabled = true;
+
 	while(!do_exit) {
 		output_qentry_t *q = (output_qentry_t *)g_async_queue_pop(ctx->q);
 		ASSERT(q != NULL);
@@ -137,6 +138,10 @@ static void *out_udp_thread(void *arg) {
 		}
 		output_qentry_destroy(q);
 	}
+
+	close(self->sockfd);
+	return NULL;
+
 fail:
 	ctx->enabled = false;
 	fprintf(stderr, "output_udp: can't connect to %s:%s, output disabled\n", self->address, self->port);

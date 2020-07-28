@@ -162,6 +162,7 @@ static int out_file_rotate(out_file_ctx_t *self) {
 static void out_file_produce_text(out_file_ctx_t *self, vdl2_msg_metadata *metadata, char *msg) {
 	ASSERT(msg != NULL);
 	ASSERT(self->fh != NULL);
+	UNUSED(metadata);
 	fprintf(self->fh, "%s\n", msg);
 	fflush(self->fh);
 }
@@ -175,6 +176,7 @@ static void *out_file_thread(void *arg) {
 		goto fail;
 	}
 	ctx->enabled = true;
+
 	while(!do_exit) {
 		output_qentry_t *q = (output_qentry_t *)g_async_queue_pop(ctx->q);
 		ASSERT(q != NULL);
@@ -187,6 +189,10 @@ static void *out_file_thread(void *arg) {
 		}
 		output_qentry_destroy(q);
 	}
+
+	fclose(self->fh);
+	return NULL;
+
 fail:
 	ctx->enabled = false;
 	fprintf(stderr, "output_file: could not write to '%s', output disabled\n", self->filename_prefix);
