@@ -17,17 +17,11 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _CONFIG_H
-#define _CONFIG_H
-#cmakedefine WITH_RTLSDR
-#cmakedefine WITH_MIRISDR
-#cmakedefine WITH_SDRPLAY
-#cmakedefine WITH_SDRPLAY3
-#cmakedefine WITH_SOAPYSDR
-#cmakedefine WITH_STATSD
-#cmakedefine WITH_SQLITE
-#cmakedefine WITH_ZMQ
-#cmakedefine IS_BIG_ENDIAN
-#cmakedefine HAVE_PTHREAD_BARRIERS
-#define SINCOSF @SINCOSF@
-#endif // !_CONFIG_H
+#ifndef _OUTPUT_ZMQ_H
+#define _OUTPUT_ZMQ_H
+
+#include "output-common.h"          // output_descriptor_t
+
+extern output_descriptor_t out_DEF_zmq;
+
+#endif // !_OUTPUT_ZMQ_H

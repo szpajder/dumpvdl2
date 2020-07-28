@@ -93,6 +93,9 @@ option(SQLITE "Enable SQLite support for reading aircraft info from
 Basestation DB" ON)
 set(WITH_SQLITE FALSE)
 
+option(ZMQ "Enable support for ZeroMQ outputs" ON)
+set(WITH_ZMQ FALSE)
+
 if(RTLSDR)
 	find_package(RTLSDR)
 	if(RTLSDR_FOUND)
@@ -167,6 +170,17 @@ if(SQLITE)
 	endif()
 endif()
 
+if(ZMQ)
+	pkg_check_modules(ZMQ libzmq)
+	if(ZMQ_FOUND)
+		list(APPEND dumpvdl2_extra_sources output-zmq.c)
+		list(APPEND dumpvdl2_extra_libs ${ZMQ_LIBRARIES})
+		list(APPEND dumpvdl2_include_dirs ${ZMQ_INCLUDE_DIRS})
+		list(APPEND link_dirs ${ZMQ_LIBRARY_DIRS})
+		set(WITH_ZMQ TRUE)
+	endif()
+endif()
+
 message(STATUS "dumpvdl2 configuration summary:")
 message(STATUS "- SDR drivers:")
 message(STATUS "  - librtsdr:\t\trequested: ${RTLSDR}, enabled: ${WITH_RTLSDR}")
@@ -177,6 +191,7 @@ message(STATUS "  - soapysdr:\t\trequested: ${SOAPYSDR}, enabled: ${WITH_SOAPYSD
 message(STATUS "- Other options:")
 message(STATUS "  - Etsy StatsD:\t\trequested: ${ETSY_STATSD}, enabled: ${WITH_STATSD}")
 message(STATUS "  - SQLite:\t\t\trequested: ${SQLITE}, enabled: ${WITH_SQLITE}")
+message(STATUS "  - ZeroMQ:\t\t\trequested: ${ZMQ}, enabled: ${WITH_ZMQ}")
 
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"

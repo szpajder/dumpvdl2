@@ -18,6 +18,7 @@
  */
 
 #include <glib.h>               // g_async_queue_new
+#include "config.h"             // WITH_*
 #include "dumpvdl2.h"           // NEW, ASSERT
 #include "output-common.h"
 
@@ -26,6 +27,9 @@
 
 #include "output-file.h"        // out_DEF_file
 #include "output-udp.h"         // out_DEF_udp
+#ifdef WITH_ZMQ
+#include "output-zmq.h"         // out_DEF_zmq
+#endif
 
 static dict const fmtr_intype_names[] = {
 	{ .id = FMTR_INTYPE_DECODED_FRAME,   .val = "decoded" },
@@ -49,6 +53,9 @@ static dict const fmtr_descriptors[] = {
 static output_descriptor_t * output_descriptors[] = {
 	&out_DEF_file,
 	&out_DEF_udp,
+#ifdef WITH_ZMQ
+	&out_DEF_zmq,
+#endif
 	NULL
 };
 
