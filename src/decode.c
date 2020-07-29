@@ -168,6 +168,7 @@ static void decoder_queue_push(vdl2_channel_t const *const v,
 	qentry->len = len;
 
 	NEW(vdl2_msg_metadata, metadata);
+	metadata->version = 1;
 	metadata->freq = v->freq;
 	metadata->frame_pwr_dbfs = 10.0f * log10f(v->frame_pwr);
 	metadata->nf_pwr_dbfs = 20.0f * log10f(v->mag_nf + 0.001f);
