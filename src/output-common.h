@@ -62,6 +62,7 @@ typedef bool (intype_check_fun_t)(fmtr_input_type_t);
 
 // Frame formatter descriptor
 typedef struct {
+	char *name;
     fmt_decoded_fun_t *format_decoded_msg;
     fmt_raw_fun_t *format_raw_msg;
     intype_check_fun_t *supports_data_type;

@@ -37,13 +37,6 @@ static dict const fmtr_intype_names[] = {
 	{ .id = FMTR_INTYPE_UNKNOWN,         .val = NULL }
 };
 
-// FIXME: move this to fmtr_descriptor_t
-static dict const outformat_names[] = {
-	{ .id = OFMT_TEXT,                  .val = "text" },
-	{ .id = OFMT_PP_ACARS,              .val = "pp_acars" },
-	{ .id = OFMT_UNKNOWN,               .val = NULL }
-};
-
 static dict const fmtr_descriptors[] = {
 	{ .id = OFMT_TEXT,                  .val = &fmtr_DEF_text },
 	{ .id = OFMT_PP_ACARS,              .val = &fmtr_DEF_pp_acars },
@@ -83,9 +76,8 @@ fmtr_instance_t *fmtr_instance_new(fmtr_descriptor_t *fmttd, fmtr_input_type_t i
 }
 
 output_format_t output_format_from_string(char const * const str) {
-	// FIXME: convert this to dict_revsearch?
-	for (dict const *d = outformat_names; d->val != NULL; d++) {
-		if (!strcmp(str, (char *)d->val)) {
+	for (dict const *d = fmtr_descriptors; d->val != NULL; d++) {
+		if (!strcmp(str, ((fmtr_descriptor_t *)d->val)->name)) {
 			return d->id;
 		}
 	}
