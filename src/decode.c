@@ -163,9 +163,9 @@ static void decoder_queue_push(vdl2_channel_t const *const v,
 		int const frame_num, uint8_t *buf,
 		size_t const len) {
 	NEW(avlc_frame_qentry_t, qentry);
-	qentry->buf = XCALLOC(len, sizeof(uint8_t));
-	memcpy(qentry->buf, buf, len);
-	qentry->len = len;
+	uint8_t *copy = XCALLOC(len, sizeof(uint8_t));
+	memcpy(copy, buf, len);
+	qentry->frame = octet_string_new(copy, len);
 
 	NEW(vdl2_msg_metadata, metadata);
 	metadata->version = 1;
@@ -446,8 +446,8 @@ void *avlc_decoder_thread(void *arg) {
 		}
 		la_proto_tree_destroy(root);
 		root = NULL;
+		octet_string_destroy(q->frame);
 		XFREE(q->metadata);
-		XFREE(q->buf);
 		XFREE(q);
 	}
 }

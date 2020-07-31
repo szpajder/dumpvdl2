@@ -163,8 +163,8 @@ uint32_t parse_dlc_addr(uint8_t *buf) {
 
 la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_ctx *reasm_ctx) {
 	ASSERT(q != NULL);
-	uint8_t *buf = q->buf;
-	uint32_t len = q->len;
+	uint8_t *buf = q->frame->buf;
+	uint32_t len = q->frame->len;
 	if(len < MIN_AVLC_LEN) {
 		debug_print(D_PROTO, "Frame %d: too short (len=%u required=%d)\n", q->metadata->idx, len, MIN_AVLC_LEN);
 		statsd_increment_per_channel(q->metadata->freq, "avlc.errors.too_short");
@@ -314,8 +314,8 @@ void avlc_format_text(la_vstring * const vstr, void const * const data, int inde
 
 	CAST_PTR(f, avlc_frame_t *, data);
 
-	if(Config.output_raw_frames == true && f->q->len > 0) {
-		append_hexdump_with_indent(vstr, f->q->buf, f->q->len, indent+1);
+	if(Config.output_raw_frames == true && f->q->frame->len > 0) {
+		append_hexdump_with_indent(vstr, f->q->frame->buf, f->q->frame->len, indent+1);
 	}
 
 	LA_ISPRINTF(vstr, indent, "%06X (%s, %s)",
