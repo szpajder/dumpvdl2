@@ -176,7 +176,7 @@ if(SQLITE)
 endif()
 
 if(ZMQ)
-	pkg_check_modules(ZMQ libzmq)
+	pkg_check_modules(ZMQ libzmq>=3.2.0)
 	if(ZMQ_FOUND)
 		list(APPEND dumpvdl2_extra_sources output-zmq.c)
 		list(APPEND dumpvdl2_extra_libs ${ZMQ_LIBRARIES})
