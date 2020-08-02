@@ -3,6 +3,7 @@ include(CheckIncludeFile)
 include(CheckSymbolExists)
 include(TestBigEndian)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 # strdup
 add_definitions(-D_XOPEN_SOURCE=600)
