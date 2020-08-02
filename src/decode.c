@@ -442,14 +442,16 @@ void *avlc_decoder_thread(void *arg) {
 				}
 			} else if(fmtr->intype == FMTR_INTYPE_RAW_FRAME) {
 				octet_string_t *serialized_msg = fmtr->td->format_raw_msg(q->metadata, q->frame);
-				output_qentry_t qentry = {
-					.msg = serialized_msg,
-					.metadata = q->metadata,
-					.format = fmtr->td->output_format
-				};
-				la_list_foreach(fmtr->outputs, output_queue_push, &qentry);
-				// output_queue_push makes a copy of serialized_msg, so it's safe to free it now
-				octet_string_destroy(serialized_msg);
+				if(serialized_msg != NULL) {
+					output_qentry_t qentry = {
+						.msg = serialized_msg,
+						.metadata = q->metadata,
+						.format = fmtr->td->output_format
+					};
+					la_list_foreach(fmtr->outputs, output_queue_push, &qentry);
+					// output_queue_push makes a copy of serialized_msg, so it's safe to free it now
+					octet_string_destroy(serialized_msg);
+				}
 			}
 		}
 		la_proto_tree_destroy(root);
