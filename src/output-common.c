@@ -24,6 +24,9 @@
 
 #include "fmtr-text.h"          // fmtr_DEF_text
 #include "fmtr-pp_acars.h"      // fmtr_DEF_pp_acars
+#ifdef WITH_PROTOBUF_C
+#include "fmtr-binary.h"        // fmtr_DEF_binary
+#endif
 
 #include "output-file.h"        // out_DEF_file
 #include "output-udp.h"         // out_DEF_udp
@@ -40,6 +43,9 @@ static dict const fmtr_intype_names[] = {
 static dict const fmtr_descriptors[] = {
 	{ .id = OFMT_TEXT,                  .val = &fmtr_DEF_text },
 	{ .id = OFMT_PP_ACARS,              .val = &fmtr_DEF_pp_acars },
+#ifdef WITH_PROTOBUF_C
+	{ .id = OFMT_BINARY,                .val = &fmtr_DEF_binary },
+#endif
 	{ .id = OFMT_UNKNOWN,               .val = NULL }
 };
 

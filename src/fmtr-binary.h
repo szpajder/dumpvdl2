@@ -1,5 +1,5 @@
 /*
- *  This file is a part of dumpvdl2
+ *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
  *
  *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
@@ -17,18 +17,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _CONFIG_H
-#define _CONFIG_H
-#cmakedefine WITH_RTLSDR
-#cmakedefine WITH_MIRISDR
-#cmakedefine WITH_SDRPLAY
-#cmakedefine WITH_SDRPLAY3
-#cmakedefine WITH_SOAPYSDR
-#cmakedefine WITH_STATSD
-#cmakedefine WITH_SQLITE
-#cmakedefine WITH_ZMQ
-#cmakedefine WITH_PROTOBUF_C
-#cmakedefine IS_BIG_ENDIAN
-#cmakedefine HAVE_PTHREAD_BARRIERS
-#define SINCOSF @SINCOSF@
-#endif // !_CONFIG_H
+#ifndef _FMTR_BINARY_H
+#define _FMTR_BINARY_H
+#include "output-common.h"              // fmtr_descriptor_t
+
+extern fmtr_descriptor_t fmtr_DEF_binary;
+
+#endif // ! _FMTR_BINARY_H

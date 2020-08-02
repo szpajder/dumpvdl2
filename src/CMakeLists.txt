@@ -96,6 +96,10 @@ set(WITH_SQLITE FALSE)
 option(ZMQ "Enable support for ZeroMQ outputs" ON)
 set(WITH_ZMQ FALSE)
 
+option(SAVE_RAW_FRAMES "Support for outputting raw (undecoded) AVLC frames
+(requires protobuf-c library)" ON)
+set(WITH_PROTOBUF_C FALSE)
+
 if(RTLSDR)
 	find_package(RTLSDR)
 	if(RTLSDR_FOUND)
@@ -181,6 +185,17 @@ if(ZMQ)
 	endif()
 endif()
 
+if(SAVE_RAW_FRAMES)
+	pkg_check_modules(PROTOBUF_C libprotobuf-c)
+	if(PROTOBUF_C_FOUND)
+		list(APPEND dumpvdl2_extra_sources dumpvdl2.pb-c.c fmtr-binary.c)
+		list(APPEND dumpvdl2_extra_libs ${PROTOBUF_C_LIBRARIES})
+		list(APPEND dumpvdl2_include_dirs ${PROTOBUF_C_INCLUDE_DIRS})
+		list(APPEND link_dirs ${PROTOBUF_C_LIBRARY_DIRS})
+		set(WITH_PROTOBUF_C TRUE)
+	endif()
+endif()
+
 message(STATUS "dumpvdl2 configuration summary:")
 message(STATUS "- SDR drivers:")
 message(STATUS "  - librtsdr:\t\trequested: ${RTLSDR}, enabled: ${WITH_RTLSDR}")
@@ -192,6 +207,7 @@ message(STATUS "- Other options:")
 message(STATUS "  - Etsy StatsD:\t\trequested: ${ETSY_STATSD}, enabled: ${WITH_STATSD}")
 message(STATUS "  - SQLite:\t\t\trequested: ${SQLITE}, enabled: ${WITH_SQLITE}")
 message(STATUS "  - ZeroMQ:\t\t\trequested: ${ZMQ}, enabled: ${WITH_ZMQ}")
+message(STATUS "  - Raw frame output:\trequested: ${SAVE_RAW_FRAMES}, enabled: ${WITH_PROTOBUF_C}")
 
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"

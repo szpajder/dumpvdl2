@@ -1,5 +1,5 @@
 /*
- *  This file is a part of dumpvdl2
+ *  dumpvdl2 - a VDL Mode 2 message decoder and protocol analyzer
  *
  *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
  *
@@ -17,18 +17,31 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _CONFIG_H
-#define _CONFIG_H
-#cmakedefine WITH_RTLSDR
-#cmakedefine WITH_MIRISDR
-#cmakedefine WITH_SDRPLAY
-#cmakedefine WITH_SDRPLAY3
-#cmakedefine WITH_SOAPYSDR
-#cmakedefine WITH_STATSD
-#cmakedefine WITH_SQLITE
-#cmakedefine WITH_ZMQ
-#cmakedefine WITH_PROTOBUF_C
-#cmakedefine IS_BIG_ENDIAN
-#cmakedefine HAVE_PTHREAD_BARRIERS
-#define SINCOSF @SINCOSF@
-#endif // !_CONFIG_H
+syntax = "proto3";
+
+package dumpvdl2;
+
+message vdl2_msg_metadata {
+	string station_id = 1;
+	uint32 frequency = 2;
+	uint32 synd_weight = 3;
+	uint32 datalen_octets = 4;
+	float frame_pwr_dbfs = 5;
+	float nf_pwr_dbfs = 6;
+	float ppm_error = 7;
+	int32 version = 8;
+	int32 num_fec_corrections = 9;
+	int32 idx = 10;
+
+	message timestamp {
+		int64 tv_sec = 1;
+		int64 tv_usec = 2;
+	}
+
+	timestamp burst_timestamp = 11;
+}
+
+message raw_avlc_frame {
+	dumpvdl2.vdl2_msg_metadata metadata = 1;
+	bytes data = 2;
+}
