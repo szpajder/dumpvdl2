@@ -186,7 +186,7 @@ if(ZMQ)
 endif()
 
 if(SAVE_RAW_FRAMES)
-	pkg_check_modules(PROTOBUF_C libprotobuf-c)
+	pkg_check_modules(PROTOBUF_C libprotobuf-c>=1.3.0)
 	if(PROTOBUF_C_FOUND)
 		list(APPEND dumpvdl2_extra_sources dumpvdl2.pb-c.c fmtr-binary.c)
 		list(APPEND dumpvdl2_extra_libs ${PROTOBUF_C_LIBRARIES})
