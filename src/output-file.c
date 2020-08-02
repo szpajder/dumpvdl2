@@ -17,7 +17,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>                      // FILE, fprintf
+#include <stdio.h>                      // FILE, fprintf, fwrite, fputc
 #include <string.h>                     // strcmp, strdup, strerror
 #include <time.h>                       // gmtime_r, localtime_r, strftime
 #include <errno.h>                      // errno
@@ -159,11 +159,13 @@ static int out_file_rotate(out_file_ctx_t *self) {
 	return 0;
 }
 
-static void out_file_produce_text(out_file_ctx_t *self, vdl2_msg_metadata *metadata, char *msg) {
+static void out_file_produce_text(out_file_ctx_t *self, vdl2_msg_metadata *metadata, octet_string_t *msg) {
 	ASSERT(msg != NULL);
 	ASSERT(self->fh != NULL);
 	UNUSED(metadata);
-	fprintf(self->fh, "%s\n", msg);
+	// Subtract 1 to cut off NULL terminator
+	fwrite(msg->buf, sizeof(uint8_t), msg->len - 1, self->fh);
+	fputc('\n', self->fh);
 	fflush(self->fh);
 }
 
@@ -184,8 +186,7 @@ static void *out_file_thread(void *arg) {
 			goto fail;
 		}
 		if(q->format == OFMT_TEXT) {
-			CAST_PTR(msg_text, char *, q->msg->buf);    // this is NULL-terminated
-			out_file_produce_text(self, q->metadata, msg_text);
+			out_file_produce_text(self, q->metadata, q->msg);
 		}
 		output_qentry_destroy(q);
 	}
