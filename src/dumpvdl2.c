@@ -296,7 +296,7 @@ la_list *setup_output(la_list *fmtr_list, char *output_spec) {
 	return fmtr_list;
 }
 
-void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
+void process_iq_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
 	UNUSED(ctx);
 	FILE *f;
 	uint32_t len;
@@ -722,7 +722,7 @@ int main(int argc, char **argv) {
 		switch(opt) {
 			case __OPT_IQ_FILE:
 				infile = strdup(optarg);
-				input = INPUT_FILE;
+				input = INPUT_IQ_FILE;
 				oversample = FILE_OVERSAMPLE;
 				sample_fmt = SFMT_U8;
 				break;
@@ -1002,8 +1002,8 @@ int main(int argc, char **argv) {
 	setup_barriers(&ctx);
 	start_demod_threads(&ctx);
 	switch(input) {
-		case INPUT_FILE:
-			process_file(&ctx, infile, sample_fmt);
+		case INPUT_IQ_FILE:
+			process_iq_file(&ctx, infile, sample_fmt);
 			pthread_barrier_wait(&demods_ready);
 			break;
 #ifdef WITH_RTLSDR

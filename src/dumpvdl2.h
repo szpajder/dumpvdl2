@@ -275,7 +275,7 @@ enum input_types {
 #ifdef WITH_SOAPYSDR
 	INPUT_SOAPYSDR,
 #endif
-	INPUT_FILE,
+	INPUT_IQ_FILE,
 	INPUT_UNDEF
 };
 enum sample_formats { SFMT_U8, SFMT_S16_LE, SFMT_UNDEF };
