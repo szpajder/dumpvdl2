@@ -21,8 +21,10 @@
 #include <string.h>                     // strcmp, strdup, strerror
 #include <time.h>                       // gmtime_r, localtime_r, strftime
 #include <errno.h>                      // errno
+#include <arpa/inet.h>                  // htons
 #include <glib.h>                       // g_async_queue_pop
 #include "output-common.h"              // output_descriptor_t, output_qentry_t
+#include "output-file.h"                // OUT_BINARY_FRAME_LEN_OCTETS, OUT_BINARY_FRAME_LEN_MAX
 #include "kvargs.h"                     // kvargs
 #include "dumpvdl2.h"                   // do_exit
 
@@ -42,7 +44,7 @@ typedef struct {
 } out_file_ctx_t;
 
 static bool out_file_supports_format(output_format_t format) {
-	return(format == OFMT_TEXT);
+	return(format == OFMT_TEXT || format == OFMT_BINARY);
 }
 
 static void *out_file_configure(kvargs *kv) {
@@ -169,6 +171,24 @@ static void out_file_produce_text(out_file_ctx_t *self, vdl2_msg_metadata *metad
 	fflush(self->fh);
 }
 
+static void out_file_produce_binary(out_file_ctx_t *self, vdl2_msg_metadata *metadata, octet_string_t *msg) {
+	ASSERT(msg != NULL);
+	ASSERT(self->fh != NULL);
+	UNUSED(metadata);
+
+    size_t frame_len = msg->len + OUT_BINARY_FRAME_LEN_OCTETS;
+    if (frame_len > OUT_BINARY_FRAME_LEN_MAX) {
+        fprintf(stderr, "output_file: encoded payload too large: %zu > %d\n",
+                frame_len, OUT_BINARY_FRAME_LEN_MAX);
+        return;
+    }
+    uint16_t frame_len_be = htons((uint16_t)frame_len);
+    debug_print(D_OUTPUT, "len: %zu frame_len_be: 0x%04x\n", frame_len, frame_len_be);
+    fwrite(&frame_len_be, OUT_BINARY_FRAME_LEN_OCTETS, 1, self->fh);
+    fwrite(msg->buf, sizeof(uint8_t), msg->len, self->fh);
+    fflush(self->fh);
+}
+
 static void *out_file_thread(void *arg) {
 	ASSERT(arg != NULL);
 	CAST_PTR(ctx, output_ctx_t *, arg);
@@ -187,6 +207,8 @@ static void *out_file_thread(void *arg) {
 		}
 		if(q->format == OFMT_TEXT) {
 			out_file_produce_text(self, q->metadata, q->msg);
+		} else if(q->format == OFMT_BINARY) {
+			out_file_produce_binary(self, q->metadata, q->msg);
 		}
 		output_qentry_destroy(q);
 	}
