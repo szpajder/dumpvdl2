@@ -17,6 +17,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>             // memset, strcmp, strdup
 #include <glib.h>               // g_async_queue_new
 #include "config.h"             // WITH_*
 #include "dumpvdl2.h"           // NEW, ASSERT
