@@ -84,7 +84,7 @@ kvargs_parse_result kvargs_from_string(char *string) {
 	goto end;
 
 fail:
-	debug_print(D_MISC, "kvpair error %d at position %ld\n", err, err_pos);
+	debug_print(D_MISC, "kvpair error %d at position %td\n", err, err_pos);
 	kvargs_destroy(kv);
 end:
 	return (kvargs_parse_result){
