@@ -330,10 +330,6 @@ void bitstream_reset(bitstream_t *bs);
 void bitstream_destroy(bitstream_t *bs);
 uint32_t reverse(uint32_t v, int numbits);
 
-// decode.c
-void decode_vdl_frame(vdl2_channel_t *v);
-void *avlc_decoder_thread(void *arg);
-
 // demod.c
 extern float *sbuf;
 vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample);

@@ -32,6 +32,7 @@
 #include "config.h"
 #include "kvargs.h"
 #include "output-common.h"
+#include "decode.h"             // avlc_decoder_thread
 #ifndef HAVE_PTHREAD_BARRIERS
 #include "pthread_barrier.h"
 #endif

@@ -157,16 +157,18 @@ static int deinterleave(uint8_t *in, uint32_t len, uint32_t rows, uint32_t cols,
 	return 0;
 }
 
-GAsyncQueue *frame_queue = NULL;
+static GAsyncQueue *frame_queue = NULL;
 
-static void decoder_queue_push(vdl2_channel_t const *const v,
+void avlc_decoder_queue_push(vdl2_msg_metadata *metadata, octet_string_t *frame) {
+	NEW(avlc_frame_qentry_t, qentry);
+	qentry->metadata = metadata;
+	qentry->frame = frame;
+	g_async_queue_push(frame_queue, qentry);
+}
+
+static void decode_frame(vdl2_channel_t const *const v,
 		int const frame_num, uint8_t *buf,
 		size_t const len) {
-	NEW(avlc_frame_qentry_t, qentry);
-	uint8_t *copy = XCALLOC(len, sizeof(uint8_t));
-	memcpy(copy, buf, len);
-	qentry->frame = octet_string_new(copy, len);
-
 	NEW(vdl2_msg_metadata, metadata);
 	metadata->version = 1;
 	metadata->freq = v->freq;
@@ -179,8 +181,10 @@ static void decoder_queue_push(vdl2_channel_t const *const v,
 	metadata->synd_weight = synd_weight[v->syndrome];
 	metadata->num_fec_corrections = v->num_fec_corrections;
 	metadata->idx = frame_num;
-	qentry->metadata = metadata;
-	g_async_queue_push(frame_queue, qentry);
+
+	uint8_t *copy = XCALLOC(len, sizeof(uint8_t));
+	memcpy(copy, buf, len);
+	avlc_decoder_queue_push(metadata, octet_string_new(copy, len));
 }
 
 void decode_vdl_frame(vdl2_channel_t *v) {
@@ -345,7 +349,7 @@ void decode_vdl_frame(vdl2_channel_t *v) {
 					goto cleanup;
 				}
 				statsd_increment_per_channel(v->freq, "decoder.msg.good");
-				decoder_queue_push(v, frame_cnt, data, frame_len_octets);
+				decode_frame(v, frame_cnt, data, frame_len_octets);
 				frame_cnt++;
 				if(ret == 0) { // this was the last frame in this burst
 					break;
