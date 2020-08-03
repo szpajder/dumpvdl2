@@ -29,10 +29,11 @@
 #include <libacars/acars.h>     // LA_ACARS_BEARER_VHF
 #include <libacars/list.h>      // la_list
 #include <pthread.h>
+#include <glib.h>               // g_async_queue_new, q_async_queue_length
 #include "config.h"
 #include "kvargs.h"
 #include "output-common.h"
-#include "decode.h"             // avlc_decoder_thread
+#include "decode.h"             // avlc_decoder_thread, avlc_decoder_queue
 #ifndef HAVE_PTHREAD_BARRIERS
 #include "pthread_barrier.h"
 #endif
@@ -1001,6 +1002,7 @@ int main(int argc, char **argv) {
 
 	setup_signals();
 	start_all_output_threads(fmtr_list);
+	avlc_decoder_queue = g_async_queue_new();
 	start_thread(&decoder_thread, avlc_decoder_thread, fmtr_list);
 
 	if(input_is_iq) {

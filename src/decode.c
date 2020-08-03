@@ -31,6 +31,7 @@
 #ifdef WITH_STATSD
 #include <sys/time.h>
 #endif
+#include "decode.h"                 // avlc_decoder_queue
 #include "output-common.h"
 #include "dumpvdl2.h"
 #include "avlc.h"                   // avlc_frame_qentry_t
@@ -157,13 +158,11 @@ static int deinterleave(uint8_t *in, uint32_t len, uint32_t rows, uint32_t cols,
 	return 0;
 }
 
-static GAsyncQueue *frame_queue = NULL;
-
 void avlc_decoder_queue_push(vdl2_msg_metadata *metadata, octet_string_t *frame) {
 	NEW(avlc_frame_qentry_t, qentry);
 	qentry->metadata = metadata;
 	qentry->frame = frame;
-	g_async_queue_push(frame_queue, qentry);
+	g_async_queue_push(avlc_decoder_queue, qentry);
 }
 
 static void decode_frame(vdl2_channel_t const *const v,
@@ -393,7 +392,6 @@ void *avlc_decoder_thread(void *arg) {
 	la_proto_node *root = NULL;
 	uint32_t msg_type = 0;
 
-	frame_queue = g_async_queue_new();
 	la_reasm_ctx *reasm_ctx = la_reasm_ctx_new();
 	enum {
 		DEC_NOT_DONE,
@@ -401,7 +399,7 @@ void *avlc_decoder_thread(void *arg) {
 		DEC_FAILURE
 	} decoding_status;
 	while(1) {
-		q = (avlc_frame_qentry_t *)g_async_queue_pop(frame_queue);
+		q = (avlc_frame_qentry_t *)g_async_queue_pop(avlc_decoder_queue);
 		ASSERT(q->metadata != NULL);
 		statsd_increment_per_channel(q->metadata->freq, "avlc.frames.processed");
 

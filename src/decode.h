@@ -19,8 +19,11 @@
 
 #ifndef _DECODE_H
 #define _DECODE_H 1
+#include <glib.h>               // GAsyncQueue
 #include "output-common.h"      // vdl2_msg_metadata
 #include "dumpvdl2.h"           // octet_string_t
+
+GAsyncQueue *avlc_decoder_queue;
 
 void decode_vdl_frame(vdl2_channel_t *v);
 void *avlc_decoder_thread(void *arg);
