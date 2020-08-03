@@ -51,6 +51,9 @@
 
 // long command line options
 #define __OPT_CENTERFREQ              1
+#ifdef WITH_PROTOBUF_C
+#define __OPT_RAW_FRAMES_FILE         3
+#endif
 #define __OPT_OUTPUT                  4
 #define __OPT_IQ_FILE                 5
 #define __OPT_OVERSAMPLE              6
@@ -276,6 +279,9 @@ enum input_types {
 	INPUT_SOAPYSDR,
 #endif
 	INPUT_IQ_FILE,
+#ifdef WITH_PROTOBUF_C
+	INPUT_RAW_FRAMES_FILE,
+#endif
 	INPUT_UNDEF
 };
 enum sample_formats { SFMT_U8, SFMT_S16_LE, SFMT_UNDEF };
@@ -348,6 +354,11 @@ uint16_t crc16_ccitt(uint8_t *data, uint32_t len, uint16_t crc_init);
 // rs.c
 int rs_init();
 int rs_verify(uint8_t *data, int fec_octets);
+
+// input-raw_frame_file.c
+#ifdef WITH_PROTOBUF_C
+int input_raw_frames_file_process(char const *file);
+#endif
 
 // statsd.c
 #ifdef WITH_STATSD

@@ -357,8 +357,12 @@ void usage() {
 			"SOAPYSDR compatible receiver:\n"
 			"    dumpvdl2 [output_options] --soapysdr <device_id> [soapysdr_options] [<freq_1> [<freq_2> [...]]]\n"
 #endif
-			"I/Q input from file:\n"
+			"Read I/Q samples from file:\n"
 			"    dumpvdl2 [output_options] --iq-file <input_file> [file_options] [<freq_1> [<freq_2> [...]]]\n"
+#ifdef WITH_PROTOBUF_C
+			"Read raw AVLC frames from file:\n"
+			"    dumpvdl2 [output_options] --raw-frames-file <input_file>\n"
+#endif
 			"\n"
 			"common options:\n"
 			"    <freq_1> [<freq_2> [...]]                   VDL2 channel frequencies, in Hz (max %d simultaneous channels supported).\n"
@@ -694,6 +698,9 @@ int main(int argc, char **argv) {
 #if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR
 		{ "correction",         required_argument,  NULL,   __OPT_CORRECTION },
 #endif
+#ifdef WITH_PROTOBUF_C
+		{ "raw-frames-file",    required_argument,  NULL,   __OPT_RAW_FRAMES_FILE },
+#endif
 #ifdef WITH_STATSD
 		{ "statsd",             required_argument,  NULL,   __OPT_STATSD },
 #endif
@@ -723,6 +730,13 @@ int main(int argc, char **argv) {
 	print_version();
 	while((opt = getopt_long(argc, argv, "", long_opts, NULL)) != -1) {
 		switch(opt) {
+#ifdef WITH_PROTOBUF_C
+			case __OPT_RAW_FRAMES_FILE:
+				infile = strdup(optarg);
+				input = INPUT_RAW_FRAMES_FILE;
+				input_is_iq = false;
+				break;
+#endif
 			case __OPT_IQ_FILE:
 				infile = strdup(optarg);
 				input = INPUT_IQ_FILE;
@@ -1014,6 +1028,17 @@ int main(int argc, char **argv) {
 	}
 
 	switch(input) {
+#ifdef WITH_PROTOBUF_C
+		case INPUT_RAW_FRAMES_FILE:
+			{
+				int ret = input_raw_frames_file_process(infile);
+				while(g_async_queue_length(avlc_decoder_queue) > 0) {
+					debug_print(D_MISC, "Waiting for decoder queue drain\n");
+					usleep(500000);
+				}
+				return ret;
+			}
+#endif
 		case INPUT_IQ_FILE:
 			process_iq_file(&ctx, infile, sample_fmt);
 			pthread_barrier_wait(&demods_ready);

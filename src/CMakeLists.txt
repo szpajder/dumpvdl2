@@ -97,8 +97,8 @@ set(WITH_SQLITE FALSE)
 option(ZMQ "Enable support for ZeroMQ outputs" ON)
 set(WITH_ZMQ FALSE)
 
-option(SAVE_RAW_FRAMES "Support for outputting raw (undecoded) AVLC frames
-(requires protobuf-c library)" ON)
+option(SAVE_RAW_FRAMES "Support for outputting raw (undecoded) AVLC frames and
+decoding them from a file (requires protobuf-c library)" ON)
 set(WITH_PROTOBUF_C FALSE)
 
 if(RTLSDR)
@@ -189,7 +189,11 @@ endif()
 if(SAVE_RAW_FRAMES)
 	pkg_check_modules(PROTOBUF_C libprotobuf-c>=1.3.0)
 	if(PROTOBUF_C_FOUND)
-		list(APPEND dumpvdl2_extra_sources dumpvdl2.pb-c.c fmtr-binary.c)
+		list(APPEND dumpvdl2_extra_sources
+			dumpvdl2.pb-c.c
+			fmtr-binary.c
+			input-raw_frames_file.c
+			)
 		list(APPEND dumpvdl2_extra_libs ${PROTOBUF_C_LIBRARIES})
 		list(APPEND dumpvdl2_include_dirs ${PROTOBUF_C_INCLUDE_DIRS})
 		list(APPEND link_dirs ${PROTOBUF_C_LIBRARY_DIRS})
