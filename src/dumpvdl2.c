@@ -606,6 +606,7 @@ int main(int argc, char **argv) {
 	enum input_types input = INPUT_UNDEF;
 	enum sample_formats sample_fmt = SFMT_UNDEF;
 	la_list *fmtr_list = NULL;
+	bool input_is_iq = true;
 #if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR
 	char *device = NULL;
 	float gain = SDR_AUTO_GAIN;
@@ -908,51 +909,53 @@ int main(int argc, char **argv) {
 		_exit(1);
 	}
 
-	if(optind < argc) {
-		num_channels = argc - optind;
-		if(num_channels > MAX_CHANNELS) {
-			fprintf(stderr, "Error: too many channels specified (%d > %d)\n", num_channels, MAX_CHANNELS);
-			_exit(1);
-		}
-		freqs = XCALLOC(num_channels, sizeof(uint32_t));
-		for(int i = 0; i < num_channels; i++)
-			freqs[i] = strtoul(argv[optind+i], NULL, 10);
-	} else {
-		fprintf(stderr, "Warning: frequency not set - using VDL2 Common Signalling Channel as a default (%u Hz)\n", CSC_FREQ);
-		num_channels = 1;
-		freqs = XCALLOC(num_channels, sizeof(uint32_t));
-		freqs[0] = CSC_FREQ;
-	}
-
 // no --output given?
 	if(fmtr_list == NULL) {
 		fmtr_list = setup_output(fmtr_list, DEFAULT_OUTPUT);
 	}
 	ASSERT(fmtr_list != NULL);
 
-	sample_rate = SYMBOL_RATE * SPS * oversample;
-	fprintf(stderr, "Sampling rate set to %u sps\n", sample_rate);
-	if(centerfreq == 0) {
-		centerfreq = calc_centerfreq(freqs, num_channels, sample_rate);
+	if(input_is_iq) {
+		if(optind < argc) {
+			num_channels = argc - optind;
+			if(num_channels > MAX_CHANNELS) {
+				fprintf(stderr, "Error: too many channels specified (%d > %d)\n", num_channels, MAX_CHANNELS);
+				_exit(1);
+			}
+			freqs = XCALLOC(num_channels, sizeof(uint32_t));
+			for(int i = 0; i < num_channels; i++)
+				freqs[i] = strtoul(argv[optind+i], NULL, 10);
+		} else {
+			fprintf(stderr, "Warning: frequency not set - using VDL2 Common Signalling Channel as a default (%u Hz)\n", CSC_FREQ);
+			num_channels = 1;
+			freqs = XCALLOC(num_channels, sizeof(uint32_t));
+			freqs[0] = CSC_FREQ;
+		}
+
+		sample_rate = SYMBOL_RATE * SPS * oversample;
+		fprintf(stderr, "Sampling rate set to %u sps\n", sample_rate);
 		if(centerfreq == 0) {
-			fprintf(stderr, "Failed to calculate center frequency\n");
-			_exit(2);
+			centerfreq = calc_centerfreq(freqs, num_channels, sample_rate);
+			if(centerfreq == 0) {
+				fprintf(stderr, "Failed to calculate center frequency\n");
+				_exit(2);
+			}
 		}
-	}
 
-	memset(&ctx, 0, sizeof(vdl2_state_t));
-	ctx.num_channels = num_channels;
-	ctx.channels = XCALLOC(num_channels, sizeof(vdl2_channel_t *));
-	for(int i = 0; i < num_channels; i++) {
-		if((ctx.channels[i] = vdl2_channel_init(centerfreq, freqs[i], sample_rate, oversample)) == NULL) {
-			fprintf(stderr, "Failed to initialize VDL channel\n");
-			_exit(2);
+		memset(&ctx, 0, sizeof(vdl2_state_t));
+		ctx.num_channels = num_channels;
+		ctx.channels = XCALLOC(num_channels, sizeof(vdl2_channel_t *));
+		for(int i = 0; i < num_channels; i++) {
+			if((ctx.channels[i] = vdl2_channel_init(centerfreq, freqs[i], sample_rate, oversample)) == NULL) {
+				fprintf(stderr, "Failed to initialize VDL channel\n");
+				_exit(2);
+			}
 		}
-	}
 
-	if(rs_init() < 0) {
-		fprintf(stderr, "Failed to initialize RS codec\n");
-		_exit(3);
+		if(rs_init() < 0) {
+			fprintf(stderr, "Failed to initialize RS codec\n");
+			_exit(3);
+		}
 	}
 
 	if(gs_file != NULL) {
@@ -970,8 +973,10 @@ int main(int argc, char **argv) {
 			XFREE(statsd_addr);
 			statsd_enabled = false;
 		} else {
-			for(int i = 0; i < num_channels; i++) {
-				statsd_initialize_counters_per_channel(freqs[i]);
+			if(input_is_iq) {
+				for(int i = 0; i < num_channels; i++) {
+					statsd_initialize_counters_per_channel(freqs[i]);
+				}
 			}
 			statsd_initialize_counters_per_msgdir();
 		}
@@ -995,13 +1000,17 @@ int main(int argc, char **argv) {
 	la_config_set_int("acars_bearer", LA_ACARS_BEARER_VHF);
 
 	setup_signals();
-	sincosf_lut_init();
-	input_lpf_init(sample_rate);
-	demod_sync_init();
 	start_all_output_threads(fmtr_list);
 	start_thread(&decoder_thread, avlc_decoder_thread, fmtr_list);
-	setup_barriers(&ctx);
-	start_demod_threads(&ctx);
+
+	if(input_is_iq) {
+		sincosf_lut_init();
+		input_lpf_init(sample_rate);
+		demod_sync_init();
+		setup_barriers(&ctx);
+		start_demod_threads(&ctx);
+	}
+
 	switch(input) {
 		case INPUT_IQ_FILE:
 			process_iq_file(&ctx, infile, sample_fmt);
