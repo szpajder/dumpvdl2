@@ -386,6 +386,7 @@ void usage() {
 			"    --bs-db <file>                              Read aircraft info from Basestation database <file> (SQLite)\n"
 #endif
 			"    --addrinfo terse|normal|verbose             Aircraft/ground station info verbosity level (default: normal)\n"
+			"    --station-id <name>                         Receiver site identifier (max. %d characters)\n"
 			"    --msg-filter <filter_spec>                  Message types to display (default: all) (\"--msg-filter help\" for details)\n"
 #ifdef WITH_STATSD
 			"    --statsd <host>:<port>                      Send statistics to Etsy StatsD server <host>:<port> (default: disabled)\n"
@@ -453,7 +454,7 @@ void usage() {
 			"    --centerfreq <center_frequency>             Center frequency of the input data, in Hz (default: 0)\n"
 			"    --oversample <oversample_rate>              Oversampling rate for recorded data (default: %u)\n"
 			"                                                (sampling rate will be set to %u * oversample_rate)\n",
-		FILE_OVERSAMPLE, SYMBOL_RATE * SPS
+		STATION_ID_LEN_MAX, FILE_OVERSAMPLE, SYMBOL_RATE * SPS
 			);
 
 	fprintf(stderr,
@@ -644,6 +645,7 @@ int main(int argc, char **argv) {
 	int opt;
 	struct option long_opts[] = {
 		{ "centerfreq",         required_argument,  NULL,   __OPT_CENTERFREQ },
+		{ "station-id",         required_argument,  NULL,   __OPT_STATION_ID },
 		{ "utc",                no_argument,        NULL,   __OPT_UTC },
 		{ "milliseconds",       no_argument,        NULL,   __OPT_MILLISECONDS },
 		{ "raw-frames",         no_argument,        NULL,   __OPT_RAW_FRAMES },
@@ -796,6 +798,13 @@ int main(int argc, char **argv) {
 					fprintf(stderr, "Use --help for help\n");
 					_exit(1);
 				}
+				break;
+			case __OPT_STATION_ID:
+				if(strlen(optarg) > STATION_ID_LEN_MAX) {
+					fprintf(stderr, "Warning: station-id value too long; truncated to %d characters\n",
+							STATION_ID_LEN_MAX);
+				}
+				Config.station_id = strndup(optarg, STATION_ID_LEN_MAX);
 				break;
 			case __OPT_CENTERFREQ:
 				centerfreq = strtoul(optarg, NULL, 10);

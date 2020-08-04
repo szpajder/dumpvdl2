@@ -51,6 +51,7 @@
 
 // long command line options
 #define __OPT_CENTERFREQ              1
+#define __OPT_STATION_ID              2
 #ifdef WITH_PROTOBUF_C
 #define __OPT_RAW_FRAMES_FILE         3
 #endif
@@ -165,6 +166,9 @@
 // default output specification - decoded text output to stdout
 #define DEFAULT_OUTPUT "decoded:text:file:path=-"
 
+// maximum length of station_id parameter
+#define STATION_ID_LEN_MAX 255
+
 typedef struct {
 	char *token;
 	uint32_t value;
@@ -183,6 +187,7 @@ typedef struct {
 	uint32_t debug_filter;
 #endif
 	uint32_t msg_filter;
+	char *station_id;
 	bool hourly, daily, utc, milliseconds;
 	bool output_raw_frames, dump_asn1, extended_header, decode_fragments;
 	bool ac_addrinfo_db_available;
