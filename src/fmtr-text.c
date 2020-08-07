@@ -72,6 +72,7 @@ static octet_string_t *fmtr_text_format_decoded_msg(vdl2_msg_metadata *metadata,
 
 fmtr_descriptor_t fmtr_DEF_text = {
 	.name = "text",
+	.description = "Human readable text",
 	.format_decoded_msg = fmtr_text_format_decoded_msg,
 	.format_raw_msg = NULL,
 	.supports_data_type = fmtr_text_supports_data_type,

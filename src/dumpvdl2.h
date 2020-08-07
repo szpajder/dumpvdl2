@@ -166,6 +166,11 @@
 // default output specification - decoded text output to stdout
 #define DEFAULT_OUTPUT "decoded:text:file:path=-"
 
+// help text pretty-printing constants and macros
+#define USAGE_INDENT_STEP 4
+#define USAGE_OPT_NAME_COLWIDTH 40
+#define IND(n) (n * USAGE_INDENT_STEP)
+
 // maximum length of station_id parameter
 #define STATION_ID_LEN_MAX 255
 
@@ -423,6 +428,7 @@ la_proto_node *unknown_proto_pdu_new(void *buf, size_t len);
 extern bool do_exit;
 extern dumpvdl2_config_t Config;
 extern pthread_barrier_t demods_ready, samples_ready;
+void describe_option(char const *name, char const *description, int indent);
 
 // version.c
 extern char const * const DUMPVDL2_VERSION;

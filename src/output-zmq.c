@@ -138,6 +138,7 @@ fail:
 
 output_descriptor_t out_DEF_zmq = {
 	.name = "zmq",
+	.description = "Output to a ZeroMQ publisher socket (as a server or a client)",
 	.start_routine = out_zmq_thread,
 	.supports_format = out_zmq_supports_format,
 	.configure = out_zmq_configure

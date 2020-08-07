@@ -150,6 +150,7 @@ fail:
 
 output_descriptor_t out_DEF_udp = {
 	.name = "udp",
+	.description = "Output to a remote host via UDP",
 	.start_routine = out_udp_thread,
 	.supports_format = out_udp_supports_format,
 	.configure = out_udp_configure

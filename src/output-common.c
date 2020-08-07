@@ -35,10 +35,30 @@
 #include "output-zmq.h"         // out_DEF_zmq
 #endif
 
+typedef struct{
+	char *name;
+	char *description;
+} fmtr_name_struct_t;
+
 static dict const fmtr_intype_names[] = {
-	{ .id = FMTR_INTYPE_DECODED_FRAME,   .val = "decoded" },
-	{ .id = FMTR_INTYPE_RAW_FRAME,       .val = "raw" },
-	{ .id = FMTR_INTYPE_UNKNOWN,         .val = NULL }
+	{
+		.id = FMTR_INTYPE_DECODED_FRAME,
+		.val = &(fmtr_name_struct_t) {
+			.name= "decoded",
+			.description = "Output decoded frames"
+		}
+	},
+	{
+		.id = FMTR_INTYPE_RAW_FRAME,
+		.val = &(fmtr_name_struct_t) {
+			.name= "raw",
+			.description = "Output undecoded AVLC frame as raw bytes"
+		}
+	},
+	{
+		.id = FMTR_INTYPE_UNKNOWN,
+		.val = NULL
+	}
 };
 
 static dict const fmtr_descriptors[] = {
@@ -60,9 +80,8 @@ static output_descriptor_t * output_descriptors[] = {
 };
 
 fmtr_input_type_t fmtr_input_type_from_string(char const * const str) {
-	// FIXME: convert this to dict_revsearch?
 	for (dict const *d = fmtr_intype_names; d->val != NULL; d++) {
-		if (!strcmp(str, (char *)d->val)) {
+		if (!strcmp(str, ((fmtr_name_struct_t *)d->val)->name)) {
 			return d->id;
 		}
 	}
@@ -152,4 +171,28 @@ void vdl2_msg_metadata_destroy(vdl2_msg_metadata *m) {
 	}
 	XFREE(m->station_id);
 	XFREE(m);
+}
+
+void output_usage() {
+	fprintf(stderr, "\n<output_specifier> is a parameter of the --output option. It has the following syntax:\n\n");
+	fprintf(stderr, "%*s<what_to_output>:<output_format>:<output_type>:<output_parameters>\n\n", IND(1), "");
+	fprintf(stderr, "where:\n");
+	fprintf(stderr, "\n%*s<what_to_output> specifies what data should be sent to the output:\n\n", IND(1), "");
+	for(dict const *p = fmtr_intype_names; p->val != NULL; p++) {
+		CAST_PTR(n, fmtr_name_struct_t *, p->val);
+		describe_option(n->name, n->description, 2);
+	}
+	fprintf(stderr, "\n%*s<output_format> specifies how the output should be formatted:\n\n", IND(1), "");
+	for(dict const *p = fmtr_descriptors; p->val != NULL; p++) {
+		CAST_PTR(n, fmtr_descriptor_t *, p->val);
+		describe_option(n->name, n->description, 2);
+	}
+	fprintf(stderr, "\n%*s<output_type> specifies the type of the output:\n\n", IND(1), "");
+	for(output_descriptor_t **od = output_descriptors; *od != NULL; od++) {
+		describe_option((*od)->name, (*od)->description, 2);
+	}
+	fprintf(stderr,
+			"\n%*s<output_parameters> - specifies detailed output options with a syntax of: param1=value1,param2=value2,...\n\n",
+			IND(1), ""
+		   );
 }

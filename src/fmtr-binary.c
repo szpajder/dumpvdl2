@@ -61,6 +61,7 @@ static octet_string_t *fmtr_binary_format_raw_frame(vdl2_msg_metadata *metadata,
 
 fmtr_descriptor_t fmtr_DEF_binary = {
 	.name = "binary",
+	.description = "Binary format, suitable for archiving raw frames",
 	.format_decoded_msg = NULL,
 	.format_raw_msg = fmtr_binary_format_raw_frame,
 	.supports_data_type = fmtr_binary_supports_data_type,

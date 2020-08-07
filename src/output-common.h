@@ -64,6 +64,7 @@ typedef bool (intype_check_fun_t)(fmtr_input_type_t);
 // Frame formatter descriptor
 typedef struct {
 	char *name;
+	char *description;
     fmt_decoded_fun_t *format_decoded_msg;
     fmt_raw_fun_t *format_raw_msg;
     intype_check_fun_t *supports_data_type;
@@ -84,6 +85,7 @@ typedef void* (output_configure_fun_t)(kvargs *);
 // Output descriptor
 typedef struct {
 	char *name;
+	char *description;
 	pthread_start_fun_t *start_routine;
 	output_format_check_fun_t *supports_format;
 	output_configure_fun_t *configure;
@@ -123,5 +125,7 @@ void output_qentry_destroy(output_qentry_t *q);
 
 vdl2_msg_metadata *vdl2_msg_metadata_copy(vdl2_msg_metadata const * const m);
 void vdl2_msg_metadata_destroy(vdl2_msg_metadata *m);
+
+void output_usage();
 
 #endif // !_OUTPUT_COMMON_H

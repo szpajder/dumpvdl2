@@ -224,6 +224,7 @@ fail:
 
 output_descriptor_t out_DEF_file = {
 	.name = "file",
+	.description = "Output to a file",
 	.start_routine = out_file_thread,
 	.supports_format = out_file_supports_format,
 	.configure = out_file_configure

@@ -233,6 +233,10 @@ fmtr_instance_t *find_fmtr_instance(la_list *fmtr_list, fmtr_descriptor_t *fmttd
 }
 
 la_list *setup_output(la_list *fmtr_list, char *output_spec) {
+	if(!strcmp(output_spec, "help")) {
+		output_usage();
+		_exit(0);
+	}
 	output_params oparams = output_params_from_string(output_spec);
 	if(oparams.err == true) {
 		fprintf(stderr, "Could not parse output specifier '%s': %s\n", output_spec, oparams.errstr);
@@ -334,6 +338,15 @@ void print_version() {
 	fprintf(stderr, "dumpvdl2 %s (libacars %s)\n", DUMPVDL2_VERSION, LA_VERSION);
 }
 
+void describe_option(char const *name, char const *description, int indent) {
+	int descr_shiftwidth = USAGE_OPT_NAME_COLWIDTH - (int)strlen(name) - indent * USAGE_INDENT_STEP;
+	if(descr_shiftwidth < 1) {
+		descr_shiftwidth = 1;
+	}
+	fprintf(stderr, "%*s%s%*s%s\n", IND(indent), "", name, descr_shiftwidth, "", description);
+}
+
+
 void usage() {
 	fprintf(stderr,
 			"Usage:\n\n"
@@ -363,7 +376,15 @@ void usage() {
 			"Read raw AVLC frames from file:\n"
 			"    dumpvdl2 [output_options] --raw-frames-file <input_file>\n"
 #endif
+			"\n");
+	fprintf(stderr,
 			"\n"
+			"General options:\n"
+			"    --help                                      Displays this text\n"
+			"    --version                                   Displays program version number\n"
+#ifdef DEBUG
+			"    --debug <filter_spec>                       Debug message classes to display (default: none) (\"--debug help\" for details)\n"
+#endif
 			"common options:\n"
 			"    <freq_1> [<freq_2> [...]]                   VDL2 channel frequencies, in Hz (max %d simultaneous channels supported).\n"
 			"                                                If omitted, will use VDL2 Common Signalling Channel (%u Hz)\n",
@@ -372,35 +393,15 @@ void usage() {
 
 	fprintf(stderr,
 			"\n"
-			"output_options:\n"
-			"    --output <output_specifier>                 Output specification (default: " DEFAULT_OUTPUT ")\n"
-			"    --utc                                       Use UTC timestamps in output and file names\n"
-			"    --milliseconds                              Print milliseconds in timestamps\n"
-			"    --raw-frames                                Output AVLC payload as raw bytes\n"
-			"    --dump-asn1                                 Output full ASN.1 structure of CM and CPDLC messages\n"
-			"    --extended-header                           Output additional fields in message header\n"
-			"    --decode-fragments                          Decode higher level protocols in fragmented packets (default: off)\n"
-			"    --prettify-xml                              Pretty-print XML payloads in ACARS and MIAM CORE PDUs (default: off)\n"
-			"    --gs-file <file>                            Read ground station info from <file> (MultiPSK format)\n"
-#ifdef WITH_SQLITE
-			"    --bs-db <file>                              Read aircraft info from Basestation database <file> (SQLite)\n"
-#endif
-			"    --addrinfo terse|normal|verbose             Aircraft/ground station info verbosity level (default: normal)\n"
-			"    --station-id <name>                         Receiver site identifier (max. %d characters)\n"
-			"    --msg-filter <filter_spec>                  Message types to display (default: all) (\"--msg-filter help\" for details)\n"
-#ifdef WITH_STATSD
-			"    --statsd <host>:<port>                      Send statistics to Etsy StatsD server <host>:<port> (default: disabled)\n"
-#endif
 #ifdef WITH_RTLSDR
-			"\n"
 			"rtlsdr_options:\n"
 			"    --rtlsdr <device_id>                        Use RTL device with specified ID or serial number (default: ID=0)\n"
 			"    --gain <gain>                               Set gain (decibels)\n"
 			"    --correction <correction>                   Set freq correction (ppm)\n"
 			"    --centerfreq <center_frequency>             Set center frequency in Hz (default: auto)\n"
+			"\n"
 #endif
 #ifdef WITH_MIRISDR
-			"\n"
 			"mirisdr_options:\n"
 			"    --mirisdr <device_id>                       Use Mirics device with specified ID or serial number (default: ID=0)\n"
 			"    --hw-type <device_type>                     0 - default, 1 - SDRPlay\n"
@@ -408,9 +409,9 @@ void usage() {
 			"    --correction <correction>                   Set freq correction (in Hertz)\n"
 			"    --centerfreq <center_frequency>             Set center frequency in Hz (default: auto)\n"
 			"    --usb-mode <usb_transfer_mode>              0 - isochronous (default), 1 - bulk\n"
+			"\n"
 #endif
 #ifdef WITH_SDRPLAY
-			"\n"
 			"sdrplay_options:\n"
 			"    --sdrplay <device_id>                       Use SDRPlay RSP device with specified ID or serial number (default: ID=0)\n"
 			"    --gr <gr>                                   Set system gain reduction, in dB, positive (if omitted, auto gain is enabled)\n"
@@ -421,9 +422,9 @@ void usage() {
 			"    --biast <0/1>                               RSP2/1a/duo Bias-T control: 0 - off (default), 1 - on\n"
 			"    --notch-filter <0/1>                        RSP2/1a/duo AM/FM/bcast notch filter control: 0 - off (default), 1 - on\n"
 			"    --tuner <1/2>                               RSPduo tuner selection: (default: 1)\n"
+			"\n"
 #endif
 #ifdef WITH_SDRPLAY3
-			"\n"
 			"sdrplay3_options:\n"
 			"    --sdrplay3 <device_id>                      Use SDRPlay RSP device with specified ID or serial number (default: ID=0)\n"
 			"    --ifgr <IF_gain_reduction>                  Set IF gain reduction, in dB, positive (if omitted, auto gain is enabled)\n"
@@ -437,9 +438,9 @@ void usage() {
 			"    --notch-filter <0/1>                        RSP2/1a/duo/dx AM/FM/bcast notch filter control: 0 - off (default), 1 - on\n"
 			"    --dab-notch-filter <0/1>                    RSP1a/duo/dx DAB notch filter control: 0 - off (default), 1 - on\n"
 			"    --tuner <1/2>                               RSPduo tuner selection: (default: 1)\n"
+			"\n"
 #endif
 #ifdef WITH_SOAPYSDR
-			"\n"
 			"soapysdr_options:\n"
 			"    --soapysdr <device_id>                      Use SoapySDR compatible device with specified ID (default: ID=0)\n"
 			"    --device-settings <key1=val1,key2=val2,...> Set device-specific parameters (default: none)\n"
@@ -447,30 +448,50 @@ void usage() {
 			"    --correction <correction>                   Set freq correction (ppm)\n"
 			"    --soapy-antenna <antenna>                   Set antenna port selection (default: RX)\n"
 			"    --soapy-gain <gain1=val1,gain2=val2,...>    Set gain components (default: none)\n"
-#endif
 			"\n"
+#endif
 			"file_options:\n"
 			"    --iq-file <input_file>                      Read I/Q samples from file\n"
 			"    --centerfreq <center_frequency>             Center frequency of the input data, in Hz (default: 0)\n"
 			"    --oversample <oversample_rate>              Oversampling rate for recorded data (default: %u)\n"
-			"                                                (sampling rate will be set to %u * oversample_rate)\n",
-		STATION_ID_LEN_MAX, FILE_OVERSAMPLE, SYMBOL_RATE * SPS
+			"                                                (sampling rate will be set to %u * oversample_rate)\n"
+			"\n",
+		FILE_OVERSAMPLE, SYMBOL_RATE * SPS
 			);
 
 	fprintf(stderr,
 			"    --sample-format <sample_format>             Input sample format. Supported formats:\n"
 			"                                                    U8     8-bit unsigned (eg. recorded with rtl_sdr) (default)\n"
 			"                                                    S16_LE 16-bit signed, little-endian (eg. recorded with miri_sdr)\n"
+			"\n"
 		   );
+	fprintf(stderr,
+			"Output options:\n"
+			"    --output <output_specifier>                 Output specification (default: " DEFAULT_OUTPUT ")\n"
+			"                                                (\"--output help\" for details)\n"
+			"    --decode-fragments                          Decode higher level protocols in fragmented packets (default: off)\n"
+			"    --gs-file <file>                            Read ground station info from <file> (MultiPSK format)\n"
+#ifdef WITH_SQLITE
+			"    --bs-db <file>                              Read aircraft info from Basestation database <file> (SQLite)\n"
+#endif
+			"    --addrinfo terse|normal|verbose             Aircraft/ground station info verbosity level (default: normal)\n"
+			"    --station-id <name>                         Receiver site identifier (max. %d characters)\n"
+			"    --msg-filter <filter_spec>                  Output only a specified subset of messages (default: all)\n"
+			"                                                (\"--msg-filter help\" for details)\n"
+#ifdef WITH_STATSD
+			"    --statsd <host>:<port>                      Send statistics to Etsy StatsD server <host>:<port> (default: disabled)\n"
+			"\n",
+#endif
+			STATION_ID_LEN_MAX );
 
 	fprintf(stderr,
-			"\n"
-			"General options:\n"
-			"    --help                                      Displays this text\n"
-			"    --version                                   Displays program version number\n"
-#ifdef DEBUG
-			"    --debug <filter_spec>                       Debug message classes to display (default: none) (\"--debug help\" for details)\n"
-#endif
+			"Text output formatting options:\n"
+			"    --utc                                       Use UTC timestamps in output and file names\n"
+			"    --milliseconds                              Print milliseconds in timestamps\n"
+			"    --raw-frames                                Output AVLC payload as raw bytes\n"
+			"    --dump-asn1                                 Output full ASN.1 structure of CM and CPDLC messages\n"
+			"    --extended-header                           Output additional fields in message header\n"
+			"    --prettify-xml                              Pretty-print XML payloads in ACARS and MIAM CORE PDUs (default: off)\n"
 		   );
 	_exit(0);
 }
