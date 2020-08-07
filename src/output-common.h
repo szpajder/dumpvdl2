@@ -86,6 +86,7 @@ typedef void* (output_configure_fun_t)(kvargs *);
 typedef struct {
 	char *name;
 	char *description;
+	option_descr_t const *options;
 	pthread_start_fun_t *start_routine;
 	output_format_check_fun_t *supports_format;
 	output_configure_fun_t *configure;

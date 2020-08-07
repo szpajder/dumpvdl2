@@ -24,7 +24,7 @@
 #include <zmq.h>                        // zmq_*
 #include "output-common.h"              // output_descriptor_t, output_qentry_t
 #include "kvargs.h"                     // kvargs
-#include "dumpvdl2.h"                   // do_exit
+#include "dumpvdl2.h"                   // do_exit, option_descr_t
 
 typedef enum {
 	ZMQ_MODE_SERVER,
@@ -136,9 +136,25 @@ fail:
 	return NULL;
 }
 
+static const option_descr_t out_zmq_options[] = {
+	{
+		.name = "mode",
+		.description = "Socket mode: client or server (required)"
+	},
+	{
+		.name= "endpoint",
+		.description = "Socket endpoint: tcp://address:port (required)"
+	},
+	{
+		.name = NULL,
+		.description = NULL
+	}
+};
+
 output_descriptor_t out_DEF_zmq = {
 	.name = "zmq",
 	.description = "Output to a ZeroMQ publisher socket (as a server or a client)",
+	.options = out_zmq_options,
 	.start_routine = out_zmq_thread,
 	.supports_format = out_zmq_supports_format,
 	.configure = out_zmq_configure

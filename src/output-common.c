@@ -35,22 +35,17 @@
 #include "output-zmq.h"         // out_DEF_zmq
 #endif
 
-typedef struct{
-	char *name;
-	char *description;
-} fmtr_name_struct_t;
-
 static dict const fmtr_intype_names[] = {
 	{
 		.id = FMTR_INTYPE_DECODED_FRAME,
-		.val = &(fmtr_name_struct_t) {
+		.val = &(option_descr_t) {
 			.name= "decoded",
 			.description = "Output decoded frames"
 		}
 	},
 	{
 		.id = FMTR_INTYPE_RAW_FRAME,
-		.val = &(fmtr_name_struct_t) {
+		.val = &(option_descr_t) {
 			.name= "raw",
 			.description = "Output undecoded AVLC frame as raw bytes"
 		}
@@ -81,7 +76,7 @@ static output_descriptor_t * output_descriptors[] = {
 
 fmtr_input_type_t fmtr_input_type_from_string(char const * const str) {
 	for (dict const *d = fmtr_intype_names; d->val != NULL; d++) {
-		if (!strcmp(str, ((fmtr_name_struct_t *)d->val)->name)) {
+		if (!strcmp(str, ((option_descr_t *)d->val)->name)) {
 			return d->id;
 		}
 	}
@@ -179,7 +174,7 @@ void output_usage() {
 	fprintf(stderr, "where:\n");
 	fprintf(stderr, "\n%*s<what_to_output> specifies what data should be sent to the output:\n\n", IND(1), "");
 	for(dict const *p = fmtr_intype_names; p->val != NULL; p++) {
-		CAST_PTR(n, fmtr_name_struct_t *, p->val);
+		CAST_PTR(n, option_descr_t *, p->val);
 		describe_option(n->name, n->description, 2);
 	}
 	fprintf(stderr, "\n%*s<output_format> specifies how the output should be formatted:\n\n", IND(1), "");
@@ -192,7 +187,16 @@ void output_usage() {
 		describe_option((*od)->name, (*od)->description, 2);
 	}
 	fprintf(stderr,
-			"\n%*s<output_parameters> - specifies detailed output options with a syntax of: param1=value1,param2=value2,...\n\n",
+			"\n%*s<output_parameters> - specifies detailed output options with a syntax of: param1=value1,param2=value2,...\n",
 			IND(1), ""
 		   );
+	for(output_descriptor_t **od = output_descriptors; *od != NULL; od++) {
+		fprintf(stderr, "\nParameters for output type '%s':\n\n", (*od)->name);
+		if((*od)->options != NULL) {
+			for(option_descr_t const *opt = (*od)->options; opt->name != NULL; opt++) {
+				describe_option(opt->name, opt->description, 2);
+			}
+		}
+	}
+	fprintf(stderr, "\n");
 }

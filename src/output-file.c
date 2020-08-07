@@ -26,7 +26,7 @@
 #include "output-common.h"              // output_descriptor_t, output_qentry_t
 #include "output-file.h"                // OUT_BINARY_FRAME_LEN_OCTETS, OUT_BINARY_FRAME_LEN_MAX
 #include "kvargs.h"                     // kvargs
-#include "dumpvdl2.h"                   // do_exit
+#include "dumpvdl2.h"                   // do_exit, option_descr_t
 
 typedef enum {
 	ROT_NONE,
@@ -222,9 +222,25 @@ fail:
 	return NULL;
 }
 
+static option_descr_t const out_file_options[] = {
+	{
+		.name = "path",
+		.description = "Path to the output file (required)"
+	},
+	{
+		.name = "rotate",
+		.description = "How often to start a new file: Accepted values: daily, hourly"
+	},
+	{
+		.name = NULL,
+		.description = NULL
+	}
+};
+
 output_descriptor_t out_DEF_file = {
 	.name = "file",
 	.description = "Output to a file",
+	.options = out_file_options,
 	.start_routine = out_file_thread,
 	.supports_format = out_file_supports_format,
 	.configure = out_file_configure

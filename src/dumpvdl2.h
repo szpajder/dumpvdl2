@@ -171,6 +171,12 @@
 #define USAGE_OPT_NAME_COLWIDTH 40
 #define IND(n) (n * USAGE_INDENT_STEP)
 
+// option name and description to be printed in the help text
+typedef struct{
+	char *name;
+	char *description;
+} option_descr_t;
+
 // maximum length of station_id parameter
 #define STATION_ID_LEN_MAX 255
 

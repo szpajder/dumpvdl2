@@ -26,7 +26,7 @@
 #include <netdb.h>                      // getaddrinfo
 #include <glib.h>                       // g_async_queue_pop
 #include "output-common.h"              // output_descriptor_t, output_qentry_t
-#include "kvargs.h"                     // kvargs
+#include "kvargs.h"                     // kvargs, option_descr_t
 #include "dumpvdl2.h"                   // do_exit
 
 typedef struct {
@@ -148,9 +148,25 @@ fail:
 	return NULL;
 }
 
+static const option_descr_t out_udp_options[] = {
+	{
+		.name = "address",
+		.description = "Destination host name or IP address (required)"
+	},
+	{
+		.name = "port",
+		.description = "Destination UDP port (required)"
+	},
+	{
+		.name = NULL,
+		.description = NULL
+	}
+};
+
 output_descriptor_t out_DEF_udp = {
 	.name = "udp",
 	.description = "Output to a remote host via UDP",
+	.options = out_udp_options,
 	.start_routine = out_udp_thread,
 	.supports_format = out_udp_supports_format,
 	.configure = out_udp_configure
