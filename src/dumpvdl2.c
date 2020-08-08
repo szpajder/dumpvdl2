@@ -461,7 +461,7 @@ void usage() {
 	describe_option("", "(See \"--output help\" for details)", 1);
 	describe_option("--output-queue-hwm <integer>", "High watermark value for output queues", 1);
 	fprintf(stderr, "%*s(default: %d messages)\n", USAGE_OPT_NAME_COLWIDTH, "", DEFAULT_OUTPUT_QUEUE_HWM);
-	describe_option("--decode-fragments", "Decode higher level protocols in fragmented packets (default: off)", 1);
+	describe_option("--decode-fragments", "Decode higher level protocols in fragmented packets", 1);
 	describe_option("--gs-file <file>", "Read ground station info from <file> (MultiPSK format)", 1);
 #ifdef WITH_SQLITE
 	describe_option("--bs-db <file>", "Read aircraft info from Basestation database <file> (SQLite)", 1);
@@ -472,16 +472,16 @@ void usage() {
 	describe_option("--msg-filter <filter_spec>", "Output only a specified subset of messages (default: all)", 1);
 	describe_option("", "(See \"--msg-filter help\" for details)", 1);
 #ifdef WITH_STATSD
-	describe_option("--statsd <host>:<port>", "Send statistics to Etsy StatsD server <host>:<port> (default: disabled)", 1);
+	describe_option("--statsd <host>:<port>", "Send statistics to Etsy StatsD server <host>:<port>", 1);
 #endif
 
 	fprintf(stderr, "\nText output formatting options:\n");
 	describe_option("--utc", "Use UTC timestamps in output and file names", 1);
 	describe_option("--milliseconds", "Print milliseconds in timestamps", 1);
-	describe_option("--raw-frames", "Output AVLC payload as raw bytes", 1);
-	describe_option("--dump-asn1", "Output full ASN.1 structure of CM and CPDLC messages", 1);
-	describe_option("--extended-header", "Output additional fields in message header", 1);
-	describe_option("--prettify-xml", "Pretty-print XML payloads in ACARS and MIAM CORE PDUs (default: off)", 1);
+	describe_option("--raw-frames", "Print raw AVLC frame as hex", 1);
+	describe_option("--dump-asn1", "Print full ASN.1 structure of CM and CPDLC messages", 1);
+	describe_option("--extended-header", "Print additional fields in message header", 1);
+	describe_option("--prettify-xml", "Pretty-print XML payloads in ACARS and MIAM CORE PDUs", 1);
 	_exit(0);
 }
 
