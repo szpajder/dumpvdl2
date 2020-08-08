@@ -741,7 +741,7 @@ the failed one.
 
 An output may also hang and stop processing messages (although this is
 a "shouldn't happen" situation). Messages will then accumulate in that output's
-queue. To prevent memory exhaustion, there is a high watermark limit on the
+queue. To prevent memory exhaustion, there is a high water mark limit on the
 number of messages that might be queued for each output. By default it is set
 to 1000 messages. If this value is reached, the program will not push any more
 messages to that output before messages get consumed and the queue length drops
@@ -753,6 +753,8 @@ message:
 ```
 Other outputs won't be affected, since each one is running in a separate thread
 and has its own message queue.
+
+The high water mark threshold can be changed with `--output-queue-hwm` option.
 
 ### Additional options for text formatting
 
