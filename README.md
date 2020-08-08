@@ -13,24 +13,38 @@ Current stable version: 1.10.1 (released July 05, 2020)
   - Mirics SDR (via [libmirisdr-4](https://github.com/f4exb/libmirisdr-4))
   - SDRPlay RSP (native support through official driver version 2 and 3)
   - SoapySDR (via [soapy-sdr project](https://github.com/pothosware/SoapySDR/wiki))
-  - reads prerecorded IQ data from file
+  - prerecorded IQ data from a file
 - Decodes up to 8 VDL2 channels simultaneously
 - Automatically reassembles multiblock ACARS messages, MIAM file transfers, and
   fragmented X.25 packets
-- Outputs messages to standard output or to a file (with optional daily or
-  hourly file rotation)
+- Supports various outputs and output formats (see below)
 - Enriches logged messages with ground station details read from a text file
   (MultiPSK format)
 - Enriches logged messages with aircraft data read from Basestation SQLite
   database
-- Outputs ACARS messages to PlanePlotter over UDP/IP socket
 - Supports message filtering by type or direction (uplink, downlink)
+- Can store raw frames in a binary file for later decoding or archiving
+  purposes.
 - Produces decoding statistics using [Etsy StatsD](https://github.com/etsy/statsd) protocol
 
+## Supported output formats
+
+- Human readable text
+- Single-line ACARS format accepted by Planeplotter
+- Custom binary format (suitable for storing raw frames)
+
+## Supported output types
+
+- file (with optional daily or hourly file rotation)
+- reliable network messaging via [ZeroMQ](https://zeromq.org/)
+- UDP socket (suitable for short messages, eg. for feeding Planeplotter)
+
 ## Example
+
 ![dumpvdl2 screenshot](example.png?raw=true)
 
 ## Supported protocols
+
 - Aviation Link Control (AVLC)
 - ACARS over AVLC
 - ISO 8208 / X.25 DTE-DCE Interface
@@ -62,12 +76,16 @@ Mandatory dependencies:
 
 Optional dependencies:
 
-- librtlsdr
-- libmirisdr-4
-- SDRPlay binary driver
-- SoapySDR
-- sqlite3
-- statsd-c-client
+- SDR device drivers:
+  - librtlsdr
+  - libmirisdr-4
+  - SDRPlay binary driver
+  - SoapySDR
+- Dependencies for optional features:
+  - sqlite3 (for enriching messages with aircraft data read from SQB database)
+  - statsd-c-client (for Etsy StatsD statistics)
+  - libprotobuf-c 1.3.0 or later (for binary format support)
+  - libzmq 3.2.0 or later (for ZeroMQ networked output)
 
 Install necessary dependencies (unless you have them already). Example for
 Debian / Raspbian:
@@ -150,8 +168,8 @@ sudo cp $HOME/libmirisdr-4/mirisdr.rules /etc/udev/rules.d/mirisdr.rules
 
 #### SDRPLAY RSP support (optional)
 
-Download and install API/hardware driver package from
-http://www.sdrplay.com/downloads/.  Make sure you have selected the right
+Download and install API/hardware driver package from [here](
+http://www.sdrplay.com/downloads/).  Make sure you have selected the right
 hardware platform before downloading, otherwise the installer will fail.
 dumpvdl2 supports both version 2 and 3 of the driver. Version 3 is needed
 for newer devices (like RSPdx). Older hardware works with both versions.
@@ -160,7 +178,7 @@ when running the program.
 
 #### SoapySDR support (optional)
 
-Download and install the SoapySDR library from https://github.com/pothosware/SoapySDR.
+Download and install the SoapySDR library from [here](https://github.com/pothosware/SoapySDR).
 Then install the driver module for your device. Refer to [SoapySDR wiki](https://github.com/pothosware/SoapySDR/wiki)
 for a list of all supported modules.
 
@@ -168,7 +186,6 @@ for a list of all supported modules.
 to work correctly with dumpvdl2. It is therefore not possible to use devices
 which only support predefined, fixed sampling rates (notably Airspies). This
 limitation will be removed in a future release of dumpvdl2.
-
 
 #### SQLite (optional)
 
@@ -195,6 +212,35 @@ sudo make install
 sudo ldconfig
 ```
 
+#### Binary input/output format support (optional)
+
+dumpvdl2 can write raw AVLC frames into a binary file. Each frame is stored
+together with its metadata (ie. timestamp of reception, channel frequency,
+signal level, noise level, etc). Frames stored in such a file can be later read
+back and decoded as if they were just received from the air.  To enable this
+feature, install [protobuf-c](https://github.com/protobuf-c/protobuf-c) library.
+On Debian/Rasbian Buster just do this:
+
+```
+sudo apt-get install libprotobuf-c-dev
+```
+It won't work on Debian/Raspbian versions older than Buster, since protobuf-c
+library shipped with these is too old.
+
+#### ZeroMQ networked output support (optional)
+
+ZeroMQ is a library that allows reliable messaging between applications to be
+set up easily. dumpvdl2 can publish decoded messages on a ZeroMQ socket and
+other apps can receive them over the network using reliable transport (TCP).
+To enable this feature, install libzmq library:
+
+```
+sudo apt-get install libzmq3-dev
+```
+
+It won't work on Debian/Raspbian versions older than Buster, since libzmq
+library shipped with these is too old.
+
 ### Compiling dumpvdl2
 
 - Download a stable release package from [here](https://github.com/szpajder/dumpvdl2/releases) and unpack it...
@@ -216,8 +262,8 @@ cmake ../
 
 `cmake` attempts to find all required libraries and SDR drivers. If a mandatory
 dependency is not installed, it will throw out an error. Missing optional
-dependencies will cause the relevant feature to be disabled. At the end of
-the process `cmake` displays a short configuration summary, like this:
+dependencies cause relevant features to be disabled. At the end of the process
+`cmake` displays a short configuration summary, like this:
 
 ```
 -- dumpvdl2 configuration summary:
@@ -230,10 +276,12 @@ the process `cmake` displays a short configuration summary, like this:
 -- - Other options:
 --   - Etsy StatsD:             requested: ON, enabled: TRUE
 --   - SQLite:                  requested: ON, enabled: TRUE
+--   - ZeroMQ:                  requested: ON, enabled: TRUE
+--   - Raw frame output:        requested: ON, enabled: TRUE
 -- Configuring done
 ```
 
-Here you can verify whether all the SDR drivers that you need were properly
+Here you can verify whether all the optional components that you need were properly
 detected and enabled. Then compile and install the program:
 
 ```
@@ -270,6 +318,8 @@ Disabling optional features:
 - `-DSOAPYSDR=FALSE`
 - `-DSQLITE=FALSE`
 - `-DETSY_STATSD=FALSE`
+- `-DRAW_BINARY_FORMAT=FALSE`
+- `-DZMQ=FALSE`
 
 Setting build type:
 
@@ -491,29 +541,222 @@ command line
 SoapySDRServer --bind
 ```
 
-Then you may run dumpvdl2 on any remote machine with :
+Then you may run dumpvdl2 on any remote machine with:
 
 ```
 ./dumpvdl2 --soapysdr driver=remote,remote=tcp://<ip address>:55132,remote:driver=sdrplay,remote:format=CS16 \
 --gain -100 --soapy-antenna "Antenna B" 136975000 136875000 136775000
 ```
 
-## Output options
+## Configuring outputs
 
-- Decoded messages are printed to standard output by default. You can direct
-  them to a disk file instead:
+### Quick start
+
+By default dumpvdl2 formats decoded messages into human readable text and prints
+it to standard output. You can direct the output to a disk file instead:
 
 ```
-./dumpvdl2 --output-file vdl2.log [other_options]
+./dumpvdl2 --output decoded:text:file:path=/some/dir/vdl2.log [other_options]
 ```
 
-- If you want the file to be automatically rotated on top of every hour, add
-  `--hourly` option.  The file name will be appended with `_YYYYMMDDHH` suffix.
-  If file extension is present, it will be placed after the suffix.
+If you want the file to be automatically rotated on top of every hour, do
+the following:
 
-- If you prefer daily rotation, `--daily` option does just that. The file name
-  suffix will be `_YYYYMMDD` in this case. If file extension is present, it will
-  be placed after the suffix.
+```
+./dumpvdl2 --output decoded:text:file:path=/some/dir/vdl2.log,rotate=hourly [other_options]
+```
+
+The file name will be appended with `_YYYYMMDDHH` suffix.  If file extension is
+present, it will be placed after the suffix.
+
+If you prefer daily rotation, change `rotate=hourly` to `rotate=daily`. The file
+name suffix will be `_YYYYMMDD` in this case. If file extension is present, it
+will be placed after the suffix.
+
+### Output configuration syntax
+
+The `--output` option takes a single parameter consisting of four fields
+separated by colons:
+
+```
+    <what_to_output>:<output_format>:<output_type>:<output_parameters>
+```
+
+where:
+
+- `<what_to_output>` specifies what data should be sent to the output. Two
+  values are supported:
+
+  - `decoded` - output decoded messages
+  - `raw` - output AVLC frames without decoding (as raw bytes)
+
+- `<output_format>` specifies how the data should be formatted before sending
+  it to the output. The following formats are currently supported:
+
+  - `text` - format the message as human readable text
+  - `pp_acars` - format the message as a single-line ACARS format accepted
+    by Planeplotter via UDP. This format can only deal with ACARS messages,
+    hence messages of all other types will be filtered out (ie. not sent to this
+    particular output).
+  - `binary`- binary format suitable for archiving raw frames without decoding
+
+- `<output_type>` specifies the type of the output. The following output types
+  are supported:
+
+  - `file` - output to a file
+  - `udp` - output to a remote host via UDP network socket
+  - `zmq` - output to a ZeroMQ publisher socket
+
+- `<output_parameters>` - specifies options for this output. The syntax is
+  as follows:
+
+```
+    param1=value1,param2=value2,...
+```
+
+The list of available formats and output types may vary depending on which
+optional features have been enabled during program compilation and whether
+necessary dependencies are installed (see "Dependencies" subsection above).
+Run `dumpvdl2 --output help` to determine which formats and output types
+are available on your system. It also shows all parameters supported by
+each output type.
+
+Back to the above example:
+
+```
+--output decoded:text:file:path=/some/dir/vdl2.log,rotate=hourly
+```
+
+It basically says: "take decoded frames, format them as text and output the
+result to a file". Of course this output requires some more configuration - at
+least it needs the path where the file is to be created. This is done by
+specifying `path=/some/dir/vdl2.log` in the last field. The `file` output
+driver also supports an optional parameter named `rotate` which indicates
+how often the file is to be rotated, if at all.
+
+A few more remarks about how output configuration works:
+
+- Multiple simultaneous outputs are supported. Just specify `--output` option
+  more than once.
+
+- Not all combinations of `<what_to_output>` and `<output_format>` are
+  supported. For example it does not make sense to specify `raw:pp_acars:....`
+  because Planeplotter formatter can only deal with decoded ACARS messages.
+  You will get an `Unsupported data_type:format combination: 'raw:pp_acars'`
+  error message on startup if you try that.
+
+- Not all combinations of `<output_format>` and `<output_type>` are supported.
+  For example, `udp` output only accepts `text` and `pp_acars` formats. If you
+  try using `binary` with that, you will get an `Unsupported format:output
+  combination: 'binary:udp'` error message on startup.
+
+- If dumpvdl2 is run without any `--output` option, it creates a default output
+  of `decoded:text:file:path=-` which causes decoded frames to be formatted as
+  text and printed to standard output.
+
+
+### Output drivers
+
+#### `file`
+
+Outputs data to a file.
+
+Supported formats: `text`, `binary`
+
+Parameters:
+
+- `path` (required) - path to the output file. If it already exists, the data is
+  appended to it.
+
+- `rotate` (optional) - how often to rotate the file. Supported values: `daily`
+  (at midnight UTC or LT depending on whether `--utc` option is used) and `hourly`
+  (rotate at the top of every hour). Default: no rotation.
+
+#### `udp`
+
+Sends data to a remote host over network using UDP/IP.
+
+Supported formats: `pp_acars`, `text`
+
+Parameters:
+
+- `address` (required) - host name or IP address of the remote host
+
+- `port` (required) - remote UDP port number
+
+**Note:** This is a very simple output driver. It sends every message in a
+separate UDP datagram. If the resulting datagram is larger than the Maximum
+Transfer Unit (MTU) of the egress interface (which commonly equals 1500 bytes),
+the message will be truncated. This can often happen with ADS-C v2 or MIAM
+payloads which tend to be large. If you plan to use networked output for real,
+please use `zmq` driver. It works on TCP and provides reliable transport
+regardless of the message size.
+
+The primary purpose of `udp` driver is to feed Planeplotter with ACARS
+messages using `pp_acars` format.
+
+#### `zmq`
+
+Opens a ZeroMQ publisher socket and sends data to it.
+
+Supported formats: `pp_acars`, `text`
+
+Parameters:
+
+- `mode` (required) - socket mode. Can be `client` or `server`.  In the first
+  case dumpvdl2 initiates a connection to the given consumer. In the latter
+  case, dumpvdl2 listens on a port and expects consumers to connect to it.
+
+- `endpoint` (required) - ZeroMQ endpoint. The syntax is: `tcp://address:port`.
+  When working in server mode, it specifies the address and port where dumpvdl2
+  shall listen for incoming connections. In client mode it specifies the address
+  and port of the remote ZeroMQ consumer where dumpvdl2 shall connect to.
+
+Examples:
+
+- `mode=server,endpoint=tcp://*:5555` - listen on TCP port 5555 on all local
+  addresses.
+
+- `mode=server,endpoint=tcp://10.1.1.1:6666` - listen on TCP port 6666 on
+  address 10.1.1.1 (it must be a local address).
+
+- `mode=client,endpoint=tcp://host.example.com:1234` - connect to port 1234
+  on host.example.com.
+
+### Diagnosing problems with outputs
+
+Outputs may fail for various reasons. A file output may fail to write to the
+given path due to lack of permissions or lack of storage space, zmq output may
+fail to set up a socket due to incorrect endpoint syntax, etc. Whenever an
+output fails, the program disables it and prints a message on standard error,
+for example:
+
+```
+Could not open output file /etc/vdl2.log: Permission denied
+output_file: could not write to '/etc/vdl2.log', output disabled
+```
+
+The program will continue to run and write data to all other outputs, except
+the failed one.
+
+An output may also hang and stop processing messages (although this is
+a "shouldn't happen" situation). Messages will then accumulate in that output's
+queue. To prevent memory exhaustion, there is a high watermark limit on the
+number of messages that might be queued for each output. By default it is set
+to 1000 messages. If this value is reached, the program will not push any more
+messages to that output before messages get consumed and the queue length drops
+down. The following message is then printed on standard error for every dropped
+message:
+
+```
+<output_type> output queue overflow, throttling
+```
+Other outputs won't be affected, since each one is running in a separate thread
+and has its own message queue.
+
+### Additional options for text formatting
+
+The following options work globally across all outputs with text format:
 
 - Add `--utc` option if you prefer UTC timestamps rather than local timezone in
   output and filenames.
@@ -526,14 +769,14 @@ Then you may run dumpvdl2 on any remote machine with :
 - Add `--dump-asn1` option to display full ASN.1 structure dumps of CPDLC and CM
   messages.
 
-- ACARS and MIAM CORE messages sometimes contain XML data. Add `--prettify-xml`
+- Some ACARS and MIAM CORE messages contain XML data. Use `--prettify-xml`
   option to enable pretty-printing of such content. XML will then be reformatted
   with proper indentation for easier reading. This feature requires libacars
   built with libxml2 library support - otherwise this option has no effect.
 
-## Enriching log files with ground station data
+## Enriching messages with ground station data
 
-VDL2 messages are normally logged like this:
+VDL2 messages formatted as text are normally logged like this:
 
 ```
 [2020-01-10 00:02:40 CET] [136.775] [-31.8/-51.6 dBFS] [19.8 dB] [-1.2 ppm]
@@ -564,7 +807,7 @@ Provide the correct path to the file, of course.
 
 Verbosity can be controlled with `--addrinfo` option, which takes three values:
 
-`--addrinfo normal (the default)`:
+`--addrinfo normal` (the default):
 
 ```
 [2020-01-10 00:02:40 CET] [136.775] [-31.8/-51.6 dBFS] [19.8 dB] [-1.2 ppm]
@@ -594,7 +837,7 @@ dumpvdl2 reads the whole ground station data file on startup and caches it in
 memory. Whenever you make changes to the file, you have to restart the program
 in order for the changes to take effect.
 
-## Enriching log files with aircraft data
+## Enriching messages with aircraft data
 
 If compiled with SQLite3 support, dumpvdl2 can read aircraft data from SQLite3
 database in a well-known Basestation format used in various plane tracking
@@ -642,9 +885,9 @@ fragments, because this will often result in a partial decode with an
 `-- Unparseable <protocol name> PDU` error printed to the log file. To reduce
 log file cluttering, dumpvdl2 does not decode higher level protocols in
 fragmented packets. Data contained in individual fragments will be printed in
-hex, but this does not mean the packet type is unknown - it's just not
-decodable yet. When all the fragments have been received and correctly reassembled,
-the packet will be decoded and logged in full.
+hex, but this does not mean the packet type is unknown - it's just not decodable
+yet. When all the fragments have been received and correctly reassembled, the
+packet will be decoded and logged in full.
 
 Before version 1.8.0, dumpvdl2 always attempted to decode higher level
 protocols, regardless of whether the packet was a fragment of a larger packet or
@@ -671,7 +914,7 @@ Supply dumpvdl2 with the address (or host name) and port where the Planeplotter
 is listening:
 
 ```
-./dumpvdl2 --output-acars-pp 10.10.10.12:9742 [other_options]
+./dumpvdl2 --output decoded:pp_acars:udp:address=10.10.10.12,port=9742 [other_options]
 ```
 
 That's all. Switch to 'Message view' in Planeplotter and look for incoming
@@ -784,6 +1027,7 @@ dumpvdl2 --iq-file <file_name> --centerfreq 136955000 136975000
 ```
 
 Putting it all together:
+
 ```
 dumpvdl2 --iq-file iq.dat --sample-format S16_LE --oversample 13 --centerfreq 136955000 136975000 136725000
 ```
@@ -791,6 +1035,23 @@ dumpvdl2 --iq-file iq.dat --sample-format S16_LE --oversample 13 --centerfreq 13
 processes `iq.dat` file recorded at 1365000 samples/sec using 16-bit signed
 samples, with receiver center frequency set to 136.955 MHz. VDL2 channels
 located at 136.975 and 136.725 MHz will be decoded.
+
+## Decoding raw AVLC frames from a binary file
+
+Raw AVLC frames saved in a file with:
+
+```
+dumpvdl2 --output raw:binary:file:path=/some/dir/file.raw [...]
+```
+
+can be decoded anytime later with:
+
+```
+dumpvdl2 --raw-frames-file /some/dir/file.raw --output [...]
+```
+
+As there is no demodulation done in this case, there is no need to specify
+any radio-related options, like `--centerfreq` or channel frequencies.
 
 ## Launching dumpvdl2 in background on system boot
 
@@ -820,7 +1081,7 @@ Edit `/etc/default/dumpvdl2` with a text editor (eg. nano). Uncomment the
 Example:
 
 ```
-DUMPVDL2_OPTIONS="--rtlsdr 0 --gain 39 --correction 0 --output-file /home/pi/vdl2.log --daily 136975000 136875000 136775000"
+DUMPVDL2_OPTIONS="--rtlsdr 0 --gain 39 --correction 0 --output decoded:text:file:path=/home/pi/vdl2.log,rotate=daily 136975000 136875000 136775000"
 ```
 
 Reload systemd configuration:
@@ -1054,6 +1315,104 @@ multitail -cS dumpvdl2 vdl2.log
 ```
 
 `-cS dumpvdl2` option select the color scheme named `dumpvdl2`.
+
+### Can I concatenate several raw binary files into one?
+
+Yes. There is no header in the file, just data. Concatenated file should
+therefore decode correctly.
+
+### I want to extract raw data from a raw binary file. Where is the format specification?
+
+Here it is:
+
+```
+<length><frame_data><length><frame_data>...
+```
+
+where:
+
+- `<length>` is an unsigned 16-bit value in network order (ie. most significant
+  byte first). It indicates the length of the following `<frame_data>` block
+  plus the length of the length field itself. So the length of `00 5b` indicates
+  that the following `<frame_data>` block is 89 bytes long (2+89 = 91 = 0x5b).
+
+- `<frame_data>` is a structure containing raw AVLC frame octets and its
+  metadata, encoded as a Google protocol buffer. Refer to the
+  `proto/dumpvdl2.proto` file for the specification of the structure.
+
+You can learn how to deal with protocol buffers from [here](https://developers.google.com/protocol-buffers/docs/overview).
+
+### How to receive data from dumpvdl2 using ZeroMQ sockets?
+
+Here is how to do it in Python, assuming that you are running Raspbian Buster or later.
+
+First, install python3-zmq:
+
+```
+apt install python3-zmq
+```
+
+**Scenario 1:** dumpvdl2 works as a client, Python script is a server:
+
+```python
+import zmq, sys
+context = zmq.Context()
+socket = context.socket(zmq.SUB)
+socket.bind(sys.argv[1])
+socket.setsockopt_string(zmq.SUBSCRIBE, '')
+while True:
+    string = socket.recv_string()
+    print(string)
+```
+
+Save the script in a file (for example, zmqserver.py) and run it like so:
+
+```
+python3 zmqserver.py tcp://*:5555
+```
+
+Assuming that the above script is running on a machine with an IP address of
+10.10.10.1, you can then run dumpvdl2 with `zmq` output set to client mode like
+this:
+
+```
+dumpvdl2 --output decoded:text:zmq:mode=client,endpoint=tcp://10.10.10.1:5555 [...]
+```
+
+**Scenario 2:** dumpvdl2 works as a server, Python script is a client:
+
+```python
+import zmq,sys
+context = zmq.Context()
+socket = context.socket(zmq.SUB)
+socket.connect(sys.argv[1])
+socket.setsockopt_string(zmq.SUBSCRIBE, '')
+while True:
+    string = socket.recv_string()
+    print(string)
+```
+
+So the only difference is that now the script calls `socket.connect()` instead
+of `socket.bind()`. Assuming that dumpvdl2 will be run on a machine with an IP
+address of 10.10.10.2, save the script as `zmqclient.py` and run it as follows:
+
+```
+python3 zmqclient.py tcp://10.10.10.2:5555
+```
+
+Then start dumpvdl2 in ZeroMQ server mode:
+
+```
+dumpvdl2 --output decoded:text:zmq:mode=server,endpoint=tcp://*:5555
+```
+
+Both scripts print arriving message to standard output.
+
+The advantage of the second scenario is that dumpvdl2 can serve multiple clients
+using just a single `zmq` output. However the first scenario may come in handy
+if dumpvdl2 is running behind a firewall which does not permit connections from
+the outside. In this case if the output is to be sent to multiple consumers,
+each one must be configured as a separate `zmq` output.
 
 ### Can you add support for [*my favourite SDR receiver type*]?
 
