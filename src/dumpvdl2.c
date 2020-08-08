@@ -459,6 +459,8 @@ void usage() {
 	fprintf(stderr, "\nOutput options:\n");
 	describe_option("--output <output_specifier>", "Output specification (default: " DEFAULT_OUTPUT ")", 1);
 	describe_option("", "(See \"--output help\" for details)", 1);
+	describe_option("--output-queue-hwm <integer>", "High watermark value for output queues", 1);
+	fprintf(stderr, "%*s(default: %d messages)\n", USAGE_OPT_NAME_COLWIDTH, "", DEFAULT_OUTPUT_QUEUE_HWM);
 	describe_option("--decode-fragments", "Decode higher level protocols in fragmented packets (default: off)", 1);
 	describe_option("--gs-file <file>", "Read ground station info from <file> (MultiPSK format)", 1);
 #ifdef WITH_SQLITE
@@ -662,6 +664,7 @@ int main(int argc, char **argv) {
 #endif
 		{ "addrinfo",           required_argument,  NULL,   __OPT_ADDRINFO_VERBOSITY },
 		{ "output",             required_argument,  NULL,   __OPT_OUTPUT },
+		{ "output-queue-hwm",   required_argument,  NULL,   __OPT_OUTPUT_QUEUE_HWM },
 		{ "iq-file",            required_argument,  NULL,   __OPT_IQ_FILE },
 		{ "oversample",         required_argument,  NULL,   __OPT_OVERSAMPLE },
 		{ "sample-format",      required_argument,  NULL,   __OPT_SAMPLE_FORMAT },
@@ -731,6 +734,7 @@ int main(int argc, char **argv) {
 	memset(&Config, 0, sizeof(Config));
 	Config.addrinfo_verbosity = ADDRINFO_NORMAL;
 	Config.msg_filter = MSGFLT_ALL;
+	Config.output_queue_hwm = DEFAULT_OUTPUT_QUEUE_HWM;
 
 	print_version();
 	while((opt = getopt_long(argc, argv, "", long_opts, NULL)) != -1) {
@@ -903,6 +907,13 @@ int main(int argc, char **argv) {
 #endif
 			case __OPT_OUTPUT:
 				fmtr_list = setup_output(fmtr_list, optarg);
+				break;
+			case __OPT_OUTPUT_QUEUE_HWM:
+				Config.output_queue_hwm = atoi(optarg);
+				if(Config.output_queue_hwm < 1) {
+					fprintf(stderr, "Invalid --output-queue-hwm value: must be a postive integer\n");
+					_exit(1);
+				}
 				break;
 			case __OPT_OVERSAMPLE:
 				oversample = atoi(optarg);

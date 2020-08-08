@@ -378,9 +378,13 @@ static void output_queue_push(void *data, void *ctx) {
 	CAST_PTR(qentry, output_qentry_t *, ctx);
 
 	if(output->ctx->enabled) {
-		output_qentry_t *copy = output_qentry_copy(qentry);
-		g_async_queue_push(output->ctx->q, copy);
-		debug_print(D_OUTPUT, "dispatched %s output %p\n", output->td->name, output);
+		if(g_async_queue_length(output->ctx->q) < Config.output_queue_hwm) {
+			output_qentry_t *copy = output_qentry_copy(qentry);
+			g_async_queue_push(output->ctx->q, copy);
+			debug_print(D_OUTPUT, "dispatched %s output %p\n", output->td->name, output);
+		} else {
+			fprintf(stderr, "%s output queue overflow, throttling\n", output->td->name);
+		}
 	} else {
 		debug_print(D_OUTPUT, "%s output %p disabled, skipping\n", output->td->name, output);
 	}

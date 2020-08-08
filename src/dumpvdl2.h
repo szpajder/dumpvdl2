@@ -82,6 +82,7 @@
 #define __OPT_STATSD                 14
 #endif
 #define __OPT_MSG_FILTER             15
+#define __OPT_OUTPUT_QUEUE_HWM       16
 #define __OPT_UTC                    17
 #define __OPT_RAW_FRAMES             18
 #define __OPT_DUMP_ASN1              19
@@ -166,6 +167,9 @@
 // default output specification - decoded text output to stdout
 #define DEFAULT_OUTPUT "decoded:text:file:path=-"
 
+// output queue high watermark
+#define DEFAULT_OUTPUT_QUEUE_HWM 1000
+
 // help text pretty-printing constants and macros
 #define USAGE_INDENT_STEP 4
 #define USAGE_OPT_NAME_COLWIDTH 48
@@ -198,6 +202,7 @@ typedef struct {
 	uint32_t debug_filter;
 #endif
 	uint32_t msg_filter;
+	int output_queue_hwm;
 	char *station_id;
 	bool hourly, daily, utc, milliseconds;
 	bool output_raw_frames, dump_asn1, extended_header, decode_fragments;
