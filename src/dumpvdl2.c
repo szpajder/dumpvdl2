@@ -348,162 +348,144 @@ void describe_option(char const *name, char const *description, int indent) {
 
 
 void usage() {
-	fprintf(stderr,
-			"Usage:\n\n"
+	fprintf(stderr, "Usage:\n");
 #ifdef WITH_RTLSDR
-			"RTL-SDR receiver:\n"
-			"    dumpvdl2 [output_options] --rtlsdr <device_id> [rtlsdr_options] [<freq_1> [<freq_2> [...]]]\n"
+	fprintf(stderr, "\nRTL-SDR receiver:\n\n"
+			"%*sdumpvdl2 [output_options] --rtlsdr <device_id> [rtlsdr_options] [<freq_1> [<freq_2> [...]]]\n",
+			IND(1), "");
 #endif
 #ifdef WITH_MIRISDR
-			"MIRI-SDR receiver:\n"
-			"    dumpvdl2 [output_options] --mirisdr <device_id> [mirisdr_options] [<freq_1> [<freq_2> [...]]]\n"
+	fprintf(stderr, "\nMIRI-SDR receiver:\n\n"
+			"%*sdumpvdl2 [output_options] --mirisdr <device_id> [mirisdr_options] [<freq_1> [<freq_2> [...]]]\n",
+			IND(1), "");
 #endif
 #ifdef WITH_SDRPLAY
-			"SDRPLAY RSP receiver (using API version 2):\n"
-			"    dumpvdl2 [output_options] --sdrplay <device_id> [sdrplay_options] [<freq_1> [<freq_2> [...]]]\n"
+	fprintf(stderr, "\nSDRPLAY RSP receiver (using API version 2):\n\n"
+			"%*sdumpvdl2 [output_options] --sdrplay <device_id> [sdrplay_options] [<freq_1> [<freq_2> [...]]]\n",
+			IND(1), "");
 #endif
 #ifdef WITH_SDRPLAY3
-			"SDRPLAY RSP receiver (using API version 3):\n"
-			"    dumpvdl2 [output_options] --sdrplay3 <device_id> [sdrplay3_options] [<freq_1> [<freq_2> [...]]]\n"
+	fprintf(stderr, "\nSDRPLAY RSP receiver (using API version 3):\n\n"
+			"%*sdumpvdl2 [output_options] --sdrplay3 <device_id> [sdrplay3_options] [<freq_1> [<freq_2> [...]]]\n",
+			IND(1), "");
 #endif
 #ifdef WITH_SOAPYSDR
-			"SOAPYSDR compatible receiver:\n"
-			"    dumpvdl2 [output_options] --soapysdr <device_id> [soapysdr_options] [<freq_1> [<freq_2> [...]]]\n"
+	fprintf(stderr, "\nSOAPYSDR compatible receiver:\n\n"
+			"%*sdumpvdl2 [output_options] --soapysdr <device_id> [soapysdr_options] [<freq_1> [<freq_2> [...]]]\n",
+			IND(1), "");
 #endif
-			"Read I/Q samples from file:\n"
-			"    dumpvdl2 [output_options] --iq-file <input_file> [file_options] [<freq_1> [<freq_2> [...]]]\n"
+	fprintf(stderr, "\nRead I/Q samples from file:\n\n"
+			"%*sdumpvdl2 [output_options] --iq-file <input_file> [file_options] [<freq_1> [<freq_2> [...]]]\n",
+			IND(1), "");
 #ifdef WITH_PROTOBUF_C
-			"Read raw AVLC frames from file:\n"
-			"    dumpvdl2 [output_options] --raw-frames-file <input_file>\n"
+	fprintf(stderr, "\nRead raw AVLC frames from file:\n\n"
+			"%*sdumpvdl2 [output_options] --raw-frames-file <input_file>\n",
+			IND(1), "");
 #endif
-			"\n");
-	fprintf(stderr,
-			"\n"
-			"General options:\n"
-			"    --help                                      Displays this text\n"
-			"    --version                                   Displays program version number\n"
+	fprintf(stderr, "\nGeneral options:\n");
+	describe_option("--help", "Displays this text", 1);
+	describe_option("--version", "Displays program version number", 1);
 #ifdef DEBUG
-			"    --debug <filter_spec>                       Debug message classes to display (default: none) (\"--debug help\" for details)\n"
+	describe_option("--debug <filter_spec>", "Debug message classes to display (default: none) (\"--debug help\" for details)", 1);
 #endif
-			"common options:\n"
-			"    <freq_1> [<freq_2> [...]]                   VDL2 channel frequencies, in Hz (max %d simultaneous channels supported).\n"
-			"                                                If omitted, will use VDL2 Common Signalling Channel (%u Hz)\n",
-		MAX_CHANNELS, CSC_FREQ
-			);
+	fprintf(stderr, "common options:\n");
+	describe_option("<freq_1> [<freq_2> [...]]", "VDL2 channel frequencies, in Hz", 1);
+	fprintf(stderr, "\nMaximum number of simultaneous VDL2 channels supported is %d.\n", MAX_CHANNELS);
+	fprintf(stderr, "If channel frequencies are omitted, VDL2 Common Signalling Channel (%u Hz) will be used as default.\n\n", CSC_FREQ);
 
-	fprintf(stderr,
-			"\n"
 #ifdef WITH_RTLSDR
-			"rtlsdr_options:\n"
-			"    --rtlsdr <device_id>                        Use RTL device with specified ID or serial number (default: ID=0)\n"
-			"    --gain <gain>                               Set gain (decibels)\n"
-			"    --correction <correction>                   Set freq correction (ppm)\n"
-			"    --centerfreq <center_frequency>             Set center frequency in Hz (default: auto)\n"
-			"\n"
+	fprintf(stderr, "rtlsdr_options:\n");
+	describe_option("--rtlsdr <device_id>", "Use RTL device with specified ID or serial number (default: ID=0)", 1);
+	describe_option("--gain <gain>", "Set gain (decibels)", 1);
+	describe_option("--correction <correction>", "Set freq correction (ppm)", 1);
+	describe_option("--centerfreq <center_frequency>", "Set center frequency in Hz (default: auto)", 1);
 #endif
 #ifdef WITH_MIRISDR
-			"mirisdr_options:\n"
-			"    --mirisdr <device_id>                       Use Mirics device with specified ID or serial number (default: ID=0)\n"
-			"    --hw-type <device_type>                     0 - default, 1 - SDRPlay\n"
-			"    --gain <gain>                               Set gain (in decibels, from 0 to 102 dB)\n"
-			"    --correction <correction>                   Set freq correction (in Hertz)\n"
-			"    --centerfreq <center_frequency>             Set center frequency in Hz (default: auto)\n"
-			"    --usb-mode <usb_transfer_mode>              0 - isochronous (default), 1 - bulk\n"
-			"\n"
+	fprintf(stderr, "\nmirisdr_options:\n");
+	describe_option("--mirisdr <device_id>", "Use Mirics device with specified ID or serial number (default: ID=0)", 1);
+	describe_option("--hw-type <device_type>", "0 - default, 1 - SDRPlay", 1);
+	describe_option("--gain <gain>", "Set gain (in decibels, from 0 to 102 dB)", 1);
+	describe_option("--correction <correction>", "Set freq correction (in Hertz)", 1);
+	describe_option("--centerfreq <center_frequency>", "Set center frequency in Hz (default: auto)", 1);
+	describe_option("--usb-mode <usb_transfer_mode>", "0 - isochronous (default), 1 - bulk", 1);
 #endif
 #ifdef WITH_SDRPLAY
-			"sdrplay_options:\n"
-			"    --sdrplay <device_id>                       Use SDRPlay RSP device with specified ID or serial number (default: ID=0)\n"
-			"    --gr <gr>                                   Set system gain reduction, in dB, positive (if omitted, auto gain is enabled)\n"
-			"    --agc <AGC_set_point>                       Auto gain set point in dBFS, negative (default: -30)\n"
-			"    --correction <correction>                   Set freq correction (ppm)\n"
-			"    --centerfreq <center_frequency>             Set center frequency in Hz (default: auto)\n"
-			"    --antenna <A/B>                             RSP2 antenna port selection (default: A)\n"
-			"    --biast <0/1>                               RSP2/1a/duo Bias-T control: 0 - off (default), 1 - on\n"
-			"    --notch-filter <0/1>                        RSP2/1a/duo AM/FM/bcast notch filter control: 0 - off (default), 1 - on\n"
-			"    --tuner <1/2>                               RSPduo tuner selection: (default: 1)\n"
-			"\n"
+	fprintf(stderr, "\nsdrplay_options:\n");
+	describe_option("--sdrplay <device_id>", "Use SDRPlay RSP device with specified ID or serial number (default: ID=0)", 1);
+	describe_option("--gr <gr>", "Set system gain reduction, in dB, positive (if omitted, auto gain is enabled)", 1);
+	describe_option("--agc <AGC_set_point>", "Auto gain set point in dBFS, negative (default: -30)", 1);
+	describe_option("--correction <correction>", "Set freq correction (ppm)", 1);
+	describe_option("--centerfreq <center_frequency>", "Set center frequency in Hz (default: auto)", 1);
+	describe_option("--antenna <A/B>", "RSP2 antenna port selection (default: A)", 1);
+	describe_option("--biast <0/1>", "RSP2/1a/duo Bias-T control: 0 - off (default), 1 - on", 1);
+	describe_option("--notch-filter <0/1>", "RSP2/1a/duo AM/FM/bcast notch filter control: 0 - off (default), 1 - on", 1);
+	describe_option("--tuner <1/2>", "RSPduo tuner selection: (default: 1)", 1);
 #endif
 #ifdef WITH_SDRPLAY3
-			"sdrplay3_options:\n"
-			"    --sdrplay3 <device_id>                      Use SDRPlay RSP device with specified ID or serial number (default: ID=0)\n"
-			"    --ifgr <IF_gain_reduction>                  Set IF gain reduction, in dB, positive (if omitted, auto gain is enabled)\n"
-			"    --lna-state <LNA_state>                     Set LNA state, non-negative, higher state = higher gain reduction\n"
-			"                                                (if omitted, auto gain is enabled)\n"
-			"    --agc <AGC_set_point>                       Auto gain set point in dBFS, negative (default: -30)\n"
-			"    --correction <correction>                   Set freq correction (ppm)\n"
-			"    --centerfreq <center_frequency>             Set center frequency in Hz (default: auto)\n"
-			"    --antenna <A/B/C>                           RSP2/dx antenna port selection (default: A)\n"
-			"    --biast <0/1>                               RSP2/1a/duo/dx Bias-T control: 0 - off (default), 1 - on\n"
-			"    --notch-filter <0/1>                        RSP2/1a/duo/dx AM/FM/bcast notch filter control: 0 - off (default), 1 - on\n"
-			"    --dab-notch-filter <0/1>                    RSP1a/duo/dx DAB notch filter control: 0 - off (default), 1 - on\n"
-			"    --tuner <1/2>                               RSPduo tuner selection: (default: 1)\n"
-			"\n"
+	fprintf(stderr, "\nsdrplay3_options:\n");
+	describe_option("--sdrplay3 <device_id>", "Use SDRPlay RSP device with specified ID or serial number (default: ID=0)", 1);
+	describe_option("--ifgr <IF_gain_reduction>", "Set IF gain reduction, in dB, positive (if omitted, auto gain is enabled)", 1);
+	describe_option("--lna-state <LNA_state>", "Set LNA state, non-negative, higher state = higher gain reduction", 1);
+	describe_option("", "(if omitted, auto gain is enabled)", 1);
+	describe_option("--agc <AGC_set_point>", "Auto gain set point in dBFS, negative (default: -30)", 1);
+	describe_option("--correction <correction>", "Set freq correction (ppm)", 1);
+	describe_option("--centerfreq <center_frequency>", "Set center frequency in Hz (default: auto)", 1);
+	describe_option("--antenna <A/B/C>", "RSP2/dx antenna port selection (default: A)", 1);
+	describe_option("--biast <0/1>", "RSP2/1a/duo/dx Bias-T control: 0 - off (default), 1 - on", 1);
+	describe_option("--notch-filter <0/1>", "RSP2/1a/duo/dx AM/FM/bcast notch filter control: 0 - off (default), 1 - on", 1);
+	describe_option("--dab-notch-filter <0/1>", "RSP1a/duo/dx DAB notch filter control: 0 - off (default), 1 - on", 1);
+	describe_option("--tuner <1/2>", "RSPduo tuner selection: (default: 1)", 1);
 #endif
 #ifdef WITH_SOAPYSDR
-			"soapysdr_options:\n"
-			"    --soapysdr <device_id>                      Use SoapySDR compatible device with specified ID (default: ID=0)\n"
-			"    --device-settings <key1=val1,key2=val2,...> Set device-specific parameters (default: none)\n"
-			"    --gain <gain>                               Set gain (decibels)\n"
-			"    --correction <correction>                   Set freq correction (ppm)\n"
-			"    --soapy-antenna <antenna>                   Set antenna port selection (default: RX)\n"
-			"    --soapy-gain <gain1=val1,gain2=val2,...>    Set gain components (default: none)\n"
-			"\n"
+	fprintf(stderr, "\nsoapysdr_options:\n");
+	describe_option("--soapysdr <device_id>", "Use SoapySDR compatible device with specified ID (default: ID=0)", 1);
+	describe_option("--device-settings <key1=val1,key2=val2,...>", "Set device-specific parameters (default: none)", 1);
+	describe_option("--gain <gain>", "Set gain (decibels)", 1);
+	describe_option("--correction <correction>", "Set freq correction (ppm)", 1);
+	describe_option("--soapy-antenna <antenna>", "Set antenna port selection (default: RX)", 1);
+	describe_option("--soapy-gain <gain1=val1,gain2=val2,...>", "Set gain components (default: none)", 1);
 #endif
-			"file_options:\n"
-			"    --iq-file <input_file>                      Read I/Q samples from file\n"
-			"    --centerfreq <center_frequency>             Center frequency of the input data, in Hz (default: 0)\n"
-			"    --oversample <oversample_rate>              Oversampling rate for recorded data (default: %u)\n"
-			"                                                (sampling rate will be set to %u * oversample_rate)\n"
-			"\n",
-		FILE_OVERSAMPLE, SYMBOL_RATE * SPS
-			);
+	fprintf(stderr, "\nfile_options:\n");
+	describe_option("--iq-file <input_file>", "Read I/Q samples from file", 1);
+	describe_option("--centerfreq <center_frequency>", "Center frequency of the input data, in Hz (default: 0)", 1);
+	describe_option("--oversample <oversample_rate>", "Oversampling rate for recorded data", 1);
+	fprintf(stderr, "%*s(sampling rate will be set to %u * oversample_rate)\n", USAGE_OPT_NAME_COLWIDTH, "", SYMBOL_RATE * SPS);
+	fprintf(stderr, "%*sDefault: %u\n", USAGE_OPT_NAME_COLWIDTH, "", FILE_OVERSAMPLE);
 
-	fprintf(stderr,
-			"    --sample-format <sample_format>             Input sample format. Supported formats:\n"
-			"                                                    U8     8-bit unsigned (eg. recorded with rtl_sdr) (default)\n"
-			"                                                    S16_LE 16-bit signed, little-endian (eg. recorded with miri_sdr)\n"
-			"\n"
-		   );
-	fprintf(stderr,
-			"Output options:\n"
-			"    --output <output_specifier>                 Output specification (default: " DEFAULT_OUTPUT ")\n"
-			"                                                (\"--output help\" for details)\n"
-			"    --decode-fragments                          Decode higher level protocols in fragmented packets (default: off)\n"
-			"    --gs-file <file>                            Read ground station info from <file> (MultiPSK format)\n"
+	describe_option("--sample-format <sample_format>", "Input sample format. Supported formats:", 1);
+	describe_option("U8", "8-bit unsigned (eg. recorded with rtl_sdr) (default)", 2);
+	describe_option("S16LE", "16-bit signed, little-endian (eg. recorded with miri_sdr)", 2);
+
+	fprintf(stderr, "\nOutput options:\n");
+	describe_option("--output <output_specifier>", "Output specification (default: " DEFAULT_OUTPUT ")", 1);
+	describe_option("", "(See \"--output help\" for details)", 1);
+	describe_option("--decode-fragments", "Decode higher level protocols in fragmented packets (default: off)", 1);
+	describe_option("--gs-file <file>", "Read ground station info from <file> (MultiPSK format)", 1);
 #ifdef WITH_SQLITE
-			"    --bs-db <file>                              Read aircraft info from Basestation database <file> (SQLite)\n"
+	describe_option("--bs-db <file>", "Read aircraft info from Basestation database <file> (SQLite)", 1);
 #endif
-			"    --addrinfo terse|normal|verbose             Aircraft/ground station info verbosity level (default: normal)\n"
-			"    --station-id <name>                         Receiver site identifier (max. %d characters)\n"
-			"    --msg-filter <filter_spec>                  Output only a specified subset of messages (default: all)\n"
-			"                                                (\"--msg-filter help\" for details)\n"
+	describe_option("--addrinfo terse|normal|verbose", "Aircraft/ground station info verbosity level (default: normal)", 1);
+	describe_option("--station-id <name>", "Receiver site identifier", 1);
+	fprintf(stderr, "%*sMaximum length: %u characters\n", USAGE_OPT_NAME_COLWIDTH, "", STATION_ID_LEN_MAX);
+	describe_option("--msg-filter <filter_spec>", "Output only a specified subset of messages (default: all)", 1);
+	describe_option("", "(See \"--msg-filter help\" for details)", 1);
 #ifdef WITH_STATSD
-			"    --statsd <host>:<port>                      Send statistics to Etsy StatsD server <host>:<port> (default: disabled)\n"
-			"\n",
+	describe_option("--statsd <host>:<port>", "Send statistics to Etsy StatsD server <host>:<port> (default: disabled)", 1);
 #endif
-			STATION_ID_LEN_MAX );
 
-	fprintf(stderr,
-			"Text output formatting options:\n"
-			"    --utc                                       Use UTC timestamps in output and file names\n"
-			"    --milliseconds                              Print milliseconds in timestamps\n"
-			"    --raw-frames                                Output AVLC payload as raw bytes\n"
-			"    --dump-asn1                                 Output full ASN.1 structure of CM and CPDLC messages\n"
-			"    --extended-header                           Output additional fields in message header\n"
-			"    --prettify-xml                              Pretty-print XML payloads in ACARS and MIAM CORE PDUs (default: off)\n"
-		   );
+	fprintf(stderr, "\nText output formatting options:\n");
+	describe_option("--utc", "Use UTC timestamps in output and file names", 1);
+	describe_option("--milliseconds", "Print milliseconds in timestamps", 1);
+	describe_option("--raw-frames", "Output AVLC payload as raw bytes", 1);
+	describe_option("--dump-asn1", "Output full ASN.1 structure of CM and CPDLC messages", 1);
+	describe_option("--extended-header", "Output additional fields in message header", 1);
+	describe_option("--prettify-xml", "Pretty-print XML payloads in ACARS and MIAM CORE PDUs (default: off)", 1);
 	_exit(0);
 }
 
-void print_msg_filterspec_list(FILE *f, msg_filterspec_t const *filters) {
+void print_msg_filterspec_list(msg_filterspec_t const *filters) {
 	for(msg_filterspec_t const *ptr = filters; ptr->token != NULL; ptr++) {
-		fprintf(f, "\t%s\t%s%s%s\n",
-				ptr->token,
-				strlen(ptr->token) < 8 ? "\t" : "",
-				strlen(ptr->token) < 16 ? "\t" : "",
-				ptr->description
-			   );
+		describe_option(ptr->token, ptr->description, 2);
 	}
 }
 
@@ -558,7 +540,7 @@ static void debug_filter_usage() {
 			"be printed.\n\nSupported debug classes:\n\n"
 		   );
 
-	print_msg_filterspec_list(stderr, debug_filters);
+	print_msg_filterspec_list(debug_filters);
 
 	fprintf(stderr,
 			"\nBy default, no debug messages are printed.\n"
@@ -574,7 +556,7 @@ static void msg_filter_usage() {
 			"\nSupported message types:\n\n"
 		   );
 
-	print_msg_filterspec_list(stderr, msg_filters);
+	print_msg_filterspec_list(msg_filters);
 
 	fprintf(stderr,
 			"\nWhen --msg-filter option is not used, all messages are displayed. But when it is, the\n"
