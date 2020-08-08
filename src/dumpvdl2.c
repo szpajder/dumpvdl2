@@ -27,8 +27,13 @@
 #include <errno.h>
 #include <libacars/libacars.h>  // LA_VERSION, la_config_set_bool()
 #include <libacars/acars.h>     // LA_ACARS_BEARER_VHF
+#include <libacars/list.h>      // la_list
 #include <pthread.h>
+#include <glib.h>               // g_async_queue_new, q_async_queue_length
 #include "config.h"
+#include "kvargs.h"
+#include "output-common.h"
+#include "decode.h"             // avlc_decoder_thread, avlc_decoder_queue
 #ifndef HAVE_PTHREAD_BARRIERS
 #include "pthread_barrier.h"
 #endif
@@ -93,26 +98,53 @@ static void setup_signals() {
 	sigaction(SIGTERM, &sigact, NULL);
 }
 
-static void setup_threads(vdl2_state_t *ctx) {
+static void pthread_barrier_new(pthread_barrier_t *barrier, unsigned count) {
 	int ret;
-	if((ret = pthread_barrier_init(&demods_ready, NULL, ctx->num_channels+1)) != 0 ||
-			(ret = pthread_barrier_init(&samples_ready, NULL, ctx->num_channels+1)) != 0) {
+	if((ret = pthread_barrier_init(barrier, NULL, count)) != 0) {
 		errno = ret;
 		perror("pthread_barrier_init failed");
 		_exit(2);
 	}
-	if((ret = pthread_create(&decoder_thread, NULL, &avlc_decoder_thread, NULL) != 0)) {
+}
+
+static void setup_barriers(vdl2_state_t *ctx) {
+	pthread_barrier_new(&demods_ready, ctx->num_channels+1);
+	pthread_barrier_new(&samples_ready, ctx->num_channels+1);
+}
+
+void start_thread(pthread_t *pth, void *(*start_routine)(void *), void *thread_ctx) {
+	int ret;
+	if((ret = pthread_create(pth, NULL, start_routine, thread_ctx) != 0)) {
 		errno = ret;
 		perror("pthread_create failed");
 		_exit(2);
 	}
+}
+
+static void start_demod_threads(vdl2_state_t *ctx) {
 	for(int i = 0; i < ctx->num_channels; i++) {
-		if((ret = pthread_create(&ctx->channels[i]->demod_thread, NULL, &process_samples, ctx->channels[i])) != 0) {
-			errno = ret;
-			perror("pthread_create failed");
-			_exit(2);
-		}
+		start_thread(&ctx->channels[i]->demod_thread, &process_samples, ctx->channels[i]);
 	}
+}
+
+void start_output_thread(void *p, void *ctx) {
+	UNUSED(ctx);
+	ASSERT(p != NULL);
+	CAST_PTR(output, output_instance_t *, p);
+	ASSERT(output->td->start_routine != NULL);
+	debug_print(D_OUTPUT, "starting thread for output %s\n", output->td->name);
+	start_thread(output->output_thread, output->td->start_routine, output->ctx);
+}
+
+void start_all_output_threads_for_fmtr(void *p, void *ctx) {
+	UNUSED(ctx);
+	ASSERT(p != NULL);
+	CAST_PTR(fmtr, fmtr_instance_t *, p);
+	la_list_foreach(fmtr->outputs, start_output_thread, NULL);
+}
+
+void start_all_output_threads(la_list *fmtr_list) {
+	la_list_foreach(fmtr_list, start_all_output_threads_for_fmtr, NULL);
 }
 
 static uint32_t calc_centerfreq(uint32_t *freq, int cnt, uint32_t source_rate) {
@@ -129,7 +161,148 @@ static uint32_t calc_centerfreq(uint32_t *freq, int cnt, uint32_t source_rate) {
 	return freq_min + (freq_max - freq_min) / 2;
 }
 
-void process_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
+typedef struct {
+	char *output_spec_string;
+	char *intype, *outformat, *outtype;
+	kvargs *outopts;
+	char const *errstr;
+	bool err;
+} output_params;
+
+#define SCAN_FIELD_OR_FAIL(str, field_name, errstr) \
+	(field_name) = strsep(&(str), ":"); \
+	if((field_name)[0] == '\0') { \
+		(errstr) = "field_name is empty"; \
+		goto fail; \
+	} else if((str) == NULL) { \
+		(errstr) = "not enough fields"; \
+		goto fail; \
+	}
+
+output_params output_params_from_string(char *output_spec) {
+	output_params out_params = {
+		.intype = NULL, .outformat = NULL, .outtype = NULL, .outopts = NULL,
+		.errstr = NULL, .err = false
+	};
+
+	// We have to work on a copy of output_spec, because strsep() modifies its
+	// first argument. The copy gets stored in the returned out_params structure
+	// so that the caller can free it later.
+	debug_print(D_MISC, "output_spec: %s\n", output_spec);
+	out_params.output_spec_string = strdup(output_spec);
+	char *ptr = out_params.output_spec_string;
+
+	// output_spec format is: <input_type>:<output_format>:<output_type>:<output_options>
+	SCAN_FIELD_OR_FAIL(ptr, out_params.intype, out_params.errstr);
+	SCAN_FIELD_OR_FAIL(ptr, out_params.outformat, out_params.errstr);
+	SCAN_FIELD_OR_FAIL(ptr, out_params.outtype, out_params.errstr);
+	debug_print(D_MISC, "intype: %s outformat: %s outtype: %s\n",
+			out_params.intype, out_params.outformat, out_params.outtype);
+
+	debug_print(D_MISC, "kvargs input string: %s\n", ptr);
+	kvargs_parse_result outopts = kvargs_from_string(ptr);
+	if(outopts.err == 0) {
+		out_params.outopts = outopts.result;
+	} else {
+		out_params.errstr = kvargs_get_errstr(outopts.err);
+		goto fail;
+	}
+
+	out_params.outopts = outopts.result;
+	debug_print(D_MISC, "intype: %s outformat: %s outtype: %s\n",
+			out_params.intype, out_params.outformat, out_params.outtype);
+	goto end;
+fail:
+	XFREE(out_params.output_spec_string);
+	out_params.err = true;
+end:
+	return out_params;
+}
+
+fmtr_instance_t *find_fmtr_instance(la_list *fmtr_list, fmtr_descriptor_t *fmttd, fmtr_input_type_t intype) {
+	if(fmtr_list == NULL) {
+		return NULL;
+	}
+	for(la_list *p = fmtr_list; p != NULL; p = la_list_next(p)) {
+		CAST_PTR(fmtr, fmtr_instance_t *, p);
+		if(fmtr->td == fmttd && fmtr->intype == intype) {
+			return fmtr;
+		}
+	}
+	return NULL;
+}
+
+la_list *setup_output(la_list *fmtr_list, char *output_spec) {
+	if(!strcmp(output_spec, "help")) {
+		output_usage();
+		_exit(0);
+	}
+	output_params oparams = output_params_from_string(output_spec);
+	if(oparams.err == true) {
+		fprintf(stderr, "Could not parse output specifier '%s': %s\n", output_spec, oparams.errstr);
+		_exit(1);
+	}
+	debug_print(D_MISC, "intype: %s outformat: %s outtype: %s\n",
+			oparams.intype, oparams.outformat, oparams.outtype);
+
+	fmtr_input_type_t intype = fmtr_input_type_from_string(oparams.intype);
+	if(intype == FMTR_INTYPE_UNKNOWN) {
+		fprintf(stderr, "Data type '%s' is unknown\n", oparams.intype);
+		_exit(1);
+	}
+
+	output_format_t outfmt = output_format_from_string(oparams.outformat);
+	if(outfmt == OFMT_UNKNOWN) {
+		fprintf(stderr, "Output format '%s' is unknown\n", oparams.outformat);
+		_exit(1);
+	}
+
+	fmtr_descriptor_t *fmttd = fmtr_descriptor_get(outfmt);
+	ASSERT(fmttd != NULL);
+	fmtr_instance_t *fmtr = find_fmtr_instance(fmtr_list, fmttd, intype);
+	if(fmtr == NULL) {      // we haven't added this formatter to the list yet
+		if(!fmttd->supports_data_type(intype)) {
+			fprintf(stderr,
+					"Unsupported data_type:format combination: '%s:%s'\n",
+					oparams.intype, oparams.outformat);
+			_exit(1);
+		}
+		fmtr = fmtr_instance_new(fmttd, intype);
+		ASSERT(fmtr != NULL);
+		fmtr_list = la_list_append(fmtr_list, fmtr);
+	}
+
+	output_descriptor_t *otd = output_descriptor_get(oparams.outtype);
+	if(otd == NULL) {
+		fprintf(stderr, "Output type '%s' is unknown\n", oparams.outtype);
+		_exit(1);
+	}
+	if(!otd->supports_format(outfmt)) {
+		fprintf(stderr, "Unsupported format:output combination: '%s:%s'\n",
+				oparams.outtype, oparams.outformat);
+		_exit(1);
+	}
+
+	void *output_cfg = otd->configure(oparams.outopts);
+	if(output_cfg == NULL) {
+		fprintf(stderr, "Invalid output configuration\n");
+		_exit(1);
+	}
+
+	output_instance_t *output = output_instance_new(otd, outfmt, output_cfg);
+	ASSERT(output != NULL);
+	fmtr->outputs = la_list_append(fmtr->outputs, output);
+
+	// oparams is no longer needed after this point.
+	// No need to free intype, outformat and outtype fields, because they
+	// point into output_spec_string.
+	XFREE(oparams.output_spec_string);
+	kvargs_destroy(oparams.outopts);
+
+	return fmtr_list;
+}
+
+void process_iq_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
 	UNUSED(ctx);
 	FILE *f;
 	uint32_t len;
@@ -165,6 +338,15 @@ void print_version() {
 	fprintf(stderr, "dumpvdl2 %s (libacars %s)\n", DUMPVDL2_VERSION, LA_VERSION);
 }
 
+void describe_option(char const *name, char const *description, int indent) {
+	int descr_shiftwidth = USAGE_OPT_NAME_COLWIDTH - (int)strlen(name) - indent * USAGE_INDENT_STEP;
+	if(descr_shiftwidth < 1) {
+		descr_shiftwidth = 1;
+	}
+	fprintf(stderr, "%*s%s%*s%s\n", IND(indent), "", name, descr_shiftwidth, "", description);
+}
+
+
 void usage() {
 	fprintf(stderr,
 			"Usage:\n\n"
@@ -188,48 +370,38 @@ void usage() {
 			"SOAPYSDR compatible receiver:\n"
 			"    dumpvdl2 [output_options] --soapysdr <device_id> [soapysdr_options] [<freq_1> [<freq_2> [...]]]\n"
 #endif
-			"I/Q input from file:\n"
+			"Read I/Q samples from file:\n"
 			"    dumpvdl2 [output_options] --iq-file <input_file> [file_options] [<freq_1> [<freq_2> [...]]]\n"
+#ifdef WITH_PROTOBUF_C
+			"Read raw AVLC frames from file:\n"
+			"    dumpvdl2 [output_options] --raw-frames-file <input_file>\n"
+#endif
+			"\n");
+	fprintf(stderr,
 			"\n"
+			"General options:\n"
+			"    --help                                      Displays this text\n"
+			"    --version                                   Displays program version number\n"
+#ifdef DEBUG
+			"    --debug <filter_spec>                       Debug message classes to display (default: none) (\"--debug help\" for details)\n"
+#endif
 			"common options:\n"
-			"    <freq_1> [<freq_2> [...]]                   VDL2 channel frequences, in Hz (max %d simultaneous channels supported).\n"
+			"    <freq_1> [<freq_2> [...]]                   VDL2 channel frequencies, in Hz (max %d simultaneous channels supported).\n"
 			"                                                If omitted, will use VDL2 Common Signalling Channel (%u Hz)\n",
 		MAX_CHANNELS, CSC_FREQ
 			);
 
 	fprintf(stderr,
 			"\n"
-			"output_options:\n"
-			"    --output-file <output_file>                 Output decoded frames to <output_file> (default: stdout)\n"
-			"    --hourly                                    Rotate output file hourly\n"
-			"    --daily                                     Rotate output file daily\n"
-			"    --utc                                       Use UTC timestamps in output and file names\n"
-			"    --milliseconds                              Print milliseconds in timestamps\n"
-			"    --raw-frames                                Output AVLC payload as raw bytes\n"
-			"    --dump-asn1                                 Output full ASN.1 structure of CM and CPDLC messages\n"
-			"    --extended-header                           Output additional fields in message header\n"
-			"    --decode-fragments                          Decode higher level protocols in fragmented packets (default: off)\n"
-			"    --prettify-xml                              Pretty-print XML payloads in ACARS and MIAM CORE PDUs (default: off)\n"
-			"    --gs-file <file>                            Read ground station info from <file> (MultiPSK format)\n"
-#ifdef WITH_SQLITE
-			"    --bs-db <file>                              Read aircraft info from Basestation database <file> (SQLite)\n"
-#endif
-			"    --addrinfo terse|normal|verbose             Aircraft/ground station info verbosity level (default: normal)\n"
-			"    --msg-filter <filter_spec>                  Message types to display (default: all) (\"--msg-filter help\" for details)\n"
-			"    --output-acars-pp <host:port>               Send ACARS messages to Planeplotter over UDP/IP\n"
-#ifdef WITH_STATSD
-			"    --statsd <host>:<port>                      Send statistics to Etsy StatsD server <host>:<port> (default: disabled)\n"
-#endif
 #ifdef WITH_RTLSDR
-			"\n"
 			"rtlsdr_options:\n"
 			"    --rtlsdr <device_id>                        Use RTL device with specified ID or serial number (default: ID=0)\n"
 			"    --gain <gain>                               Set gain (decibels)\n"
 			"    --correction <correction>                   Set freq correction (ppm)\n"
 			"    --centerfreq <center_frequency>             Set center frequency in Hz (default: auto)\n"
+			"\n"
 #endif
 #ifdef WITH_MIRISDR
-			"\n"
 			"mirisdr_options:\n"
 			"    --mirisdr <device_id>                       Use Mirics device with specified ID or serial number (default: ID=0)\n"
 			"    --hw-type <device_type>                     0 - default, 1 - SDRPlay\n"
@@ -237,9 +409,9 @@ void usage() {
 			"    --correction <correction>                   Set freq correction (in Hertz)\n"
 			"    --centerfreq <center_frequency>             Set center frequency in Hz (default: auto)\n"
 			"    --usb-mode <usb_transfer_mode>              0 - isochronous (default), 1 - bulk\n"
+			"\n"
 #endif
 #ifdef WITH_SDRPLAY
-			"\n"
 			"sdrplay_options:\n"
 			"    --sdrplay <device_id>                       Use SDRPlay RSP device with specified ID or serial number (default: ID=0)\n"
 			"    --gr <gr>                                   Set system gain reduction, in dB, positive (if omitted, auto gain is enabled)\n"
@@ -250,9 +422,9 @@ void usage() {
 			"    --biast <0/1>                               RSP2/1a/duo Bias-T control: 0 - off (default), 1 - on\n"
 			"    --notch-filter <0/1>                        RSP2/1a/duo AM/FM/bcast notch filter control: 0 - off (default), 1 - on\n"
 			"    --tuner <1/2>                               RSPduo tuner selection: (default: 1)\n"
+			"\n"
 #endif
 #ifdef WITH_SDRPLAY3
-			"\n"
 			"sdrplay3_options:\n"
 			"    --sdrplay3 <device_id>                      Use SDRPlay RSP device with specified ID or serial number (default: ID=0)\n"
 			"    --ifgr <IF_gain_reduction>                  Set IF gain reduction, in dB, positive (if omitted, auto gain is enabled)\n"
@@ -266,9 +438,9 @@ void usage() {
 			"    --notch-filter <0/1>                        RSP2/1a/duo/dx AM/FM/bcast notch filter control: 0 - off (default), 1 - on\n"
 			"    --dab-notch-filter <0/1>                    RSP1a/duo/dx DAB notch filter control: 0 - off (default), 1 - on\n"
 			"    --tuner <1/2>                               RSPduo tuner selection: (default: 1)\n"
+			"\n"
 #endif
 #ifdef WITH_SOAPYSDR
-			"\n"
 			"soapysdr_options:\n"
 			"    --soapysdr <device_id>                      Use SoapySDR compatible device with specified ID (default: ID=0)\n"
 			"    --device-settings <key1=val1,key2=val2,...> Set device-specific parameters (default: none)\n"
@@ -276,13 +448,14 @@ void usage() {
 			"    --correction <correction>                   Set freq correction (ppm)\n"
 			"    --soapy-antenna <antenna>                   Set antenna port selection (default: RX)\n"
 			"    --soapy-gain <gain1=val1,gain2=val2,...>    Set gain components (default: none)\n"
-#endif
 			"\n"
+#endif
 			"file_options:\n"
 			"    --iq-file <input_file>                      Read I/Q samples from file\n"
 			"    --centerfreq <center_frequency>             Center frequency of the input data, in Hz (default: 0)\n"
 			"    --oversample <oversample_rate>              Oversampling rate for recorded data (default: %u)\n"
-			"                                                (sampling rate will be set to %u * oversample_rate)\n",
+			"                                                (sampling rate will be set to %u * oversample_rate)\n"
+			"\n",
 		FILE_OVERSAMPLE, SYMBOL_RATE * SPS
 			);
 
@@ -290,16 +463,35 @@ void usage() {
 			"    --sample-format <sample_format>             Input sample format. Supported formats:\n"
 			"                                                    U8     8-bit unsigned (eg. recorded with rtl_sdr) (default)\n"
 			"                                                    S16_LE 16-bit signed, little-endian (eg. recorded with miri_sdr)\n"
+			"\n"
 		   );
+	fprintf(stderr,
+			"Output options:\n"
+			"    --output <output_specifier>                 Output specification (default: " DEFAULT_OUTPUT ")\n"
+			"                                                (\"--output help\" for details)\n"
+			"    --decode-fragments                          Decode higher level protocols in fragmented packets (default: off)\n"
+			"    --gs-file <file>                            Read ground station info from <file> (MultiPSK format)\n"
+#ifdef WITH_SQLITE
+			"    --bs-db <file>                              Read aircraft info from Basestation database <file> (SQLite)\n"
+#endif
+			"    --addrinfo terse|normal|verbose             Aircraft/ground station info verbosity level (default: normal)\n"
+			"    --station-id <name>                         Receiver site identifier (max. %d characters)\n"
+			"    --msg-filter <filter_spec>                  Output only a specified subset of messages (default: all)\n"
+			"                                                (\"--msg-filter help\" for details)\n"
+#ifdef WITH_STATSD
+			"    --statsd <host>:<port>                      Send statistics to Etsy StatsD server <host>:<port> (default: disabled)\n"
+			"\n",
+#endif
+			STATION_ID_LEN_MAX );
 
 	fprintf(stderr,
-			"\n"
-			"General options:\n"
-			"    --help                                      Displays this text\n"
-			"    --version                                   Displays program version number\n"
-#ifdef DEBUG
-			"    --debug <filter_spec>                       Debug message classes to display (default: none) (\"--debug help\" for details)\n"
-#endif
+			"Text output formatting options:\n"
+			"    --utc                                       Use UTC timestamps in output and file names\n"
+			"    --milliseconds                              Print milliseconds in timestamps\n"
+			"    --raw-frames                                Output AVLC payload as raw bytes\n"
+			"    --dump-asn1                                 Output full ASN.1 structure of CM and CPDLC messages\n"
+			"    --extended-header                           Output additional fields in message header\n"
+			"    --prettify-xml                              Pretty-print XML payloads in ACARS and MIAM CORE PDUs (default: off)\n"
 		   );
 	_exit(0);
 }
@@ -440,6 +632,8 @@ int main(int argc, char **argv) {
 	int num_channels = 0;
 	enum input_types input = INPUT_UNDEF;
 	enum sample_formats sample_fmt = SFMT_UNDEF;
+	la_list *fmtr_list = NULL;
+	bool input_is_iq = true;
 #if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR
 	char *device = NULL;
 	float gain = SDR_AUTO_GAIN;
@@ -472,8 +666,7 @@ int main(int argc, char **argv) {
 	int opt;
 	struct option long_opts[] = {
 		{ "centerfreq",         required_argument,  NULL,   __OPT_CENTERFREQ },
-		{ "daily",              no_argument,        NULL,   __OPT_DAILY },
-		{ "hourly",             no_argument,        NULL,   __OPT_HOURLY },
+		{ "station-id",         required_argument,  NULL,   __OPT_STATION_ID },
 		{ "utc",                no_argument,        NULL,   __OPT_UTC },
 		{ "milliseconds",       no_argument,        NULL,   __OPT_MILLISECONDS },
 		{ "raw-frames",         no_argument,        NULL,   __OPT_RAW_FRAMES },
@@ -486,12 +679,11 @@ int main(int argc, char **argv) {
 		{ "bs-db",              required_argument,  NULL,   __OPT_BS_DB },
 #endif
 		{ "addrinfo",           required_argument,  NULL,   __OPT_ADDRINFO_VERBOSITY },
-		{ "output-file",        required_argument,  NULL,   __OPT_OUTPUT_FILE },
+		{ "output",             required_argument,  NULL,   __OPT_OUTPUT },
 		{ "iq-file",            required_argument,  NULL,   __OPT_IQ_FILE },
 		{ "oversample",         required_argument,  NULL,   __OPT_OVERSAMPLE },
 		{ "sample-format",      required_argument,  NULL,   __OPT_SAMPLE_FORMAT },
 		{ "msg-filter",         required_argument,  NULL,   __OPT_MSG_FILTER },
-		{ "output-acars-pp",    required_argument,  NULL,   __OPT_OUTPUT_ACARS_PP },
 #ifdef WITH_MIRISDR
 		{ "mirisdr",            required_argument,  NULL,   __OPT_MIRISDR },
 		{ "hw-type",            required_argument,  NULL,   __OPT_HW_TYPE },
@@ -529,6 +721,9 @@ int main(int argc, char **argv) {
 #if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR
 		{ "correction",         required_argument,  NULL,   __OPT_CORRECTION },
 #endif
+#ifdef WITH_PROTOBUF_C
+		{ "raw-frames-file",    required_argument,  NULL,   __OPT_RAW_FRAMES_FILE },
+#endif
 #ifdef WITH_STATSD
 		{ "statsd",             required_argument,  NULL,   __OPT_STATSD },
 #endif
@@ -547,7 +742,7 @@ int main(int argc, char **argv) {
 #ifdef WITH_SQLITE
 	char *bs_db_file = NULL;
 #endif
-	char *infile = NULL, *outfile = NULL, *pp_addr = NULL;
+	char *infile = NULL;
 	char *gs_file = NULL;
 
 	// Initialize default config
@@ -558,9 +753,16 @@ int main(int argc, char **argv) {
 	print_version();
 	while((opt = getopt_long(argc, argv, "", long_opts, NULL)) != -1) {
 		switch(opt) {
+#ifdef WITH_PROTOBUF_C
+			case __OPT_RAW_FRAMES_FILE:
+				infile = strdup(optarg);
+				input = INPUT_RAW_FRAMES_FILE;
+				input_is_iq = false;
+				break;
+#endif
 			case __OPT_IQ_FILE:
 				infile = strdup(optarg);
-				input = INPUT_FILE;
+				input = INPUT_IQ_FILE;
 				oversample = FILE_OVERSAMPLE;
 				sample_fmt = SFMT_U8;
 				break;
@@ -573,12 +775,6 @@ int main(int argc, char **argv) {
 					fprintf(stderr, "Unknown sample format\n");
 					_exit(1);
 				}
-				break;
-			case __OPT_HOURLY:
-				Config.hourly = true;
-				break;
-			case __OPT_DAILY:
-				Config.daily = true;
 				break;
 			case __OPT_UTC:
 				Config.utc = true;
@@ -623,6 +819,13 @@ int main(int argc, char **argv) {
 					fprintf(stderr, "Use --help for help\n");
 					_exit(1);
 				}
+				break;
+			case __OPT_STATION_ID:
+				if(strlen(optarg) > STATION_ID_LEN_MAX) {
+					fprintf(stderr, "Warning: station-id value too long; truncated to %d characters\n",
+							STATION_ID_LEN_MAX);
+				}
+				Config.station_id = strndup(optarg, STATION_ID_LEN_MAX);
 				break;
 			case __OPT_CENTERFREQ:
 				centerfreq = strtoul(optarg, NULL, 10);
@@ -716,8 +919,8 @@ int main(int argc, char **argv) {
 				correction = atoi(optarg);
 				break;
 #endif
-			case __OPT_OUTPUT_FILE:
-				outfile = strdup(optarg);
+			case __OPT_OUTPUT:
+				fmtr_list = setup_output(fmtr_list, optarg);
 				break;
 			case __OPT_OVERSAMPLE:
 				oversample = atoi(optarg);
@@ -728,9 +931,6 @@ int main(int argc, char **argv) {
 				statsd_enabled = true;
 				break;
 #endif
-			case __OPT_OUTPUT_ACARS_PP:
-				pp_addr = strdup(optarg);
-				break;
 			case __OPT_MSG_FILTER:
 				Config.msg_filter = parse_msg_filterspec(msg_filters, msg_filter_usage, optarg);
 				break;
@@ -754,54 +954,53 @@ int main(int argc, char **argv) {
 		_exit(1);
 	}
 
-	if(optind < argc) {
-		num_channels = argc - optind;
-		if(num_channels > MAX_CHANNELS) {
-			fprintf(stderr, "Error: too many channels specified (%d > %d)\n", num_channels, MAX_CHANNELS);
-			_exit(1);
-		}
-		freqs = XCALLOC(num_channels, sizeof(uint32_t));
-		for(int i = 0; i < num_channels; i++)
-			freqs[i] = strtoul(argv[optind+i], NULL, 10);
-	} else {
-		fprintf(stderr, "Warning: frequency not set - using VDL2 Common Signalling Channel as a default (%u Hz)\n", CSC_FREQ);
-		num_channels = 1;
-		freqs = XCALLOC(num_channels, sizeof(uint32_t));
-		freqs[0] = CSC_FREQ;
+// no --output given?
+	if(fmtr_list == NULL) {
+		fmtr_list = setup_output(fmtr_list, DEFAULT_OUTPUT);
 	}
+	ASSERT(fmtr_list != NULL);
 
-	if(outfile == NULL) {
-		outfile = strdup("-");                  // output to stdout by default
-		Config.hourly = Config.daily = false;   // stdout is not rotateable - ignore silently
-	}
-	if(outfile != NULL && Config.hourly == true && Config.daily == true) {
-		fprintf(stderr, "Options: -H and -D are exclusive\n");
-		fprintf(stderr, "Use --help for help\n");
-		_exit(1);
-	}
-	sample_rate = SYMBOL_RATE * SPS * oversample;
-	fprintf(stderr, "Sampling rate set to %u sps\n", sample_rate);
-	if(centerfreq == 0) {
-		centerfreq = calc_centerfreq(freqs, num_channels, sample_rate);
+	if(input_is_iq) {
+		if(optind < argc) {
+			num_channels = argc - optind;
+			if(num_channels > MAX_CHANNELS) {
+				fprintf(stderr, "Error: too many channels specified (%d > %d)\n", num_channels, MAX_CHANNELS);
+				_exit(1);
+			}
+			freqs = XCALLOC(num_channels, sizeof(uint32_t));
+			for(int i = 0; i < num_channels; i++)
+				freqs[i] = strtoul(argv[optind+i], NULL, 10);
+		} else {
+			fprintf(stderr, "Warning: frequency not set - using VDL2 Common Signalling Channel as a default (%u Hz)\n", CSC_FREQ);
+			num_channels = 1;
+			freqs = XCALLOC(num_channels, sizeof(uint32_t));
+			freqs[0] = CSC_FREQ;
+		}
+
+		sample_rate = SYMBOL_RATE * SPS * oversample;
+		fprintf(stderr, "Sampling rate set to %u sps\n", sample_rate);
 		if(centerfreq == 0) {
-			fprintf(stderr, "Failed to calculate center frequency\n");
-			_exit(2);
+			centerfreq = calc_centerfreq(freqs, num_channels, sample_rate);
+			if(centerfreq == 0) {
+				fprintf(stderr, "Failed to calculate center frequency\n");
+				_exit(2);
+			}
 		}
-	}
 
-	memset(&ctx, 0, sizeof(vdl2_state_t));
-	ctx.num_channels = num_channels;
-	ctx.channels = XCALLOC(num_channels, sizeof(vdl2_channel_t *));
-	for(int i = 0; i < num_channels; i++) {
-		if((ctx.channels[i] = vdl2_channel_init(centerfreq, freqs[i], sample_rate, oversample)) == NULL) {
-			fprintf(stderr, "Failed to initialize VDL channel\n");
-			_exit(2);
+		memset(&ctx, 0, sizeof(vdl2_state_t));
+		ctx.num_channels = num_channels;
+		ctx.channels = XCALLOC(num_channels, sizeof(vdl2_channel_t *));
+		for(int i = 0; i < num_channels; i++) {
+			if((ctx.channels[i] = vdl2_channel_init(centerfreq, freqs[i], sample_rate, oversample)) == NULL) {
+				fprintf(stderr, "Failed to initialize VDL channel\n");
+				_exit(2);
+			}
 		}
-	}
 
-	if(rs_init() < 0) {
-		fprintf(stderr, "Failed to initialize RS codec\n");
-		_exit(3);
+		if(rs_init() < 0) {
+			fprintf(stderr, "Failed to initialize RS codec\n");
+			_exit(3);
+		}
 	}
 
 	if(gs_file != NULL) {
@@ -819,8 +1018,10 @@ int main(int argc, char **argv) {
 			XFREE(statsd_addr);
 			statsd_enabled = false;
 		} else {
-			for(int i = 0; i < num_channels; i++) {
-				statsd_initialize_counters_per_channel(freqs[i]);
+			if(input_is_iq) {
+				for(int i = 0; i < num_channels; i++) {
+					statsd_initialize_counters_per_channel(freqs[i]);
+				}
 			}
 			statsd_initialize_counters_per_msgdir();
 		}
@@ -839,26 +1040,37 @@ int main(int argc, char **argv) {
 		}
 	}
 #endif
-	if(init_output_file(outfile) < 0) {
-		fprintf(stderr, "Failed to initialize output - aborting\n");
-		_exit(4);
-	}
-	if(pp_addr && init_pp(pp_addr) < 0) {
-		fprintf(stderr, "Failed to initialize output socket to Planeplotter - disabling it\n");
-		XFREE(pp_addr);
-	}
 
 	// Configure libacars
 	la_config_set_int("acars_bearer", LA_ACARS_BEARER_VHF);
 
 	setup_signals();
-	sincosf_lut_init();
-	input_lpf_init(sample_rate);
-	demod_sync_init();
-	setup_threads(&ctx);
+	start_all_output_threads(fmtr_list);
+	avlc_decoder_queue = g_async_queue_new();
+	start_thread(&decoder_thread, avlc_decoder_thread, fmtr_list);
+
+	if(input_is_iq) {
+		sincosf_lut_init();
+		input_lpf_init(sample_rate);
+		demod_sync_init();
+		setup_barriers(&ctx);
+		start_demod_threads(&ctx);
+	}
+
 	switch(input) {
-		case INPUT_FILE:
-			process_file(&ctx, infile, sample_fmt);
+#ifdef WITH_PROTOBUF_C
+		case INPUT_RAW_FRAMES_FILE:
+			{
+				int ret = input_raw_frames_file_process(infile);
+				while(g_async_queue_length(avlc_decoder_queue) > 0) {
+					debug_print(D_MISC, "Waiting for decoder queue drain\n");
+					usleep(500000);
+				}
+				return ret;
+			}
+#endif
+		case INPUT_IQ_FILE:
+			process_iq_file(&ctx, infile, sample_fmt);
 			pthread_barrier_wait(&demods_ready);
 			break;
 #ifdef WITH_RTLSDR

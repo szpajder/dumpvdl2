@@ -109,17 +109,14 @@ la_proto_node *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type,
 	return node;
 }
 
-void acars_output_pp(la_proto_node *tree) {
-	if(pp_sockfd == 0) {
-		return;
-	}
+la_vstring *acars_format_pp(la_proto_node *tree) {
 	la_proto_node *acars_node = la_proto_tree_find_acars(tree);
 	if(acars_node == NULL) {
-		return;
+		return NULL;
 	}
 	la_acars_msg *msg = acars_node->data;
 	if(msg->err == true) {
-		return;
+		return NULL;
 	}
 	char *txt = strdup(msg->txt);
 	for(char *ptr = txt; *ptr != 0; ptr++) {
@@ -132,9 +129,6 @@ void acars_output_pp(la_proto_node *tree) {
 			msg->mode, msg->reg, msg->ack, msg->label, msg->block_id,
 			msg->msg_num, msg->msg_num_seq, msg->flight_id, txt);
 
-	if(write(pp_sockfd, vstr->str, vstr->len) < 0) {
-		debug_print(D_OUTPUT, "write(pp_sockfd) error: %s", strerror(errno));
-	}
 	XFREE(txt);
-	la_vstring_destroy(vstr, true);
+	return vstr;
 }

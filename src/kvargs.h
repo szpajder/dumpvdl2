@@ -16,13 +16,23 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <stdint.h>
-#include <sys/time.h>               // struct timeval
-#include <libacars/libacars.h>      // la_proto_node
-#include <libacars/reassembly.h>    // la_reasm_ctx
-#include <libacars/vstring.h>       // la_vstring
+#ifndef _KVARGS_H
+#define _KVARGS_H 1
 
-// acars.c
-la_proto_node *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type,
-		la_reasm_ctx *reasm_ctx, struct timeval rx_time);
-la_vstring *acars_format_pp(la_proto_node *tree);
+#include <stddef.h>         // ptrdiff_t
+
+typedef struct kvargs_s kvargs;
+
+typedef struct {
+	kvargs *result;
+	ptrdiff_t err_pos;
+	int err;
+} kvargs_parse_result;
+
+kvargs *kvargs_new();
+kvargs_parse_result kvargs_from_string(char *string);
+char *kvargs_get(kvargs const *kv, char const *key);
+char const *kvargs_get_errstr(int err);
+void kvargs_destroy(kvargs *kv);
+
+#endif // !_KVARGS_H

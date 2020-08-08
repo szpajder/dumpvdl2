@@ -31,6 +31,7 @@
 #include "pthread_barrier.h"
 #endif
 #include "chebyshev.h"          // chebyshev_lpf_init
+#include "decode.h"             // decode_vdl_frame
 #include "dumpvdl2.h"
 
 #define BSLEN 32768UL
