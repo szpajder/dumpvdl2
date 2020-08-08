@@ -97,8 +97,8 @@ set(WITH_SQLITE FALSE)
 option(ZMQ "Enable support for ZeroMQ outputs" ON)
 set(WITH_ZMQ FALSE)
 
-option(SAVE_RAW_FRAMES "Support for outputting raw (undecoded) AVLC frames and
-decoding them from a file (requires protobuf-c library)" ON)
+option(RAW_BINARY_FORMAT "Support for binary format for raw AVLC
+frames storage (requires protobuf-c library)" ON)
 set(WITH_PROTOBUF_C FALSE)
 
 if(RTLSDR)
@@ -186,7 +186,7 @@ if(ZMQ)
 	endif()
 endif()
 
-if(SAVE_RAW_FRAMES)
+if(RAW_BINARY_FORMAT)
 	pkg_check_modules(PROTOBUF_C libprotobuf-c>=1.3.0)
 	if(PROTOBUF_C_FOUND)
 		list(APPEND dumpvdl2_extra_sources
@@ -212,7 +212,7 @@ message(STATUS "- Other options:")
 message(STATUS "  - Etsy StatsD:\t\trequested: ${ETSY_STATSD}, enabled: ${WITH_STATSD}")
 message(STATUS "  - SQLite:\t\t\trequested: ${SQLITE}, enabled: ${WITH_SQLITE}")
 message(STATUS "  - ZeroMQ:\t\t\trequested: ${ZMQ}, enabled: ${WITH_ZMQ}")
-message(STATUS "  - Raw frame output:\trequested: ${SAVE_RAW_FRAMES}, enabled: ${WITH_PROTOBUF_C}")
+message(STATUS "  - Raw binary format:\trequested: ${RAW_BINARY_FORMAT}, enabled: ${WITH_PROTOBUF_C}")
 
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
