@@ -279,7 +279,7 @@ la_list *setup_output(la_list *fmtr_list, char *output_spec) {
 	}
 	if(!otd->supports_format(outfmt)) {
 		fprintf(stderr, "Unsupported format:output combination: '%s:%s'\n",
-				oparams.outtype, oparams.outformat);
+				oparams.outformat, oparams.outtype);
 		_exit(1);
 	}
 
