@@ -338,6 +338,26 @@ are explicitly overriden with `-D` option. So if you disable a feature with, eg.
 `-DRTLSDR=TRUE` option. Just omitting `-DRTLSDR=FALSE` will not revert the
 option value to the default.
 
+### Enabling and disabling optional features
+
+As described in the "Dependencies" section, optional features (like SQLite
+support, binary format support, etc) are enabled automatically whenever
+libraries they depend upon are found during cmake run. Results of library
+searches are also stored in cmake's cache. If the program has initially been
+built without a particular feature and you later change your mind and decide to
+enable it, you need to:
+
+- install the library required by the feature
+- remove cmake's cache file to force all checks to be done again:
+
+```
+cd build
+rm CMakeCache.txt
+```
+
+- rerun cmake and recompile the program as described in "Compiling dumpvdl2"
+  section.
+
 ## Basic usage
 
 ### RTL-SDR
@@ -684,13 +704,10 @@ Parameters:
 
 - `port` (required) - remote UDP port number
 
-**Note:** This is a very simple output driver. It sends every message in a
-separate UDP datagram. If the resulting datagram is larger than the Maximum
-Transfer Unit (MTU) of the egress interface (which commonly equals 1500 bytes),
-the message will be truncated. This can often happen with ADS-C v2 or MIAM
-payloads which tend to be large. If you plan to use networked output for real,
-please use `zmq` driver. It works on TCP and provides reliable transport
-regardless of the message size.
+**Note:** UDP protocol does not guarantee successful message delivery (it works
+on a "fire and forget" principle, no retransmissions, no acknowledgements, etc).
+If you plan to use networked output for real, please use `zmq` driver. It works
+on TCP and provides reliable transport regardless of the message size.
 
 The primary purpose of `udp` driver is to feed Planeplotter with ACARS
 messages using `pp_acars` format.
