@@ -112,7 +112,11 @@ typedef struct {
 	octet_string_t *msg;            // formatted message
 	vdl2_msg_metadata *metadata;    // message metadata
 	output_format_t format;         // format of the data stored in msg
+	uint32_t flags;                 // flags
 } output_qentry_t;
+
+// output queue entry flags
+#define OUT_FLAG_ORDERED_SHUTDOWN (1 << 0)
 
 fmtr_input_type_t fmtr_input_type_from_string(char const * const str);
 fmtr_descriptor_t *fmtr_descriptor_get(output_format_t const fmt);

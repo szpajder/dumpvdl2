@@ -158,10 +158,11 @@ static int deinterleave(uint8_t *in, uint32_t len, uint32_t rows, uint32_t cols,
 	return 0;
 }
 
-void avlc_decoder_queue_push(vdl2_msg_metadata *metadata, octet_string_t *frame) {
+void avlc_decoder_queue_push(vdl2_msg_metadata *metadata, octet_string_t *frame, int flags) {
 	NEW(avlc_frame_qentry_t, qentry);
 	qentry->metadata = metadata;
 	qentry->frame = frame;
+	qentry->flags = flags;
 	g_async_queue_push(avlc_decoder_queue, qentry);
 }
 
@@ -181,10 +182,11 @@ static void decode_frame(vdl2_channel_t const *const v,
 	metadata->synd_weight = synd_weight[v->syndrome];
 	metadata->num_fec_corrections = v->num_fec_corrections;
 	metadata->idx = frame_num;
+	int flags = 0;
 
 	uint8_t *copy = XCALLOC(len, sizeof(uint8_t));
 	memcpy(copy, buf, len);
-	avlc_decoder_queue_push(metadata, octet_string_new(copy, len));
+	avlc_decoder_queue_push(metadata, octet_string_new(copy, len), flags);
 }
 
 void decode_vdl_frame(vdl2_channel_t *v) {
@@ -377,16 +379,32 @@ static void output_queue_push(void *data, void *ctx) {
 	CAST_PTR(output, output_instance_t *, data);
 	CAST_PTR(qentry, output_qentry_t *, ctx);
 
-	if(output->ctx->enabled) {
-		if(g_async_queue_length(output->ctx->q) < Config.output_queue_hwm) {
-			output_qentry_t *copy = output_qentry_copy(qentry);
-			g_async_queue_push(output->ctx->q, copy);
-			debug_print(D_OUTPUT, "dispatched %s output %p\n", output->td->name, output);
-		} else {
-			fprintf(stderr, "%s output queue overflow, throttling\n", output->td->name);
-		}
+	bool overflow = (g_async_queue_length(output->ctx->q) >= Config.output_queue_hwm);
+	bool enabled = output->ctx->enabled;
+	if(qentry->flags & OUT_FLAG_ORDERED_SHUTDOWN || (enabled && !overflow)) {
+		output_qentry_t *copy = output_qentry_copy(qentry);
+		g_async_queue_push(output->ctx->q, copy);
+		debug_print(D_OUTPUT, "dispatched %s output %p\n", output->td->name, output);
 	} else {
-		debug_print(D_OUTPUT, "%s output %p disabled, skipping\n", output->td->name, output);
+		if(overflow) {
+			fprintf(stderr, "%s output queue overflow, throttling\n", output->td->name);
+		} else if(!enabled) {
+			debug_print(D_OUTPUT, "%s output %p disabled, skipping\n", output->td->name, output);
+		}
+	}
+}
+
+static void shutdown_outputs(la_list *fmtr_list) {
+	fmtr_instance_t *fmtr = NULL;
+	for(la_list *p = fmtr_list; p != NULL; p = la_list_next(p)) {
+		fmtr = (fmtr_instance_t *)(p->data);
+		output_qentry_t qentry = {
+			.msg = NULL,
+			.metadata = NULL,
+			.format = OFMT_UNKNOWN,
+			.flags = OUT_FLAG_ORDERED_SHUTDOWN
+		};
+		la_list_foreach(fmtr->outputs, output_queue_push, &qentry);
 	}
 }
 
@@ -405,6 +423,13 @@ void *avlc_decoder_thread(void *arg) {
 	} decoding_status;
 	while(1) {
 		q = (avlc_frame_qentry_t *)g_async_queue_pop(avlc_decoder_queue);
+
+		if(q->flags & OUT_FLAG_ORDERED_SHUTDOWN) {
+			fprintf(stderr, "Shutting down decoder thread\n");
+			shutdown_outputs(fmtr_list);
+			return NULL;
+		}
+
 		ASSERT(q->metadata != NULL);
 		statsd_increment_per_channel(q->metadata->freq, "avlc.frames.processed");
 
@@ -467,4 +492,8 @@ void *avlc_decoder_thread(void *arg) {
 		XFREE(q->metadata);
 		XFREE(q);
 	}
+}
+
+void avlc_decoder_thread_shutdown() {
+	avlc_decoder_queue_push(NULL, NULL, OUT_FLAG_ORDERED_SHUTDOWN);
 }

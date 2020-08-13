@@ -127,7 +127,6 @@ output_instance_t *output_instance_new(output_descriptor_t *outtd, output_format
 	output->td = outtd;
 	output->ctx = ctx;
 	output->output_thread = XCALLOC(1, sizeof(pthread_t));
-	memset(output->output_thread, 0, sizeof(pthread_t));
 	return output;
 }
 
@@ -135,9 +134,14 @@ output_qentry_t *output_qentry_copy(output_qentry_t const * const q) {
 	ASSERT(q != NULL);
 
 	NEW(output_qentry_t, copy);
-	copy->msg = octet_string_copy(q->msg);
-	copy->metadata = vdl2_msg_metadata_copy(q->metadata);
+	if(q->msg != NULL) {
+		copy->msg = octet_string_copy(q->msg);
+	}
+	if(q->metadata != NULL) {
+		copy->metadata = vdl2_msg_metadata_copy(q->metadata);
+	}
 	copy->format = q->format;
+	copy->flags = q->flags;
 	return copy;
 }
 

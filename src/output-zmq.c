@@ -116,15 +116,19 @@ static void *out_zmq_thread(void *arg) {
 	}
 	ctx->enabled = true;
 
-	while(!do_exit) {
+	while(1) {
 		output_qentry_t *q = (output_qentry_t *)g_async_queue_pop(ctx->q);
 		ASSERT(q != NULL);
+		if(q->flags & OUT_FLAG_ORDERED_SHUTDOWN) {
+			break;
+		}
 		if(q->format == OFMT_TEXT || q->format == OFMT_PP_ACARS) {
 			out_zmq_produce_text(self, q->metadata, q->msg);
 		}
 		output_qentry_destroy(q);
 	}
 
+	fprintf(stderr, "output_zmq(%s): shutting down\n", self->endpoint);
 	zmq_close(self->zmq_sock);
 	zmq_ctx_destroy(self->zmq_ctx);
 	return NULL;

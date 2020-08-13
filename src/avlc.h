@@ -44,6 +44,7 @@ typedef union {
 typedef struct {
 	vdl2_msg_metadata *metadata;
 	octet_string_t *frame;
+	int flags;
 } avlc_frame_qentry_t;
 
 uint32_t parse_dlc_addr(uint8_t *buf);

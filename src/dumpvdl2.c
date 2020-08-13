@@ -16,6 +16,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#define _GNU_SOURCE              // pthread_tryjoin_np
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,11 +30,12 @@
 #include <libacars/acars.h>     // LA_ACARS_BEARER_VHF
 #include <libacars/list.h>      // la_list
 #include <pthread.h>
-#include <glib.h>               // g_async_queue_new, q_async_queue_length
+#include <time.h>               // time
+#include <glib.h>               // g_async_queue_new
 #include "config.h"
 #include "kvargs.h"
 #include "output-common.h"
-#include "decode.h"             // avlc_decoder_thread, avlc_decoder_queue
+#include "decode.h"             // avlc_decoder_thread, avlc_decoder_thread_shutdown, avlc_decoder_queue
 #ifndef HAVE_PTHREAD_BARRIERS
 #include "pthread_barrier.h"
 #endif
@@ -62,7 +64,6 @@ bool do_exit = false;
 dumpvdl2_config_t Config;
 
 pthread_barrier_t demods_ready, samples_ready;
-pthread_t decoder_thread;
 
 void sighandler(int sig) {
 	fprintf(stderr, "Got signal %d, exiting\n", sig);
@@ -145,6 +146,13 @@ void start_all_output_threads_for_fmtr(void *p, void *ctx) {
 
 void start_all_output_threads(la_list *fmtr_list) {
 	la_list_foreach(fmtr_list, start_all_output_threads_for_fmtr, NULL);
+}
+
+bool is_thread_active(pthread_t *pth) {
+	if(pthread_tryjoin_np(*pth, NULL) == EBUSY) {
+		return true;
+	}
+	return false;
 }
 
 static uint32_t calc_centerfreq(uint32_t *freq, int cnt, uint32_t source_rate) {
@@ -618,6 +626,7 @@ int main(int argc, char **argv) {
 	enum sample_formats sample_fmt = SFMT_UNDEF;
 	la_list *fmtr_list = NULL;
 	bool input_is_iq = true;
+	NEW(pthread_t, decoder_thread);
 #if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR
 	char *device = NULL;
 	float gain = SDR_AUTO_GAIN;
@@ -1040,7 +1049,7 @@ int main(int argc, char **argv) {
 	setup_signals();
 	start_all_output_threads(fmtr_list);
 	avlc_decoder_queue = g_async_queue_new();
-	start_thread(&decoder_thread, avlc_decoder_thread, fmtr_list);
+	start_thread(decoder_thread, avlc_decoder_thread, fmtr_list);
 
 	if(input_is_iq) {
 		sincosf_lut_init();
@@ -1050,17 +1059,12 @@ int main(int argc, char **argv) {
 		start_demod_threads(&ctx);
 	}
 
+	int exit_code = 0;
 	switch(input) {
 #ifdef WITH_PROTOBUF_C
 		case INPUT_RAW_FRAMES_FILE:
-			{
-				int ret = input_raw_frames_file_process(infile);
-				while(g_async_queue_length(avlc_decoder_queue) > 0) {
-					debug_print(D_MISC, "Waiting for decoder queue drain\n");
-					usleep(500000);
-				}
-				return ret;
-			}
+			exit_code = input_raw_frames_file_process(infile);
+			break;
 #endif
 		case INPUT_IQ_FILE:
 			process_iq_file(&ctx, infile, sample_fmt);
@@ -1096,7 +1100,36 @@ int main(int argc, char **argv) {
 #endif
 		default:
 			fprintf(stderr, "Unknown input type\n");
-			_exit(5);
+			exit_code = 5;
+			break;
 	}
-	return(0);
+	avlc_decoder_thread_shutdown();
+
+	fprintf(stderr, "Waiting for output threads to finish\n");
+	int active_threads_cnt = 0;
+	time_t wait_start = time(NULL);
+	do {
+		active_threads_cnt = 0;
+		usleep(500000);
+		if(decoder_thread != NULL && is_thread_active(decoder_thread)) {
+			active_threads_cnt++;
+		} else {
+			XFREE(decoder_thread);
+		}
+		fmtr_instance_t *fmtr = NULL;
+		for(la_list *fl = fmtr_list; fl != NULL; fl = la_list_next(fl)) {
+			fmtr = (fmtr_instance_t *)(fl->data);
+			output_instance_t *output = NULL;
+			for(la_list *ol = fmtr->outputs; ol != NULL; ol = la_list_next(ol)) {
+				output = (output_instance_t *)(ol->data);
+				if(output->output_thread != NULL && is_thread_active(output->output_thread)) {
+					active_threads_cnt++;
+				} else {
+					XFREE(output->output_thread);
+				}
+			}
+		}
+	} while(active_threads_cnt != 0 && wait_start + 10 > time(NULL));
+	fprintf(stderr, "Exiting\n");
+	return(exit_code);
 }

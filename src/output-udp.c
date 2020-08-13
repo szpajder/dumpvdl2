@@ -128,9 +128,12 @@ static void *out_udp_thread(void *arg) {
 	}
 	ctx->enabled = true;
 
-	while(!do_exit) {
+	while(1) {
 		output_qentry_t *q = (output_qentry_t *)g_async_queue_pop(ctx->q);
 		ASSERT(q != NULL);
+		if(q->flags & OUT_FLAG_ORDERED_SHUTDOWN) {
+			break;
+		}
 		if(q->format == OFMT_TEXT) {
 			out_udp_produce_text(self, q->metadata, q->msg);
 		} else if(q->format == OFMT_PP_ACARS) {
@@ -139,6 +142,7 @@ static void *out_udp_thread(void *arg) {
 		output_qentry_destroy(q);
 	}
 
+	fprintf(stderr, "output_udp(%s:%s): shutting down\n", self->address, self->port);
 	close(self->sockfd);
 	return NULL;
 

@@ -66,7 +66,8 @@ static int process_frame(uint8_t *buf, size_t len) {
 
 	uint8_t *copy = XCALLOC(f->data.len, sizeof(uint8_t));
 	memcpy(copy, f->data.data, f->data.len);
-	avlc_decoder_queue_push(metadata, octet_string_new(copy, f->data.len));
+	int flags = 0;
+	avlc_decoder_queue_push(metadata, octet_string_new(copy, f->data.len), flags);
 	dumpvdl2__raw_avlc_frame__free_unpacked(f, NULL);
 	return 0;
 }

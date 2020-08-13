@@ -199,9 +199,12 @@ static void *out_file_thread(void *arg) {
 	}
 	ctx->enabled = true;
 
-	while(!do_exit) {
+	while(1) {
 		output_qentry_t *q = (output_qentry_t *)g_async_queue_pop(ctx->q);
 		ASSERT(q != NULL);
+		if(q->flags & OUT_FLAG_ORDERED_SHUTDOWN) {
+			break;
+		}
 		if(self->rotate != ROT_NONE && out_file_rotate(self) < 0) {
 			goto fail;
 		}
@@ -213,6 +216,7 @@ static void *out_file_thread(void *arg) {
 		output_qentry_destroy(q);
 	}
 
+	fprintf(stderr, "output_file(%s): shutting down\n", self->filename_prefix);
 	fclose(self->fh);
 	return NULL;
 
