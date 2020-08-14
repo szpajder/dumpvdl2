@@ -24,6 +24,8 @@ addons:
     - pkg-config
     - libsqlite3-dev
     - librtlsdr-dev
+    - libzmq3-dev
+    - libprotobuf-c-dev
   homebrew:
     packages:
     - glib
