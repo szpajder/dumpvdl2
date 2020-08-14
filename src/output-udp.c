@@ -126,7 +126,6 @@ static void *out_udp_thread(void *arg) {
 	if(out_udp_init(self) < 0) {
 		goto fail;
 	}
-	ctx->enabled = true;
 
 	while(1) {
 		output_qentry_t *q = (output_qentry_t *)g_async_queue_pop(ctx->q);
