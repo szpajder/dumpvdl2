@@ -127,6 +127,7 @@ output_descriptor_t *output_descriptor_get(char const * const output_name);
 output_instance_t *output_instance_new(output_descriptor_t *outtd, output_format_t format, void *priv);
 output_qentry_t *output_qentry_copy(output_qentry_t const * const q);
 void output_qentry_destroy(output_qentry_t *q);
+void output_queue_drain(GAsyncQueue *q);
 
 vdl2_msg_metadata *vdl2_msg_metadata_copy(vdl2_msg_metadata const * const m);
 void vdl2_msg_metadata_destroy(vdl2_msg_metadata *m);

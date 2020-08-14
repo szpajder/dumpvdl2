@@ -23,7 +23,7 @@
 #include <errno.h>                      // errno
 #include <arpa/inet.h>                  // htons
 #include <glib.h>                       // g_async_queue_pop
-#include "output-common.h"              // output_descriptor_t, output_qentry_t
+#include "output-common.h"              // output_descriptor_t, output_qentry_t, output_queue_drain
 #include "output-file.h"                // OUT_BINARY_FRAME_LEN_OCTETS, OUT_BINARY_FRAME_LEN_MAX
 #include "kvargs.h"                     // kvargs
 #include "dumpvdl2.h"                   // do_exit, option_descr_t
@@ -222,6 +222,7 @@ static void *out_file_thread(void *arg) {
 fail:
 	ctx->enabled = false;
 	fprintf(stderr, "output_file: could not write to '%s', output disabled\n", self->filename_prefix);
+	output_queue_drain(ctx->q);
 	return NULL;
 }
 

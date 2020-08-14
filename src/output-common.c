@@ -155,6 +155,16 @@ void output_qentry_destroy(output_qentry_t *q) {
 	XFREE(q);
 }
 
+void output_queue_drain(GAsyncQueue *q) {
+	ASSERT(q != NULL);
+	g_async_queue_lock(q);
+	while(g_async_queue_length_unlocked(q) > 0) {
+		output_qentry_t *qentry = (output_qentry_t *)g_async_queue_pop_unlocked(q);
+		output_qentry_destroy(qentry);
+	}
+	g_async_queue_unlock(q);
+}
+
 vdl2_msg_metadata *vdl2_msg_metadata_copy(vdl2_msg_metadata const * const m) {
 	ASSERT(m != NULL);
 	NEW(vdl2_msg_metadata, copy);

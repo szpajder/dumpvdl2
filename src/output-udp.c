@@ -25,7 +25,7 @@
 #include <sys/socket.h>                 // socket, connect
 #include <netdb.h>                      // getaddrinfo
 #include <glib.h>                       // g_async_queue_pop
-#include "output-common.h"              // output_descriptor_t, output_qentry_t
+#include "output-common.h"              // output_descriptor_t, output_qentry_t, output_queue_drain
 #include "kvargs.h"                     // kvargs, option_descr_t
 #include "dumpvdl2.h"                   // do_exit
 
@@ -148,6 +148,7 @@ static void *out_udp_thread(void *arg) {
 fail:
 	ctx->enabled = false;
 	fprintf(stderr, "output_udp: can't connect to %s:%s, output disabled\n", self->address, self->port);
+	output_queue_drain(ctx->q);
 	return NULL;
 }
 

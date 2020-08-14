@@ -22,7 +22,7 @@
 #include <errno.h>                      // errno
 #include <glib.h>                       // g_async_queue_pop
 #include <zmq.h>                        // zmq_*
-#include "output-common.h"              // output_descriptor_t, output_qentry_t
+#include "output-common.h"              // output_descriptor_t, output_qentry_t, output_queue_drain
 #include "kvargs.h"                     // kvargs
 #include "dumpvdl2.h"                   // do_exit, option_descr_t
 
@@ -136,6 +136,7 @@ fail:
 	ctx->enabled = false;
 	fprintf(stderr, "output_zmq: Could not %s to %s, output disabled\n",
 			self->mode == ZMQ_MODE_SERVER ? "bind" : "connect", self->endpoint);
+	output_queue_drain(ctx->q);
 	return NULL;
 }
 
