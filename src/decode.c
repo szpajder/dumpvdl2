@@ -500,6 +500,6 @@ void avlc_decoder_init() {
 	avlc_decoder_queue = g_async_queue_new();
 }
 
-void avlc_decoder_thread_shutdown() {
+void avlc_decoder_shutdown() {
 	avlc_decoder_queue_push(NULL, NULL, OUT_FLAG_ORDERED_SHUTDOWN);
 }

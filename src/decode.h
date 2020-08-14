@@ -26,7 +26,7 @@
 void decode_vdl_frame(vdl2_channel_t *v);
 void avlc_decoder_init();
 void *avlc_decoder_thread(void *arg);
-void avlc_decoder_thread_shutdown();
+void avlc_decoder_shutdown();
 void avlc_decoder_queue_push(vdl2_msg_metadata *metadata, octet_string_t *frame, int flags);
 
 #endif // !_DECODE_H

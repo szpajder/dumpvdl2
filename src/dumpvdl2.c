@@ -34,7 +34,7 @@
 #include "config.h"
 #include "kvargs.h"
 #include "output-common.h"
-#include "decode.h"             // avlc_decoder_thread, avlc_decoder_thread_shutdown, avlc_decoder_init
+#include "decode.h"             // avlc_decoder_thread, avlc_decoder_shutdown, avlc_decoder_init
 #ifndef HAVE_PTHREAD_BARRIERS
 #include "pthread_barrier.h"
 #endif
@@ -1099,7 +1099,7 @@ int main(int argc, char **argv) {
 			exit_code = 5;
 			break;
 	}
-	avlc_decoder_thread_shutdown();
+	avlc_decoder_shutdown();
 
 	fprintf(stderr, "Waiting for output threads to finish\n");
 	int active_threads_cnt = 0;
