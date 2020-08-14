@@ -31,11 +31,10 @@
 #include <libacars/list.h>      // la_list
 #include <pthread.h>
 #include <time.h>               // time
-#include <glib.h>               // g_async_queue_new
 #include "config.h"
 #include "kvargs.h"
 #include "output-common.h"
-#include "decode.h"             // avlc_decoder_thread, avlc_decoder_thread_shutdown, avlc_decoder_queue
+#include "decode.h"             // avlc_decoder_thread, avlc_decoder_thread_shutdown, avlc_decoder_init
 #ifndef HAVE_PTHREAD_BARRIERS
 #include "pthread_barrier.h"
 #endif
@@ -1045,7 +1044,7 @@ int main(int argc, char **argv) {
 
 	setup_signals();
 	start_all_output_threads(fmtr_list);
-	avlc_decoder_queue = g_async_queue_new();
+	avlc_decoder_init();
 	start_thread(decoder_thread, avlc_decoder_thread, fmtr_list);
 
 	if(input_is_iq) {

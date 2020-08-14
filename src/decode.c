@@ -23,7 +23,7 @@
 #include <string.h>
 #include <limits.h>
 #include <unistd.h>
-#include <glib.h>
+#include <glib.h>                   // GAsyncQueue, g_async_queue_*
 #include <math.h>                   // log10f
 #include <libacars/libacars.h>      // la_proto_node, la_proto_tree_destroy()
 #include <libacars/reassembly.h>    // la_reasm_ctx, la_reasm_ctx_new()
@@ -47,6 +47,8 @@
 #define MAX_FRAME_LENGTH_CORRECTED 0x1FFF
 
 #define LFSR_IV 0x6959u
+
+static GAsyncQueue *avlc_decoder_queue;
 
 static uint32_t const H[HDRFECLEN] = {
 	0b0000000011111111111110000,
@@ -492,6 +494,10 @@ void *avlc_decoder_thread(void *arg) {
 		XFREE(q->metadata);
 		XFREE(q);
 	}
+}
+
+void avlc_decoder_init() {
+	avlc_decoder_queue = g_async_queue_new();
 }
 
 void avlc_decoder_thread_shutdown() {
