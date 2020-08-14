@@ -97,7 +97,7 @@ typedef struct {
 	GAsyncQueue *q;                 // input queue
 	void *priv;                     // output instance context (private)
 	output_format_t format;         // format of the data fed into the output
-	bool enabled;                   // output is ready to process messages
+	bool active;                    // output thread is running
 } output_ctx_t;
 
 // Output instance

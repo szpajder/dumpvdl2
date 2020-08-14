@@ -1111,7 +1111,7 @@ int main(int argc, char **argv) {
 			output_instance_t *output = NULL;
 			for(la_list *ol = fmtr->outputs; ol != NULL; ol = la_list_next(ol)) {
 				output = (output_instance_t *)(ol->data);
-				if(output->ctx->enabled) {
+				if(output->ctx->active) {
 					active_threads_cnt++;
 				}
 			}

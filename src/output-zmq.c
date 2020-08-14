@@ -130,12 +130,12 @@ static void *out_zmq_thread(void *arg) {
 	fprintf(stderr, "output_zmq(%s): shutting down\n", self->endpoint);
 	zmq_close(self->zmq_sock);
 	zmq_ctx_destroy(self->zmq_ctx);
-	ctx->enabled = false;
+	ctx->active = false;
 	return NULL;
 
 fail:
-	ctx->enabled = false;
-	fprintf(stderr, "output_zmq: Could not %s to %s, output disabled\n",
+	ctx->active = false;
+	fprintf(stderr, "output_zmq: Could not %s to %s, deactivating output\n",
 			self->mode == ZMQ_MODE_SERVER ? "bind" : "connect", self->endpoint);
 	output_queue_drain(ctx->q);
 	return NULL;

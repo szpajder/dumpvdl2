@@ -143,12 +143,12 @@ static void *out_udp_thread(void *arg) {
 
 	fprintf(stderr, "output_udp(%s:%s): shutting down\n", self->address, self->port);
 	close(self->sockfd);
-	ctx->enabled = false;
+	ctx->active = false;
 	return NULL;
 
 fail:
-	ctx->enabled = false;
-	fprintf(stderr, "output_udp: can't connect to %s:%s, output disabled\n", self->address, self->port);
+	ctx->active = false;
+	fprintf(stderr, "output_udp: can't connect to %s:%s, deactivating output\n", self->address, self->port);
 	output_queue_drain(ctx->q);
 	return NULL;
 }

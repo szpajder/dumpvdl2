@@ -382,16 +382,16 @@ static void output_queue_push(void *data, void *ctx) {
 	CAST_PTR(qentry, output_qentry_t *, ctx);
 
 	bool overflow = (g_async_queue_length(output->ctx->q) >= Config.output_queue_hwm);
-	bool enabled = output->ctx->enabled;
-	if(qentry->flags & OUT_FLAG_ORDERED_SHUTDOWN || (enabled && !overflow)) {
+	bool active = output->ctx->active;
+	if(qentry->flags & OUT_FLAG_ORDERED_SHUTDOWN || (active && !overflow)) {
 		output_qentry_t *copy = output_qentry_copy(qentry);
 		g_async_queue_push(output->ctx->q, copy);
 		debug_print(D_OUTPUT, "dispatched %s output %p\n", output->td->name, output);
 	} else {
 		if(overflow) {
 			fprintf(stderr, "%s output queue overflow, throttling\n", output->td->name);
-		} else if(!enabled) {
-			debug_print(D_OUTPUT, "%s output %p disabled, skipping\n", output->td->name, output);
+		} else if(!active) {
+			debug_print(D_OUTPUT, "%s output %p is inactive, skipping\n", output->td->name, output);
 		}
 	}
 }

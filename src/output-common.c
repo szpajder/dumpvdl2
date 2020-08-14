@@ -123,7 +123,7 @@ output_instance_t *output_instance_new(output_descriptor_t *outtd, output_format
 	ctx->q = g_async_queue_new();
 	ctx->format = format;
 	ctx->priv = priv;
-	ctx->enabled = true;
+	ctx->active = true;
 	NEW(output_instance_t, output);
 	output->td = outtd;
 	output->ctx = ctx;

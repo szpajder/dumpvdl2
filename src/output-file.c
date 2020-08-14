@@ -217,12 +217,12 @@ static void *out_file_thread(void *arg) {
 
 	fprintf(stderr, "output_file(%s): shutting down\n", self->filename_prefix);
 	fclose(self->fh);
-	ctx->enabled = false;
+	ctx->active = false;
 	return NULL;
 
 fail:
-	ctx->enabled = false;
-	fprintf(stderr, "output_file: could not write to '%s', output disabled\n", self->filename_prefix);
+	ctx->active = false;
+	fprintf(stderr, "output_file: could not write to '%s', deactivating output\n", self->filename_prefix);
 	output_queue_drain(ctx->q);
 	return NULL;
 }
