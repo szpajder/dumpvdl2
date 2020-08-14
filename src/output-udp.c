@@ -143,6 +143,7 @@ static void *out_udp_thread(void *arg) {
 
 	fprintf(stderr, "output_udp(%s:%s): shutting down\n", self->address, self->port);
 	close(self->sockfd);
+	ctx->enabled = false;
 	return NULL;
 
 fail:

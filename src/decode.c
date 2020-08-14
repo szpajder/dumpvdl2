@@ -417,6 +417,7 @@ void *avlc_decoder_thread(void *arg) {
 	la_proto_node *root = NULL;
 	uint32_t msg_type = 0;
 
+	decoder_thread_active = true;
 	la_reasm_ctx *reasm_ctx = la_reasm_ctx_new();
 	enum {
 		DEC_NOT_DONE,
@@ -429,6 +430,7 @@ void *avlc_decoder_thread(void *arg) {
 		if(q->flags & OUT_FLAG_ORDERED_SHUTDOWN) {
 			fprintf(stderr, "Shutting down decoder thread\n");
 			shutdown_outputs(fmtr_list);
+			decoder_thread_active = false;
 			return NULL;
 		}
 

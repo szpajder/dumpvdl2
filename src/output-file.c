@@ -217,6 +217,7 @@ static void *out_file_thread(void *arg) {
 
 	fprintf(stderr, "output_file(%s): shutting down\n", self->filename_prefix);
 	fclose(self->fh);
+	ctx->enabled = false;
 	return NULL;
 
 fail:

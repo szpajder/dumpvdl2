@@ -16,7 +16,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define _GNU_SOURCE              // pthread_tryjoin_np
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -145,10 +144,6 @@ void start_all_output_threads_for_fmtr(void *p, void *ctx) {
 
 void start_all_output_threads(la_list *fmtr_list) {
 	la_list_foreach(fmtr_list, start_all_output_threads_for_fmtr, NULL);
-}
-
-bool is_thread_active(pthread_t *pth) {
-	return pthread_tryjoin_np(*pth, NULL) == EBUSY;
 }
 
 static uint32_t calc_centerfreq(uint32_t *freq, int cnt, uint32_t source_rate) {
@@ -622,7 +617,7 @@ int main(int argc, char **argv) {
 	enum sample_formats sample_fmt = SFMT_UNDEF;
 	la_list *fmtr_list = NULL;
 	bool input_is_iq = true;
-	NEW(pthread_t, decoder_thread);
+	pthread_t decoder_thread;
 #if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR
 	char *device = NULL;
 	float gain = SDR_AUTO_GAIN;
@@ -1045,7 +1040,7 @@ int main(int argc, char **argv) {
 	setup_signals();
 	start_all_output_threads(fmtr_list);
 	avlc_decoder_init();
-	start_thread(decoder_thread, avlc_decoder_thread, fmtr_list);
+	start_thread(&decoder_thread, avlc_decoder_thread, fmtr_list);
 
 	if(input_is_iq) {
 		sincosf_lut_init();
@@ -1107,10 +1102,8 @@ int main(int argc, char **argv) {
 	do {
 		active_threads_cnt = 0;
 		usleep(500000);
-		if(decoder_thread != NULL && is_thread_active(decoder_thread)) {
+		if(decoder_thread_active) {
 			active_threads_cnt++;
-		} else {
-			XFREE(decoder_thread);
 		}
 		fmtr_instance_t *fmtr = NULL;
 		for(la_list *fl = fmtr_list; fl != NULL; fl = la_list_next(fl)) {
@@ -1118,10 +1111,8 @@ int main(int argc, char **argv) {
 			output_instance_t *output = NULL;
 			for(la_list *ol = fmtr->outputs; ol != NULL; ol = la_list_next(ol)) {
 				output = (output_instance_t *)(ol->data);
-				if(output->output_thread != NULL && is_thread_active(output->output_thread)) {
+				if(output->ctx->enabled) {
 					active_threads_cnt++;
-				} else {
-					XFREE(output->output_thread);
 				}
 			}
 		}
