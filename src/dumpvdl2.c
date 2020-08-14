@@ -149,10 +149,7 @@ void start_all_output_threads(la_list *fmtr_list) {
 }
 
 bool is_thread_active(pthread_t *pth) {
-	if(pthread_tryjoin_np(*pth, NULL) == EBUSY) {
-		return true;
-	}
-	return false;
+	return pthread_tryjoin_np(*pth, NULL) == EBUSY;
 }
 
 static uint32_t calc_centerfreq(uint32_t *freq, int cnt, uint32_t source_rate) {
