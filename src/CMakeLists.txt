@@ -8,6 +8,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 # strdup
 add_definitions(-D_XOPEN_SOURCE=600)
 
+# strsep on MacOS
+if(APPLE)
+	add_definitions(-D_DARWIN_C_SOURCE)
+endif()
+
 # silence warnings about obsolete _BSD_SOURCE in asn_system.h
 add_definitions(-D_DEFAULT_SOURCE)
 
