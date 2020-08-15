@@ -167,8 +167,10 @@
 // default output specification - decoded text output to stdout
 #define DEFAULT_OUTPUT "decoded:text:file:path=-"
 
-// output queue high watermark
-#define DEFAULT_OUTPUT_QUEUE_HWM 1000
+// output queue high water mark
+#define OUTPUT_QUEUE_HWM_DEFAULT 1000
+// high water mark disabled
+#define OUTPUT_QUEUE_HWM_NONE 0
 
 // help text pretty-printing constants and macros
 #define USAGE_INDENT_STEP 4

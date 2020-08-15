@@ -381,7 +381,8 @@ static void output_queue_push(void *data, void *ctx) {
 	CAST_PTR(output, output_instance_t *, data);
 	CAST_PTR(qentry, output_qentry_t *, ctx);
 
-	bool overflow = (g_async_queue_length(output->ctx->q) >= Config.output_queue_hwm);
+	bool overflow = (Config.output_queue_hwm != OUTPUT_QUEUE_HWM_NONE &&
+			g_async_queue_length(output->ctx->q) >= Config.output_queue_hwm);
 	bool active = output->ctx->active;
 	if(qentry->flags & OUT_FLAG_ORDERED_SHUTDOWN || (active && !overflow)) {
 		output_qentry_t *copy = output_qentry_copy(qentry);

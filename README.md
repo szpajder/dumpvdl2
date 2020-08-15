@@ -771,6 +771,10 @@ message:
 Other outputs won't be affected, since each one is running in a separate thread
 and has its own message queue.
 
+High water mark limit is disabled when dumpvdl2 is decoding data from a file
+(ie. eiter `--iq-file` or `--raw-frames-file` option is in use). This allows
+all queues to grow indefinitely, but it makes sure that no frames get dropped.
+
 The high water mark threshold can be changed with `--output-queue-hwm` option.
 
 ### Additional options for text formatting

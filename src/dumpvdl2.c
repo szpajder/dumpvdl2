@@ -459,7 +459,7 @@ void usage() {
 	describe_option("--output <output_specifier>", "Output specification (default: " DEFAULT_OUTPUT ")", 1);
 	describe_option("", "(See \"--output help\" for details)", 1);
 	describe_option("--output-queue-hwm <integer>", "High watermark value for output queues", 1);
-	fprintf(stderr, "%*s(default: %d messages)\n", USAGE_OPT_NAME_COLWIDTH, "", DEFAULT_OUTPUT_QUEUE_HWM);
+	fprintf(stderr, "%*s(default: %d messages, not applicable when using --iq-file or --raw-frames-file)\n", USAGE_OPT_NAME_COLWIDTH, "", OUTPUT_QUEUE_HWM_DEFAULT);
 	describe_option("--decode-fragments", "Decode higher level protocols in fragmented packets", 1);
 	describe_option("--gs-file <file>", "Read ground station info from <file> (MultiPSK format)", 1);
 #ifdef WITH_SQLITE
@@ -734,7 +734,7 @@ int main(int argc, char **argv) {
 	memset(&Config, 0, sizeof(Config));
 	Config.addrinfo_verbosity = ADDRINFO_NORMAL;
 	Config.msg_filter = MSGFLT_ALL;
-	Config.output_queue_hwm = DEFAULT_OUTPUT_QUEUE_HWM;
+	Config.output_queue_hwm = OUTPUT_QUEUE_HWM_DEFAULT;
 
 	print_version();
 	while((opt = getopt_long(argc, argv, "", long_opts, NULL)) != -1) {
@@ -1054,10 +1054,12 @@ int main(int argc, char **argv) {
 	switch(input) {
 #ifdef WITH_PROTOBUF_C
 		case INPUT_RAW_FRAMES_FILE:
+			Config.output_queue_hwm = OUTPUT_QUEUE_HWM_NONE;
 			exit_code = input_raw_frames_file_process(infile);
 			break;
 #endif
 		case INPUT_IQ_FILE:
+			Config.output_queue_hwm = OUTPUT_QUEUE_HWM_NONE;
 			process_iq_file(&ctx, infile, sample_fmt);
 			pthread_barrier_wait(&demods_ready);
 			break;
