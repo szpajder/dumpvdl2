@@ -29,7 +29,6 @@
 #include <libacars/acars.h>     // LA_ACARS_BEARER_VHF
 #include <libacars/list.h>      // la_list
 #include <pthread.h>
-#include <time.h>               // time
 #include "config.h"
 #include "kvargs.h"
 #include "output-common.h"
@@ -1100,7 +1099,6 @@ int main(int argc, char **argv) {
 
 	fprintf(stderr, "Waiting for output threads to finish\n");
 	int active_threads_cnt = 0;
-	time_t wait_start = time(NULL);
 	do {
 		active_threads_cnt = 0;
 		usleep(500000);
@@ -1118,7 +1116,7 @@ int main(int argc, char **argv) {
 				}
 			}
 		}
-	} while(active_threads_cnt != 0 && wait_start + 10 > time(NULL));
+	} while(active_threads_cnt != 0);
 	fprintf(stderr, "Exiting\n");
 	return(exit_code);
 }
