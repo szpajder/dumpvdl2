@@ -776,6 +776,7 @@ High water mark limit is disabled when dumpvdl2 is decoding data from a file
 all queues to grow indefinitely, but it makes sure that no frames get dropped.
 
 The high water mark threshold can be changed with `--output-queue-hwm` option.
+Set its value to 0 to disable the limit.
 
 ### Additional options for text formatting
 

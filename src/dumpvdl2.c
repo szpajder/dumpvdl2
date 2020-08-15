@@ -458,7 +458,7 @@ void usage() {
 	fprintf(stderr, "\nOutput options:\n");
 	describe_option("--output <output_specifier>", "Output specification (default: " DEFAULT_OUTPUT ")", 1);
 	describe_option("", "(See \"--output help\" for details)", 1);
-	describe_option("--output-queue-hwm <integer>", "High watermark value for output queues", 1);
+	describe_option("--output-queue-hwm <integer>", "High water mark value for output queues (0 = no limit)", 1);
 	fprintf(stderr, "%*s(default: %d messages, not applicable when using --iq-file or --raw-frames-file)\n", USAGE_OPT_NAME_COLWIDTH, "", OUTPUT_QUEUE_HWM_DEFAULT);
 	describe_option("--decode-fragments", "Decode higher level protocols in fragmented packets", 1);
 	describe_option("--gs-file <file>", "Read ground station info from <file> (MultiPSK format)", 1);
@@ -910,8 +910,8 @@ int main(int argc, char **argv) {
 				break;
 			case __OPT_OUTPUT_QUEUE_HWM:
 				Config.output_queue_hwm = atoi(optarg);
-				if(Config.output_queue_hwm < 1) {
-					fprintf(stderr, "Invalid --output-queue-hwm value: must be a postive integer\n");
+				if(Config.output_queue_hwm < 0) {
+					fprintf(stderr, "Invalid --output-queue-hwm value: must be a non-negative integer\n");
 					_exit(1);
 				}
 				break;
