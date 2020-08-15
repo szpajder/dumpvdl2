@@ -57,14 +57,19 @@
 #endif
 #include "gs_data.h"
 
-bool do_exit = false;
+int do_exit = 0;
 dumpvdl2_config_t Config;
 
 pthread_barrier_t demods_ready, samples_ready;
 
 void sighandler(int sig) {
-	fprintf(stderr, "Got signal %d, exiting\n", sig);
-	do_exit = true;
+	fprintf(stderr, "Got signal %d, ", sig);
+	if(do_exit == 0) {
+		fprintf(stderr, "exiting gracefully (send signal once again to force quit)\n");
+	} else {
+		fprintf(stderr, "forcing quit\n");
+	}
+	do_exit++;
 #ifdef WITH_RTLSDR
 	rtl_cancel();
 #endif
@@ -328,7 +333,7 @@ void process_iq_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
 	do {
 		len = fread(buf, 1, FILE_BUFSIZE, f);
 		(*process_buf)(buf, len, NULL);
-	} while(len == FILE_BUFSIZE && do_exit == false);
+	} while(len == FILE_BUFSIZE && do_exit == 0);
 	fclose(f);
 }
 
@@ -1116,7 +1121,7 @@ int main(int argc, char **argv) {
 				}
 			}
 		}
-	} while(active_threads_cnt != 0);
+	} while(active_threads_cnt != 0 && do_exit < 2);
 	fprintf(stderr, "Exiting\n");
 	return(exit_code);
 }

@@ -83,7 +83,7 @@ int input_raw_frames_file_process(char const *file) {
 	size_t available = 0, offset = 0, i = 0;
 	size_t frame_len = 0;
 	uint8_t buf[BUF_SIZE];
-	while(do_exit == false && (available = fread(buf + offset, sizeof(uint8_t), READ_SIZE, fh)) > 0) {
+	while(do_exit == 0 && (available = fread(buf + offset, sizeof(uint8_t), READ_SIZE, fh)) > 0) {
 		available += offset;
 		i = offset = 0;
 		while(available > 0) {
