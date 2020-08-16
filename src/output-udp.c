@@ -24,7 +24,6 @@
 #include <sys/types.h>                  // socket, connect
 #include <sys/socket.h>                 // socket, connect
 #include <netdb.h>                      // getaddrinfo
-#include <glib.h>                       // g_async_queue_pop
 #include "output-common.h"              // output_descriptor_t, output_qentry_t, output_queue_drain
 #include "kvargs.h"                     // kvargs, option_descr_t
 #include "dumpvdl2.h"                   // do_exit
@@ -58,8 +57,9 @@ fail:
 	return NULL;
 }
 
-int out_udp_init(out_udp_ctx_t *self) {
-	ASSERT(self != NULL);
+static int out_udp_init(void *selfptr) {
+	ASSERT(selfptr != NULL);
+	CAST_PTR(self, out_udp_ctx_t *, selfptr);
 
 	struct addrinfo hints, *result, *rptr;
 	memset(&hints, 0, sizeof(struct addrinfo));
@@ -118,39 +118,30 @@ static void out_udp_produce_text(out_udp_ctx_t *self, vdl2_msg_metadata *metadat
 	}
 }
 
-static void *out_udp_thread(void *arg) {
-	ASSERT(arg != NULL);
-	CAST_PTR(ctx, output_ctx_t *, arg);
-	CAST_PTR(self, out_udp_ctx_t *, ctx->priv);
-
-	if(out_udp_init(self) < 0) {
-		goto fail;
+static int out_udp_produce(void *selfptr, output_format_t format, vdl2_msg_metadata *metadata, octet_string_t *msg) {
+	ASSERT(selfptr != NULL);
+	CAST_PTR(self, out_udp_ctx_t *, selfptr);
+	if(format == OFMT_TEXT) {
+		out_udp_produce_text(self, metadata, msg);
+	} else if(format == OFMT_PP_ACARS) {
+		out_udp_produce_pp_acars(self, metadata, msg);
 	}
+	return 0;
+}
 
-	while(1) {
-		output_qentry_t *q = (output_qentry_t *)g_async_queue_pop(ctx->q);
-		ASSERT(q != NULL);
-		if(q->flags & OUT_FLAG_ORDERED_SHUTDOWN) {
-			break;
-		}
-		if(q->format == OFMT_TEXT) {
-			out_udp_produce_text(self, q->metadata, q->msg);
-		} else if(q->format == OFMT_PP_ACARS) {
-			out_udp_produce_pp_acars(self, q->metadata, q->msg);
-		}
-		output_qentry_destroy(q);
-	}
-
+static void out_udp_handle_shutdown(void *selfptr) {
+	ASSERT(selfptr != NULL);
+	CAST_PTR(self, out_udp_ctx_t *, selfptr);
 	fprintf(stderr, "output_udp(%s:%s): shutting down\n", self->address, self->port);
 	close(self->sockfd);
-	ctx->active = false;
-	return NULL;
+}
 
-fail:
-	ctx->active = false;
-	fprintf(stderr, "output_udp: can't connect to %s:%s, deactivating output\n", self->address, self->port);
-	output_queue_drain(ctx->q);
-	return NULL;
+static void out_udp_handle_failure(void *selfptr) {
+	ASSERT(selfptr != NULL);
+	CAST_PTR(self, out_udp_ctx_t *, selfptr);
+	fprintf(stderr, "output_udp: can't connect to %s:%s, deactivating output\n",
+			self->address, self->port);
+	close(self->sockfd);
 }
 
 static const option_descr_t out_udp_options[] = {
@@ -172,7 +163,10 @@ output_descriptor_t out_DEF_udp = {
 	.name = "udp",
 	.description = "Output to a remote host via UDP",
 	.options = out_udp_options,
-	.start_routine = out_udp_thread,
 	.supports_format = out_udp_supports_format,
-	.configure = out_udp_configure
+	.configure = out_udp_configure,
+	.init = out_udp_init,
+	.produce = out_udp_produce,
+	.handle_shutdown = out_udp_handle_shutdown,
+	.handle_failure = out_udp_handle_failure
 };

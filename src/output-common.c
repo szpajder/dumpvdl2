@@ -215,3 +215,43 @@ void output_usage() {
 	}
 	fprintf(stderr, "\n");
 }
+
+void *output_thread(void *arg) {
+	ASSERT(arg != NULL);
+	CAST_PTR(oi, output_instance_t *, arg);
+	ASSERT(oi->ctx != NULL);
+	CAST_PTR(ctx, output_ctx_t *, oi->ctx);
+
+	if(oi->td->init != NULL) {
+		if(oi->td->init(ctx->priv) < 0) {
+			goto fail;
+		}
+	}
+
+	while(1) {
+		output_qentry_t *q = (output_qentry_t *)g_async_queue_pop(ctx->q);
+		ASSERT(q != NULL);
+		if(q->flags & OUT_FLAG_ORDERED_SHUTDOWN) {
+			break;
+		}
+		int result = oi->td->produce(ctx->priv, q->format, q->metadata, q->msg);
+		output_qentry_destroy(q);
+		if(result < 0) {
+			break;
+		}
+	}
+
+	if(oi->td->handle_shutdown != NULL) {
+		oi->td->handle_shutdown(ctx->priv);
+	}
+	ctx->active = false;
+	return NULL;
+
+fail:
+	ctx->active = false;
+	if(oi->td->handle_failure != NULL) {
+		oi->td->handle_failure(ctx->priv);
+	}
+	output_queue_drain(ctx->q);
+	return NULL;
+}

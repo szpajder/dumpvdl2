@@ -20,7 +20,6 @@
 #include <stdio.h>                      // fprintf
 #include <string.h>                     // strdup, strerror
 #include <errno.h>                      // errno
-#include <glib.h>                       // g_async_queue_pop
 #include <zmq.h>                        // zmq_*
 #include "output-common.h"              // output_descriptor_t, output_qentry_t, output_queue_drain
 #include "kvargs.h"                     // kvargs
@@ -69,8 +68,9 @@ fail:
 	return NULL;
 }
 
-int out_zmq_init(out_zmq_ctx_t *self) {
-	ASSERT(self != NULL);
+static int out_zmq_init(void *selfptr) {
+	ASSERT(selfptr != NULL);
+	CAST_PTR(self, out_zmq_ctx_t *, selfptr);
 
 	self->zmq_ctx = zmq_ctx_new();
 	if(self->zmq_ctx == NULL) {
@@ -106,39 +106,28 @@ static void out_zmq_produce_text(out_zmq_ctx_t *self, vdl2_msg_metadata *metadat
 	}
 }
 
-static void *out_zmq_thread(void *arg) {
-	ASSERT(arg != NULL);
-	CAST_PTR(ctx, output_ctx_t *, arg);
-	CAST_PTR(self, out_zmq_ctx_t *, ctx->priv);
-
-	if(out_zmq_init(self) < 0) {
-		goto fail;
+static int out_zmq_produce(void *selfptr, output_format_t format, vdl2_msg_metadata *metadata, octet_string_t *msg) {
+	ASSERT(selfptr != NULL);
+	CAST_PTR(self, out_zmq_ctx_t *, selfptr);
+	if(format == OFMT_TEXT || format == OFMT_PP_ACARS) {
+		out_zmq_produce_text(self, metadata, msg);
 	}
+	return 0;
+}
 
-	while(1) {
-		output_qentry_t *q = (output_qentry_t *)g_async_queue_pop(ctx->q);
-		ASSERT(q != NULL);
-		if(q->flags & OUT_FLAG_ORDERED_SHUTDOWN) {
-			break;
-		}
-		if(q->format == OFMT_TEXT || q->format == OFMT_PP_ACARS) {
-			out_zmq_produce_text(self, q->metadata, q->msg);
-		}
-		output_qentry_destroy(q);
-	}
-
+static void out_zmq_handle_shutdown(void *selfptr) {
+	ASSERT(selfptr != NULL);
+	CAST_PTR(self, out_zmq_ctx_t *, selfptr);
 	fprintf(stderr, "output_zmq(%s): shutting down\n", self->endpoint);
 	zmq_close(self->zmq_sock);
 	zmq_ctx_destroy(self->zmq_ctx);
-	ctx->active = false;
-	return NULL;
+}
 
-fail:
-	ctx->active = false;
+static void out_zmq_handle_failure(void *selfptr) {
+	ASSERT(selfptr != NULL);
+	CAST_PTR(self, out_zmq_ctx_t *, selfptr);
 	fprintf(stderr, "output_zmq: Could not %s to %s, deactivating output\n",
 			self->mode == ZMQ_MODE_SERVER ? "bind" : "connect", self->endpoint);
-	output_queue_drain(ctx->q);
-	return NULL;
 }
 
 static const option_descr_t out_zmq_options[] = {
@@ -160,7 +149,10 @@ output_descriptor_t out_DEF_zmq = {
 	.name = "zmq",
 	.description = "Output to a ZeroMQ publisher socket (as a server or a client)",
 	.options = out_zmq_options,
-	.start_routine = out_zmq_thread,
 	.supports_format = out_zmq_supports_format,
-	.configure = out_zmq_configure
+	.configure = out_zmq_configure,
+	.init = out_zmq_init,
+	.produce = out_zmq_produce,
+	.handle_shutdown = out_zmq_handle_shutdown,
+	.handle_failure = out_zmq_handle_failure
 };

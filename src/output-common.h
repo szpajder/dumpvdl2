@@ -78,18 +78,24 @@ typedef struct {
 	la_list *outputs;                // list of output descriptors where the formatted message should be sent
 } fmtr_instance_t;
 
-typedef void* (pthread_start_fun_t)(void *);
 typedef bool (output_format_check_fun_t)(output_format_t);
 typedef void* (output_configure_fun_t)(kvargs *);
+typedef int (output_init_fun_t)(void *);
+typedef int (output_produce_msg_fun_t)(void *, output_format_t, vdl2_msg_metadata *, octet_string_t *);
+typedef void (output_shutdown_handler_fun_t)(void *);
+typedef void (output_failure_handler_fun_t)(void *);
 
 // Output descriptor
 typedef struct {
 	char *name;
 	char *description;
 	option_descr_t const *options;
-	pthread_start_fun_t *start_routine;
 	output_format_check_fun_t *supports_format;
 	output_configure_fun_t *configure;
+	output_init_fun_t *init;
+	output_produce_msg_fun_t *produce;
+	output_shutdown_handler_fun_t *handle_shutdown;
+	output_failure_handler_fun_t *handle_failure;
 } output_descriptor_t;
 
 // Output instance context (passed to the thread routine)
@@ -128,6 +134,7 @@ output_instance_t *output_instance_new(output_descriptor_t *outtd, output_format
 output_qentry_t *output_qentry_copy(output_qentry_t const * const q);
 void output_qentry_destroy(output_qentry_t *q);
 void output_queue_drain(GAsyncQueue *q);
+void *output_thread(void *arg);
 
 vdl2_msg_metadata *vdl2_msg_metadata_copy(vdl2_msg_metadata const * const m);
 void vdl2_msg_metadata_destroy(vdl2_msg_metadata *m);

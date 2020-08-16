@@ -22,7 +22,6 @@
 #include <time.h>                       // gmtime_r, localtime_r, strftime
 #include <errno.h>                      // errno
 #include <arpa/inet.h>                  // htons
-#include <glib.h>                       // g_async_queue_pop
 #include "output-common.h"              // output_descriptor_t, output_qentry_t, output_queue_drain
 #include "output-file.h"                // OUT_BINARY_FRAME_LEN_OCTETS, OUT_BINARY_FRAME_LEN_MAX
 #include "kvargs.h"                     // kvargs
@@ -114,8 +113,9 @@ static int out_file_open(out_file_ctx_t *self) {
 	return 0;
 }
 
-int out_file_init(out_file_ctx_t *self) {
-	ASSERT(self != NULL);
+static int out_file_init(void *selfptr) {
+	ASSERT(selfptr != NULL);
+	CAST_PTR(self, out_file_ctx_t *, selfptr);
 	if(!strcmp(self->filename_prefix, "-")) {
 		self->fh = stdout;
 		self->rotate = ROT_NONE;
@@ -155,7 +155,10 @@ static int out_file_rotate(out_file_ctx_t *self) {
 	}
 	if((self->rotate == ROT_HOURLY && new_tm.tm_hour != self->current_tm.tm_hour) ||
 			(self->rotate == ROT_DAILY && new_tm.tm_mday != self->current_tm.tm_mday)) {
-		fclose(self->fh);
+		if(self->fh != NULL) {
+			fclose(self->fh);
+			self->fh = NULL;
+		}
 		return out_file_open(self);
 	}
 	return 0;
@@ -189,42 +192,39 @@ static void out_file_produce_binary(out_file_ctx_t *self, vdl2_msg_metadata *met
     fflush(self->fh);
 }
 
-static void *out_file_thread(void *arg) {
-	ASSERT(arg != NULL);
-	CAST_PTR(ctx, output_ctx_t *, arg);
-	CAST_PTR(self, out_file_ctx_t *, ctx->priv);
-
-	if(out_file_init(self) < 0) {
-		goto fail;
+static int out_file_produce(void *selfptr, output_format_t format, vdl2_msg_metadata *metadata, octet_string_t *msg) {
+	ASSERT(selfptr != NULL);
+	CAST_PTR(self, out_file_ctx_t *, selfptr);
+	if(self->rotate != ROT_NONE && out_file_rotate(self) < 0) {
+		return -1;
 	}
-
-	while(1) {
-		output_qentry_t *q = (output_qentry_t *)g_async_queue_pop(ctx->q);
-		ASSERT(q != NULL);
-		if(q->flags & OUT_FLAG_ORDERED_SHUTDOWN) {
-			break;
-		}
-		if(self->rotate != ROT_NONE && out_file_rotate(self) < 0) {
-			goto fail;
-		}
-		if(q->format == OFMT_TEXT) {
-			out_file_produce_text(self, q->metadata, q->msg);
-		} else if(q->format == OFMT_BINARY) {
-			out_file_produce_binary(self, q->metadata, q->msg);
-		}
-		output_qentry_destroy(q);
+	if(format == OFMT_TEXT) {
+		out_file_produce_text(self, metadata, msg);
+	} else if(format == OFMT_BINARY) {
+		out_file_produce_binary(self, metadata, msg);
 	}
+	return 0;
+}
 
+static void out_file_handle_shutdown(void *selfptr) {
+	ASSERT(selfptr != NULL);
+	CAST_PTR(self, out_file_ctx_t *, selfptr);
 	fprintf(stderr, "output_file(%s): shutting down\n", self->filename_prefix);
-	fclose(self->fh);
-	ctx->active = false;
-	return NULL;
+	if(self->fh != NULL) {
+		fclose(self->fh);
+		self->fh = NULL;
+	}
+}
 
-fail:
-	ctx->active = false;
-	fprintf(stderr, "output_file: could not write to '%s', deactivating output\n", self->filename_prefix);
-	output_queue_drain(ctx->q);
-	return NULL;
+static void out_file_handle_failure(void *selfptr) {
+	ASSERT(selfptr != NULL);
+	CAST_PTR(self, out_file_ctx_t *, selfptr);
+	fprintf(stderr, "output_file: could not write to '%s', deactivating output\n",
+			self->filename_prefix);
+	if(self->fh != NULL) {
+		fclose(self->fh);
+		self->fh = NULL;
+	}
 }
 
 static option_descr_t const out_file_options[] = {
@@ -246,7 +246,10 @@ output_descriptor_t out_DEF_file = {
 	.name = "file",
 	.description = "Output to a file",
 	.options = out_file_options,
-	.start_routine = out_file_thread,
 	.supports_format = out_file_supports_format,
-	.configure = out_file_configure
+	.configure = out_file_configure,
+	.init = out_file_init,
+	.produce = out_file_produce,
+	.handle_shutdown = out_file_handle_shutdown,
+	.handle_failure = out_file_handle_failure
 };

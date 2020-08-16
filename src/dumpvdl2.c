@@ -134,9 +134,8 @@ void start_output_thread(void *p, void *ctx) {
 	UNUSED(ctx);
 	ASSERT(p != NULL);
 	CAST_PTR(output, output_instance_t *, p);
-	ASSERT(output->td->start_routine != NULL);
 	debug_print(D_OUTPUT, "starting thread for output %s\n", output->td->name);
-	start_thread(output->output_thread, output->td->start_routine, output->ctx);
+	start_thread(output->output_thread, output_thread, output);
 }
 
 void start_all_output_threads_for_fmtr(void *p, void *ctx) {
