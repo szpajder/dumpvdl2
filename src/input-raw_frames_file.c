@@ -43,7 +43,6 @@ static int process_frame(uint8_t *buf, size_t len) {
 		return 0;
 	}
 	if(f->data.data == NULL || f->data.len < 1) {
-		fprintf(stderr, "No data in frame, skipping\n");
 		return 0;
 	}
 	Dumpvdl2__Vdl2MsgMetadata *m = f->metadata;
