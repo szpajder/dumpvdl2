@@ -90,6 +90,13 @@ static int out_zmq_init(void *selfptr) {
 				self->endpoint, zmq_strerror(errno));
 		return -1;
 	}
+	rc = zmq_setsockopt(self->zmq_sock, ZMQ_SNDHWM, &Config.output_queue_hwm,
+			sizeof(Config.output_queue_hwm));
+	if(rc < 0) {
+		fprintf(stderr, "output_zmq: could not set ZMQ_SNDHWM option for socket: %s\n",
+				zmq_strerror(errno));
+		return -1;
+	}
 	return 0;
 }
 
