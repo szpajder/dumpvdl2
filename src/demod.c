@@ -31,7 +31,7 @@
 #include "pthread_barrier.h"
 #endif
 #include "chebyshev.h"          // chebyshev_lpf_init
-#include "decode.h"             // decode_vdl_frame
+#include "decode.h"             // decode_vdl2_burst
 #include "dumpvdl2.h"
 
 #define BSLEN 32768UL
@@ -278,7 +278,7 @@ static void demod(vdl2_channel_t *v, float re, float im) {
 			if(v->bs->end - v->bs->start >= v->requested_bits) {
 				debug_print(D_DEMOD, "bitstream len=%u requested_bits=%u, launching frame decoder\n",
 						v->bs->end - v->bs->start, v->requested_bits);
-				decode_vdl_frame(v);
+				decode_vdl2_burst(v);
 			}
 			return;
 	}

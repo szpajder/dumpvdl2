@@ -191,7 +191,7 @@ static void decode_frame(vdl2_channel_t const *const v,
 	avlc_decoder_queue_push(metadata, octet_string_new(copy, len), flags);
 }
 
-void decode_vdl_frame(vdl2_channel_t *v) {
+void decode_vdl2_burst(vdl2_channel_t *v) {
 	switch(v->decoder_state) {
 		case DEC_HEADER:
 			v->lfsr = LFSR_IV;

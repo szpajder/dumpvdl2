@@ -24,7 +24,7 @@
 #include "dumpvdl2.h"           // octet_string_t
 
 bool decoder_thread_active;
-void decode_vdl_frame(vdl2_channel_t *v);
+void decode_vdl2_burst(vdl2_channel_t *v);
 void avlc_decoder_init();
 void *avlc_decoder_thread(void *arg);
 void avlc_decoder_shutdown();
