@@ -21,6 +21,7 @@
 #include <string.h>                     // strdup, strerror
 #include <errno.h>                      // errno
 #include <zmq.h>                        // zmq_*
+#include "config.h"                     // LIBZMQ_VER_*
 #include "output-common.h"              // output_descriptor_t, output_qentry_t, output_queue_drain
 #include "kvargs.h"                     // kvargs
 #include "dumpvdl2.h"                   // do_exit, option_descr_t
@@ -44,6 +45,15 @@ static bool out_zmq_supports_format(output_format_t format) {
 static void *out_zmq_configure(kvargs *kv) {
 	ASSERT(kv != NULL);
 	NEW(out_zmq_ctx_t, cfg);
+
+	int major, minor, patch;
+	zmq_version(&major, &minor, &patch);
+	if(major < LIBZMQ_VER_MAJOR_MIN || minor < LIBZMQ_VER_MINOR_MIN || patch < LIBZMQ_VER_PATCH_MIN) {
+		fprintf(stderr, "output_zmq: error: libzmq library version %d.%d.%d is too old; at least %d.%d.%d is required\n",
+				major, minor, patch,
+				LIBZMQ_VER_MAJOR_MIN, LIBZMQ_VER_MINOR_MIN, LIBZMQ_VER_PATCH_MIN);
+		goto fail;
+	}
 	if(kvargs_get(kv, "endpoint") == NULL) {
 		fprintf(stderr, "output_zmq: endpoint not specified\n");
 		goto fail;
