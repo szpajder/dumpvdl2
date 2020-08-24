@@ -57,8 +57,8 @@ typedef enum {
 	OFMT_BINARY     = 3
 } output_format_t;
 
-typedef octet_string_t* (fmt_decoded_fun_t)(vdl2_msg_metadata *metadata, la_proto_node *root);
-typedef octet_string_t* (fmt_raw_fun_t)(vdl2_msg_metadata *metadata, octet_string_t *msg);
+typedef octet_string_t* (fmt_decoded_fun_t)(vdl2_msg_metadata *, la_proto_node *);
+typedef octet_string_t* (fmt_raw_fun_t)(vdl2_msg_metadata *, octet_string_t *);
 typedef bool (intype_check_fun_t)(fmtr_input_type_t);
 
 // Frame formatter descriptor
