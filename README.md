@@ -37,7 +37,7 @@ Current stable version: 1.10.1 (released July 05, 2020)
 
 - file (with optional daily or hourly file rotation)
 - reliable network messaging via [ZeroMQ](https://zeromq.org/)
-- UDP socket (suitable for short messages, eg. for feeding Planeplotter)
+- UDP socket
 
 ## Example
 
@@ -91,7 +91,7 @@ Install necessary dependencies (unless you have them already). Example for
 Debian / Raspbian:
 
 ```
-sudo apt-get install build-essential cmake git libglib2.0-dev pkg-config
+sudo apt install build-essential cmake git libglib2.0-dev pkg-config
 ```
 
 Install `libacars` library - either:
@@ -122,14 +122,14 @@ To use RTL dongles, install `librtlsdr` library (unless you have it already).
 Raspbian has a packaged version:
 
 ```
-apt-get install librtlsdr-dev
+apt install librtlsdr-dev
 ```
 
 If your distribution does not provide a package, then clone the source
 repository and compile manually:
 
 ```
-apt-get install libtool autoconf libusb-1.0-0-dev
+apt install libtool autoconf libusb-1.0-0-dev
 cd
 git clone git://git.osmocom.org/rtl-sdr.git
 cd rtl-sdr/
@@ -155,7 +155,7 @@ rate.
 Install `libmirisdr-4` library:
 
 ```
-apt-get install libusb-1.0-0-dev
+apt install libusb-1.0-0-dev
 cd
 git clone https://github.com/f4exb/libmirisdr-4.git
 cd libmirisdr-4
@@ -195,7 +195,7 @@ aircraft data (registration number, operator, type, etc). If you want this
 feature, install SQLite3 library:
 
 ```
-sudo apt-get install libsqlite3-dev
+sudo apt install libsqlite3-dev
 sudo ldconfig
 ```
 
@@ -222,7 +222,7 @@ feature, install [protobuf-c](https://github.com/protobuf-c/protobuf-c) library.
 On Debian/Rasbian Buster just do this:
 
 ```
-sudo apt-get install libprotobuf-c-dev
+sudo apt install libprotobuf-c-dev
 ```
 It won't work on Debian/Raspbian versions older than Buster, since protobuf-c
 library shipped with these is too old.
@@ -235,7 +235,7 @@ other apps can receive them over the network using reliable transport (TCP).
 To enable this feature, install libzmq library:
 
 ```
-sudo apt-get install libzmq3-dev
+sudo apt install libzmq3-dev
 ```
 
 It won't work on Debian/Raspbian versions older than Buster, since libzmq
@@ -378,7 +378,7 @@ serial number to get deterministic behavior:
 ./dumpvdl2 --rtlsdr 771111153 --gain 40 --correction 42
 ```
 
-Use `rtl_test` utility to get serial numbers of your devices. dumpvdl2 will print
+Use `rtl_test` utility to get serial numbers of your devices. dumpvdl2 prints
 them to the screen on startup as well.
 
 If you want to decode a different VDL2 channel than the default, just add its
@@ -510,8 +510,8 @@ options instead:
   of LNA states and their respective gain reductions for each receiver.
 
 if you want to set the gain reduction manually, specify both `--ifgr` and
-`--lna-state`. If either option is omitted, the other one will be ignored and
-AGC will be used instead.
+`--lna-state`. If either option is omitted, the other one is ignored and
+AGC is used instead.
 
 ### SoapySDR library
 
@@ -1315,7 +1315,7 @@ an example. To use it:
 - Install the program:
 
 ```
-sudo apt-get install multitail
+sudo apt install multitail
 ```
 
 - Copy the example colorization scheme to `/etc`:
@@ -1430,7 +1430,7 @@ Then start dumpvdl2 in ZeroMQ server mode:
 dumpvdl2 --output decoded:text:zmq:mode=server,endpoint=tcp://*:5555
 ```
 
-Both scripts print arriving message to standard output.
+Both scripts print arriving messages to standard output.
 
 The advantage of the second scenario is that dumpvdl2 can serve multiple clients
 using just a single `zmq` output. However the first scenario may come in handy
