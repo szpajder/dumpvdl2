@@ -1,4 +1,4 @@
 # This file is used by the dumpvdl2 systemd unit.
 # - Copy it to /etc/default/dumpvdl2
 # - Uncomment the following line and set your preferred command line options.
-#DUMPVDL2_OPTIONS="--rtlsdr 0 --gain 39 --correction 0 --output-file /home/pi/vdl2.log --daily 136975000 136875000 136775000"
+#DUMPVDL2_OPTIONS="--rtlsdr 0 --gain 39 --correction 0 --output decoded:text:file:path=/home/pi/vdl2.log,rotate=daily 136975000 136875000 136775000"
