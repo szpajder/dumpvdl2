@@ -304,10 +304,10 @@ TLV_FORMATTER(flow_control_confirmation_format_text) {
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Acked credit: %hu\n", f->acked_credit);
 }
 
-#define TPDU_CHECK_LEN(len, val, goto_on_fail) \
+#define TPDU_HDR_CHECK_LEN(len, val, goto_on_fail) \
 	do { \
 		if((len) < (val)) { \
-			debug_print(D_PROTO, "Truncated TPDU: len: %u < %u\n", (len), (val)); \
+			debug_print(D_PROTO, "TPDU header too short: len: %u < %u\n", (len), (val)); \
 			goto goto_on_fail; \
 		} \
 	} while(0)
@@ -319,6 +319,7 @@ typedef struct {
 } cotp_pdu_parse_result;
 
 static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+	ASSERT(buf != NULL);
 	cotp_pdu_parse_result r = { NULL, NULL, 0 };
 	NEW(cotp_pdu_t, pdu);
 	r.pdu = pdu;
@@ -328,6 +329,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 	bool final_pdu = false;
 	uint8_t *ptr = buf;
 	uint32_t remaining = len;
+	TPDU_HDR_CHECK_LEN(remaining, 4, fail);     // need at least LI + TPDU code + dst_ref
 
 	uint8_t li = ptr[0];
 	ptr++; remaining--;
@@ -365,7 +367,8 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 		case COTP_TPDU_CR:
 		case COTP_TPDU_CC:
 		case COTP_TPDU_DR:
-			TPDU_CHECK_LEN(remaining, 6, fail);
+			variable_part_offset = 6;
+			TPDU_HDR_CHECK_LEN(li, variable_part_offset, fail);
 			pdu->src_ref = extract_uint16_msbfirst(ptr + 3);
 
 			if(pdu->code == COTP_TPDU_DR) {
@@ -374,13 +377,12 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 				pdu->class_or_disc_reason = ptr[5] >> 4;    // protocol class
 				pdu->options = ptr[5] & 0xf;
 			}
-			variable_part_offset = 6;
 			final_pdu = true;
 			break;
 		case COTP_TPDU_ER:
-			TPDU_CHECK_LEN(remaining, 4, fail);
-			pdu->class_or_disc_reason = ptr[3];            // reject cause
 			variable_part_offset = 4;
+			TPDU_HDR_CHECK_LEN(li, variable_part_offset, fail);
+			pdu->class_or_disc_reason = ptr[3];            // reject cause
 			cotp_params = cotp_er_variable_part_params;
 			break;
 		case COTP_TPDU_DT:
@@ -389,59 +391,60 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 			// This assumption holds true only if the length of all options in the variable part
 			// is even (which is true for all options described in X.224 and Doc9705).
 			if(li & 1) {
-				TPDU_CHECK_LEN(remaining, 7, fail);
+				variable_part_offset = 7;
+				TPDU_HDR_CHECK_LEN(li, variable_part_offset, fail);
 				pdu->eot = (ptr[3] & 0x80) >> 7;
 				pdu->tpdu_seq = extract_uint32_msbfirst(ptr + 3) & 0x7fffffffu;
-				variable_part_offset = 7;
 				pdu->extended = true;
 			} else {    // normal format
-				TPDU_CHECK_LEN(remaining, 4, fail);
+				variable_part_offset = 4;
+				TPDU_HDR_CHECK_LEN(li, variable_part_offset, fail);
 				pdu->eot = (ptr[3] & 0x80) >> 7;
 				pdu->tpdu_seq = (uint32_t)(ptr[3] & 0x7f);
-				variable_part_offset = 4;
 				pdu->extended = false;
 			}
 			final_pdu = true;
 			break;
 		case COTP_TPDU_DC:
-			pdu->src_ref = extract_uint16_msbfirst(ptr + 3);
 			variable_part_offset = 5;
+			TPDU_HDR_CHECK_LEN(li, variable_part_offset, fail);
+			pdu->src_ref = extract_uint16_msbfirst(ptr + 3);
 			break;
 		case COTP_TPDU_AK:
 			if(li & 1) {
-				TPDU_CHECK_LEN(remaining, 9, fail);
+				variable_part_offset = 9;
+				TPDU_HDR_CHECK_LEN(li, variable_part_offset, fail);
 				pdu->tpdu_seq = extract_uint32_msbfirst(ptr + 3) & 0x7fffffffu;
 				pdu->credit = extract_uint16_msbfirst(ptr + 7);
-				variable_part_offset = 9;
 				pdu->extended = true;
 			} else {
-				TPDU_CHECK_LEN(remaining, 4, fail);
-				pdu->tpdu_seq = (uint32_t)(ptr[3] & 0x7f);
 				variable_part_offset = 4;
+				TPDU_HDR_CHECK_LEN(li, variable_part_offset, fail);
+				pdu->tpdu_seq = (uint32_t)(ptr[3] & 0x7f);
 				pdu->extended = false;
 			}
 			break;
 		case COTP_TPDU_EA:
 			if(li & 1) {
-				TPDU_CHECK_LEN(remaining, 7, fail);
-				pdu->tpdu_seq = extract_uint32_msbfirst(ptr + 3) & 0x7fffffffu;
 				variable_part_offset = 7;
+				TPDU_HDR_CHECK_LEN(li, variable_part_offset, fail);
+				pdu->tpdu_seq = extract_uint32_msbfirst(ptr + 3) & 0x7fffffffu;
 				pdu->extended = true;
 			} else {
-				TPDU_CHECK_LEN(remaining, 4, fail);
-				pdu->tpdu_seq = (uint32_t)(ptr[3] & 0x7f);
 				variable_part_offset = 4;
+				TPDU_HDR_CHECK_LEN(li, variable_part_offset, fail);
+				pdu->tpdu_seq = (uint32_t)(ptr[3] & 0x7f);
 				pdu->extended = false;
 			}
 			break;
 		case COTP_TPDU_RJ:
 			if(li & 1) {
-				TPDU_CHECK_LEN(remaining, 9, fail);
+				TPDU_HDR_CHECK_LEN(li, 9, fail);
 				pdu->tpdu_seq = extract_uint32_msbfirst(ptr + 3) & 0x7fffffffu;
 				pdu->credit = extract_uint16_msbfirst(ptr + 7);
 				pdu->extended = true;
 			} else {
-				TPDU_CHECK_LEN(remaining, 4, fail);
+				TPDU_HDR_CHECK_LEN(li, 4, fail);
 				pdu->tpdu_seq = (uint32_t)(ptr[3] & 0x7f);
 				pdu->extended = false;
 			}
@@ -450,7 +453,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 			debug_print(D_PROTO, "Unknown TPDU code 0x%02x\n", pdu->code);
 			goto fail;
 	}
-	if(variable_part_offset > 0 && remaining > variable_part_offset) {
+	if(variable_part_offset > 0 && li > variable_part_offset) {
 		pdu->variable_part_params = tlv_parse(ptr + variable_part_offset,
 				li - variable_part_offset, cotp_params, 1);
 		if(pdu->variable_part_params == NULL) {

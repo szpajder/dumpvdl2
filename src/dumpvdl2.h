@@ -51,9 +51,11 @@
 
 // long command line options
 #define __OPT_CENTERFREQ              1
-#define __OPT_DAILY                   2
-#define __OPT_HOURLY                  3
-#define __OPT_OUTPUT_FILE             4
+#define __OPT_STATION_ID              2
+#ifdef WITH_PROTOBUF_C
+#define __OPT_RAW_FRAMES_FILE         3
+#endif
+#define __OPT_OUTPUT                  4
 #define __OPT_IQ_FILE                 5
 #define __OPT_OVERSAMPLE              6
 #define __OPT_SAMPLE_FORMAT           7
@@ -80,7 +82,7 @@
 #define __OPT_STATSD                 14
 #endif
 #define __OPT_MSG_FILTER             15
-#define __OPT_OUTPUT_ACARS_PP        16
+#define __OPT_OUTPUT_QUEUE_HWM       16
 #define __OPT_UTC                    17
 #define __OPT_RAW_FRAMES             18
 #define __OPT_DUMP_ASN1              19
@@ -162,6 +164,28 @@
 #define D_OUTPUT                    (1 <<  9)
 #define D_MISC                      (1 << 31)
 
+// default output specification - decoded text output to stdout
+#define DEFAULT_OUTPUT "decoded:text:file:path=-"
+
+// output queue high water mark
+#define OUTPUT_QUEUE_HWM_DEFAULT 1000
+// high water mark disabled
+#define OUTPUT_QUEUE_HWM_NONE 0
+
+// help text pretty-printing constants and macros
+#define USAGE_INDENT_STEP 4
+#define USAGE_OPT_NAME_COLWIDTH 48
+#define IND(n) (n * USAGE_INDENT_STEP)
+
+// option name and description to be printed in the help text
+typedef struct{
+	char *name;
+	char *description;
+} option_descr_t;
+
+// maximum length of station_id parameter
+#define STATION_ID_LEN_MAX 255
+
 typedef struct {
 	char *token;
 	uint32_t value;
@@ -180,6 +204,8 @@ typedef struct {
 	uint32_t debug_filter;
 #endif
 	uint32_t msg_filter;
+	int output_queue_hwm;
+	char *station_id;
 	bool hourly, daily, utc, milliseconds;
 	bool output_raw_frames, dump_asn1, extended_header, decode_fragments;
 	bool ac_addrinfo_db_available;
@@ -275,7 +301,10 @@ enum input_types {
 #ifdef WITH_SOAPYSDR
 	INPUT_SOAPYSDR,
 #endif
-	INPUT_FILE,
+	INPUT_IQ_FILE,
+#ifdef WITH_PROTOBUF_C
+	INPUT_RAW_FRAMES_FILE,
+#endif
 	INPUT_UNDEF
 };
 enum sample_formats { SFMT_U8, SFMT_S16_LE, SFMT_UNDEF };
@@ -330,10 +359,6 @@ void bitstream_reset(bitstream_t *bs);
 void bitstream_destroy(bitstream_t *bs);
 uint32_t reverse(uint32_t v, int numbits);
 
-// decode.c
-void decode_vdl_frame(vdl2_channel_t *v);
-void *avlc_decoder_thread(void *arg);
-
 // demod.c
 extern float *sbuf;
 vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample);
@@ -353,12 +378,10 @@ uint16_t crc16_ccitt(uint8_t *data, uint32_t len, uint16_t crc_init);
 int rs_init();
 int rs_verify(uint8_t *data, int fec_octets);
 
-// output.c
-extern int pp_sockfd;
-int init_output_file(char *file);
-int init_pp(char *pp_addr);
-void output_raw(uint8_t *buf, uint32_t len);
-void output_proto_tree(la_proto_node *root);
+// input-raw_frame_file.c
+#ifdef WITH_PROTOBUF_C
+int input_raw_frames_file_process(char const *file);
+#endif
 
 // statsd.c
 #ifdef WITH_STATSD
@@ -402,10 +425,12 @@ uint16_t extract_uint16_msbfirst(uint8_t const * const data);
 uint32_t extract_uint32_msbfirst(uint8_t const * const data);
 void bitfield_format_text(la_vstring *vstr, uint8_t *buf, size_t len, dict const *d);
 octet_string_t *octet_string_new(void *buf, size_t len);
+octet_string_t *octet_string_copy(octet_string_t const * const ostring);
 int octet_string_parse(uint8_t *buf, size_t len, octet_string_t *result);
 void octet_string_format_text(la_vstring * const vstr, void const * const data, int indent);
 void octet_string_as_ascii_format_text(la_vstring * const vstr, void const * const data, int indent);
 void octet_string_with_ascii_format_text(la_vstring * const vstr, void const * const data, int indent);
+void octet_string_destroy(octet_string_t *ostring);
 size_t slurp_hexstring(char* string, uint8_t **buf);
 char *hexdump(uint8_t *data, size_t len);
 void append_hexdump_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int indent);
@@ -413,9 +438,10 @@ void unknown_proto_format_text(la_vstring * const vstr, void const * const data,
 la_proto_node *unknown_proto_pdu_new(void *buf, size_t len);
 
 // dumpvdl2.c
-extern bool do_exit;
+extern int do_exit;
 extern dumpvdl2_config_t Config;
 extern pthread_barrier_t demods_ready, samples_ready;
+void describe_option(char const *name, char const *description, int indent);
 
 // version.c
 extern char const * const DUMPVDL2_VERSION;

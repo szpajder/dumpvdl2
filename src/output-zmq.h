@@ -16,13 +16,12 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <stdint.h>
-#include <sys/time.h>               // struct timeval
-#include <libacars/libacars.h>      // la_proto_node
-#include <libacars/reassembly.h>    // la_reasm_ctx
-#include <libacars/vstring.h>       // la_vstring
 
-// acars.c
-la_proto_node *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type,
-		la_reasm_ctx *reasm_ctx, struct timeval rx_time);
-la_vstring *acars_format_pp(la_proto_node *tree);
+#ifndef _OUTPUT_ZMQ_H
+#define _OUTPUT_ZMQ_H
+
+#include "output-common.h"          // output_descriptor_t
+
+extern output_descriptor_t out_DEF_zmq;
+
+#endif // !_OUTPUT_ZMQ_H

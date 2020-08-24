@@ -240,7 +240,7 @@ TLV_FORMATTER(dlc_addr_list_format_text) {
 }
 
 TLV_DESTRUCTOR(dlc_list_destroy) {
-	la_list_free((la_list *)data);
+	la_list_free(data);
 }
 
 /***************************************************************************
@@ -296,7 +296,7 @@ TLV_FORMATTER(freq_support_list_format_text) {
 }
 
 TLV_DESTRUCTOR(freq_support_list_destroy) {
-	la_list_free((la_list *)data);
+	la_list_free(data);
 }
 
 /***************************************************************************

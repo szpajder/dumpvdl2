@@ -3,9 +3,15 @@ include(CheckIncludeFile)
 include(CheckSymbolExists)
 include(TestBigEndian)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 # strdup
 add_definitions(-D_XOPEN_SOURCE=600)
+
+# strsep on MacOS
+if(APPLE)
+	add_definitions(-D_DARWIN_C_SOURCE)
+endif()
 
 # silence warnings about obsolete _BSD_SOURCE in asn_system.h
 add_definitions(-D_DEFAULT_SOURCE)
@@ -93,6 +99,13 @@ option(SQLITE "Enable SQLite support for reading aircraft info from
 Basestation DB" ON)
 set(WITH_SQLITE FALSE)
 
+option(ZMQ "Enable support for ZeroMQ outputs" ON)
+set(WITH_ZMQ FALSE)
+
+option(RAW_BINARY_FORMAT "Support for binary format for raw AVLC
+frames storage (requires protobuf-c library)" ON)
+set(WITH_PROTOBUF_C FALSE)
+
 if(RTLSDR)
 	find_package(RTLSDR)
 	if(RTLSDR_FOUND)
@@ -167,6 +180,37 @@ if(SQLITE)
 	endif()
 endif()
 
+set(LIBZMQ_VER_MAJOR_MIN 3)
+set(LIBZMQ_VER_MINOR_MIN 2)
+set(LIBZMQ_VER_PATCH_MIN 0)
+set(LIBZMQ_VER_MIN
+	"${LIBZMQ_VER_MAJOR_MIN}.${LIBZMQ_VER_MINOR_MIN}.${LIBZMQ_VER_PATCH_MIN}")
+if(ZMQ)
+	pkg_check_modules(ZMQ libzmq>=${LIBZMQ_VER_MIN})
+	if(ZMQ_FOUND)
+		list(APPEND dumpvdl2_extra_sources output-zmq.c)
+		list(APPEND dumpvdl2_extra_libs ${ZMQ_LIBRARIES})
+		list(APPEND dumpvdl2_include_dirs ${ZMQ_INCLUDE_DIRS})
+		list(APPEND link_dirs ${ZMQ_LIBRARY_DIRS})
+		set(WITH_ZMQ TRUE)
+	endif()
+endif()
+
+if(RAW_BINARY_FORMAT)
+	pkg_check_modules(PROTOBUF_C libprotobuf-c>=1.3.0)
+	if(PROTOBUF_C_FOUND)
+		list(APPEND dumpvdl2_extra_sources
+			dumpvdl2.pb-c.c
+			fmtr-binary.c
+			input-raw_frames_file.c
+			)
+		list(APPEND dumpvdl2_extra_libs ${PROTOBUF_C_LIBRARIES})
+		list(APPEND dumpvdl2_include_dirs ${PROTOBUF_C_INCLUDE_DIRS})
+		list(APPEND link_dirs ${PROTOBUF_C_LIBRARY_DIRS})
+		set(WITH_PROTOBUF_C TRUE)
+	endif()
+endif()
+
 message(STATUS "dumpvdl2 configuration summary:")
 message(STATUS "- SDR drivers:")
 message(STATUS "  - librtsdr:\t\trequested: ${RTLSDR}, enabled: ${WITH_RTLSDR}")
@@ -177,6 +221,8 @@ message(STATUS "  - soapysdr:\t\trequested: ${SOAPYSDR}, enabled: ${WITH_SOAPYSD
 message(STATUS "- Other options:")
 message(STATUS "  - Etsy StatsD:\t\trequested: ${ETSY_STATSD}, enabled: ${WITH_STATSD}")
 message(STATUS "  - SQLite:\t\t\trequested: ${SQLITE}, enabled: ${WITH_SQLITE}")
+message(STATUS "  - ZeroMQ:\t\t\trequested: ${ZMQ}, enabled: ${WITH_ZMQ}")
+message(STATUS "  - Raw binary format:\trequested: ${RAW_BINARY_FORMAT}, enabled: ${WITH_PROTOBUF_C}")
 
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
@@ -210,10 +256,15 @@ add_library (dumpvdl2_base OBJECT
 	demod.c
 	dumpvdl2.c
 	esis.c
+	fmtr-pp_acars.c
+	fmtr-text.c
 	gs_data.c
 	icao.c
 	idrp.c
-	output.c
+	kvargs.c
+	output-common.c
+	output-file.c
+	output-udp.c
 	rs.c
 	tlv.c
 	util.c
