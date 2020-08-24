@@ -1,6 +1,26 @@
 # NEWS
 
-## Version 1.10.1 (2020-07-05):
+## Version 2.0.0 (2020-08-24)
+
+* Major overhaul of the output subsystem. The new architecture is modular,
+  multithreaded and can easily be extended with new output drivers. It also
+  allows using multiple outputs simultaneously.
+* New output configuration scheme. `--output-file` `--daily`, `--hourly` and
+  `--output-acars-pp` options have been removed. All outputs are now configured
+  using `--output` option. Adjusting command line parameters is therefore
+  required to run the program. Run `dumpvdl2 --output help` for instructions or
+  see "Output configuration" section in README.md for details and examples.
+* Support for streaming messages over network using UDP/IP.
+* Support for streaming messages over network using ZeroMQ publisher sockets.
+  Requires libzmq library.
+* Support for storing AVLC frames as raw data (without decoding) in binary
+  files for archiving purposes. File contents can then be decoded anytime
+  later, as if the frames were just received from the air. Requires protobuf-c
+  library.
+* Minor bugfixes.
+
+## Version 1.10.1 (2020-07-05)
+
 * Added support for SDRPlay API version 3 which is required for new devices
   (notably RSPdx). API version 2 is still supported, however it will probably
   be removed in a future release. It is possible to have both versions
@@ -15,7 +35,8 @@
 
 ## Version 1.10.0 (not released)
 
-## Version 1.9.0 (2020-02-13):
+## Version 1.9.0 (2020-02-13)
+
 * Added decoder for ISO 8650 / X.227 Association Control Service (ACSE).
 * Improved decoder for ISO 8327 / X.225 Session Protocol.
 * Restructured code of ATN applications decoder. The previous implementation
@@ -25,20 +46,23 @@
 * Enable debugging output from SDRPlay driver only if `--debug sdr` option is used.
 * Fix formatting of geo coordinates in ADS-C v2 messages.
 
-## Version 1.8.2 (2020-01-27):
+## Version 1.8.2 (2020-01-27)
+
 * Fix another crash opportunity due to missing sanity check on unparseable ACARS
   messages.
 * Fix ACARS output to Planeplotter. Only first three characters of Message
   Serial Number (MSN) field were sent instead of all four.
 
-## Version 1.8.1 (2020-01-23):
+## Version 1.8.1 (2020-01-23)
+
 * Fix a bug where an unparseable ACARS message could cause the program to crash
 * Add a little bit of optimization when compiling with debugging enabled. Debug
   builds are now compiled with -Og flag rather than -O0. This makes debugging on
   a Raspberry Pi feasible - when -O0 was used, CPU usage was often too high and
   caused loss of samples and reduced decoding success rate.
 
-## Version 1.8.0 (2020-01-16):
+## Version 1.8.0 (2020-01-16)
+
 * Support for ATN-B2 Automatic Dependent Surveillance-Contract (ADS-C)
   version  2.
 * Support for automatic reassembly of multiblock ACARS messages, MIAM file
@@ -73,14 +97,16 @@
 * Bug fixes, code cleanups.
 * libacars version 2.0.0 or later is now required to compile and run dumpvdl2.
 
-## Version 1.7.1 (2019-11-11):
+## Version 1.7.1 (2019-11-11)
+
 * Fixed an issue where a truncated or corrupted ICAO APDU could cause a
   crash in ASN.1 decoder.
 * Fixed an issue where NULL characters in XID attribute values could
   cause them do be printed partially. Any non-printable characters
   in octet strings printed as text are now replaced with periods.
 
-## Version 1.7.0 (2019-08-11):
+## Version 1.7.0 (2019-08-11)
+
 * Complete overhaul of output generation code. Messages are no longer printed
   directly into the output file, but rather stored in memory in a structured
   manner and serialized into an output string (still in memory), which is then
@@ -100,7 +126,8 @@
   diagnostic codes.
 * Minor bug fixes.
 
-## Version 1.6.0 (2019-01-19):
+## Version 1.6.0 (2019-01-19)
+
 * New build system based on cmake. Refer to README.md for new installation
   instructions.
 * FANS/1-A CPDLC, ADS-C and ACARS decoders have been removed. These features
@@ -115,7 +142,8 @@
   tested well. Feedback and bug reports are welcome.
 * Minor bugfixes
 
-## Version 1.5.0 (2018-11-17):
+## Version 1.5.0 (2018-11-17)
+
 * Sync with the latest SDRPlay API v. 2.13 which is now required to compile the
   program
 * Added support for SDRPlay RSPduo (with tuner selection, bias-T and notch
@@ -123,7 +151,8 @@
 * Added support for RSP1A features: Bias-T and broadcast notch filter
 * Minor bugfixes
 
-## Version 1.4.0 (2018-08-01):
+## Version 1.4.0 (2018-08-01)
+
 * Major improvements to the DSP and decoding engine - gives much better decoding
   success rate, especially for weak transmissions from distant aircraft.
 * Each VDL2 channel is now processed in a separate thread, which allows
@@ -145,13 +174,15 @@
 * Other minor bugfixes and improvements.
 * C11-capable compiler is now required to build the program.
 
-## Version 1.3.1 (2018-05-27):
+## Version 1.3.1 (2018-05-27)
+
 * Added `decpdlc` utility which decodes FANS-1/A CPDLC messages supplied from
   command line or from a file. Can be used to decode CPDLC traffic received via
   other media than VDL-2 (eg. ACARS, HFDL, SATCOM). Refer to "decpdlc" section in
   README.md for details.
 
-## Version 1.3.0 (2018-04-11):
+## Version 1.3.0 (2018-04-11)
+
 * Added decoder for FANS-1/A ADS-C messages
 * Added decoder for FANS-1/A CPDLC messages
 * Human-readable formatting of CPDLC and Context Management messages (if you
@@ -160,7 +191,8 @@
 * Added a sample systemd service file
 * Bug fixes
 
-## Version 1.2.0 (2018-01-01):
+## Version 1.2.0 (2018-01-01)
+
 * Better input signal filtering - reduced bit error rate, 10-50% more messages
   successfully decoded.
 * SDRPlay: major bugfixes in sample buffer handling code - shall now perform
@@ -174,7 +206,8 @@
   rpiv1, rpiv2, rpiv3.
 * Other minor bug fixes
 
-## Version 1.1.0 (2017-06-20):
+## Version 1.1.0 (2017-06-20)
+
 * Support for SDRPlay RSP1 and 2 using native binary API
 * Added dissector for ISO 8073/X.224 Connection-oriented Transport Protocol
 * Added dissectors for ICAO Context Management and CPDLC
@@ -183,7 +216,8 @@
 * Output formatting fixes
 * Bug fixes
 
-## Version 1.0.0 (2017-02-26):
+## Version 1.0.0 (2017-02-26)
+
 * First public release
 
 // vim: textwidth=80
