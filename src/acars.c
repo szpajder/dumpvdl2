@@ -132,3 +132,28 @@ la_vstring *acars_format_pp(la_proto_node *tree) {
 	XFREE(txt);
 	return vstr;
 }
+
+la_vstring *acars_format_json(la_proto_node *tree) {
+	la_proto_node *acars_node = la_proto_tree_find_acars(tree);
+	if(acars_node == NULL) {
+		return NULL;
+	}
+	la_acars_msg *msg = acars_node->data;
+	if(msg->err == true) {
+		return NULL;
+	}
+	char *txt = strdup(msg->txt);
+	for(char *ptr = txt; *ptr != 0; ptr++) {
+		if (*ptr == '\n' || *ptr == '\r') {
+			*ptr = ' ';
+		}
+	}
+	la_vstring *vstr = la_vstring_new();
+	la_vstring_append_sprintf(vstr,
+			"{ \"mode\": %1c, \"ident\": \"%7s\", \"ack\": \"%1c\", \"label\": \"%2s\", \"block_id\": \"%1c\", \"message_number\": \"%3s%c\", \"flight\": \"%6s\", \"text\": \"%s\" }",
+			msg->mode, msg->reg, msg->ack, msg->label, msg->block_id,
+			msg->msg_num, msg->msg_num_seq, msg->flight_id, txt);
+
+	XFREE(txt);
+	return vstr;
+}

@@ -35,7 +35,7 @@ typedef struct {
 } out_udp_ctx_t;
 
 static bool out_udp_supports_format(output_format_t format) {
-	return(format == OFMT_TEXT || format == OFMT_PP_ACARS);
+	return(format == OFMT_TEXT || format == OFMT_JSON || format == OFMT_PP_ACARS);
 }
 
 static void *out_udp_configure(kvargs *kv) {
@@ -105,6 +105,19 @@ static void out_udp_produce_pp_acars(out_udp_ctx_t *self, vdl2_msg_metadata *met
 	}
 }
 
+static void out_udp_produce_json(out_udp_ctx_t *self, vdl2_msg_metadata *metadata, octet_string_t *msg) {
+	UNUSED(metadata);
+	ASSERT(msg != NULL);
+	ASSERT(self->sockfd != 0);
+	if(msg->len < 2) {
+		return;
+	}
+	// Don't send the NULL terminator
+	if(write(self->sockfd, msg->buf, msg->len - 1) < 0) {
+		debug_print(D_OUTPUT, "output_udp: error while writing to the network socket: %s", strerror(errno));
+	}
+}
+
 static void out_udp_produce_text(out_udp_ctx_t *self, vdl2_msg_metadata *metadata, octet_string_t *msg) {
 	UNUSED(metadata);
 	ASSERT(msg != NULL);
@@ -123,6 +136,8 @@ static int out_udp_produce(void *selfptr, output_format_t format, vdl2_msg_metad
 	CAST_PTR(self, out_udp_ctx_t *, selfptr);
 	if(format == OFMT_TEXT) {
 		out_udp_produce_text(self, metadata, msg);
+	} else if(format == OFMT_JSON) {
+		out_udp_produce_json(self, metadata, msg);
 	} else if(format == OFMT_PP_ACARS) {
 		out_udp_produce_pp_acars(self, metadata, msg);
 	}
