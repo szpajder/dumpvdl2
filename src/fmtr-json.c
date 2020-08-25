@@ -56,14 +56,14 @@ static octet_string_t *fmtr_json_format_decoded_msg(vdl2_msg_metadata *metadata,
 	la_vstring *vstrAcars = acars_format_json(root);
 
 	la_vstring_append_sprintf(vstr,
-      "{ \"source_app\": \"dumpvdl2\", \"source_app_version\", \"%s\", \"timestamp\": \"%s\", \"frequency\": \"%.3f\", \"frame_pwr_dbfs\": \"%.1f\", \"nf_pwr_dbfs\": \"%.1f\", \"ppm_error\": \"%.1f\" ",
+      "{ \"source_app\": \"dumpvdl2\", \"source_app_version\", \"%s\", \"timestamp\": \"%s\", \"frequency\": \"%.3f\", \"frame_pwr_dbfs\": \"%.1f\", \"nf_pwr_dbfs\": \"%.1f\", \"ppm_error\": \"%.1f\"",
 			DUMPVDL2_VERSION, timestamp->str, (float)metadata->freq / 1e+6, metadata->frame_pwr_dbfs, metadata->nf_pwr_dbfs,
       metadata->ppm_error);
 	la_vstring_destroy(timestamp, true);
 
 	if(Config.extended_header == true) {
 		la_vstring_append_sprintf(vstr,
-        ", \"synd_weight\": %d, \"datalen_octets\": \"%u\", \"num_fec_corrections\": %d, \"idx\": \"%u\", ",
+        ", \"synd_weight\": %d, \"datalen_octets\": \"%u\", \"num_fec_corrections\": %d, \"idx\": \"%u\"",
 				metadata->synd_weight, metadata->datalen_octets, metadata->num_fec_corrections, metadata->idx);
 	}
 
