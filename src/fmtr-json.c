@@ -67,9 +67,13 @@ static octet_string_t *fmtr_json_format_decoded_msg(vdl2_msg_metadata *metadata,
 				metadata->synd_weight, metadata->datalen_octets, metadata->num_fec_corrections, metadata->idx);
 	}
 
-  la_vstring_append_sprintf(vstr,
-      "\"message\": %s }",
-      vstrAcars->str);
+	if(vstrAcars != NULL) {
+    la_vstring_append_sprintf(vstr,
+        "\"message\": %s",
+        vstrAcars->str);
+  }
+
+  la_vstring_append_sprintf(vstr, " }");
 
 	// vstr = la_proto_tree_format_text(vstr, root);
 	octet_string_t *ret = octet_string_new(vstr->str, vstr->len);
