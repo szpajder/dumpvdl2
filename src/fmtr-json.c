@@ -72,7 +72,7 @@ static octet_string_t *fmtr_json_format_decoded_msg(vdl2_msg_metadata *metadata,
         "\"acars\": %s }",
         vstrAcars->str);
   } else {
-    la_vstring_append_sprintf(vstr, " } ");
+    la_vstring_append_sprintf(vstr, "%s", " }");
   }
 
 	// vstr = la_proto_tree_format_text(vstr, root);
