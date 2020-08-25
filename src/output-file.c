@@ -178,8 +178,7 @@ static void out_file_produce_json(out_file_ctx_t *self, vdl2_msg_metadata *metad
 	ASSERT(msg != NULL);
 	ASSERT(self->fh != NULL);
 	UNUSED(metadata);
-	// Subtract 1 to cut off NULL terminator
-	fwrite(msg->buf, sizeof(uint8_t), msg->len - 1, self->fh);
+	fwrite(msg->buf, sizeof(uint8_t), msg->len, self->fh);
 	fputc('\n', self->fh);
 	fflush(self->fh);
 }
