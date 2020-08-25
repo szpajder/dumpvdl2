@@ -43,7 +43,7 @@ typedef struct {
 } out_file_ctx_t;
 
 static bool out_file_supports_format(output_format_t format) {
-	return(format == OFMT_TEXT || format == OFMT_BINARY);
+	return(format == OFMT_TEXT || format == OFMT_JSON || format == OFMT_BINARY);
 }
 
 static void *out_file_configure(kvargs *kv) {
@@ -174,6 +174,16 @@ static void out_file_produce_text(out_file_ctx_t *self, vdl2_msg_metadata *metad
 	fflush(self->fh);
 }
 
+static void out_file_produce_json(out_file_ctx_t *self, vdl2_msg_metadata *metadata, octet_string_t *msg) {
+	ASSERT(msg != NULL);
+	ASSERT(self->fh != NULL);
+	UNUSED(metadata);
+	// Subtract 1 to cut off NULL terminator
+	fwrite(msg->buf, sizeof(uint8_t), msg->len - 1, self->fh);
+	fputc('\n', self->fh);
+	fflush(self->fh);
+}
+
 static void out_file_produce_binary(out_file_ctx_t *self, vdl2_msg_metadata *metadata, octet_string_t *msg) {
 	ASSERT(msg != NULL);
 	ASSERT(self->fh != NULL);
@@ -200,6 +210,8 @@ static int out_file_produce(void *selfptr, output_format_t format, vdl2_msg_meta
 	}
 	if(format == OFMT_TEXT) {
 		out_file_produce_text(self, metadata, msg);
+	} else if(format == OFMT_JSON) {
+		out_file_produce_json(self, metadata, msg);
 	} else if(format == OFMT_BINARY) {
 		out_file_produce_binary(self, metadata, msg);
 	}
