@@ -48,6 +48,7 @@
 
 #define LFSR_IV 0x6959u
 
+bool decoder_thread_active;
 static GAsyncQueue *avlc_decoder_queue;
 
 static uint32_t const H[HDRFECLEN] = {
