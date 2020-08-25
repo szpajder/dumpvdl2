@@ -73,7 +73,7 @@ static octet_string_t *fmtr_json_format_decoded_msg(vdl2_msg_metadata *metadata,
 	EOL(vstr);
 
 	// vstr = la_proto_tree_format_text(vstr, root);
-	octet_string_t *ret = octet_string_new(vstr->str, vstr->len + 1);     // +1 for NULL terminator
+	octet_string_t *ret = octet_string_new(vstr->str, vstr->len);
 	la_vstring_destroy(vstr, false);
 	return ret;
 }
