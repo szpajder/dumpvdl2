@@ -143,11 +143,11 @@ la_vstring *acars_format_json(la_proto_node *tree) {
 		return NULL;
 	}
 	char *txt = strdup(msg->txt);
-	for(char *ptr = txt; *ptr != 0; ptr++) {
-		if (*ptr == '\n' || *ptr == '\r') {
-			*ptr = ' ';
-		}
-	}
+	// for(char *ptr = txt; *ptr != 0; ptr++) {
+	// 	if (*ptr == '\n' || *ptr == '\r') {
+	//    *ptr = ' ';
+	// 	}
+	// }
 	la_vstring *vstr = la_vstring_new();
 	la_vstring_append_sprintf(vstr,
 			"{ \"mode\": %1c, \"ident\": \"%7s\", \"ack\": \"%1c\", \"label\": \"%2s\", \"block_id\": \"%1c\", \"message_number\": \"%3s%c\", \"flight\": \"%6s\", \"text\": \"%s\" }",
