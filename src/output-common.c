@@ -23,6 +23,7 @@
 #include "dumpvdl2.h"           // NEW, ASSERT
 #include "output-common.h"
 
+#include "fmtr-json.h"          // fmtr_DEF_json
 #include "fmtr-text.h"          // fmtr_DEF_text
 #include "fmtr-pp_acars.h"      // fmtr_DEF_pp_acars
 #ifdef WITH_PROTOBUF_C
@@ -57,6 +58,7 @@ static dict const fmtr_intype_names[] = {
 };
 
 static dict const fmtr_descriptors[] = {
+	{ .id = OFMT_JSON,                  .val = &fmtr_DEF_json },
 	{ .id = OFMT_TEXT,                  .val = &fmtr_DEF_text },
 	{ .id = OFMT_PP_ACARS,              .val = &fmtr_DEF_pp_acars },
 #ifdef WITH_PROTOBUF_C
