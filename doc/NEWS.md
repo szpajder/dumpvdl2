@@ -1,5 +1,9 @@
 # NEWS
 
+## Version 2.0.1 (2020-08-25)
+
+* Fixed build failure with gcc version 10.
+
 ## Version 2.0.0 (2020-08-24)
 
 * Major overhaul of the output subsystem. The new architecture is modular,
