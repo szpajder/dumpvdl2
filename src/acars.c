@@ -146,12 +146,12 @@ la_vstring *acars_format_json(la_proto_node *tree) {
 	char *txt = strdup(msg->txt);
 	int newlen = 1;
 
-	for (char* p = txt; *p; p++)
+	for (char *p = txt; *p; p++)
   	newlen += (*p == '\n' || *p == '\r') ? 2 : 1;
 
 	char *newtxt = malloc(newlen);
 
-	for (char *p = str, *q = newtxt;; p++) {
+	for (char *p = txt, *q = newtxt;; p++) {
     if (*p == '\n')
     {
 			*q++ = '\\';
