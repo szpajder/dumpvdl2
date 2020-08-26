@@ -142,18 +142,37 @@ la_vstring *acars_format_json(la_proto_node *tree) {
 	if(msg->err == true) {
 		return NULL;
 	}
+
 	char *txt = strdup(msg->txt);
-	// for(char *ptr = txt; *ptr != 0; ptr++) {
-	// 	if (*ptr == '\n' || *ptr == '\r') {
-	//    *ptr = ' ';
-	// 	}
-	// }
+	int newlen = 1;
+
+	for (char* p = txt; *p; p++)
+  	newlen += (*p == '\n' || *p == '\r') ? 2 : 1;
+
+	char *newtxt = malloc(newlen);
+
+	for (char *p = str, *q = newtxt;; p++) {
+    if (*p == '\n')
+    {
+			*q++ = '\\';
+			*q++ = 'n';
+    }
+		else if (*p == '\r')
+		{
+			*q++ = '\\';
+			*q++ = 'r';
+		}
+    else if (!(*q++ = *p))
+			break;
+	}
+
 	la_vstring *vstr = la_vstring_new();
 	la_vstring_append_sprintf(vstr,
 			"{ \"mode\": %1c, \"ident\": \"%7s\", \"ack\": \"%1c\", \"label\": \"%2s\", \"block_id\": \"%1c\", \"message_number\": \"%3s%c\", \"flight\": \"%6s\", \"text\": \"%s\" }",
 			msg->mode, msg->reg, msg->ack, msg->label, msg->block_id,
-			msg->msg_num, msg->msg_num_seq, msg->flight_id, txt);
+			msg->msg_num, msg->msg_num_seq, msg->flight_id, newtxt);
 
 	XFREE(txt);
+	XFREE(newtxt);
 	return vstr;
 }
