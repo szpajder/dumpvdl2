@@ -35,8 +35,8 @@ static la_vstring *format_timestamp(struct timeval const tv) {
 	struct tm *tmstruct = (Config.utc == true ? gmtime(&tv.tv_sec) : localtime(&tv.tv_sec));
 
 	char tbuf[30], tzbuf[8];
-	strftime(tbuf, sizeof(tbuf), "%F %T", tmstruct);
-	strftime(tzbuf, sizeof(tzbuf), "%Z", tmstruct);
+	strftime(tbuf, sizeof(tbuf), "%FT%T", tmstruct);
+	strftime(tzbuf, sizeof(tzbuf), "-%z", tmstruct);
 
 	la_vstring *vstr = la_vstring_new();
 	la_vstring_append_sprintf(vstr, "%s", tbuf);
@@ -56,7 +56,7 @@ static octet_string_t *fmtr_json_format_decoded_msg(vdl2_msg_metadata *metadata,
 	la_vstring *vstrAcars = acars_format_json(root);
 
 	la_vstring_append_sprintf(vstr,
-      "{ \"source_app\": \"dumpvdl2\", \"source_app_version\", \"%s\", \"timestamp\": \"%s\", \"frequency\": \"%.3f\", \"frame_pwr_dbfs\": \"%.1f\", \"nf_pwr_dbfs\": \"%.1f\", \"ppm_error\": \"%.1f\"",
+      "{ \"timestamp\": \"%s\", \"frequency\": \"%.3f\", \"frame_pwr_dbfs\": \"%.1f\", \"nf_pwr_dbfs\": \"%.1f\", \"ppm_error\": \"%.1f\"",
 			DUMPVDL2_VERSION, timestamp->str, (float)metadata->freq / 1e+6, metadata->frame_pwr_dbfs, metadata->nf_pwr_dbfs,
       metadata->ppm_error);
 	la_vstring_destroy(timestamp, true);
