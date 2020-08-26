@@ -57,7 +57,7 @@ static octet_string_t *fmtr_json_format_decoded_msg(vdl2_msg_metadata *metadata,
 
 	la_vstring_append_sprintf(vstr,
       "{ \"timestamp\": \"%s\", \"frequency\": \"%.3f\", \"frame_pwr_dbfs\": \"%.1f\", \"nf_pwr_dbfs\": \"%.1f\", \"ppm_error\": \"%.1f\"",
-			DUMPVDL2_VERSION, timestamp->str, (float)metadata->freq / 1e+6, metadata->frame_pwr_dbfs, metadata->nf_pwr_dbfs,
+			timestamp->str, (float)metadata->freq / 1e+6, metadata->frame_pwr_dbfs, metadata->nf_pwr_dbfs,
       metadata->ppm_error);
 	la_vstring_destroy(timestamp, true);
 
