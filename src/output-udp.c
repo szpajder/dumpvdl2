@@ -35,7 +35,7 @@ typedef struct {
 } out_udp_ctx_t;
 
 static bool out_udp_supports_format(output_format_t format) {
-	return(format == OFMT_TEXT || format == OFMT_PP_ACARS);
+	return(format == OFMT_TEXT || format == OFMT_JSON || format == OFMT_PP_ACARS);
 }
 
 static void *out_udp_configure(kvargs *kv) {
@@ -121,7 +121,7 @@ static void out_udp_produce_text(out_udp_ctx_t *self, vdl2_msg_metadata *metadat
 static int out_udp_produce(void *selfptr, output_format_t format, vdl2_msg_metadata *metadata, octet_string_t *msg) {
 	ASSERT(selfptr != NULL);
 	CAST_PTR(self, out_udp_ctx_t *, selfptr);
-	if(format == OFMT_TEXT) {
+	if(format == OFMT_TEXT || format == OFMT_JSON) {
 		out_udp_produce_text(self, metadata, msg);
 	} else if(format == OFMT_PP_ACARS) {
 		out_udp_produce_pp_acars(self, metadata, msg);

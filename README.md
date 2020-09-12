@@ -30,6 +30,7 @@ Current stable version: 2.0.1 (released August 25, 2020)
 ## Supported output formats
 
 - Human readable text
+- JSON
 - Single-line ACARS format accepted by Planeplotter
 - Custom binary format (suitable for storing raw frames)
 
@@ -613,12 +614,12 @@ where:
 - `<output_format>` specifies how the data should be formatted before sending
   it to the output. The following formats are currently supported:
 
-  - `text` - format the message as human readable text
-  - `pp_acars` - format the message as a single-line ACARS format accepted
-    by Planeplotter via UDP. This format can only deal with ACARS messages,
-    hence messages of all other types will be filtered out (ie. not sent to this
-    particular output).
-  - `binary`- binary format suitable for archiving raw frames without decoding
+  - `text`
+  - `json`
+  - `pp_acars` - a single-line ACARS format accepted by Planeplotter via UDP.
+    This format can only deal with ACARS, hence messages of all other types will
+    be filtered out (ie. not sent to this particular output).
+  - `binary`- a format suitable for archiving raw frames without decoding
 
 - `<output_type>` specifies the type of the output. The following output types
   are supported:
@@ -666,9 +667,9 @@ A few more remarks about how output configuration works:
   error message on startup if you try that.
 
 - Not all combinations of `<output_format>` and `<output_type>` are supported.
-  For example, `udp` output only accepts `text` and `pp_acars` formats. If you
-  try using `binary` with that, you will get an `Unsupported format:output
-  combination: 'binary:udp'` error message on startup.
+  For example, `udp` output only accepts `text`, `json` and `pp_acars` formats.
+  If you try using `binary` with that, you will get an `Unsupported
+  format:output combination: 'binary:udp'` error message on startup.
 
 - If dumpvdl2 is run without any `--output` option, it creates a default output
   of `decoded:text:file:path=-` which causes decoded frames to be formatted as
@@ -681,7 +682,7 @@ A few more remarks about how output configuration works:
 
 Outputs data to a file.
 
-Supported formats: `text`, `binary`
+Supported formats: `text`, `json`, `binary`
 
 Parameters:
 
@@ -696,7 +697,7 @@ Parameters:
 
 Sends data to a remote host over network using UDP/IP.
 
-Supported formats: `pp_acars`, `text`
+Supported formats: `text`, `json`, `pp_acars`
 
 Parameters:
 
@@ -716,7 +717,7 @@ messages using `pp_acars` format.
 
 Opens a ZeroMQ publisher socket and sends data to it.
 
-Supported formats: `pp_acars`, `text`
+Supported formats: `text`, `json`, `pp_acars`
 
 Parameters:
 
@@ -1437,6 +1438,11 @@ using just a single `zmq` output. However the first scenario may come in handy
 if dumpvdl2 is running behind a firewall which does not permit connections from
 the outside. In this case if the output is to be sent to multiple consumers,
 each one must be configured as a separate `zmq` output.
+
+### I collect data in JSON format over network from several receivers. Is there a way to determine which receiver each frame came from?
+
+Use `--station-id <name>` option to set the name of the receiver. This name will
+be put into `station` attribute at top level of every JSON-formatted message.
 
 ### Can you add support for [*my favourite SDR receiver type*]?
 

@@ -28,6 +28,7 @@
 #ifdef WITH_PROTOBUF_C
 #include "fmtr-binary.h"        // fmtr_DEF_binary
 #endif
+#include "fmtr-json.h"          // fmtr_DEF_json
 
 #include "output-file.h"        // out_DEF_file
 #include "output-udp.h"         // out_DEF_udp
@@ -62,6 +63,7 @@ static dict const fmtr_descriptors[] = {
 #ifdef WITH_PROTOBUF_C
 	{ .id = OFMT_BINARY,                .val = &fmtr_DEF_binary },
 #endif
+	{ .id = OFMT_JSON,                  .val = &fmtr_DEF_json },
 	{ .id = OFMT_UNKNOWN,               .val = NULL }
 };
 
