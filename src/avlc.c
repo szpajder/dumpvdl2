@@ -25,6 +25,7 @@
 #include <glib.h>
 #include <libacars/libacars.h>      // la_type_descriptor, la_proto_node
 #include <libacars/vstring.h>       // la_vstring
+#include <libacars/json.h>
 #include <libacars/reassembly.h>    // la_reasm_ctx_new()
 #include "config.h"                 // IS_BIG_ENDIAN
 #include "dumpvdl2.h"
@@ -307,7 +308,7 @@ static void addrinfo_format_as_text(la_vstring *vstr, int indent, avlc_addr_t co
 	}
 }
 
-void avlc_format_text(la_vstring * const vstr, void const * const data, int indent) {
+static void avlc_format_text(la_vstring * const vstr, void const * const data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
@@ -359,7 +360,88 @@ void avlc_format_text(la_vstring * const vstr, void const * const data, int inde
 	}
 }
 
+static void addrinfo_format_as_json(la_vstring *vstr, avlc_addr_t const addr) {
+	if(IS_AIRCRAFT(addr)) {
+		if(Config.ac_addrinfo_db_available == true) {
+			ac_data_entry *ac = ac_data_entry_lookup(addr.a_addr.addr);
+			if(ac == NULL) {
+				return;
+			}
+			JSON_APPEND_STRING(vstr, "regnr", ac->registration);
+			if(Config.addrinfo_verbosity >= ADDRINFO_NORMAL) {
+				JSON_APPEND_STRING(vstr, "typecode", ac->icaotypecode);
+				JSON_APPEND_STRING(vstr, "opercode", ac->operatorflagcode);
+			}
+			if(Config.addrinfo_verbosity >= ADDRINFO_VERBOSE) {
+				JSON_APPEND_STRING(vstr, "manuf", ac->manufacturer);
+				JSON_APPEND_STRING(vstr, "model", ac->type);
+				JSON_APPEND_STRING(vstr, "owner", ac->registeredowners);
+			}
+		}
+	} else if(IS_GS(addr)) {
+		if(Config.gs_addrinfo_db_available == true) {
+			gs_data_entry *gs = gs_data_entry_lookup(addr.a_addr.addr);
+			if(gs == NULL) {
+				return;
+			}
+			JSON_APPEND_STRING(vstr, "airport_code", gs->airport_code);
+			if(Config.addrinfo_verbosity >= ADDRINFO_NORMAL) {
+				JSON_APPEND_STRING(vstr, "location", gs->location);
+			}
+			if(Config.addrinfo_verbosity >= ADDRINFO_VERBOSE) {
+				JSON_APPEND_STRING(vstr, "details", gs->details);
+			}
+		}
+	}
+}
+
+static void avlc_addr_format_as_json(la_vstring *vstr, char const *name, avlc_addr_t const addr,
+		int const ag_status) {
+	ASSERT(vstr != NULL);
+	ASSERT(name != NULL);
+
+	char addr_str[7];
+	sprintf(addr_str, "%06X", addr.a_addr.addr);
+	la_json_object_start(vstr, name);
+	la_json_append_string(vstr, "addr", addr_str);
+	la_json_append_string(vstr, "type", addrtype_descr[addr.a_addr.type]);
+	if(ag_status >= 0 && ag_status <= 1) {
+		la_json_append_string(vstr, "status", status_ag_descr[ag_status]);
+	}
+	addrinfo_format_as_json(vstr, addr);
+	la_json_object_end(vstr);
+}
+
+static void avlc_format_json(la_vstring * const vstr, void const * const data) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+
+	CAST_PTR(f, avlc_frame_t *, data);
+	// Air/Ground bit applies to the src addr, but it resides in the dst address field
+	avlc_addr_format_as_json(vstr, "src", f->src, f->dst.a_addr.status);
+	avlc_addr_format_as_json(vstr, "dst", f->dst, -1);
+
+	la_json_append_string(vstr, "cr", status_cr_descr[f->src.a_addr.status]);
+	if(IS_S(f->lcf)) {
+		la_json_append_char(vstr, "frame_type", 'S');
+		la_json_append_string(vstr, "cmd", S_cmd[f->lcf.S.sfunc]);
+		la_json_append_bool(vstr, "pf", (bool)(f->lcf.S.pf));
+		la_json_append_long(vstr, "rseq", f->lcf.S.recv_seq);
+	} else if(IS_U(f->lcf)) {
+		la_json_append_char(vstr, "frame_type", 'U');
+		la_json_append_string(vstr, "cmd", U_cmd[U_MFUNC(f->lcf)]);
+		la_json_append_bool(vstr, "pf", (bool)(U_PF(f->lcf)));
+	} else {    // IS_I == true
+		la_json_append_char(vstr, "frame_type", 'I');
+		la_json_append_long(vstr, "rseq", f->lcf.I.send_seq);
+		la_json_append_long(vstr, "sseq", f->lcf.I.recv_seq);
+		la_json_append_bool(vstr, "poll", (bool)(f->lcf.I.poll));
+	}
+}
+
 la_type_descriptor const proto_DEF_avlc_frame = {
 	.format_text = avlc_format_text,
+	.format_json = avlc_format_json,
+	.json_key = "avlc",
 	.destroy = NULL
 };

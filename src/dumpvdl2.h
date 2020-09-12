@@ -277,6 +277,12 @@ typedef struct {
 #define NEW(type, x) type *(x) = XCALLOC(1, sizeof(type))
 #define UNUSED(x) (void)(x)
 #define EOL(x) la_vstring_append_sprintf((x), "%s", "\n")
+#define JSON_APPEND_STRING(v, n, val) \
+	do { \
+		if((val) != NULL) { \
+			la_json_append_string((v), (n), (val)); \
+		} \
+	} while(0)
 
 typedef struct {
 	uint8_t *buf;
