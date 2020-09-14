@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <libacars/libacars.h>      // la_proto_node, la_proto_node_new()
 #include <libacars/vstring.h>       // la_vstring
+#include <libacars/json.h>
 #include "config.h"                 // IS_BIG_ENDIAN
 #include "dumpvdl2.h"               // dict_search()
 #include "tlv.h"
@@ -132,6 +133,17 @@ TLV_FORMATTER(xid_seq_format_text) {
 			label, *xidseq & 0x7, *xidseq >> 4);
 }
 
+TLV_FORMATTER(xid_seq_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	CAST_PTR(xidseq, uint8_t *, data);
+	la_json_object_start(ctx->vstr, label);
+	la_json_append_long(ctx->vstr, "seq", *xidseq & 0x7);
+	la_json_append_long(ctx->vstr, "retry", *xidseq >> 4);
+	la_json_object_end(ctx->vstr);
+}
+
 /***************************************************************************
  * Frequency, modulation
  **************************************************************************/
@@ -151,6 +163,15 @@ TLV_FORMATTER(modulation_support_format_text) {
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
 	bitfield_format_text(ctx->vstr, &mods_val, 1, modulations);
 	EOL(ctx->vstr);
+}
+
+TLV_FORMATTER(modulation_support_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	CAST_PTR(val, uint32_t *, data);
+	uint8_t mods_val = (uint8_t)(*val & 0xff);
+	bitfield_format_json(ctx->vstr, label, &mods_val, 1, modulations);
 }
 
 typedef struct {
@@ -201,6 +222,17 @@ TLV_FORMATTER(vdl2_frequency_format_text) {
 	EOL(ctx->vstr);
 }
 
+TLV_FORMATTER(vdl2_frequency_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	CAST_PTR(f, vdl2_frequency_t *, data);
+	la_json_object_start(ctx->vstr, label);
+	la_json_append_double(ctx->vstr, "freq_mhz", f->frequency);
+	bitfield_format_json(ctx->vstr, "modulation_support", &f->modulations, 1, modulations);
+	la_json_object_end(ctx->vstr);
+}
+
 /***************************************************************************
  * DLC addresses
  **************************************************************************/
@@ -220,6 +252,8 @@ TLV_PARSER(dlc_addr_list_parse) {
 	return addr_list;
 }
 
+// Appends anonymous DLC address to the current line.
+// Executed via la_list_foreach().
 static void append_dlc_addr_as_text(void const * const data, void *ctx) {
 	ASSERT(data != NULL);
 	ASSERT(ctx != NULL);
@@ -237,6 +271,34 @@ TLV_FORMATTER(dlc_addr_list_format_text) {
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:", label);
 	la_list_foreach(addr_list, append_dlc_addr_as_text, ctx->vstr);
 	EOL(ctx->vstr);
+}
+
+TLV_FORMATTER(dlc_addr_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	CAST_PTR(a, avlc_addr_t *, data);
+	char addr_str[7];
+	sprintf(addr_str, "%06X", a->a_addr.addr);
+	la_json_append_string(ctx->vstr, label, addr_str);
+}
+
+// Appends anonymous DLC address to the JSON list.
+// Executed via la_list_foreach().
+static void append_dlc_addr_as_json(void const * const data, void *ctx) {
+	ASSERT(data != NULL);
+	ASSERT(ctx != NULL);
+	CAST_PTR(vstr, la_vstring *, ctx);
+	dlc_addr_format_json(&(tlv_formatter_ctx_t){ .vstr = vstr }, NULL, data);
+}
+
+TLV_FORMATTER(dlc_addr_list_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	CAST_PTR(addr_list, la_list *, data);
+	la_json_array_start(ctx->vstr, label);
+	la_list_foreach(addr_list, append_dlc_addr_as_json, ctx->vstr);
+	la_json_array_end(ctx->vstr);
 }
 
 TLV_DESTRUCTOR(dlc_list_destroy) {
@@ -270,6 +332,8 @@ TLV_PARSER(freq_support_list_parse) {
 	return fslist;
 }
 
+// Appends frequency support list entry.
+// Executed via la_list_foreach().
 static void fs_entry_format_text(void const * const data, void *ctx_ptr) {
 	ASSERT(data != NULL);
 	ASSERT(ctx_ptr != NULL);
@@ -293,6 +357,27 @@ TLV_FORMATTER(freq_support_list_format_text) {
 	ctx->indent++;
 	la_list_foreach(fslist, fs_entry_format_text, ctx);
 	ctx->indent--;
+}
+
+static void fs_entry_format_json(void const * const data, void *ctx_ptr) {
+	ASSERT(data != NULL);
+	ASSERT(ctx_ptr != NULL);
+	CAST_PTR(ctx, tlv_formatter_ctx_t *, ctx_ptr);
+	CAST_PTR(fs, freq_support_t *, data);
+	la_json_object_start(ctx->vstr, NULL);
+	dlc_addr_format_json(ctx, "gs_addr", &fs->gs_addr);
+	vdl2_frequency_format_json(ctx, "gs_freq", &fs->freq);
+	la_json_object_end(ctx->vstr);
+}
+
+TLV_FORMATTER(freq_support_list_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	CAST_PTR(fslist, la_list *, data);
+	la_json_array_start(ctx->vstr, label);
+	la_list_foreach(fslist, fs_entry_format_json, ctx);
+	la_json_array_end(ctx->vstr);
 }
 
 TLV_DESTRUCTOR(freq_support_list_destroy) {
@@ -325,22 +410,23 @@ TLV_PARSER(lcr_cause_parse) {
 	return c;
 }
 
+static dict const lcr_causes[] = {
+	{ .id = 0x00, .val = "Bad local parameter" },
+	{ .id = 0x01, .val = "Out of link layer resources" },
+	{ .id = 0x02, .val = "Out of packet layer resources" },
+	{ .id = 0x03, .val = "Terrestrial network not available" },
+	{ .id = 0x04, .val = "Terrestrial network congestion" },
+	{ .id = 0x05, .val = "Cannot support autotune" },
+	{ .id = 0x06, .val = "Station cannot support initiating handoff" },
+	{ .id = 0x7f, .val = "Other unspecified local reason" },
+	{ .id = 0x80, .val = "Bad global parameter" },
+	{ .id = 0x81, .val = "Protocol violation" },
+	{ .id = 0x82, .val = "Ground system out of resources" },
+	{ .id = 0xff, .val = "Other unspecified system reason" },
+	{ .id = 0x00, .val = NULL }
+};
+
 TLV_FORMATTER(lcr_cause_format_text) {
-	static dict const lcr_causes[] = {
-		{ .id = 0x00, .val = "Bad local parameter" },
-		{ .id = 0x01, .val = "Out of link layer resources" },
-		{ .id = 0x02, .val = "Out of packet layer resources" },
-		{ .id = 0x03, .val = "Terrestrial network not available" },
-		{ .id = 0x04, .val = "Terrestrial network congestion" },
-		{ .id = 0x05, .val = "Cannot support autotune" },
-		{ .id = 0x06, .val = "Station cannot support initiating handoff" },
-		{ .id = 0x7f, .val = "Other unspecified local reason" },
-		{ .id = 0x80, .val = "Bad global parameter" },
-		{ .id = 0x81, .val = "Protocol violation" },
-		{ .id = 0x82, .val = "Ground system out of resources" },
-		{ .id = 0xff, .val = "Other unspecified system reason" },
-		{ .id = 0x00, .val = NULL }
-	};
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
@@ -355,6 +441,24 @@ TLV_FORMATTER(lcr_cause_format_text) {
 		octet_string_format_text(ctx->vstr, &c->additional_data, 0);
 		EOL(ctx->vstr);
 	}
+}
+
+TLV_FORMATTER(lcr_cause_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	CAST_PTR(c, lcr_cause_t *, data);
+	CAST_PTR(cause_descr, char *, dict_search(lcr_causes, c->cause));
+	la_json_object_start(ctx->vstr, label);
+	la_json_append_long(ctx->vstr, "cause_code", c->cause);
+	if(cause_descr != NULL) {
+		la_json_append_string(ctx->vstr, "cause_descr", cause_descr);
+	}
+	la_json_append_long(ctx->vstr, "delay", c->delay);
+	if(c->additional_data.buf != NULL) {
+		la_json_append_octet_string(ctx->vstr, "additional_data", c->additional_data.buf, c->additional_data.len);
+	}
+	la_json_object_end(ctx->vstr);
 }
 
 /***************************************************************************
@@ -411,6 +515,16 @@ TLV_FORMATTER(location_format_text) {
 	EOL(ctx->vstr);
 }
 
+TLV_FORMATTER(location_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	CAST_PTR(loc, location_t *, data);
+	la_json_object_start(ctx->vstr, label);
+	la_json_append_double(ctx->vstr, "lat", loc->lat);
+	la_json_append_double(ctx->vstr, "lon", loc->lon);
+	la_json_object_end(ctx->vstr);
+}
+
 /***************************************************************************
  * Aicraft location
  **************************************************************************/
@@ -442,6 +556,16 @@ TLV_FORMATTER(loc_alt_format_text) {
 	la_vstring_append_sprintf(ctx->vstr, " %d ft\n", la->alt);
 }
 
+TLV_FORMATTER(loc_alt_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	CAST_PTR(la, loc_alt_t *, data);
+	la_json_object_start(ctx->vstr, label);
+	location_format_json(ctx, "loc", &la->loc);
+	la_json_append_long(ctx->vstr, "alt", la->alt);
+	la_json_object_end(ctx->vstr);
+}
+
 /***************************************************************************
  * Public XID parameters
  **************************************************************************/
@@ -451,8 +575,10 @@ static const dict xid_pub_params[] = {
 		.id = 0x1,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Parameter set ID",
+			.json_key = "param_set_id",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_as_ascii_format_text,
+			.format_json = tlv_octet_string_as_ascii_format_json,
 			.destroy = NULL
 		}
 	},
@@ -460,8 +586,10 @@ static const dict xid_pub_params[] = {
 		.id = 0x2,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Procedure classes",
+			.json_key = "procedure_classes",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -469,8 +597,10 @@ static const dict xid_pub_params[] = {
 		.id = 0x3,
 		.val = &(tlv_type_descriptor_t){
 			.label = "HDLC options",
+			.json_key = "hdlc_options",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -478,8 +608,10 @@ static const dict xid_pub_params[] = {
 		.id = 0x5,
 		.val = &(tlv_type_descriptor_t){
 			.label = "N1-downlink",
+			.json_key = "n1_downlink",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -487,8 +619,10 @@ static const dict xid_pub_params[] = {
 		.id = 0x6,
 		.val = &(tlv_type_descriptor_t){
 			.label = "N1-uplink",
+			.json_key = "n1_uplink",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -496,8 +630,10 @@ static const dict xid_pub_params[] = {
 		.id = 0x7,
 		.val = &(tlv_type_descriptor_t){
 			.label = "k-downlink",
+			.json_key = "k_downlink",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -505,8 +641,10 @@ static const dict xid_pub_params[] = {
 		.id = 0x8,
 		.val = &(tlv_type_descriptor_t){
 			.label = "k-uplink",
+			.json_key = "k_uplink",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -514,8 +652,10 @@ static const dict xid_pub_params[] = {
 		.id = 0x9,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Timer T1_downlink",
+			.json_key = "timer_t1_downlink",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -523,8 +663,10 @@ static const dict xid_pub_params[] = {
 		.id = 0xA,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Counter N2",
+			.json_key = "counter_n2",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -532,8 +674,10 @@ static const dict xid_pub_params[] = {
 		.id = 0xB,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Timer T2",
+			.json_key = "timer_t2",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -552,8 +696,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0x00,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Parameter set ID",
+			.json_key = "param_set_id",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_as_ascii_format_text,
+			.format_json = tlv_octet_string_as_ascii_format_json,
 			.destroy = NULL
 		}
 	},
@@ -561,8 +707,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0x01,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Connection management",
+			.json_key = "conn_mgmt",
 			.parse = conn_mgmt_parse,
 			.format_text = conn_mgmt_format_text,
+			.format_json = tlv_uint_format_json,
 			.destroy = NULL
 		}
 	},
@@ -570,8 +718,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0x02,
 		.val = &(tlv_type_descriptor_t){
 			.label = "SQP",
+			.json_key = "sqp",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -579,8 +729,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0x03,
 		.val = &(tlv_type_descriptor_t){
 			.label = "XID sequencing",
+			.json_key = "xid_sequencing",
 			.parse = tlv_uint8_parse,
 			.format_text = xid_seq_format_text,
+			.format_json = xid_seq_format_json,
 			.destroy = NULL
 		}
 	},
@@ -588,17 +740,21 @@ static const dict xid_vdl_params[] = {
 		.id = 0x04,
 		.val = &(tlv_type_descriptor_t){
 			.label = "AVLC specific options",
+			.json_key = "avlc_specific_options",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
 	{
 		.id = 0x05,
 		.val = &(tlv_type_descriptor_t){
-			.label = "Expedited SN connection ",
+			.label = "Expedited SN connection",
+			.json_key = "expedited_sn_connection",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -606,8 +762,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0x06,
 		.val = &(tlv_type_descriptor_t){
 			.label = "LCR cause",
+			.json_key = "lcr_cause",
 			.parse = lcr_cause_parse,
 			.format_text = lcr_cause_format_text,
+			.format_json = lcr_cause_format_json,
 			.destroy = NULL
 		}
 	},
@@ -615,8 +773,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0x81,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Modulation support",
+			.json_key = "modulation_support",
 			.parse = tlv_uint8_parse,
 			.format_text = modulation_support_format_text,
+			.format_json = modulation_support_format_json,
 			.destroy = NULL
 		}
 	},
@@ -624,8 +784,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0x82,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Alternate ground stations",
+			.json_key = "alternate_ground_stations",
 			.parse = dlc_addr_list_parse,
 			.format_text = dlc_addr_list_format_text,
+			.format_json = dlc_addr_list_format_json,
 			.destroy = dlc_list_destroy
 		}
 	},
@@ -633,8 +795,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0x83,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Destination airport",
+			.json_key = "dst_airport",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_as_ascii_format_text,
+			.format_json = tlv_octet_string_as_ascii_format_json,
 			.destroy = NULL
 		}
 	},
@@ -642,8 +806,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0x84,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Aircraft location",
+			.json_key = "ac_location",
 			.parse = loc_alt_parse,
 			.format_text = loc_alt_format_text,
+			.format_json = loc_alt_format_json,
 			.destroy = NULL
 		}
 	},
@@ -651,8 +817,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0x40,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Autotune frequency",
+			.json_key = "autotune_freq",
 			.parse = vdl2_frequency_parse,
 			.format_text = vdl2_frequency_format_text,
+			.format_json = vdl2_frequency_format_json,
 			.destroy = NULL
 		}
 	},
@@ -660,8 +828,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0x41,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Replacement ground stations",
+			.json_key = "replacement_ground_stations",
 			.parse = dlc_addr_list_parse,
 			.format_text = dlc_addr_list_format_text,
+			.format_json = dlc_addr_list_format_json,
 			.destroy = dlc_list_destroy
 		}
 	},
@@ -669,8 +839,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0x42,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Timer T4",
+			.json_key = "timer_t4",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -678,8 +850,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0x43,
 		.val = &(tlv_type_descriptor_t){
 			.label = "MAC persistence",
+			.json_key = "mac_persistence",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -687,8 +861,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0x44,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Counter M1",
+			.json_key = "counter_m1",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -696,8 +872,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0x45,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Timer TM2",
+			.json_key = "timer_tm2",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -705,8 +883,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0x46,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Timer TG5",
+			.json_key = "timer_tg5",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -714,8 +894,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0x47,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Timer T3min",
+			.json_key = "timer_t3min",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -723,8 +905,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0x48,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Ground station address filter",
+			.json_key = "gs_addr_filter",
 			.parse = dlc_addr_list_parse,
 			.format_text = dlc_addr_list_format_text,
+			.format_json = dlc_addr_list_format_json,
 			.destroy = dlc_list_destroy
 		}
 	},
@@ -732,8 +916,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0x49,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Broadcast connection",
+			.json_key = "broadcast_connection",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -741,8 +927,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0xC0,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Frequency support list",
+			.json_key = "freq_support_list",
 			.parse = freq_support_list_parse,
 			.format_text = freq_support_list_format_text,
+			.format_json = freq_support_list_format_json,
 			.destroy = freq_support_list_destroy
 		}
 	},
@@ -750,8 +938,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0xC1,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Airport coverage",
+			.json_key = "airport_coverage",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_as_ascii_format_text,
+			.format_json = tlv_octet_string_as_ascii_format_json,
 			.destroy = NULL
 		}
 	},
@@ -759,8 +949,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0xC3,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Nearest airport ID",
+			.json_key = "nearest_airport_id",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_as_ascii_format_text,
+			.format_json = tlv_octet_string_as_ascii_format_json,
 			.destroy = NULL
 		}
 	},
@@ -768,8 +960,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0xC4,
 		.val = &(tlv_type_descriptor_t){
 			.label = "ATN router NETs",
+			.json_key = "atn_router_nets",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_with_ascii_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -777,8 +971,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0xC5,
 		.val = &(tlv_type_descriptor_t){
 			.label = "System mask",
+			.json_key = "system_mask",
 			.parse = dlc_addr_list_parse,
 			.format_text = dlc_addr_list_format_text,
+			.format_json = dlc_addr_list_format_json,
 			.destroy = dlc_list_destroy
 		}
 	},
@@ -786,8 +982,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0xC6,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Timer TG3",
+			.json_key = "timer_tg3",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -795,8 +993,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0xC7,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Timer TG4",
+			.json_key = "timer_tg4",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -804,8 +1004,10 @@ static const dict xid_vdl_params[] = {
 		.id = 0xC8,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Ground station location",
+			.json_key = "gs_location",
 			.parse = location_parse,
 			.format_text = location_format_text,
+			.format_json = location_format_json,
 			.destroy = NULL
 		}
 	},
@@ -923,6 +1125,23 @@ void xid_format_text(la_vstring * const vstr, void const * const data, int inden
 	tlv_list_format_text(vstr, msg->vdl_params, indent+1);
 }
 
+void xid_format_json(la_vstring * const vstr, void const * const data) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+
+	CAST_PTR(msg, xid_msg_t *, data);
+	la_json_append_bool(vstr, "err", msg->err);
+	if(msg->err == true) {
+		return;
+	}
+	la_json_append_string(vstr, "type", xid_names[msg->type].name);
+	la_json_append_string(vstr, "type_descr", xid_names[msg->type].description);
+	if(msg->pub_params) {
+		tlv_list_format_json(vstr, "pub_params", msg->pub_params);
+	}
+	tlv_list_format_json(vstr, "vdl_params", msg->vdl_params);
+}
+
 /***************************************************************************
  * Destructors
  **************************************************************************/
@@ -944,5 +1163,7 @@ void xid_destroy(void *data) {
 
 la_type_descriptor const proto_DEF_XID_msg = {
 	.format_text = xid_format_text,
+	.format_json = xid_format_json,
+	.json_key = "xid",
 	.destroy = xid_destroy
 };
