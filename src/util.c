@@ -26,6 +26,7 @@
 #include <libacars/libacars.h>      // la_proto_node, la_type_descriptor
 #include <libacars/vstring.h>       // la_vstring, la_isprintf_multiline_text()
 #include "dumpvdl2.h"
+#include "libacars/json.h"
 
 void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func) {
 	void *ptr = calloc(nmemb, size);
@@ -115,6 +116,26 @@ void bitfield_format_text(la_vstring *vstr, uint8_t *buf, size_t len, dict const
 	}
 }
 
+void bitfield_format_json(la_vstring *vstr, char const * const key, uint8_t *buf, size_t len, dict const *d) {
+	ASSERT(vstr != NULL);
+	ASSERT(d != NULL);
+	ASSERT(len <= sizeof(uint32_t));
+
+	uint32_t val = 0;
+	for(size_t i = 0; i < len; val = (val << 8) | buf[i++])
+		;
+	la_json_array_start(vstr, key);
+	if(val != 0) {
+		for(dict const *ptr = d; ptr->val != NULL; ptr++) {
+			if((val & (uint32_t)ptr->id) == (uint32_t)ptr->id) {
+				la_json_append_string(vstr, NULL, ptr->val);
+			}
+		}
+	}
+	la_json_array_end(vstr);
+	return;
+}
+
 uint32_t extract_uint32_msbfirst(uint8_t const * const data) {
 	ASSERT(data != NULL);
 	return ((uint32_t)data[0] << 24) | ((uint32_t)data[1] << 16) |
@@ -185,6 +206,16 @@ void octet_string_as_ascii_format_text(la_vstring * const vstr, void const * con
 	}
 	char *replaced = replace_nonprintable_chars(ostring->buf, ostring->len);
 	la_vstring_append_buffer(vstr, replaced, ostring->len);
+	XFREE(replaced);
+}
+
+void octet_string_as_ascii_format_json(la_vstring * const vstr, char const * const key,
+		octet_string_t const * const ostring) {
+	ASSERT(vstr != NULL);
+	ASSERT(ostring != NULL);
+
+	char *replaced = replace_nonprintable_chars(ostring->buf, ostring->len);
+	la_json_append_string(vstr, key, replaced);
 	XFREE(replaced);
 }
 
@@ -300,7 +331,7 @@ void append_hexdump_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int
 // la_proto_node routines for unknown protocols
 // which are to be serialized as octet string (hex dump or hex string)
 
-void unknown_proto_format_text(la_vstring * const vstr, void const * const data, int indent) {
+static void unknown_proto_format_text(la_vstring * const vstr, void const * const data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data != NULL);
 	ASSERT(indent >= 0);
@@ -316,8 +347,21 @@ void unknown_proto_format_text(la_vstring * const vstr, void const * const data,
 	EOL(vstr);
 }
 
+static void unknown_proto_format_json(la_vstring * const vstr, void const * const data) {
+	ASSERT(vstr != NULL);
+	ASSERT(data != NULL);
+
+	octet_string_t const *ostring = data;
+	if(ostring-> buf == NULL && ostring->len == 0) {
+		return;
+	}
+	la_json_append_octet_string(vstr, "data", ostring->buf, ostring->len);
+}
+
 la_type_descriptor const proto_DEF_unknown = {
 	.format_text = unknown_proto_format_text,
+	.format_json = unknown_proto_format_json,
+	.json_key = "unknown_proto",
 	.destroy = NULL
 };
 
