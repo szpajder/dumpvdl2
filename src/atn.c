@@ -17,6 +17,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "libacars/list.h"  // la_list
+#include "libacars/json.h"
 #include "dumpvdl2.h"       // dict
 #include "tlv.h"
 #include "config.h"         // IS_BIG_ENDIAN
@@ -100,27 +101,28 @@ TLV_PARSER(atn_traffic_type_parse) {
 	return t;
 }
 
-TLV_FORMATTER(atn_traffic_type_format_text) {
-	static dict const traffic_categories[] = {
-		{ .id = CAT_ATSC, .val = "ATSC" },
-		{ .id = CAT_AOC, .val = "AOC" },
-		{ .id = CAT_NONE, .val = "none" },
-		{ .id = 0, .val = NULL }
-	};
-	static dict const traffic_types[] = {
-		{ .id = TT_ATN_OPER, .val = "ATN operational" },
-		{ .id = TT_ATN_ADMIN, .val = "ATN administrative" },
-		{ .id = TT_ATN_SYS_MGMT, .val = "ATN system management" },
-		{ .id = 0, .val = NULL }
-	};
+static dict const atn_sec_tag_traffic_categories[] = {
+	{ .id = CAT_ATSC, .val = "ATSC" },
+	{ .id = CAT_AOC, .val = "AOC" },
+	{ .id = CAT_NONE, .val = "none" },
+	{ .id = 0, .val = NULL }
+};
 
+static dict const atn_sec_tag_traffic_types[] = {
+	{ .id = TT_ATN_OPER, .val = "ATN operational" },
+	{ .id = TT_ATN_ADMIN, .val = "ATN administrative" },
+	{ .id = TT_ATN_SYS_MGMT, .val = "ATN system management" },
+	{ .id = 0, .val = NULL }
+};
+
+TLV_FORMATTER(atn_traffic_type_format_text) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
 	CAST_PTR(t, tag_atn_traffic_type_t *, data);
-	CAST_PTR(type, char *, dict_search(traffic_types, t->type));
-	CAST_PTR(category, char *, dict_search(traffic_categories, t->category));
+	CAST_PTR(type, char *, dict_search(atn_sec_tag_traffic_types, t->type));
+	CAST_PTR(category, char *, dict_search(atn_sec_tag_traffic_categories, t->category));
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	ctx->indent++;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "Type: %s\n", type ? type : "unknown");
@@ -128,6 +130,23 @@ TLV_FORMATTER(atn_traffic_type_format_text) {
 	// TODO: stringify all policies according to 9705, Table 5.6-1
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "Route policy: 0x%02x\n", t->policy);
 	ctx->indent--;
+}
+
+TLV_FORMATTER(atn_traffic_type_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	CAST_PTR(t, tag_atn_traffic_type_t *, data);
+	CAST_PTR(type, char *, dict_search(atn_sec_tag_traffic_types, t->type));
+	CAST_PTR(category, char *, dict_search(atn_sec_tag_traffic_categories, t->category));
+	la_json_object_start(ctx->vstr, label);
+	la_json_append_long(ctx->vstr, "type_id", t->type);
+	JSON_APPEND_STRING(ctx->vstr, "type_name", type);
+	la_json_append_long(ctx->vstr, "category_id", t->category);
+	JSON_APPEND_STRING(ctx->vstr, "category_name", category);
+	// TODO: stringify all policies according to 9705, Table 5.6-1
+	la_json_append_long(ctx->vstr, "route_policy", t->policy);
+	la_json_object_end(ctx->vstr);
 }
 
 typedef struct {
@@ -146,22 +165,22 @@ TLV_PARSER(atn_subnet_type_parse) {
 	return t;
 }
 
-TLV_FORMATTER(atn_subnet_type_format_text) {
-	static dict const subnet_types[] = {
-		{ .id = 1, .val = "Mode S" },
-		{ .id = 2, .val = "VDL" },
-		{ .id = 3, .val = "AMSS" },
-		{ .id = 4, .val = "Gatelink" },
-		{ .id = 5, .val = "HF" },
-		{ .id = 0, .val = NULL }
-	};
+static dict const atn_subnet_types[] = {
+	{ .id = 1, .val = "Mode S" },
+	{ .id = 2, .val = "VDL" },
+	{ .id = 3, .val = "AMSS" },
+	{ .id = 4, .val = "Gatelink" },
+	{ .id = 5, .val = "HF" },
+	{ .id = 0, .val = NULL }
+};
 
+TLV_FORMATTER(atn_subnet_type_format_text) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
 	CAST_PTR(t, tag_subnet_type_t *, data);
-	CAST_PTR(subnet, char *, dict_search(subnet_types, t->subnet));
+	CAST_PTR(subnet, char *, dict_search(atn_subnet_types, t->subnet));
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	ctx->indent++;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "Subnet: %s\n", subnet ? subnet : "unknown");
@@ -173,6 +192,20 @@ TLV_FORMATTER(atn_subnet_type_format_text) {
 	}
 	EOL(ctx->vstr);
 	ctx->indent--;
+}
+
+TLV_FORMATTER(atn_subnet_type_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	CAST_PTR(t, tag_subnet_type_t *, data);
+	CAST_PTR(subnet, char *, dict_search(atn_subnet_types, t->subnet));
+	la_json_object_start(ctx->vstr, label);
+	la_json_append_long(ctx->vstr, "subnet_id", t->subnet);
+	la_json_append_string(ctx->vstr, "subnet_name", subnet);
+	bitfield_format_json(ctx->vstr, "permitted_traffic_types", &t->permitted_traffic_types,
+			1, atn_traffic_types);
+	la_json_object_end(ctx->vstr);
 }
 
 TLV_FORMATTER(atn_supported_traffic_classes_format_text) {
@@ -190,23 +223,43 @@ TLV_FORMATTER(atn_supported_traffic_classes_format_text) {
 	EOL(ctx->vstr);
 }
 
+TLV_FORMATTER(atn_supported_traffic_classes_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	CAST_PTR(t, uint8_t *, data);
+	bitfield_format_json(ctx->vstr, label, t, 1, atsc_traffic_classes);
+}
+
+static dict const atn_security_classes[] = {
+	{ .id = 1, .val = "unclassified" },
+	{ .id = 2, .val = "restricted" },
+	{ .id = 3, .val = "confidential" },
+	{ .id = 4, .val = "secret" },
+	{ .id = 5, .val = "top secret" },
+	{ .id = 0, .val = NULL }
+};
+
 TLV_FORMATTER(atn_sec_class_format_text) {
-	static dict const security_classes[] = {
-		{ .id = 1, .val = "unclassified" },
-		{ .id = 2, .val = "restricted" },
-		{ .id = 3, .val = "confidential" },
-		{ .id = 4, .val = "secret" },
-		{ .id = 5, .val = "top secret" },
-		{ .id = 0, .val = NULL }
-	};
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
 	CAST_PTR(t, uint8_t *, data);
-	CAST_PTR(class, char *, dict_search(security_classes, *t));
+	CAST_PTR(class, char *, dict_search(atn_security_classes, *t));
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %s\n",
 			label, class ? class : "unassigned");
+}
+
+TLV_FORMATTER(atn_sec_class_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	CAST_PTR(t, uint8_t *, data);
+	CAST_PTR(class, char *, dict_search(atn_security_classes, *t));
+	la_json_object_start(ctx->vstr, label);
+	la_json_append_long(ctx->vstr, "class_id", *t);
+	la_json_append_string(ctx->vstr, "class_name", class);
+	la_json_object_end(ctx->vstr);
 }
 
 dict const atn_security_tags[] = {
@@ -214,8 +267,10 @@ dict const atn_security_tags[] = {
 		.id = 0x3,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Security classification",
+			.json_key = "security_classification",
 			.parse = tlv_uint8_parse,
 			.format_text = atn_sec_class_format_text,
+			.format_json = atn_sec_class_format_json,
 			.destroy = NULL
 		}
 	},
@@ -223,8 +278,10 @@ dict const atn_security_tags[] = {
 		.id = 0x5,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Subnetwork type",
+			.json_key = "subnet_type",
 			.parse = atn_subnet_type_parse,
 			.format_text = atn_subnet_type_format_text,
+			.format_json = atn_subnet_type_format_json,
 			.destroy = NULL
 		}
 	},
@@ -234,8 +291,10 @@ dict const atn_security_tags[] = {
 		.id = 0x6,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Supported ATSC classes",
+			.json_key = "supported_atsc_classes",
 			.parse = tlv_uint8_parse,
 			.format_text = atn_supported_traffic_classes_format_text,
+			.format_json = atn_supported_traffic_classes_format_json,
 			.destroy = NULL
 		}
 	},
@@ -243,8 +302,10 @@ dict const atn_security_tags[] = {
 		.id = 0x7,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Supported ATSC classes",
+			.json_key = "supported_atsc_classes",
 			.parse = tlv_uint8_parse,
 			.format_text = atn_supported_traffic_classes_format_text,
+			.format_json = atn_supported_traffic_classes_format_json,
 			.destroy = NULL
 		}
 	},
@@ -252,8 +313,10 @@ dict const atn_security_tags[] = {
 		.id = 0xf,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Traffic type",
+			.json_key = "traffic_type",
 			.parse = atn_traffic_type_parse,
 			.format_text = atn_traffic_type_format_text,
+			.format_json = atn_traffic_type_format_json,
 			.destroy = NULL
 		}
 	},
@@ -355,6 +418,19 @@ TLV_FORMATTER(atn_sec_label_format_text) {
 	}
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "%s:\n", "Info");
 	tlv_list_format_text(ctx->vstr, l->sec_info, ctx->indent+2);
+}
+
+TLV_FORMATTER(atn_sec_label_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	CAST_PTR(l, atn_sec_label_t *, data);
+	la_json_object_start(ctx->vstr, label);
+	la_json_append_octet_string(ctx->vstr, "reg_id", l->sec_rid.buf, l->sec_rid.len);
+	if(l->sec_info != NULL) {
+		tlv_list_format_json(ctx->vstr, "sec_info", l->sec_info);
+	}
+	la_json_object_end(ctx->vstr);
 }
 
 TLV_DESTRUCTOR(atn_sec_label_destroy) {
