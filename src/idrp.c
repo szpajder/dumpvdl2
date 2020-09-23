@@ -23,6 +23,7 @@
 #include <arpa/inet.h>
 #include <libacars/libacars.h>  // la_proto_node
 #include <libacars/vstring.h>   // la_vstring
+#include <libacars/json.h>
 #include <libacars/list.h>      // la_list
 #include "idrp.h"
 #include "dumpvdl2.h"
@@ -175,6 +176,17 @@ TLV_FORMATTER(idrp_route_separator_format_text) {
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Local preference: %u\n", s->localpref);
 }
 
+TLV_FORMATTER(idrp_route_separator_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	CAST_PTR(s, idrp_route_separator_t *, data);
+	la_json_object_start(ctx->vstr, label);
+	la_json_append_long(ctx->vstr, "id", s->id);
+	la_json_append_long(ctx->vstr, "localpref", s->localpref);
+	la_json_object_end(ctx->vstr);
+}
+
 /*******************
  * RD_PATH
  *******************/
@@ -219,6 +231,20 @@ TLV_FORMATTER(rd_path_segment_format_text) {
 	ctx->indent--;
 }
 
+TLV_FORMATTER(rd_path_segment_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	CAST_PTR(rdi_list, la_list *, data);
+	la_json_array_start(ctx->vstr, label);
+	while(rdi_list != NULL) {
+		octet_string_t *ostring = rdi_list->data;
+		la_json_append_octet_string(ctx->vstr, NULL, ostring->buf, ostring->len);
+		rdi_list = la_list_next(rdi_list);
+	}
+	la_json_array_end(ctx->vstr);
+}
+
 TLV_DESTRUCTOR(rd_path_segment_destroy) {
 	la_list_free(data);
 }
@@ -228,8 +254,10 @@ static dict const rd_path_seg_types[] = {
 		.id = 1,
 		.val = &(tlv_type_descriptor_t){
 			.label = "RD_SET",
+			.json_key = "rd_set",
 			.parse = rd_path_segment_parse,
 			.format_text = rd_path_segment_format_text,
+			.format_json = rd_path_segment_format_json,
 			.destroy = rd_path_segment_destroy
 		}
 	},
@@ -237,8 +265,10 @@ static dict const rd_path_seg_types[] = {
 		.id = 2,
 		.val = &(tlv_type_descriptor_t){
 			.label = "RD_SEQ",
+			.json_key = "rd_seq",
 			.parse = rd_path_segment_parse,
 			.format_text = rd_path_segment_format_text,
+			.format_json = rd_path_segment_format_json,
 			.destroy = rd_path_segment_destroy
 		}
 	},
@@ -246,8 +276,10 @@ static dict const rd_path_seg_types[] = {
 		.id = 3,
 		.val = &(tlv_type_descriptor_t){
 			.label = "ENTRY_SEQ",
+			.json_key = "entry_seq",
 			.parse = rd_path_segment_parse,
 			.format_text = rd_path_segment_format_text,
+			.format_json = rd_path_segment_format_json,
 			.destroy = rd_path_segment_destroy
 		}
 	},
@@ -255,8 +287,10 @@ static dict const rd_path_seg_types[] = {
 		.id = 4,
 		.val = &(tlv_type_descriptor_t){
 			.label = "ENTRY_SET",
+			.json_key = "entry_set",
 			.parse = rd_path_segment_parse,
 			.format_text = rd_path_segment_format_text,
+			.format_json = rd_path_segment_format_json,
 			.destroy = rd_path_segment_destroy
 		}
 	},
@@ -281,6 +315,14 @@ TLV_FORMATTER(rd_path_format_text) {
 	tlv_list_format_text(ctx->vstr, rd_path, ctx->indent+1);
 }
 
+TLV_FORMATTER(rd_path_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	CAST_PTR(rd_path, la_list *, data);
+	tlv_list_format_json(ctx->vstr, label, rd_path);
+}
+
 TLV_DESTRUCTOR(rd_path_destroy) {
 	tlv_list_destroy(data);
 }
@@ -290,8 +332,10 @@ static dict const path_attributes[] = {
 		.id = 1,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Route",
+			.json_key = "route",
 			.parse = idrp_route_separator_parse,
 			.format_text = idrp_route_separator_format_text,
+			.format_json = idrp_route_separator_format_json,
 			.destroy = NULL
 		}
 	},
@@ -299,8 +343,10 @@ static dict const path_attributes[] = {
 		.id = 2,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Ext. info",
+			.json_key = "ext_info",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -308,8 +354,10 @@ static dict const path_attributes[] = {
 		.id = 3,
 		.val = &(tlv_type_descriptor_t){
 			.label = "RD path",
+			.json_key = "rd_path",
 			.parse = rd_path_parse,
 			.format_text = rd_path_format_text,
+			.format_json = rd_path_format_json,
 			.destroy = rd_path_destroy
 		}
 	},
@@ -317,8 +365,10 @@ static dict const path_attributes[] = {
 		.id = 4,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Next hop",
+			.json_key = "next_hop",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -326,8 +376,10 @@ static dict const path_attributes[] = {
 		.id = 5,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Distribute list inclusions",
+			.json_key = "distribute_list_inclusions",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -335,8 +387,10 @@ static dict const path_attributes[] = {
 		.id = 6,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Distribute list exclusions",
+			.json_key = "distribute_list_exclusions",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -344,8 +398,10 @@ static dict const path_attributes[] = {
 		.id = 7,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Multi exit discriminator",
+			.json_key = "multi_exit_discriminator",
 			.parse = tlv_uint8_parse,
 			.format_text = tlv_uint_format_text,
+			.format_json = tlv_uint_format_json,
 			.destroy = NULL
 		}
 	},
@@ -353,8 +409,10 @@ static dict const path_attributes[] = {
 		.id = 8,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Transit delay",
+			.json_key = "transit_delay",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -362,8 +420,10 @@ static dict const path_attributes[] = {
 		.id = 9,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Residual error",
+			.json_key = "residual_error",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -371,8 +431,10 @@ static dict const path_attributes[] = {
 		.id = 10,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Expense",
+			.json_key = "expense",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -380,8 +442,10 @@ static dict const path_attributes[] = {
 		.id = 11,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Locally defined QoS",
+			.json_key = "locally_defined_qos",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -389,8 +453,10 @@ static dict const path_attributes[] = {
 		.id = 12,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Hierarchical recording",
+			.json_key = "hierarchical_recording",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -398,8 +464,10 @@ static dict const path_attributes[] = {
 		.id = 13,
 		.val = &(tlv_type_descriptor_t){
 			.label = "RD hop count",
+			.json_key = "rd_hop_count",
 			.parse = tlv_uint8_parse,
 			.format_text = tlv_uint_format_text,
+			.format_json = tlv_uint_format_json,
 			.destroy = NULL
 		}
 	},
@@ -407,8 +475,10 @@ static dict const path_attributes[] = {
 		.id = 14,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Security",
+			.json_key = "security",
 			.parse = atn_sec_label_parse,
 			.format_text = atn_sec_label_format_text,
+			.format_json = atn_sec_label_format_json,
 			.destroy = atn_sec_label_destroy
 		}
 	},
@@ -416,8 +486,10 @@ static dict const path_attributes[] = {
 		.id = 15,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Capacity",
+			.json_key = "capacity",
 			.parse = tlv_uint8_parse,
 			.format_text = tlv_uint_format_text,
+			.format_json = tlv_uint_format_json,
 			.destroy = NULL
 		}
 	},
@@ -425,8 +497,10 @@ static dict const path_attributes[] = {
 		.id = 16,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Priority",
+			.json_key = "priority",
 			.parse = tlv_uint8_parse,
 			.format_text = tlv_uint_format_text,
+			.format_json = tlv_uint_format_json,
 			.destroy = NULL
 		}
 	},
@@ -449,6 +523,19 @@ TLV_FORMATTER(idrp_attr_no_value_format_text) {
 		LA_ISPRINTF(ctx->vstr, ctx->indent, "%s\n", td->label);
 	} else {
 		LA_ISPRINTF(ctx->vstr, ctx->indent, "Unknown attribute %u\n", *typecode);
+	}
+}
+
+TLV_FORMATTER(idrp_attr_no_value_format_json) {
+	UNUSED(label);
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	CAST_PTR(typecode, uint8_t *, data);
+	la_json_append_long(ctx->vstr, "attr_type", *typecode);
+	CAST_PTR(td, tlv_type_descriptor_t *, dict_search(path_attributes, *typecode));
+	if(td != NULL) {
+		la_json_append_string(ctx->vstr, "attr_name", td->json_key);
 	}
 }
 
@@ -547,6 +634,15 @@ TLV_FORMATTER(idrp_ribatt_format_text) {
 	tlv_list_format_text(ctx->vstr, r->attr_list, ctx->indent+1);
 }
 
+TLV_FORMATTER(idrp_ribatt_format_json) {
+	UNUSED(label);
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	CAST_PTR(r, idrp_ribatt_t *, data);
+	tlv_list_format_json(ctx->vstr, label, r->attr_list);
+}
+
 TLV_DESTRUCTOR(idrp_ribatt_destroy) {
 	if(data == NULL) {
 		return;
@@ -559,15 +655,19 @@ TLV_DESTRUCTOR(idrp_ribatt_destroy) {
 // A pseudo-type which only prints its label
 static tlv_type_descriptor_t tlv_DEF_idrp_attr_no_value = {
 	.label = "",
+	.json_key = "",
 	.parse = NULL,
 	.format_text = idrp_attr_no_value_format_text,
+	.format_json = idrp_attr_no_value_format_json,
 	.destroy = NULL
 };
 
 static tlv_type_descriptor_t tlv_DEF_idrp_ribatt = {
 	.label = "",
+	.json_key = "ribatt",
 	.parse = NULL,
 	.format_text = idrp_ribatt_format_text,
+	.format_json = idrp_ribatt_format_json,
 	.destroy = idrp_ribatt_destroy
 };
 
@@ -900,6 +1000,35 @@ print_err_payload:
 	}
 }
 
+static void idrp_error_format_json(la_vstring *vstr, idrp_pdu_t *pdu) {
+	ASSERT(vstr != NULL);
+	ASSERT(pdu != NULL);
+
+	la_json_append_long(vstr, "err_code", pdu->err_code);
+	CAST_PTR(err, bispdu_err_t *, dict_search(bispdu_errors, pdu->err_code));
+	if(err != NULL) {
+		la_json_append_string(vstr, "err_descr", err->descr);
+	} else {
+		goto print_err_payload;
+	}
+	if(pdu->err_code == BISPDU_ERR_FSM) {   // special case
+		la_json_append_long(vstr, "err_fsm_bispdu_type", pdu->err_fsm_bispdu_type);
+		la_json_append_long(vstr, "err_fsm_state", pdu->err_fsm_state);
+		CAST_PTR(bispdu_name, char *, dict_search(bispdu_types, pdu->err_fsm_bispdu_type));
+		CAST_PTR(fsm_state_name, char *, dict_search(FSM_states, pdu->err_fsm_state));
+		JSON_APPEND_STRING(vstr, "err_fsm_bispdu_name", bispdu_name);
+		JSON_APPEND_STRING(vstr, "err_fsm_state_descr", fsm_state_name);
+	} else {
+		la_json_append_long(vstr, "err_subcode", pdu->err_subcode);
+		CAST_PTR(subcode, char *, dict_search(err->subcodes, pdu->err_subcode));
+		JSON_APPEND_STRING(vstr, "err_subcode_descr", subcode);
+	}
+print_err_payload:
+	if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
+		la_json_append_octet_string(vstr, "err_payload", pdu->data->buf, pdu->data->len);
+	}
+}
+
 void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
@@ -996,6 +1125,89 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 	}
 }
 
+void idrp_pdu_format_json(la_vstring * const vstr, void const * const data) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+
+	CAST_PTR(pdu, idrp_pdu_t *, data);
+	la_json_append_bool(vstr, "err", pdu->err);
+	if(pdu->err == true) {
+		return;
+	}
+	idrp_hdr_t *hdr = pdu->hdr;
+	la_json_append_long(vstr, "pdu_type", hdr->type);
+	char *bispdu_name = dict_search(bispdu_types, hdr->type);
+	JSON_APPEND_STRING(vstr, "pdu_type_name", bispdu_name);
+	la_json_append_long(vstr, "seq", ntohl(hdr->seq));
+	la_json_append_long(vstr, "ack", ntohl(hdr->ack));
+	la_json_append_long(vstr, "credit_offered", hdr->coff);
+	la_json_append_long(vstr, "credit_avail", hdr->cavail);
+	switch(pdu->hdr->type) {
+		case BISPDU_TYPE_OPEN:
+			la_json_append_long(vstr, "hold_time", pdu->open_holdtime);
+			la_json_append_long(vstr, "max_pdu_size", pdu->open_max_pdu_size);
+			la_json_append_octet_string(vstr, "src_rdi", pdu->open_src_rdi.buf, pdu->open_src_rdi.len);
+			if(pdu->ribatts_set != NULL) {
+				tlv_list_format_json(vstr, "ribatts_set", pdu->ribatts_set);
+			}
+			{
+				if(pdu->confed_ids != NULL) {
+					la_json_array_start(vstr, "confed_ids");
+					for(la_list *p = pdu->confed_ids; p != NULL; p = p->next) {
+						octet_string_t *ostring = p->data;
+						la_json_append_octet_string(vstr, NULL, ostring->buf, ostring->len);
+					}
+					la_json_array_end(vstr);
+				}
+			}
+			la_json_append_long(vstr, "auth_mech", pdu->auth_mech);
+			char *auth_mech_name = dict_search(auth_mechs, pdu->auth_mech);
+			JSON_APPEND_STRING(vstr, "auth_mech_name", auth_mech_name);
+			if(pdu->auth_data.buf != NULL && pdu->auth_data.len > 0) {
+				la_json_append_octet_string(vstr, "auth_data", pdu->auth_data.buf, pdu->auth_data.len);
+			}
+			break;
+		case BISPDU_TYPE_UPDATE:
+			if(pdu->withdrawn_routes != NULL) {
+				la_json_array_start(vstr, "withdrawn_routes");
+				for(la_list *p = pdu->withdrawn_routes; p != NULL; p = p->next) {
+					la_json_append_long(vstr, NULL, *(uint32_t *)(p->data));
+				}
+				la_json_array_end(vstr);
+			}
+			if(pdu->path_attributes != NULL) {
+				tlv_list_format_json(vstr, "path_attributes", pdu->path_attributes);
+			}
+			if(pdu->nlri_list != NULL) {
+				la_json_array_start(vstr, "nlri_list");
+				for(la_list *n = pdu->nlri_list; n != NULL; n = la_list_next(n)) {
+					CAST_PTR(dest, idrp_nlri_t *, n->data);
+					la_json_object_start(vstr, NULL);
+					if(dest->is_clnp) {
+						la_json_append_string(vstr, "proto", "CLNP");
+						la_json_append_long(vstr, "prefix_len", dest->prefix_len);
+					} else {
+						la_json_append_octet_string(vstr, "proto_id", dest->proto.buf, dest->proto.len);
+					}
+					la_json_append_octet_string(vstr, "dst_prefix", dest->prefix.buf, dest->prefix.len);
+					la_json_object_end(vstr);
+				}
+				la_json_array_end(vstr);
+			} else if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
+				la_json_append_octet_string(vstr, "__unparseable_nlri", pdu->data->buf, pdu->data->len);
+			}
+			break;
+		case BISPDU_TYPE_ERROR:
+			idrp_error_format_json(vstr, pdu);
+			break;
+		case BISPDU_TYPE_KEEPALIVE:
+		case BISPDU_TYPE_CEASE:
+			break;
+		case BISPDU_TYPE_RIBREFRESH:
+			break;
+	}
+}
+
 void idrp_pdu_destroy(void *data) {
 	if(data == NULL) {
 		return;
@@ -1012,5 +1224,7 @@ void idrp_pdu_destroy(void *data) {
 
 la_type_descriptor const proto_DEF_idrp_pdu = {
 	.format_text = idrp_pdu_format_text,
+	.format_json = idrp_pdu_format_json,
+	.json_key = "idrp",
 	.destroy = idrp_pdu_destroy
 };
