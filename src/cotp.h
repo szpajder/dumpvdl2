@@ -18,8 +18,8 @@
  */
 #include <stdint.h>
 #include <stdbool.h>
-#include <glib.h>
 #include <libacars/libacars.h>      // la_proto_node
+#include <libacars/list.h>          // la_list
 
 // These defines apply to upper nibble of the TPDU code only
 #define COTP_TPDU_CR    0xe0

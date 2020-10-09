@@ -24,6 +24,7 @@
 #include <libacars/libacars.h>      // la_proto_node
 #include <libacars/vstring.h>       // la_vstring
 #include <libacars/list.h>          // la_list
+#include <libacars/json.h>
 #include "dumpvdl2.h"
 #include "tlv.h"
 #include "cotp.h"
@@ -39,6 +40,7 @@
 TLV_PARSER(tpdu_size_parse);
 TLV_PARSER(flow_control_confirmation_parse);
 TLV_FORMATTER(flow_control_confirmation_format_text);
+TLV_FORMATTER(flow_control_confirmation_format_json);
 la_type_descriptor const proto_DEF_cotp_concatenated_pdu;
 
 // Some rarely used parameters which are not required to be supported
@@ -50,8 +52,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0x08,
 		.val = &(tlv_type_descriptor_t){
 			.label = "ATN checksum",
+			.json_key = "atn_checksum",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -59,8 +63,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0x85,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Ack time (ms)",
+			.json_key = "ack_time_ms",
 			.parse = tlv_uint16_msbfirst_parse,
 			.format_text = tlv_uint_format_text,
+			.format_json = tlv_uint_format_json,
 			.destroy = NULL
 		},
 	},
@@ -68,8 +74,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0x86,     // not required
 		.val = &(tlv_type_descriptor_t){
 			.label = "Residual error rate",
+			.json_key = "residual_error_rate",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -77,8 +85,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0x87,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Priority",
+			.json_key = "priority",
 			.parse = tlv_uint16_msbfirst_parse,
 			.format_text = tlv_uint_format_text,
+			.format_json = tlv_uint_format_json,
 			.destroy = NULL
 		},
 	},
@@ -86,8 +96,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0x88,     // not required
 		.val = &(tlv_type_descriptor_t){
 			.label = "Transit delay",
+			.json_key = "transit_delay",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -95,8 +107,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0x89,     // not required
 		.val = &(tlv_type_descriptor_t){
 			.label = "Throughput",
+			.json_key = "throughput",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -104,8 +118,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0x8a,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Subsequence number",
+			.json_key = "subseq_num",
 			.parse = tlv_uint16_msbfirst_parse,
 			.format_text = tlv_uint_format_text,
+			.format_json = tlv_uint_format_json,
 			.destroy = NULL
 		},
 	},
@@ -113,8 +129,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0x8b,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Reassignment time (s)",
+			.json_key = "reassignment_time_sec",
 			.parse = tlv_uint16_msbfirst_parse,
 			.format_text = tlv_uint_format_text,
+			.format_json = tlv_uint_format_json,
 			.destroy = NULL
 		},
 	},
@@ -122,8 +140,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0x8c,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Flow control",
+			.json_key = "flow_control",
 			.parse = flow_control_confirmation_parse,
 			.format_text = flow_control_confirmation_format_text,
+			.format_json = flow_control_confirmation_format_json,
 			.destroy = NULL
 		},
 	},
@@ -131,8 +151,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0x8f,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Selective ACK",
+			.json_key = "sack",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -140,8 +162,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0xc0,
 		.val = &(tlv_type_descriptor_t){
 			.label = "TPDU size (bytes)",
+			.json_key = "tpdu_size",
 			.parse = tpdu_size_parse,
 			.format_text = tlv_uint_format_text,
+			.format_json = tlv_uint_format_json,
 			.destroy = NULL
 		},
 	},
@@ -149,8 +173,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0xc1,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Calling transport selector",
+			.json_key = "calling_transport_selector",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -158,8 +184,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0xc2,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Called/responding transport selector",
+			.json_key = "called_responding_transport_selector",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -167,8 +195,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0xc3,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Checksum",
+			.json_key = "checksum",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -176,8 +206,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0xc4,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Version",
+			.json_key = "version",
 			.parse = tlv_uint8_parse,
 			.format_text = tlv_uint_format_text,
+			.format_json = tlv_uint_format_json,
 			.destroy = NULL
 		},
 	},
@@ -185,8 +217,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0xc5,     // not required
 		.val = &(tlv_type_descriptor_t){
 			.label = "Protection params",
+			.json_key = "protection_params",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -194,8 +228,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0xc6,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Additional options",
+			.json_key = "additional_options",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_single_octet_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -203,8 +239,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0xc7,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Additional protocol class(es)",
+			.json_key = "additional_proto_classes",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -212,8 +250,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0xe0,     // DR
 		.val = &(tlv_type_descriptor_t){
 			.label = "Additional info",
+			.json_key = "additional_info",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -221,8 +261,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0xf0,     // not required
 		.val = &(tlv_type_descriptor_t){
 			.label = "Preferred max. TPDU size (bytes)",
+			.json_key = "preferred_max_tpdu_size",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -230,8 +272,10 @@ static dict const cotp_variable_part_params[] = {
 		.id = 0xf2,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Inactivity timer (ms)",
+			.json_key = "inactivity_timer_ms",
 			.parse = tlv_uint32_msbfirst_parse,
 			.format_text = tlv_uint_format_text,
+			.format_json = tlv_uint_format_json,
 			.destroy = NULL
 		},
 	},
@@ -248,8 +292,10 @@ static dict const cotp_er_variable_part_params[] = {
 		.id = 0xc1,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Invalid TPDU header",
+			.json_key = "invalid_tpdu_header",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -257,8 +303,10 @@ static dict const cotp_er_variable_part_params[] = {
 		.id = 0xc3,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Checksum",
+			.json_key = "checksum",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -302,6 +350,17 @@ TLV_FORMATTER(flow_control_confirmation_format_text) {
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Acked TPDU nr: %u\n", f->acked_tpdu_nr);
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Acked subsequence: %hu\n", f->acked_subseq);
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Acked credit: %hu\n", f->acked_credit);
+}
+
+TLV_FORMATTER(flow_control_confirmation_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+	CAST_PTR(f, cotp_flow_control_confirm_t *, data);
+	la_json_object_start(ctx->vstr, label);
+	la_json_append_long(ctx->vstr, "acked_tpdu_nr", f->acked_tpdu_nr);
+	la_json_append_long(ctx->vstr, "acked_subseq", f->acked_subseq);
+	la_json_append_long(ctx->vstr, "acked_credit", f->acked_credit);
+	la_json_object_end(ctx->vstr);
 }
 
 #define TPDU_HDR_CHECK_LEN(len, val, goto_on_fail) \
@@ -518,56 +577,57 @@ la_proto_node *cotp_concatenated_pdu_parse(uint8_t *buf, uint32_t len, uint32_t 
 	return node;
 }
 
-static void output_cotp_pdu_as_text(gpointer p, gpointer user_data) {
-	static char const * const x225_xport_disc_reason_codes[] = {
-		[SPM_PROTOCOL_ERROR] = "Protocol error, cannnot sent ABORT SPDU",
-		[SPM_DISC_NORMAL_NO_REUSE] = "OK, transport connection not reused",
-		[SPM_DISC_NORMAL_REUSE_NOT_POSSIBLE] = "OK, transport connection reuse not possible"
-	};
+static char const * const x225_xport_disc_reason_codes[] = {
+	[SPM_PROTOCOL_ERROR] = "Protocol error, cannnot sent ABORT SPDU",
+	[SPM_DISC_NORMAL_NO_REUSE] = "OK, transport connection not reused",
+	[SPM_DISC_NORMAL_REUSE_NOT_POSSIBLE] = "OK, transport connection reuse not possible"
+};
 
-	static const dict cotp_tpdu_codes[] = {
-		{ COTP_TPDU_CR, "Connect Request" },
-		{ COTP_TPDU_CC, "Connect Confirm" },
-		{ COTP_TPDU_DR, "Disconnect Request" },
-		{ COTP_TPDU_DC, "Disconnect Confirm" },
-		{ COTP_TPDU_DT, "Data" },
-		{ COTP_TPDU_ED, "Expedited Data" },
-		{ COTP_TPDU_AK, "Data Ack" },
-		{ COTP_TPDU_EA, "Expedited Data Ack" },
-		{ COTP_TPDU_RJ, "Reject" },
-		{ COTP_TPDU_ER, "Error" },
-		{ 0, NULL }
-	};
+static const dict cotp_tpdu_codes[] = {
+	{ COTP_TPDU_CR, "Connect Request" },
+	{ COTP_TPDU_CC, "Connect Confirm" },
+	{ COTP_TPDU_DR, "Disconnect Request" },
+	{ COTP_TPDU_DC, "Disconnect Confirm" },
+	{ COTP_TPDU_DT, "Data" },
+	{ COTP_TPDU_ED, "Expedited Data" },
+	{ COTP_TPDU_AK, "Data Ack" },
+	{ COTP_TPDU_EA, "Expedited Data Ack" },
+	{ COTP_TPDU_RJ, "Reject" },
+	{ COTP_TPDU_ER, "Error" },
+	{ 0, NULL }
+};
 
-	static const dict cotp_dr_reasons[] = {
-		{   0, "Reason not specified" },
-		{   1, "TSAP congestion" },
-		{   2, "Session entity not attached to TSAP" },
-		{   3, "Unknown address" },
-		{ 128, "Normal disconnect" },
-		{ 129, "Remote transport entity congestion" },
-		{ 130, "Connection negotiation failed" },
-		{ 131, "Duplicate source reference" },
-		{ 132, "Mismatched references" },
-		{ 133, "Protocol error" },
-		{ 135, "Reference overflow" },
-		{ 136, "Connection request refused" },
-		{ 138, "Header or parameter length invalid" },
-		{   0, NULL }
-	};
+static const dict cotp_dr_reasons[] = {
+	{   0, "Reason not specified" },
+	{   1, "TSAP congestion" },
+	{   2, "Session entity not attached to TSAP" },
+	{   3, "Unknown address" },
+	{ 128, "Normal disconnect" },
+	{ 129, "Remote transport entity congestion" },
+	{ 130, "Connection negotiation failed" },
+	{ 131, "Duplicate source reference" },
+	{ 132, "Mismatched references" },
+	{ 133, "Protocol error" },
+	{ 135, "Reference overflow" },
+	{ 136, "Connection request refused" },
+	{ 138, "Header or parameter length invalid" },
+	{   0, NULL }
+};
 
-	static const dict cotp_er_reject_causes[] = {
-		{ 0, "Reason not specified" },
-		{ 1, "Invalid parameter code" },
-		{ 2, "Invalid TPDU type" },
-		{ 3, "Invalid parameter value" },
-		{ 0, NULL }
-	};
+static const dict cotp_er_reject_causes[] = {
+	{ 0, "Reason not specified" },
+	{ 1, "Invalid parameter code" },
+	{ 2, "Invalid TPDU type" },
+	{ 3, "Invalid parameter value" },
+	{ 0, NULL }
+};
 
-	ASSERT(p != NULL);
-	ASSERT(user_data != NULL);
-	CAST_PTR(pdu, cotp_pdu_t *, p);
-	CAST_PTR(ctx, tlv_formatter_ctx_t *, user_data);
+// Executed with la_list_foreach()
+static void output_cotp_pdu_as_text(void *data, void *ctx_ptr) {
+	ASSERT(data != NULL);
+	ASSERT(ctx_ptr != NULL);
+	CAST_PTR(pdu, cotp_pdu_t *, data);
+	CAST_PTR(ctx, tlv_formatter_ctx_t *, ctx_ptr);
 
 	la_vstring *vstr = ctx->vstr;
 	int indent = ctx->indent;
@@ -611,7 +671,7 @@ static void output_cotp_pdu_as_text(gpointer p, gpointer user_data) {
 			LA_ISPRINTF(vstr, indent, "rseq: %u\n", pdu->tpdu_seq);
 			break;
 		case COTP_TPDU_ER:
-			str = (char *)dict_search(cotp_er_reject_causes, pdu->class_or_disc_reason);
+			str = dict_search(cotp_er_reject_causes, pdu->class_or_disc_reason);
 			LA_ISPRINTF(vstr, indent, "Reject cause: %u (%s)\n", pdu->class_or_disc_reason,
 					(str ? str : "<unknown>"));
 			break;
@@ -621,7 +681,7 @@ static void output_cotp_pdu_as_text(gpointer p, gpointer user_data) {
 					pdu->tpdu_seq, pdu->roa, pdu->eot);
 			break;
 		case COTP_TPDU_DR:
-			str = (char *)dict_search(cotp_dr_reasons, pdu->class_or_disc_reason);
+			str = dict_search(cotp_dr_reasons, pdu->class_or_disc_reason);
 			LA_ISPRINTF(vstr, indent, "Reason: %u (%s)\n", pdu->class_or_disc_reason,
 					(str ? str : "<unknown>"));
 			break;
@@ -639,6 +699,83 @@ static void output_cotp_pdu_as_text(gpointer p, gpointer user_data) {
 	}
 }
 
+// Executed with la_list_foreach()
+static void output_cotp_pdu_as_json(void *data, void *ctx_ptr) {
+	ASSERT(data != NULL);
+	ASSERT(ctx_ptr != NULL);
+	CAST_PTR(pdu, cotp_pdu_t *, data);
+	CAST_PTR(ctx, tlv_formatter_ctx_t *, ctx_ptr);
+
+	la_vstring *vstr = ctx->vstr;
+	char *str;
+
+	la_json_object_start(vstr, NULL);
+	la_json_append_bool(vstr, "err", pdu->err);
+	if(pdu->err == true) {
+		return;
+	}
+
+	la_json_append_long(vstr, "tpdu_code", pdu->code);
+	CAST_PTR(tpdu_name, char *, dict_search(cotp_tpdu_codes, pdu->code));
+	ASSERT(tpdu_name != NULL);
+	la_json_append_string(vstr, "tpdu_code_descr", tpdu_name);
+	la_json_append_bool(vstr, "extended", pdu->extended);
+
+	switch(pdu->code) {
+		case COTP_TPDU_CR:
+		case COTP_TPDU_CC:
+		case COTP_TPDU_DR:
+		case COTP_TPDU_DC:
+			la_json_append_long(vstr, "src_ref", pdu->src_ref);
+			/* FALLTHROUGH */
+		default:
+			la_json_append_long(vstr, "dst_ref", pdu->dst_ref);
+	}
+
+	switch(pdu->code) {
+		case COTP_TPDU_CR:
+		case COTP_TPDU_CC:
+			la_json_append_long(vstr, "credit", pdu->credit);
+			la_json_append_long(vstr, "proto_class", pdu->class_or_disc_reason);
+			la_json_append_long(vstr, "options", pdu->options);
+			la_json_append_bool(vstr, "use_extended_pdu_formats", pdu->options & 2);
+			break;
+		case COTP_TPDU_AK:
+		case COTP_TPDU_RJ:
+			la_json_append_long(vstr, "credit", pdu->credit);
+			la_json_append_long(vstr, "rseq", pdu->tpdu_seq);
+			break;
+		case COTP_TPDU_EA:
+			la_json_append_long(vstr, "rseq", pdu->tpdu_seq);
+			break;
+		case COTP_TPDU_ER:
+			la_json_append_long(vstr, "reject_code", pdu->class_or_disc_reason);
+			str = dict_search(cotp_er_reject_causes, pdu->class_or_disc_reason);
+			JSON_APPEND_STRING(vstr, "reject_cause", str);
+			break;
+		case COTP_TPDU_DT:
+		case COTP_TPDU_ED:
+			la_json_append_long(vstr, "sseq", pdu->tpdu_seq);
+			la_json_append_long(vstr, "req_of_ack", pdu->roa);
+			la_json_append_long(vstr, "eot", pdu->eot);
+			break;
+		case COTP_TPDU_DR:
+			la_json_append_long(vstr, "disc_reason_code", pdu->class_or_disc_reason);
+			str = dict_search(cotp_dr_reasons, pdu->class_or_disc_reason);
+			JSON_APPEND_STRING(vstr, "disc_reason", str);
+			break;
+		case COTP_TPDU_DC:
+			break;
+	}
+	tlv_list_format_json(vstr, "variable_part_params", pdu->variable_part_params);
+
+	if(pdu->code == COTP_TPDU_DR && pdu->x225_xport_disc_reason >= 0) {
+		la_json_append_long(vstr, "x225_spm_transport_disconnect_reason_code", pdu->x225_xport_disc_reason);
+		la_json_append_string(vstr, "x225_spm_transport_disconnect_reason",
+				x225_xport_disc_reason_codes[pdu->x225_xport_disc_reason]);
+	}
+	la_json_object_end(vstr);
+}
 void cotp_concatenated_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
@@ -648,7 +785,18 @@ void cotp_concatenated_pdu_format_text(la_vstring * const vstr, void const * con
 	la_list_foreach(pdu_list, output_cotp_pdu_as_text, &(tlv_formatter_ctx_t){ .vstr = vstr, .indent = indent});
 }
 
-static void cotp_pdu_destroy(gpointer ptr) {
+void cotp_concatenated_pdu_format_json(la_vstring * const vstr, void const * const data) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+
+	CAST_PTR(pdu_list, la_list *, data);
+	la_json_array_start(vstr, "pdu_list");
+	la_list_foreach(pdu_list, output_cotp_pdu_as_json, &(tlv_formatter_ctx_t){ .vstr = vstr, .indent = 0});
+	la_json_array_end(vstr);
+}
+
+
+static void cotp_pdu_destroy(void *ptr) {
 	CAST_PTR(pdu, cotp_pdu_t *, ptr);
 	tlv_list_destroy(pdu->variable_part_params);
 	XFREE(pdu);
@@ -665,5 +813,7 @@ void cotp_concatenated_pdu_destroy(void *data) {
 
 la_type_descriptor const proto_DEF_cotp_concatenated_pdu = {
 	.format_text = cotp_concatenated_pdu_format_text,
+	.format_json = cotp_concatenated_pdu_format_json,
+	.json_key = "cotp",
 	.destroy = cotp_concatenated_pdu_destroy
 };
