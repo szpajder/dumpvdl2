@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <libacars/libacars.h>          // la_proto_node, la_type_descriptor
 #include <libacars/vstring.h>           // la_vstring
+#include <libacars/json.h>
 #include "asn1/BIT_STRING.h"
 #include "asn1/ACSE-apdu.h"
 #include "asn1/CMAircraftMessage.h"
@@ -579,8 +580,26 @@ void x225_spdu_format_text(la_vstring *vstr, void const * const data, int indent
 	}
 }
 
+void x225_spdu_format_json(la_vstring *vstr, void const * const data) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+
+	CAST_PTR(spdu, x225_spdu_t *, data);
+	la_json_append_long(vstr, "spdu_id", spdu->spdu_id);
+	char *str = dict_search(x225_spdu_names, spdu->spdu_id);
+	JSON_APPEND_STRING(vstr, "spdu_type", str);
+	if(spdu->spdu_id == X225_SPDU_SRF) {
+		la_json_append_string(vstr, "refusal",
+				(spdu->spdu_special_data & 1 ? "persistent" : "transient"));
+		la_json_append_string(vstr, "transport_connection",
+				(spdu->spdu_special_data & 2 ? "release" : "retain"));
+	}
+}
+
 la_type_descriptor const proto_DEF_x225_spdu = {
 	.format_text    = x225_spdu_format_text,
+	.format_json    = x225_spdu_format_json,
+	.json_key       = "x225_spdu",
 	.destroy        = NULL
 };
 
