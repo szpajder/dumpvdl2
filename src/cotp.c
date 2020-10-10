@@ -383,8 +383,8 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 	NEW(cotp_pdu_t, pdu);
 	r.pdu = pdu;
 
-	pdu->err = true;                    // fail-safe default
-	pdu->x225_xport_disc_reason = -1;   // X.225 xport disc reason not present
+	pdu->err = true;                            // fail-safe default
+	pdu->x225_transport_disc_reason = -1;       // X.225 transport disc reason not present
 	bool final_pdu = false;
 	uint8_t *ptr = buf;
 	uint32_t remaining = len;
@@ -528,7 +528,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 				// special case - single-byte user-data field in DR contains Session Protocol Machine
 				// disconnect reason code (X.225 6.6.4)
 				if(ptr[0] <= SPM_DISC_REASON_MAX) {
-					pdu->x225_xport_disc_reason = (int16_t)ptr[0];
+					pdu->x225_transport_disc_reason = (int16_t)ptr[0];
 				} else {
 					r.next_node = unknown_proto_pdu_new(ptr, remaining);
 				}
@@ -577,7 +577,7 @@ la_proto_node *cotp_concatenated_pdu_parse(uint8_t *buf, uint32_t len, uint32_t 
 	return node;
 }
 
-static char const * const x225_xport_disc_reason_codes[] = {
+static char const * const x225_transport_disc_reason_codes[] = {
 	[SPM_PROTOCOL_ERROR] = "Protocol error, cannnot sent ABORT SPDU",
 	[SPM_DISC_NORMAL_NO_REUSE] = "OK, transport connection not reused",
 	[SPM_DISC_NORMAL_REUSE_NOT_POSSIBLE] = "OK, transport connection reuse not possible"
@@ -690,11 +690,11 @@ static void output_cotp_pdu_as_text(void *data, void *ctx_ptr) {
 	}
 	tlv_list_format_text(vstr, pdu->variable_part_params, indent);
 
-	if(pdu->code == COTP_TPDU_DR && pdu->x225_xport_disc_reason >= 0) {
+	if(pdu->code == COTP_TPDU_DR && pdu->x225_transport_disc_reason >= 0) {
 		LA_ISPRINTF(vstr, indent,
 				"X.225 disconnect reason: %hd (%s)\n",
-				pdu->x225_xport_disc_reason,
-				x225_xport_disc_reason_codes[pdu->x225_xport_disc_reason]
+				pdu->x225_transport_disc_reason,
+				x225_transport_disc_reason_codes[pdu->x225_transport_disc_reason]
 				);
 	}
 }
@@ -769,10 +769,10 @@ static void output_cotp_pdu_as_json(void *data, void *ctx_ptr) {
 	}
 	tlv_list_format_json(vstr, "variable_part_params", pdu->variable_part_params);
 
-	if(pdu->code == COTP_TPDU_DR && pdu->x225_xport_disc_reason >= 0) {
-		la_json_append_long(vstr, "x225_spm_transport_disconnect_reason_code", pdu->x225_xport_disc_reason);
+	if(pdu->code == COTP_TPDU_DR && pdu->x225_transport_disc_reason >= 0) {
+		la_json_append_long(vstr, "x225_spm_transport_disconnect_reason_code", pdu->x225_transport_disc_reason);
 		la_json_append_string(vstr, "x225_spm_transport_disconnect_reason",
-				x225_xport_disc_reason_codes[pdu->x225_xport_disc_reason]);
+				x225_transport_disc_reason_codes[pdu->x225_transport_disc_reason]);
 	}
 	la_json_object_end(vstr);
 }

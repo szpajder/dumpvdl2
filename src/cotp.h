@@ -38,7 +38,7 @@ typedef struct {
 	uint32_t tpdu_seq;              /* TPDU sequence number (valid for DT, ED, AK) */
 	uint16_t src_ref, dst_ref;
 	uint16_t credit;                /* Credit for AK, RJ, initial credit for CR, CC */
-	int16_t x225_xport_disc_reason;
+	int16_t x225_transport_disc_reason;
 	uint8_t code;
 	uint8_t roa;                    /* Request of Acknowledgment (valid for DT) */
 	uint8_t eot;                    /* Last fragment of TSDU (valid for DT, ED) */
