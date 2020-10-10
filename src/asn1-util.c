@@ -89,6 +89,9 @@ void asn1_pdu_format_text(la_vstring *vstr, void const * const data, int indent)
 			pdu->type, pdu->data, indent);
 }
 
+void asn1_pdu_format_json(la_vstring *vstr, void const * const data) {
+}
+
 // a destructor for la_proto_nodes containing asn1_pdu_t data
 void asn1_pdu_destroy(void *data) {
 	if(data == NULL) {
@@ -100,8 +103,3 @@ void asn1_pdu_destroy(void *data) {
 	}
 	XFREE(data);
 }
-
-la_type_descriptor const proto_DEF_asn1_pdu = {
-	.format_text    = asn1_pdu_format_text,
-	.destroy        = asn1_pdu_destroy
-};

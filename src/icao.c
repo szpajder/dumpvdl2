@@ -50,6 +50,10 @@
 
 // Forward declarations
 la_type_descriptor const proto_DEF_x225_spdu;
+la_type_descriptor const proto_DEF_cpdlc;
+la_type_descriptor const proto_DEF_cm;
+la_type_descriptor const proto_DEF_adsc_v2;
+la_type_descriptor const proto_DEF_x227_acse_apdu;
 
 /********************************************************************************
   * ICAO applications
@@ -277,6 +281,7 @@ static la_proto_node *arbitrary_payload_parse(AE_qualifier_form2_t app_type,
 		ACSE_apdu_PR acse_apdu_type, uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 	void *msg = NULL;
 	la_proto_node *node = NULL;
+	la_type_descriptor const *td = NULL;
 	NEW(asn1_pdu_t, pdu);
 	asn_TYPE_descriptor_t *decoded_apdu_type = NULL;
 	if(*msg_type & MSGFLT_SRC_AIR) {
@@ -284,6 +289,7 @@ static la_proto_node *arbitrary_payload_parse(AE_qualifier_form2_t app_type,
 				decode_protected_ATCDownlinkMessage((void **)&msg, &decoded_apdu_type, acse_apdu_type, buf, size) == 0) {
 			pdu->type = decoded_apdu_type;
 			pdu->data = msg;
+			td = &proto_DEF_cpdlc;
 			*msg_type |= MSGFLT_CPDLC;
 			goto end;
 		}
@@ -294,6 +300,7 @@ static la_proto_node *arbitrary_payload_parse(AE_qualifier_form2_t app_type,
 				asn1_decode_as(&asn_DEF_CMAircraftMessage, (void **)&msg, buf, size) == 0) {
 			pdu->type = &asn_DEF_CMAircraftMessage;
 			pdu->data = msg;
+			td = &proto_DEF_cm;
 			*msg_type |= MSGFLT_CM;
 			goto end;
 		}
@@ -304,6 +311,7 @@ static la_proto_node *arbitrary_payload_parse(AE_qualifier_form2_t app_type,
 				decode_ADSAircraftPDUs((void **)&msg, &decoded_apdu_type, buf, size) == 0) {
 			pdu->type = decoded_apdu_type;
 			pdu->data = msg;
+			td = &proto_DEF_adsc_v2;
 			*msg_type |= MSGFLT_ADSC;
 			goto end;
 		}
@@ -314,6 +322,7 @@ static la_proto_node *arbitrary_payload_parse(AE_qualifier_form2_t app_type,
 				decode_protected_ATCUplinkMessage((void **)&msg, &decoded_apdu_type, acse_apdu_type, buf, size) == 0) {
 			pdu->type = decoded_apdu_type;
 			pdu->data = msg;
+			td = &proto_DEF_cpdlc;
 			*msg_type |= MSGFLT_CPDLC;
 			goto end;
 		}
@@ -324,6 +333,7 @@ static la_proto_node *arbitrary_payload_parse(AE_qualifier_form2_t app_type,
 				asn1_decode_as(&asn_DEF_CMGroundMessage, (void **)&msg, buf, size) == 0) {
 			pdu->type = &asn_DEF_CMGroundMessage;
 			pdu->data = msg;
+			td = &proto_DEF_cm;
 			*msg_type |= MSGFLT_CM;
 			goto end;
 		}
@@ -334,6 +344,7 @@ static la_proto_node *arbitrary_payload_parse(AE_qualifier_form2_t app_type,
 				decode_ADSGroundPDUs((void **)&msg, &decoded_apdu_type, buf, size) == 0) {
 			pdu->type = decoded_apdu_type;
 			pdu->data = msg;
+			td = &proto_DEF_adsc_v2;
 			*msg_type |= MSGFLT_ADSC;
 			goto end;
 		}
@@ -347,7 +358,7 @@ end:
 	pdu->formatter_table_text = asn1_icao_formatter_table;
 	pdu->formatter_table_text_len = asn1_icao_formatter_table_len;
 	node = la_proto_node_new();
-	node->td = &proto_DEF_asn1_pdu;
+	node->td = td;
 	node->data = pdu;
 	node->next = NULL;
 	return node;
@@ -427,7 +438,7 @@ static la_proto_node *ulcs_acse_parse(uint8_t *buf, uint32_t len, uint32_t *msg_
 	}
 end:
 	node = la_proto_node_new();
-	node->td = &proto_DEF_asn1_pdu;
+	node->td = &proto_DEF_x227_acse_apdu;
 	node->data = apdu;
 	node->next = next_node;
 	return node;
@@ -640,3 +651,31 @@ la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 end:
 	return node ? node : unknown_proto_pdu_new(buf, len);
 }
+
+la_type_descriptor const proto_DEF_cpdlc = {
+	.format_text    = asn1_pdu_format_text,
+	.format_json    = asn1_pdu_format_json,
+	.json_key       = "cpdlc",
+	.destroy        = asn1_pdu_destroy
+};
+
+la_type_descriptor const proto_DEF_cm = {
+	.format_text    = asn1_pdu_format_text,
+	.format_json    = asn1_pdu_format_json,
+	.json_key       = "context_mgmt",
+	.destroy        = asn1_pdu_destroy
+};
+
+la_type_descriptor const proto_DEF_adsc_v2 = {
+	.format_text    = asn1_pdu_format_text,
+	.format_json    = asn1_pdu_format_json,
+	.json_key       = "adsc_v2",
+	.destroy        = asn1_pdu_destroy
+};
+
+la_type_descriptor const proto_DEF_x227_acse_apdu = {
+	.format_text    = asn1_pdu_format_text,
+	.format_json    = asn1_pdu_format_json,
+	.json_key       = "x227_acse_apdu",
+	.destroy        = asn1_pdu_destroy
+};
