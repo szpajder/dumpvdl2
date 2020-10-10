@@ -355,8 +355,8 @@ static la_proto_node *arbitrary_payload_parse(AE_qualifier_form2_t app_type,
 	XFREE(pdu);
 	return NULL;        // the caller will turn this into unknown_proto_pdu
 end:
-	pdu->formatter_table_text = asn1_icao_formatter_table;
-	pdu->formatter_table_text_len = asn1_icao_formatter_table_len;
+	pdu->formatter_table_text = asn1_icao_formatter_table_text;
+	pdu->formatter_table_text_len = asn1_icao_formatter_table_text_len;
 	node = la_proto_node_new();
 	node->td = td;
 	node->data = pdu;
@@ -387,8 +387,8 @@ static la_proto_node *ulcs_acse_parse(uint8_t *buf, uint32_t len, uint32_t *msg_
 	NEW(asn1_pdu_t, apdu);
 	apdu->data = acse_apdu;
 	apdu->type = &asn_DEF_ACSE_apdu;
-	apdu->formatter_table_text = asn1_acse_formatter_table;
-	apdu->formatter_table_text_len = asn1_acse_formatter_table_len;
+	apdu->formatter_table_text = asn1_acse_formatter_table_text;
+	apdu->formatter_table_text_len = asn1_acse_formatter_table_text_len;
 
 	AE_qualifier_form2_t ae_qualifier = ICAO_APP_TYPE_UNKNOWN;
 	Association_information_t *user_info = NULL;

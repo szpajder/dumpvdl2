@@ -33,14 +33,14 @@ char const *value2enum(asn_TYPE_descriptor_t *td, long const value) {
 	return enum_map->enum_name;
 }
 
-void _format_INTEGER_with_unit(la_vstring *vstr, char const * const label, asn_TYPE_descriptor_t *td,
+void _format_INTEGER_with_unit_as_text(la_vstring *vstr, char const * const label, asn_TYPE_descriptor_t *td,
 		void const *sptr, int indent, char const * const unit, double multiplier, int decimal_places) {
 	UNUSED(td);
 	CAST_PTR(val, long *, sptr);
 	LA_ISPRINTF(vstr, indent, "%s: %.*f%s\n", label, decimal_places, (double)(*val) * multiplier, unit);
 }
 
-void _format_INTEGER_as_ENUM(la_vstring *vstr, char const * const label, dict const * const value_labels,
+void _format_INTEGER_as_ENUM_as_text(la_vstring *vstr, char const * const label, dict const * const value_labels,
 		void const *sptr, int indent) {
 	CAST_PTR(val, long *, sptr);
 	char *val_label = dict_search(value_labels, (int)(*val));
@@ -51,7 +51,7 @@ void _format_INTEGER_as_ENUM(la_vstring *vstr, char const * const label, dict co
 	}
 }
 
-void _format_CHOICE(la_vstring *vstr, char const * const label, dict const * const choice_labels,
+void _format_CHOICE_as_text(la_vstring *vstr, char const * const label, dict const * const choice_labels,
 		asn1_output_fun_t cb, asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
 
 	CAST_PTR(specs, asn_CHOICE_specifics_t *, td->specifics);
@@ -89,7 +89,7 @@ void _format_CHOICE(la_vstring *vstr, char const * const label, dict const * con
 	}
 }
 
-void _format_SEQUENCE(la_vstring *vstr, char const * const label, asn1_output_fun_t cb,
+void _format_SEQUENCE_as_text(la_vstring *vstr, char const * const label, asn1_output_fun_t cb,
 		asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
 	if(label != NULL) {
 		LA_ISPRINTF(vstr, indent, "%s:\n", label);
@@ -111,7 +111,7 @@ void _format_SEQUENCE(la_vstring *vstr, char const * const label, asn1_output_fu
 	}
 }
 
-void _format_SEQUENCE_OF(la_vstring *vstr, char const * const label, asn1_output_fun_t cb,
+void _format_SEQUENCE_OF_as_text(la_vstring *vstr, char const * const label, asn1_output_fun_t cb,
 		asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
 	if(label != NULL) {
 		LA_ISPRINTF(vstr, indent, "%s:\n", label);
@@ -131,7 +131,7 @@ void _format_SEQUENCE_OF(la_vstring *vstr, char const * const label, asn1_output
 // Handles bit string up to 32 bits long.
 // dict indices are bit numbers from 0 to bit_stream_len-1
 // Bit 0 is the MSB of the first octet in the buffer.
-void _format_BIT_STRING(la_vstring *vstr, char const * const label, dict const * const bit_labels,
+void _format_BIT_STRING_as_text(la_vstring *vstr, char const * const label, dict const * const bit_labels,
 		void const *sptr, int indent) {
 	CAST_PTR(bs, BIT_STRING_t *, sptr);
 	debug_print(D_PROTO_DETAIL, "buf len: %d bits_unused: %d\n", bs->size, bs->bits_unused);
@@ -177,7 +177,7 @@ end:
 	}
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_any) {
+ASN1_FORMATTER_PROTOTYPE(asn1_format_any_as_text) {
 	if(label != NULL) {
 		LA_ISPRINTF(vstr, indent, "%s: ", label);
 	} else {
@@ -195,7 +195,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_NULL) {
 	// NOOP
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_label_only) {
+ASN1_FORMATTER_PROTOTYPE(asn1_format_label_only_as_text) {
 	UNUSED(td);
 	UNUSED(sptr);
 	if(label != NULL) {
@@ -203,7 +203,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_label_only) {
 	}
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_ENUM) {
+ASN1_FORMATTER_PROTOTYPE(asn1_format_ENUM_as_text) {
 	long const value = *(long const *)sptr;
 	char const *s = value2enum(td, value);
 	if(s != NULL) {
@@ -213,6 +213,6 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_ENUM) {
 	}
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Deg) {
-	_format_INTEGER_with_unit(vstr, label, td, sptr, indent, " deg", 1, 0);
+ASN1_FORMATTER_PROTOTYPE(asn1_format_Deg_as_text) {
+	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " deg", 1, 0);
 }

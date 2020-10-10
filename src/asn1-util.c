@@ -49,7 +49,7 @@ int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, i
 	return 0;
 }
 
-void asn1_output(la_vstring *vstr, asn_formatter_t const * const asn1_formatter_table,
+void asn1_output_as_text(la_vstring *vstr, asn_formatter_t const * const asn1_formatter_table,
 		size_t asn1_formatter_table_len, asn_TYPE_descriptor_t *td, const void *sptr, int indent) {
 	if(td == NULL || sptr == NULL) return;
 	asn_formatter_t *formatter = lfind(td, asn1_formatter_table, &asn1_formatter_table_len,
@@ -85,7 +85,7 @@ void asn1_pdu_format_text(la_vstring *vstr, void const * const data, int indent)
 		asn_sprintf(vstr, pdu->type, pdu->data, indent + 2);
 	}
 	ASSERT(pdu->formatter_table_text != NULL);
-	asn1_output(vstr, pdu->formatter_table_text, pdu->formatter_table_text_len,
+	asn1_output_as_text(vstr, pdu->formatter_table_text, pdu->formatter_table_text_len,
 			pdu->type, pdu->data, indent);
 }
 

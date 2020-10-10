@@ -20,7 +20,7 @@
 #include "asn1-util.h"                          // asn_formatter_t
 
 // asn1-format-icao.c
-extern asn_formatter_t const asn1_icao_formatter_table[];
-extern size_t asn1_icao_formatter_table_len;
-extern asn_formatter_t const asn1_acse_formatter_table[];
-extern size_t asn1_acse_formatter_table_len;
+extern asn_formatter_t const asn1_icao_formatter_table_text[];
+extern size_t asn1_icao_formatter_table_text_len;
+extern asn_formatter_t const asn1_acse_formatter_table_text[];
+extern size_t asn1_acse_formatter_table_text_len;

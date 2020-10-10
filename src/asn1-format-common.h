@@ -23,20 +23,22 @@
 #include "dumpvdl2.h"               // dict
 
 char const *value2enum(asn_TYPE_descriptor_t *td, long const value);
-void _format_INTEGER_with_unit(la_vstring *vstr, char const * const label, asn_TYPE_descriptor_t *td,
+
+// Text formatters
+void _format_INTEGER_with_unit_as_text(la_vstring *vstr, char const * const label, asn_TYPE_descriptor_t *td,
 		void const *sptr, int indent, char const * const unit, double multiplier, int decimal_places);
-void _format_INTEGER_as_ENUM(la_vstring *vstr, char const * const label, dict const * const value_labels,
+void _format_INTEGER_as_ENUM_as_text(la_vstring *vstr, char const * const label, dict const * const value_labels,
 		void const *sptr, int indent);
-void _format_CHOICE(la_vstring *vstr, char const * const label, dict const * const choice_labels,
+void _format_CHOICE_as_text(la_vstring *vstr, char const * const label, dict const * const choice_labels,
 		asn1_output_fun_t cb, asn_TYPE_descriptor_t *td, void const *sptr, int indent);
-void _format_SEQUENCE(la_vstring *vstr, char const * const label, asn1_output_fun_t cb,
+void _format_SEQUENCE_as_text(la_vstring *vstr, char const * const label, asn1_output_fun_t cb,
 		asn_TYPE_descriptor_t *td, void const *sptr, int indent);
-void _format_SEQUENCE_OF(la_vstring *vstr, char const * const label, asn1_output_fun_t cb,
+void _format_SEQUENCE_OF_as_text(la_vstring *vstr, char const * const label, asn1_output_fun_t cb,
 		asn_TYPE_descriptor_t *td, void const *sptr, int indent);
-void _format_BIT_STRING(la_vstring *vstr, char const * const label, dict const * const bit_labels,
+void _format_BIT_STRING_as_text(la_vstring *vstr, char const * const label, dict const * const bit_labels,
 		void const *sptr, int indent);
-ASN1_FORMATTER_PROTOTYPE(asn1_format_any);
+ASN1_FORMATTER_PROTOTYPE(asn1_format_any_as_text);
 ASN1_FORMATTER_PROTOTYPE(asn1_format_NULL);
-ASN1_FORMATTER_PROTOTYPE(asn1_format_label_only);
-ASN1_FORMATTER_PROTOTYPE(asn1_format_ENUM);
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Deg);
+ASN1_FORMATTER_PROTOTYPE(asn1_format_label_only_as_text);
+ASN1_FORMATTER_PROTOTYPE(asn1_format_ENUM_as_text);
+ASN1_FORMATTER_PROTOTYPE(asn1_format_Deg_as_text);
