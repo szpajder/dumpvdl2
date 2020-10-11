@@ -184,6 +184,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_any_as_text) {
 		LA_ISPRINTF(vstr, indent, "%s", "");
 	}
 	asn_sprintf(vstr, td, sptr, 1);
+	EOL(vstr);
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_NULL) {
