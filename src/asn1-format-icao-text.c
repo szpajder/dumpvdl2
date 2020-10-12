@@ -49,34 +49,34 @@
 void asn1_output_icao_as_text(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
 void asn1_output_acse_as_text(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
 
-static dict const Associate_result_labels[] = {
+dict const Associate_result_labels[] = {
 	{ .id = Associate_result_accepted, .val = "accept" },
 	{ .id = Associate_result_rejected_permanent, .val = "reject (permanent)" },
 	{ .id = Associate_result_rejected_transient, .val = "reject (transient)" },
 	{ .id = 0, .val = NULL }
 };
 
-static dict const Release_request_reason_labels[] = {
+dict const Release_request_reason_labels[] = {
 	{ .id = Release_request_reason_normal, .val = "normal" },
 	{ .id = Release_request_reason_urgent, .val = "urgent" },
 	{ .id = Release_request_reason_user_defined, .val = "user defined" },
 	{ .id = 0, .val = NULL }
 };
 
-static dict const Release_response_reason_labels[] = {
+dict const Release_response_reason_labels[] = {
 	{ .id = Release_response_reason_normal, .val = "normal" },
 	{ .id = Release_response_reason_not_finished, .val = "not finished" },
 	{ .id = Release_response_reason_user_defined, .val = "user defined" },
 	{ .id = 0, .val = NULL }
 };
 
-static dict const ABRT_source_labels[] = {
+dict const ABRT_source_labels[] = {
 	{ .id = ABRT_source_acse_service_user, .val = "user" },
 	{ .id = ABRT_source_acse_service_provider, .val = "provider" },
 	{ .id = 0, .val = NULL }
 };
 
-static dict const ATCUplinkMsgElementId_labels[] = {
+dict const ATCUplinkMsgElementId_labels[] = {
 	{ ATCUplinkMsgElementId_PR_uM0NULL, "UNABLE" },
 	{ ATCUplinkMsgElementId_PR_uM1NULL, "STANDBY" },
 	{ ATCUplinkMsgElementId_PR_uM2NULL, "REQUEST DEFERRED" },
@@ -318,7 +318,7 @@ static dict const ATCUplinkMsgElementId_labels[] = {
 	{ 0, NULL }
 };
 
-static dict const VerticalType_bit_labels[] = {
+dict const VerticalType_bit_labels[] = {
 	{ 0, "top of climb" },
 	{ 1, "top of descent" },
 	{ 2, "start of climb" },
@@ -331,7 +331,7 @@ static dict const VerticalType_bit_labels[] = {
 	{ 0, NULL }
 };
 
-static dict const ReportTypeNotSupported_bit_labels[] = {
+dict const ReportTypeNotSupported_bit_labels[] = {
 	{ 0, "projected profile" },
 	{ 1, "ground vector" },
 	{ 2, "air vector" },
@@ -344,7 +344,7 @@ static dict const ReportTypeNotSupported_bit_labels[] = {
 	{ 0, NULL }
 };
 
-static dict const EPPLimitations_bit_labels[] = {
+dict const EPPLimitations_bit_labels[] = {
 	{ 0, "requested distance tolerance not supported" },
 	{ 1, "requested level tolerance not supported" },
 	{ 2, "requested time tolerance not supported" },
@@ -352,7 +352,7 @@ static dict const EPPLimitations_bit_labels[] = {
 	{ 0, NULL }
 };
 
-static dict const EventTypeNotSupported_bit_labels[] = {
+dict const EventTypeNotSupported_bit_labels[] = {
 	{ 0, "lateral deviations" },
 	{ 1, "vertical rate deviations" },
 	{ 2, "level range deviations" },
@@ -373,7 +373,7 @@ static dict const EventTypeNotSupported_bit_labels[] = {
 	{ 0, NULL }
 };
 
-static dict const EmergencyUrgencyStatus_bit_labels[] = {
+dict const EmergencyUrgencyStatus_bit_labels[] = {
 	{ 0, "emergency" },
 	{ 1, "reserved0" },
 	{ 2, "unlawful-interference" },
@@ -383,7 +383,8 @@ static dict const EmergencyUrgencyStatus_bit_labels[] = {
 	{ 0, NULL }
 
 };
-static dict const ATCDownlinkMsgElementId_labels[] = {
+
+dict const ATCDownlinkMsgElementId_labels[] = {
 	{ ATCDownlinkMsgElementId_PR_dM0NULL, "WILCO" },
 	{ ATCDownlinkMsgElementId_PR_dM1NULL, "UNABLE" },
 	{ ATCDownlinkMsgElementId_PR_dM2NULL, "STANDBY" },
