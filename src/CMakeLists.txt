@@ -243,6 +243,7 @@ add_library (dumpvdl2_base OBJECT
 	acars.c
 	ac_data.c
 	asn1-format-common.c
+	asn1-format-icao-json.c
 	asn1-format-icao-text.c
 	asn1-util.c
 	atn.c

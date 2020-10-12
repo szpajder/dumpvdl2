@@ -40,4 +40,10 @@ extern size_t asn1_icao_formatter_table_text_len;
 extern asn_formatter_t const asn1_acse_formatter_table_text[];
 extern size_t asn1_acse_formatter_table_text_len;
 
+// asn1-format-icao-json.c
+extern asn_formatter_t const asn1_icao_formatter_table_json[];
+extern size_t asn1_icao_formatter_table_json_len;
+extern asn_formatter_t const asn1_acse_formatter_table_json[];
+extern size_t asn1_acse_formatter_table_json_len;
+
 #endif // !_ASN1_FORMAT_ICAO_H
