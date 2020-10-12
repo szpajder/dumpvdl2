@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <search.h>                 // lfind()
 #include <libacars/vstring.h>       // la_vstring
+#include <libacars/json.h>
 #include "asn1/asn_application.h"   // asn_TYPE_descriptor_t
 #include "dumpvdl2.h"               // debug_print(D_PROTO, )
 #include "asn1-util.h"              // asn_formatter_table
@@ -65,6 +66,16 @@ void asn1_output_as_text(la_vstring *vstr, asn_formatter_t const * const asn1_fo
 	}
 }
 
+void asn1_output_as_json(la_vstring *vstr, asn_formatter_t const * const asn1_formatter_table,
+		size_t asn1_formatter_table_len, asn_TYPE_descriptor_t *td, const void *sptr) {
+	if(td == NULL || sptr == NULL) return;
+	asn_formatter_t *formatter = lfind(td, asn1_formatter_table, &asn1_formatter_table_len,
+			sizeof(asn_formatter_t), &compare_fmtr);
+	if(formatter != NULL && formatter->format != NULL) {
+		(*formatter->format)(vstr, formatter->label, td, sptr, 0);
+	}
+}
+
 // text formatter for la_proto_nodes containing asn1_pdu_t data
 void asn1_pdu_format_text(la_vstring *vstr, void const * const data, int indent) {
 	ASSERT(vstr != NULL);
@@ -92,6 +103,22 @@ void asn1_pdu_format_text(la_vstring *vstr, void const * const data, int indent)
 }
 
 void asn1_pdu_format_json(la_vstring *vstr, void const * const data) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+
+	CAST_PTR(pdu, asn1_pdu_t *, data);
+	if(pdu->type == NULL) {   // No user data in APDU, so no decoding was attempted
+		return;
+	}
+	la_json_object_start(vstr, pdu->type->name);
+	if(pdu->data == NULL) {
+		goto end;
+	}
+	ASSERT(pdu->formatter_table_json != NULL);
+	asn1_output_as_json(vstr, pdu->formatter_table_json, pdu->formatter_table_json_len,
+			pdu->type, pdu->data);
+end:
+	la_json_object_end(vstr);
 }
 
 // a destructor for la_proto_nodes containing asn1_pdu_t data
