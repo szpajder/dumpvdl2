@@ -42,8 +42,9 @@ extern asn_TYPE_descriptor_t asn_DEF_TimeDeparture;
 #endif
 
 /* Referred external types */
-#include "Time.h"
+#include "TimeDepAllocated.h"
 #include "ControlledTime.h"
+#include "TimeDepClearanceExpected.h"
 
 #endif	/* _TimeDeparture_H_ */
 #include "asn_internal.h"

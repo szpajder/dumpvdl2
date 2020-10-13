@@ -50,8 +50,9 @@ extern asn_TYPE_descriptor_t asn_DEF_Holdatwaypoint;
 #endif
 
 /* Referred external types */
-#include "Speed.h"
+#include "HoldatwaypointSpeedLow.h"
 #include "ATWLevel.h"
+#include "HoldatwaypointSpeedHigh.h"
 #include "Degrees.h"
 #include "Time.h"
 #include "LegType.h"
