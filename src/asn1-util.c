@@ -107,18 +107,15 @@ void asn1_pdu_format_json(la_vstring *vstr, void const * const data) {
 	ASSERT(data);
 
 	CAST_PTR(pdu, asn1_pdu_t *, data);
-	if(pdu->type == NULL) {   // No user data in APDU, so no decoding was attempted
+	if(pdu->type == NULL) {     // No user data in APDU - no decoding was attempted
 		return;
 	}
-	la_json_object_start(vstr, pdu->type->name);
-	if(pdu->data == NULL) {
-		goto end;
+	if(pdu->data == NULL) {     // Empty PDU
+		return;
 	}
 	ASSERT(pdu->formatter_table_json != NULL);
 	asn1_output_as_json(vstr, pdu->formatter_table_json, pdu->formatter_table_json_len,
 			pdu->type, pdu->data);
-end:
-	la_json_object_end(vstr);
 }
 
 // a destructor for la_proto_nodes containing asn1_pdu_t data
