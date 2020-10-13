@@ -168,10 +168,13 @@ void _format_SEQUENCE_as_text(la_vstring *vstr, char const * const label, asn1_o
 	}
 }
 
+// Prints ASN.1 SEQUENCE as JSON object.
+// All fields in the sequence must have unique types (and labels), otherwise
+// JSON keys will clash.
 void _format_SEQUENCE_as_json(la_vstring *vstr, char const * const label, asn1_output_fun_t cb,
 		asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
 	UNUSED(indent);
-	la_json_array_start(vstr, label);
+	la_json_object_start(vstr, label);
 	for(int edx = 0; edx < td->elements_count; edx++) {
 		asn_TYPE_member_t *elm = &td->elements[edx];
 		const void *memb_ptr;
@@ -184,11 +187,9 @@ void _format_SEQUENCE_as_json(la_vstring *vstr, char const * const label, asn1_o
 		} else {
 			memb_ptr = (const void *)((const char *)sptr + elm->memb_offset);
 		}
-		la_json_object_start(vstr, NULL);
 		cb(vstr, elm->type, memb_ptr, 0);
-		la_json_object_end(vstr);
 	}
-	la_json_array_end(vstr);
+	la_json_object_end(vstr);
 }
 
 void _format_SEQUENCE_OF_as_text(la_vstring *vstr, char const * const label, asn1_output_fun_t cb,
