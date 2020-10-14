@@ -519,47 +519,47 @@ static GByteArray *_stringify_ShortTsap(GByteArray *array, ShortTsap_t *tsap) {
  ************************/
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_acse_as_text) {
-	_format_SEQUENCE_as_text(p.vstr, p.label, &asn1_output_acse_as_text, p.td, p.sptr, p.indent);
+	format_SEQUENCE_as_text(p, asn1_output_acse_as_text);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_CHOICE_acse_as_text) {
-	_format_CHOICE_as_text(p.vstr, p.label, NULL, &asn1_output_acse_as_text, p.td, p.sptr, p.indent);
+	format_CHOICE_as_text(p, NULL, asn1_output_acse_as_text);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Associate_result_as_text) {
-	_format_INTEGER_as_ENUM_as_text(p.vstr, p.label, Associate_result_labels, p.sptr, p.indent);
+	format_INTEGER_as_ENUM_as_text(p, Associate_result_labels);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Release_request_reason_as_text) {
-	_format_INTEGER_as_ENUM_as_text(p.vstr, p.label, Release_request_reason_labels, p.sptr, p.indent);
+	format_INTEGER_as_ENUM_as_text(p, Release_request_reason_labels);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Release_response_reason_as_text) {
-	_format_INTEGER_as_ENUM_as_text(p.vstr, p.label, Release_response_reason_labels, p.sptr, p.indent);
+	format_INTEGER_as_ENUM_as_text(p, Release_response_reason_labels);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ABRT_source_as_text) {
-	_format_INTEGER_as_ENUM_as_text(p.vstr, p.label, ABRT_source_labels, p.sptr, p.indent);
+	format_INTEGER_as_ENUM_as_text(p, ABRT_source_labels);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_CHOICE_icao_as_text) {
-	_format_CHOICE_as_text(p.vstr, p.label, NULL, &asn1_output_icao_as_text, p.td, p.sptr, p.indent);
+	format_CHOICE_as_text(p, NULL, asn1_output_icao_as_text);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_icao_as_text) {
-	_format_SEQUENCE_as_text(p.vstr, p.label, &asn1_output_icao_as_text, p.td, p.sptr, p.indent);
+	format_SEQUENCE_as_text(p, asn1_output_icao_as_text);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_OF_icao_as_text) {
-	_format_SEQUENCE_OF_as_text(p.vstr, p.label, &asn1_output_icao_as_text, p.td, p.sptr, p.indent);
+	format_SEQUENCE_OF_as_text(p, asn1_output_icao_as_text);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCDownlinkMsgElementId_as_text) {
-	_format_CHOICE_as_text(p.vstr, p.label, ATCDownlinkMsgElementId_labels, &asn1_output_icao_as_text, p.td, p.sptr, p.indent);
+	format_CHOICE_as_text(p, ATCDownlinkMsgElementId_labels, asn1_output_icao_as_text);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCUplinkMsgElementId_as_text) {
-	_format_CHOICE_as_text(p.vstr, p.label, ATCUplinkMsgElementId_labels, &asn1_output_icao_as_text, p.td, p.sptr, p.indent);
+	format_CHOICE_as_text(p, ATCUplinkMsgElementId_labels, asn1_output_icao_as_text);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Code_as_text) {
@@ -670,67 +670,67 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_Longitude_as_text) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_AltimeterEnglish_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " inHg", 0.01, 2);
+	format_INTEGER_with_unit_as_text(p, " inHg", 0.01, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_AltimeterMetric_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " hPa", 0.1, 1);
+	format_INTEGER_with_unit_as_text(p, " hPa", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Deg_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " deg", 1, 0);
+	format_INTEGER_with_unit_as_text(p, " deg", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DepartureMinimumInterval_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " min", 0.1, 1);
+	format_INTEGER_with_unit_as_text(p, " min", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceKm_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " km", 0.25, 2);
+	format_INTEGER_with_unit_as_text(p, " km", 0.25, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceNm_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " nm", 0.1, 1);
+	format_INTEGER_with_unit_as_text(p, " nm", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Humidity_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, "%%", 1, 0);
+	format_INTEGER_with_unit_as_text(p, "%%", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceEnglish_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " nm", 1, 0);
+	format_INTEGER_with_unit_as_text(p, " nm", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceMetric_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " km", 1, 0);
+	format_INTEGER_with_unit_as_text(p, " km", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyvhf_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " MHz", 0.005, 3);
+	format_INTEGER_with_unit_as_text(p, " MHz", 0.005, 3);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyuhf_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " MHz", 0.025, 3);
+	format_INTEGER_with_unit_as_text(p, " MHz", 0.025, 3);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyhf_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " kHz", 1, 0);
+	format_INTEGER_with_unit_as_text(p, " kHz", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_LegTime_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " min", 1, 0);
+	format_INTEGER_with_unit_as_text(p, " min", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_LevelFeet_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " ft", 10, 0);
+	format_INTEGER_with_unit_as_text(p, " ft", 10, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_LevelFlightLevelMetric_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " m", 10, 0);
+	format_INTEGER_with_unit_as_text(p, " m", 10, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Meters_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " m", 1, 0);
+	format_INTEGER_with_unit_as_text(p, " m", 1, 0);
 }
 
 // RejectDetails is a CHOICE whose all values are NULLs.  Aliasing them all to
@@ -777,12 +777,12 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ReportingRate_as_text) {
 	CAST_PTR(rate, ReportingRate_t *, p.sptr);
 	switch(rate->present) {
 		case ReportingRate_PR_reporting_time_seconds_scale:
-			_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td,
-					&rate->choice.reporting_time_seconds_scale, p.indent, " sec", 1, 0);
+			p.sptr = &rate->choice.reporting_time_seconds_scale;
+			format_INTEGER_with_unit_as_text(p, " sec", 1, 0);
 			break;
 		case ReportingRate_PR_reporting_time_minutes_scale:
-			_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td,
-					&rate->choice.reporting_time_minutes_scale, p.indent, " min", 1, 0);
+			p.sptr = &rate->choice.reporting_time_minutes_scale;
+			format_INTEGER_with_unit_as_text(p, " min", 1, 0);
 			break;
 		default:
 			break;
@@ -790,43 +790,43 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ReportingRate_as_text) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_RTASecTolerance_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " sec", 1, 0);
+	format_INTEGER_with_unit_as_text(p, " sec", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_RTATolerance_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " min", 0.1, 1);
+	format_INTEGER_with_unit_as_text(p, " min", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Feet_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " ft", 1, 0);
+	format_INTEGER_with_unit_as_text(p, " ft", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedMetric_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " km/h", 1, 0);
+	format_INTEGER_with_unit_as_text(p, " km/h", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedEnglish_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " kts", 1, 0);
+	format_INTEGER_with_unit_as_text(p, " kts", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedIndicated_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " kts", 1, 0);
+	format_INTEGER_with_unit_as_text(p, " kts", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedMach_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, "", 0.001, 3);
+	format_INTEGER_with_unit_as_text(p, "", 0.001, 3);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Temperature_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " C", 1, 0);
+	format_INTEGER_with_unit_as_text(p, " C", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateEnglish_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " ft/min", 10, 0);
+	format_INTEGER_with_unit_as_text(p, " ft/min", 10, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateMetric_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " m/min", 10, 0);
+	format_INTEGER_with_unit_as_text(p, " m/min", 10, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_LongTsap_as_text) {
@@ -886,7 +886,7 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_EstimatedPositionUncertainty_as_text
 	if(*epu == 9900) {
 		LA_ISPRINTF(p.vstr, p.indent, "%s: complete-loss\n", p.label);
 	} else {
-		_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " nm", 0.01, 2);
+		format_INTEGER_with_unit_as_text(p, " nm", 0.01, 2);
 	}
 }
 
@@ -923,31 +923,31 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSAircraftPDUs_as_text) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Temperature_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " C", 0.25, 2);
+	format_INTEGER_with_unit_as_text(p, " C", 0.25, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2WindSpeedKts_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " kts", 1, 0);
+	format_INTEGER_with_unit_as_text(p, " kts", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2WindSpeedKmh_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " km/h", 2, 0);
+	format_INTEGER_with_unit_as_text(p, " km/h", 2, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EmergencyUrgencyStatus_as_text) {
-	_format_BIT_STRING_as_text(p.vstr, p.label, EmergencyUrgencyStatus_bit_labels, p.sptr, p.indent);
+	format_BIT_STRING_as_text(p, EmergencyUrgencyStatus_bit_labels);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPPTimeInterval_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " minutes", 1, 0);
+	format_INTEGER_with_unit_as_text(p, " minutes", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EventTypeNotSupported_as_text) {
-	_format_BIT_STRING_as_text(p.vstr, p.label, EventTypeNotSupported_bit_labels, p.sptr, p.indent);
+	format_BIT_STRING_as_text(p, EventTypeNotSupported_bit_labels);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_GrossMass_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " kg", 10, 0);
+	format_INTEGER_with_unit_as_text(p, " kg", 10, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSGroundPDUs_as_text) {
@@ -957,35 +957,35 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSGroundPDUs_as_text) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPPLimitations_as_text) {
-	_format_BIT_STRING_as_text(p.vstr, p.label, EPPLimitations_bit_labels, p.sptr, p.indent);
+	format_BIT_STRING_as_text(p, EPPLimitations_bit_labels);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPPTolETA_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " min", 0.1, 1);
+	format_INTEGER_with_unit_as_text(p, " min", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPPTolGCDistance_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " nm", 0.01, 2);
+	format_INTEGER_with_unit_as_text(p, " nm", 0.01, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPUChangeTolerance_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " nm", 0.01, 2);
+	format_INTEGER_with_unit_as_text(p, " nm", 0.01, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_GroundSpeed_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " kts", 0.5, 1);
+	format_INTEGER_with_unit_as_text(p, " kts", 0.5, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_GroundTrack_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " deg", 0.05, 2);
+	format_INTEGER_with_unit_as_text(p, " deg", 0.05, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_LateralDeviationThreshold_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " nm", 0.1, 1);
+	format_INTEGER_with_unit_as_text(p, " nm", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_MachNumberTolerance_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, "", 0.01, 2);
+	format_INTEGER_with_unit_as_text(p, "", 0.01, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Modulus_as_text) {
@@ -994,27 +994,27 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_Modulus_as_text) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ReportTypeNotSupported_as_text) {
-	_format_BIT_STRING_as_text(p.vstr, p.label, ReportTypeNotSupported_bit_labels, p.sptr, p.indent);
+	format_BIT_STRING_as_text(p, ReportTypeNotSupported_bit_labels);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_RNPValue_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " nm", 0.1, 1);
+	format_INTEGER_with_unit_as_text(p, " nm", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_TurbulenceEDRValue_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " m^2/s^3", 0.01, 2);
+	format_INTEGER_with_unit_as_text(p, " m^2/s^3", 0.01, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_TurbulenceMinutesInThePast_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " min", 0.5, 1);
+	format_INTEGER_with_unit_as_text(p, " min", 0.5, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_TurbulenceObservationWindow_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " min", 1, 0);
+	format_INTEGER_with_unit_as_text(p, " min", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_TurnRadius_as_text) {
-	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " nm", 0.1, 1);
+	format_INTEGER_with_unit_as_text(p, " nm", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Timesec_as_text) {
@@ -1023,7 +1023,7 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_Timesec_as_text) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalType_as_text) {
-	_format_BIT_STRING_as_text(p.vstr, p.label, VerticalType_bit_labels, p.sptr, p.indent);
+	format_BIT_STRING_as_text(p, VerticalType_bit_labels);
 }
 
 asn_formatter_t const asn1_icao_formatter_table_text[] = {

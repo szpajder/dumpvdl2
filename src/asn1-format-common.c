@@ -36,203 +36,188 @@ char const *value2enum(asn_TYPE_descriptor_t *td, long const value) {
 	return enum_map->enum_name;
 }
 
-void _format_INTEGER_with_unit_as_text(la_vstring *vstr, char const * const label, asn_TYPE_descriptor_t *td,
-		void const *sptr, int indent, char const * const unit, double multiplier, int decimal_places) {
-	UNUSED(td);
-	CAST_PTR(val, long *, sptr);
-	LA_ISPRINTF(vstr, indent, "%s: %.*f%s\n", label, decimal_places, (double)(*val) * multiplier, unit);
+void format_INTEGER_with_unit_as_text(asn1_formatter_param_t p,
+		char const * const unit, double multiplier, int decimal_places) {
+	CAST_PTR(val, long *, p.sptr);
+	LA_ISPRINTF(p.vstr, p.indent, "%s: %.*f%s\n", p.label, decimal_places, (double)(*val) * multiplier, unit);
 }
 
-void _format_INTEGER_with_unit_as_json(la_vstring *vstr, char const * const label, asn_TYPE_descriptor_t *td,
-		void const *sptr, int indent, char const * const unit, double multiplier, int decimal_places) {
-	UNUSED(td);
-	UNUSED(indent);
+void format_INTEGER_with_unit_as_json(asn1_formatter_param_t p,
+		char const * const unit, double multiplier, int decimal_places) {
 	UNUSED(decimal_places);
-	CAST_PTR(val, long *, sptr);
-	la_json_object_start(vstr, label);
-	la_json_append_double(vstr, "val", (double)(*val) * multiplier);
-	la_json_append_string(vstr, "unit", unit);
-	la_json_object_end(vstr);
+	CAST_PTR(val, long *, p.sptr);
+	la_json_object_start(p.vstr, p.label);
+	la_json_append_double(p.vstr, "val", (double)(*val) * multiplier);
+	la_json_append_string(p.vstr, "unit", unit);
+	la_json_object_end(p.vstr);
 }
 
-void _format_INTEGER_as_ENUM_as_text(la_vstring *vstr, char const * const label, dict const * const value_labels,
-		void const *sptr, int indent) {
-	CAST_PTR(val, long *, sptr);
+void format_INTEGER_as_ENUM_as_text(asn1_formatter_param_t p, dict const * const value_labels) {
+	CAST_PTR(val, long *, p.sptr);
 	char *val_label = dict_search(value_labels, (int)(*val));
 	if(val_label != NULL) {
-		LA_ISPRINTF(vstr, indent, "%s: %s\n", label, val_label);
+		LA_ISPRINTF(p.vstr, p.indent, "%s: %s\n", p.label, val_label);
 	} else {
-		LA_ISPRINTF(vstr, indent, "%s: %ld (unknown)\n", label, *val);
+		LA_ISPRINTF(p.vstr, p.indent, "%s: %ld (unknown)\n", p.label, *val);
 	}
 }
 
-void _format_INTEGER_as_ENUM_as_json(la_vstring *vstr, char const * const label, dict const * const value_labels,
-		void const *sptr, int indent) {
-	UNUSED(indent);
-	CAST_PTR(val, long *, sptr);
-	la_json_object_start(vstr, label);
-	la_json_append_long(vstr, "value", (int)(*val));
+void format_INTEGER_as_ENUM_as_json(asn1_formatter_param_t p, dict const * const value_labels) {
+	CAST_PTR(val, long *, p.sptr);
+	la_json_object_start(p.vstr, p.label);
+	la_json_append_long(p.vstr, "value", (int)(*val));
 	char *val_label = dict_search(value_labels, (int)(*val));
-	JSON_APPEND_STRING(vstr, "value_descr", val_label);
-	la_json_object_end(vstr);
+	JSON_APPEND_STRING(p.vstr, "value_descr", val_label);
+	la_json_object_end(p.vstr);
 }
 
-void _format_CHOICE_as_text(la_vstring *vstr, char const * const label, dict const * const choice_labels,
-		asn1_output_fun_t cb, asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
-
-	CAST_PTR(specs, asn_CHOICE_specifics_t *, td->specifics);
-	int present = _fetch_present_idx(sptr, specs->pres_offset, specs->pres_size);
-	if(label != NULL) {
-		LA_ISPRINTF(vstr, indent, "%s:\n", label);
-		indent++;
+void format_CHOICE_as_text(asn1_formatter_param_t p, dict const * const choice_labels,
+		asn1_output_fun_t cb) {
+	CAST_PTR(specs, asn_CHOICE_specifics_t *, p.td->specifics);
+	int present = _fetch_present_idx(p.sptr, specs->pres_offset, specs->pres_size);
+	if(p.label != NULL) {
+		LA_ISPRINTF(p.vstr, p.indent, "%s:\n", p.label);
+		p.indent++;
 	}
 	if(choice_labels != NULL) {
 		char *descr = dict_search(choice_labels, present);
 		if(descr != NULL) {
-			LA_ISPRINTF(vstr, indent, "%s\n", descr);
+			LA_ISPRINTF(p.vstr, p.indent, "%s\n", descr);
 		} else {
-			LA_ISPRINTF(vstr, indent, "<no description for CHOICE value %d>\n", present);
+			LA_ISPRINTF(p.vstr, p.indent, "<no description for CHOICE value %d>\n", present);
 		}
-		indent++;
+		p.indent++;
 	}
-	if(present > 0 && present <= td->elements_count) {
-		asn_TYPE_member_t *elm = &td->elements[present-1];
+	if(present > 0 && present <= p.td->elements_count) {
+		asn_TYPE_member_t *elm = &p.td->elements[present-1];
 		void const *memb_ptr;
 
 		if(elm->flags & ATF_POINTER) {
-			memb_ptr = *(const void * const *)((const char *)sptr + elm->memb_offset);
+			memb_ptr = *(const void * const *)((const char *)p.sptr + elm->memb_offset);
 			if(!memb_ptr) {
-				LA_ISPRINTF(vstr, indent, "%s: <not present>\n", elm->name);
+				LA_ISPRINTF(p.vstr, p.indent, "%s: <not present>\n", elm->name);
 				return;
 			}
 		} else {
-			memb_ptr = (const void *)((const char *)sptr + elm->memb_offset);
+			memb_ptr = (const void *)((const char *)p.sptr + elm->memb_offset);
 		}
 
-		cb(vstr, elm->type, memb_ptr, indent);
+		cb(p.vstr, elm->type, memb_ptr, p.indent);
 	} else {
-		LA_ISPRINTF(vstr, indent, "-- %s: value %d out of range\n", td->name, present);
+		LA_ISPRINTF(p.vstr, p.indent, "-- %s: value %d out of range\n", p.td->name, present);
 	}
 }
 
-void _format_CHOICE_as_json(la_vstring *vstr, char const * const label, dict const * const choice_labels,
-		asn1_output_fun_t cb, asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
-	UNUSED(indent);
-	asn_CHOICE_specifics_t *specs = (asn_CHOICE_specifics_t *)td->specifics;
-	int present = _fetch_present_idx(sptr, specs->pres_offset, specs->pres_size);
-	la_json_object_start(vstr, label);
+void format_CHOICE_as_json(asn1_formatter_param_t p, dict const * const choice_labels,
+		asn1_output_fun_t cb) {
+	asn_CHOICE_specifics_t *specs = (asn_CHOICE_specifics_t *)p.td->specifics;
+	int present = _fetch_present_idx(p.sptr, specs->pres_offset, specs->pres_size);
+	la_json_object_start(p.vstr, p.label);
 	if(choice_labels != NULL) {
 		char *descr = dict_search(choice_labels, present);
-		la_json_append_string(vstr, "choice_label", descr != NULL ? descr : "");
+		la_json_append_string(p.vstr, "choice_label", descr != NULL ? descr : "");
 	}
-	if(present > 0 && present <= td->elements_count) {
-		asn_TYPE_member_t *elm = &td->elements[present-1];
+	if(present > 0 && present <= p.td->elements_count) {
+		asn_TYPE_member_t *elm = &p.td->elements[present-1];
 		void const *memb_ptr;
 
 		if(elm->flags & ATF_POINTER) {
-			memb_ptr = *(const void * const *)((const char *)sptr + elm->memb_offset);
+			memb_ptr = *(const void * const *)((const char *)p.sptr + elm->memb_offset);
 			if(!memb_ptr) {
 				goto end;
 			}
 		} else {
-			memb_ptr = (const void *)((const char *)sptr + elm->memb_offset);
+			memb_ptr = (const void *)((const char *)p.sptr + elm->memb_offset);
 		}
-		la_json_append_string(vstr, "choice", elm->name);
-		la_json_object_start(vstr, "data");
-		cb(vstr, elm->type, memb_ptr, 0);
-		la_json_object_end(vstr);
+		la_json_append_string(p.vstr, "choice", elm->name);
+		la_json_object_start(p.vstr, "data");
+		cb(p.vstr, elm->type, memb_ptr, 0);
+		la_json_object_end(p.vstr);
 	}
 end:
-	la_json_object_end(vstr);
+	la_json_object_end(p.vstr);
 }
 
-void _format_SEQUENCE_as_text(la_vstring *vstr, char const * const label, asn1_output_fun_t cb,
-		asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
-	if(label != NULL) {
-		LA_ISPRINTF(vstr, indent, "%s:\n", label);
-		indent++;
+void format_SEQUENCE_as_text(asn1_formatter_param_t p, asn1_output_fun_t cb) {
+	if(p.label != NULL) {
+		LA_ISPRINTF(p.vstr, p.indent, "%s:\n", p.label);
+		p.indent++;
 	}
-	for(int edx = 0; edx < td->elements_count; edx++) {
-		asn_TYPE_member_t *elm = &td->elements[edx];
+	for(int edx = 0; edx < p.td->elements_count; edx++) {
+		asn_TYPE_member_t *elm = &p.td->elements[edx];
 		const void *memb_ptr;
 
 		if(elm->flags & ATF_POINTER) {
-			memb_ptr = *(const void * const *)((const char *)sptr + elm->memb_offset);
+			memb_ptr = *(const void * const *)((const char *)p.sptr + elm->memb_offset);
 			if(!memb_ptr) {
 				continue;
 			}
 		} else {
-			memb_ptr = (const void *)((const char *)sptr + elm->memb_offset);
+			memb_ptr = (const void *)((const char *)p.sptr + elm->memb_offset);
 		}
-		cb(vstr, elm->type, memb_ptr, indent);
+		cb(p.vstr, elm->type, memb_ptr, p.indent);
 	}
 }
 
 // Prints ASN.1 SEQUENCE as JSON object.
-// All fields in the sequence must have unique types (and labels), otherwise
+// All fields in the sequence must have unique types (and p.labels), otherwise
 // JSON keys will clash.
-void _format_SEQUENCE_as_json(la_vstring *vstr, char const * const label, asn1_output_fun_t cb,
-		asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
-	UNUSED(indent);
-	la_json_object_start(vstr, label);
-	for(int edx = 0; edx < td->elements_count; edx++) {
-		asn_TYPE_member_t *elm = &td->elements[edx];
+void format_SEQUENCE_as_json(asn1_formatter_param_t p, asn1_output_fun_t cb) {
+	la_json_object_start(p.vstr, p.label);
+	for(int edx = 0; edx < p.td->elements_count; edx++) {
+		asn_TYPE_member_t *elm = &p.td->elements[edx];
 		const void *memb_ptr;
 
 		if(elm->flags & ATF_POINTER) {
-			memb_ptr = *(const void * const *)((const char *)sptr + elm->memb_offset);
+			memb_ptr = *(const void * const *)((const char *)p.sptr + elm->memb_offset);
 			if(!memb_ptr) {
 				continue;
 			}
 		} else {
-			memb_ptr = (const void *)((const char *)sptr + elm->memb_offset);
+			memb_ptr = (const void *)((const char *)p.sptr + elm->memb_offset);
 		}
-		cb(vstr, elm->type, memb_ptr, 0);
+		cb(p.vstr, elm->type, memb_ptr, 0);
 	}
-	la_json_object_end(vstr);
+	la_json_object_end(p.vstr);
 }
 
-void _format_SEQUENCE_OF_as_text(la_vstring *vstr, char const * const label, asn1_output_fun_t cb,
-		asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
-	if(label != NULL) {
-		LA_ISPRINTF(vstr, indent, "%s:\n", label);
-		indent++;
+void format_SEQUENCE_OF_as_text(asn1_formatter_param_t p, asn1_output_fun_t cb) {
+	if(p.label != NULL) {
+		LA_ISPRINTF(p.vstr, p.indent, "%s:\n", p.label);
+		p.indent++;
 	}
-	asn_TYPE_member_t *elm = td->elements;
-	const asn_anonymous_set_ *list = _A_CSET_FROM_VOID(sptr);
+	asn_TYPE_member_t *elm = p.td->elements;
+	const asn_anonymous_set_ *list = _A_CSET_FROM_VOID(p.sptr);
 	for(int i = 0; i < list->count; i++) {
 		const void *memb_ptr = list->array[i];
 		if(memb_ptr == NULL) {
 			continue;
 		}
-		cb(vstr, elm->type, memb_ptr, indent);
+		cb(p.vstr, elm->type, memb_ptr, p.indent);
 	}
 }
 
-void _format_SEQUENCE_OF_as_json(la_vstring *vstr, char const * const label, asn1_output_fun_t cb,
-		asn_TYPE_descriptor_t *td, void const *sptr, int indent) {
-	UNUSED(indent);
-	la_json_array_start(vstr, label);
-	asn_TYPE_member_t *elm = td->elements;
-	const asn_anonymous_set_ *list = _A_CSET_FROM_VOID(sptr);
+void format_SEQUENCE_OF_as_json(asn1_formatter_param_t p, asn1_output_fun_t cb) {
+	la_json_array_start(p.vstr, p.label);
+	asn_TYPE_member_t *elm = p.td->elements;
+	const asn_anonymous_set_ *list = _A_CSET_FROM_VOID(p.sptr);
 	for(int i = 0; i < list->count; i++) {
 		const void *memb_ptr = list->array[i];
 		if(memb_ptr == NULL) {
 			continue;
 		}
-		la_json_object_start(vstr, NULL);
-		cb(vstr, elm->type, memb_ptr, 0);
-		la_json_object_end(vstr);
+		la_json_object_start(p.vstr, NULL);
+		cb(p.vstr, elm->type, memb_ptr, 0);
+		la_json_object_end(p.vstr);
 	}
-	la_json_array_end(vstr);
+	la_json_array_end(p.vstr);
 }
 
 // Handles bit string up to 32 bits long.
 // dict indices are bit numbers from 0 to bit_stream_len-1
 // Bit 0 is the MSB of the first octet in the buffer.
-void _format_BIT_STRING_as_text(la_vstring *vstr, char const * const label, dict const * const bit_labels,
-		void const *sptr, int indent) {
-	CAST_PTR(bs, BIT_STRING_t *, sptr);
+void format_BIT_STRING_as_text(asn1_formatter_param_t p, dict const * const bit_labels) {
+	CAST_PTR(bs, BIT_STRING_t *, p.sptr);
 	debug_print(D_PROTO_DETAIL, "buf len: %d bits_unused: %d\n", bs->size, bs->bits_unused);
 	uint32_t val = 0;
 	int truncated = 0;
@@ -246,15 +231,15 @@ void _format_BIT_STRING_as_text(la_vstring *vstr, char const * const label, dict
 		len = sizeof(val);
 		bits_unused = 0;
 	}
-	if(label != NULL) {
-		LA_ISPRINTF(vstr, indent, "%s: ", label);
+	if(p.label != NULL) {
+		LA_ISPRINTF(p.vstr, p.indent, "%s: ", p.label);
 	}
 	for(int i = 0; i < len; val = (val << 8) | bs->buf[i++])
 		;
 	debug_print(D_PROTO_DETAIL, "val: 0x%08x\n", val);
 	val &= (~0u << bits_unused);    // zeroize unused bits
 	if(val == 0) {
-		la_vstring_append_sprintf(vstr, "none\n");
+		la_vstring_append_sprintf(p.vstr, "none\n");
 		goto end;
 	}
 	val = reverse(val, len * 8);
@@ -262,24 +247,22 @@ void _format_BIT_STRING_as_text(la_vstring *vstr, char const * const label, dict
 	for(dict const *ptr = bit_labels; ptr->val != NULL; ptr++) {
 		uint32_t shift = (uint32_t)ptr->id;
 		if((val >> shift) & 1) {
-			la_vstring_append_sprintf(vstr, "%s%s",
+			la_vstring_append_sprintf(p.vstr, "%s%s",
 					(first ? "" : ", "), (char *)ptr->val);
 			first = false;
 		}
 	}
-	EOL(vstr);
+	EOL(p.vstr);
 end:
 	if(truncated > 0) {
-		LA_ISPRINTF(vstr, indent,
+		LA_ISPRINTF(p.vstr, p.indent,
 				"-- Warning: bit string too long (%d bits), truncated to %d bits\n",
 				bs->size * 8 - bs->bits_unused, len * 8);
 	}
 }
 
-void _format_BIT_STRING_as_json(la_vstring *vstr, char const * const label, dict const * const bit_labels,
-		void const *sptr, int indent) {
-	UNUSED(indent);
-	CAST_PTR(bs, BIT_STRING_t *, sptr);
+void format_BIT_STRING_as_json(asn1_formatter_param_t p, dict const * const bit_labels) {
+	CAST_PTR(bs, BIT_STRING_t *, p.sptr);
 	debug_print(D_PROTO_DETAIL, "buf len: %d bits_unused: %d\n", bs->size, bs->bits_unused);
 	uint32_t val = 0;
 	int len = bs->size;
@@ -291,7 +274,7 @@ void _format_BIT_STRING_as_json(la_vstring *vstr, char const * const label, dict
 		len = sizeof(val);
 		bits_unused = 0;
 	}
-	la_json_array_start(vstr, label);
+	la_json_array_start(p.vstr, p.label);
 	for(int i = 0; i < len; val = (val << 8) | bs->buf[i++])
 		;
 	debug_print(D_PROTO_DETAIL, "val: 0x%08x\n", val);
@@ -303,11 +286,11 @@ void _format_BIT_STRING_as_json(la_vstring *vstr, char const * const label, dict
 	for(dict const *ptr = bit_labels; ptr->val != NULL; ptr++) {
 		uint32_t shift = (uint32_t)ptr->id;
 		if((val >> shift) & 1) {
-			la_json_append_string(vstr, NULL, (char *)ptr->val);
+			la_json_append_string(p.vstr, NULL, (char *)ptr->val);
 		}
 	}
 end:
-	la_json_array_end(vstr);
+	la_json_array_end(p.vstr);
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_any_as_text) {
