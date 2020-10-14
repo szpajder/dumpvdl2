@@ -213,6 +213,10 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_AltimeterMetric_as_json) {
 	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "hPa", 0.1, 1);
 }
 
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_Deg_as_json) {
+	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "deg", 1, 0);
+}
+
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DepartureMinimumInterval_as_json) {
 	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "min", 0.1, 1);
 }

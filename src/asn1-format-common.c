@@ -367,14 +367,6 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_ENUM_as_json) {
 	}
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Deg_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " deg", 1, 0);
-}
-
-ASN1_FORMATTER_PROTOTYPE(asn1_format_Deg_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "deg", 1, 0);
-}
-
 ASN1_FORMATTER_PROTOTYPE(asn1_format_long_as_json) {
 	UNUSED(td);
 	UNUSED(indent);
