@@ -311,82 +311,67 @@ end:
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_any_as_text) {
-	if(label != NULL) {
-		LA_ISPRINTF(vstr, indent, "%s: ", label);
+	if(p.label != NULL) {
+		LA_ISPRINTF(p.vstr, p.indent, "%s: ", p.label);
 	} else {
-		LA_ISPRINTF(vstr, indent, "%s", "");
+		LA_ISPRINTF(p.vstr, p.indent, "%s", "");
 	}
-	asn_sprintf(vstr, td, sptr, 1);
-	EOL(vstr);
+	asn_sprintf(p.vstr, p.td, p.sptr, 1);
+	EOL(p.vstr);
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_any_as_string_as_json) {
-	UNUSED(indent);
+	UNUSED(p.indent);
 	la_vstring *tmp = la_vstring_new();
-	asn_sprintf(tmp, td, sptr, 0);
-	la_json_append_string(vstr, label, tmp->str);
+	asn_sprintf(tmp, p.td, p.sptr, 0);
+	la_json_append_string(p.vstr, p.label, tmp->str);
 	la_vstring_destroy(tmp, true);
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_label_only_as_text) {
-	UNUSED(td);
-	UNUSED(sptr);
-	if(label != NULL) {
-		LA_ISPRINTF(vstr, indent, "%s\n", label);
+	if(p.label != NULL) {
+		LA_ISPRINTF(p.vstr, p.indent, "%s\n", p.label);
 	}
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_label_only_as_json) {
-	UNUSED(td);
-	UNUSED(sptr);
-	UNUSED(indent);
-	if(label != NULL) {
-		la_json_object_start(vstr, label);
-		la_json_object_end(vstr);
+	if(p.label != NULL) {
+		la_json_object_start(p.vstr, p.label);
+		la_json_object_end(p.vstr);
 	}
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_ENUM_as_text) {
-	long const value = *(long const *)sptr;
-	char const *s = value2enum(td, value);
+	long const value = *(long const *)p.sptr;
+	char const *s = value2enum(p.td, value);
 	if(s != NULL) {
-		LA_ISPRINTF(vstr, indent, "%s: %s\n", label, s);
+		LA_ISPRINTF(p.vstr, p.indent, "%s: %s\n", p.label, s);
 	} else {
-		LA_ISPRINTF(vstr, indent, "%s: %ld\n", label, value);
+		LA_ISPRINTF(p.vstr, p.indent, "%s: %ld\n", p.label, value);
 	}
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_ENUM_as_json) {
-	UNUSED(indent);
-	long const value = *(long const *)sptr;
-	char const *s = value2enum(td, value);
+	long const value = *(long const *)p.sptr;
+	char const *s = value2enum(p.td, value);
 	if(s != NULL) {
-		la_json_append_string(vstr, label, s);
+		la_json_append_string(p.vstr, p.label, s);
 	} else {
-		la_json_append_long(vstr, label, value);
+		la_json_append_long(p.vstr, p.label, value);
 	}
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_long_as_json) {
-	UNUSED(td);
-	UNUSED(indent);
-
-	CAST_PTR(valptr, long *, sptr);
-	la_json_append_long(vstr, label, *valptr);
+	CAST_PTR(valptr, long *, p.sptr);
+	la_json_append_long(p.vstr, p.label, *valptr);
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_bool_as_json) {
-	UNUSED(td);
-	UNUSED(indent);
-
-	CAST_PTR(valptr, BOOLEAN_t *, sptr);
-	la_json_append_bool(vstr, label, (*valptr) ? true : false);
+	CAST_PTR(valptr, BOOLEAN_t *, p.sptr);
+	la_json_append_bool(p.vstr, p.label, (*valptr) ? true : false);
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_OCTET_STRING_as_json) {
-	UNUSED(td);
-	UNUSED(indent);
-
-	CAST_PTR(valptr, OCTET_STRING_t *, sptr);
-	la_json_append_octet_string(vstr, label, valptr->buf, valptr->size);
+	CAST_PTR(valptr, OCTET_STRING_t *, p.sptr);
+	la_json_append_octet_string(p.vstr, p.label, valptr->buf, valptr->size);
 }

@@ -55,59 +55,53 @@ void asn1_output_acse_as_json(la_vstring *vstr, asn_TYPE_descriptor_t *td, const
  ************************/
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_acse_as_json) {
-	_format_SEQUENCE_as_json(vstr, label, &asn1_output_acse_as_json, td, sptr, indent);
+	_format_SEQUENCE_as_json(p.vstr, p.label, &asn1_output_acse_as_json, p.td, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_CHOICE_acse_as_json) {
-	_format_CHOICE_as_json(vstr, label, NULL, &asn1_output_acse_as_json, td, sptr, indent);
+	_format_CHOICE_as_json(p.vstr, p.label, NULL, &asn1_output_acse_as_json, p.td, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Associate_result_as_json) {
-	UNUSED(td);
-	_format_INTEGER_as_ENUM_as_json(vstr, label, Associate_result_labels, sptr, indent);
+	_format_INTEGER_as_ENUM_as_json(p.vstr, p.label, Associate_result_labels, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Release_request_reason_as_json) {
-	UNUSED(td);
-	_format_INTEGER_as_ENUM_as_json(vstr, label, Release_request_reason_labels, sptr, indent);
+	_format_INTEGER_as_ENUM_as_json(p.vstr, p.label, Release_request_reason_labels, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Release_response_reason_as_json) {
-	UNUSED(td);
-	_format_INTEGER_as_ENUM_as_json(vstr, label, Release_response_reason_labels, sptr, indent);
+	_format_INTEGER_as_ENUM_as_json(p.vstr, p.label, Release_response_reason_labels, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ABRT_source_as_json) {
-	UNUSED(td);
-	_format_INTEGER_as_ENUM_as_json(vstr, label, ABRT_source_labels, sptr, indent);
+	_format_INTEGER_as_ENUM_as_json(p.vstr, p.label, ABRT_source_labels, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_CHOICE_icao_as_json) {
-	_format_CHOICE_as_json(vstr, label, NULL, &asn1_output_icao_as_json, td, sptr, indent);
+	_format_CHOICE_as_json(p.vstr, p.label, NULL, &asn1_output_icao_as_json, p.td, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_icao_as_json) {
-	_format_SEQUENCE_as_json(vstr, label, &asn1_output_icao_as_json, td, sptr, indent);
+	_format_SEQUENCE_as_json(p.vstr, p.label, &asn1_output_icao_as_json, p.td, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_OF_icao_as_json) {
-	_format_SEQUENCE_OF_as_json(vstr, label, &asn1_output_icao_as_json, td, sptr, indent);
+	_format_SEQUENCE_OF_as_json(p.vstr, p.label, &asn1_output_icao_as_json, p.td, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCDownlinkMsgElementId_as_json) {
-	_format_CHOICE_as_json(vstr, label, ATCDownlinkMsgElementId_labels, &asn1_output_icao_as_json, td, sptr, indent);
+	_format_CHOICE_as_json(p.vstr, p.label, ATCDownlinkMsgElementId_labels, &asn1_output_icao_as_json, p.td, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCUplinkMsgElementId_as_json) {
-	_format_CHOICE_as_json(vstr, label, ATCUplinkMsgElementId_labels, &asn1_output_icao_as_json, td, sptr, indent);
+	_format_CHOICE_as_json(p.vstr, p.label, ATCUplinkMsgElementId_labels, &asn1_output_icao_as_json, p.td, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Code_as_json) {
-	UNUSED(td);
-	UNUSED(indent);
-	CAST_PTR(code, Code_t *, sptr);
+	CAST_PTR(code, Code_t *, p.sptr);
 	long **cptr = code->list.array;
-	la_json_append_long(vstr, label,
+	la_json_append_long(p.vstr, p.label,
 			*cptr[0] * 1000 +
 			*cptr[1] * 100 +
 			*cptr[2] * 10 +
@@ -116,157 +110,147 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_Code_as_json) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTime_as_json) {
-	UNUSED(td);
-	UNUSED(indent);
-	CAST_PTR(dtg, DateTime_t *, sptr);
+	CAST_PTR(dtg, DateTime_t *, p.sptr);
 	Date_t *d = &dtg->date;
 	Time_t *t = &dtg->time;
-	la_json_object_start(vstr, label);
-	la_json_append_long(vstr, "year", d->year);
-	la_json_append_long(vstr, "month", d->month);
-	la_json_append_long(vstr, "day", d->day);
-	la_json_append_long(vstr, "hour", t->hours);
-	la_json_append_long(vstr, "min", t->minutes);
-	la_json_object_end(vstr);
+	la_json_object_start(p.vstr, p.label);
+	la_json_append_long(p.vstr, "year", d->year);
+	la_json_append_long(p.vstr, "month", d->month);
+	la_json_append_long(p.vstr, "day", d->day);
+	la_json_append_long(p.vstr, "hour", t->hours);
+	la_json_append_long(p.vstr, "min", t->minutes);
+	la_json_object_end(p.vstr);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Timehhmmss_as_json) {
-	UNUSED(td);
-	UNUSED(indent);
-	CAST_PTR(t, Timehhmmss_t *, sptr);
-	la_json_object_start(vstr, label);
-	la_json_append_long(vstr, "hour", t->hoursminutes.hours);
-	la_json_append_long(vstr, "min", t->hoursminutes.minutes);
-	la_json_append_long(vstr, "sec", t->seconds);
-	la_json_object_end(vstr);
+	CAST_PTR(t, Timehhmmss_t *, p.sptr);
+	la_json_object_start(p.vstr, p.label);
+	la_json_append_long(p.vstr, "hour", t->hoursminutes.hours);
+	la_json_append_long(p.vstr, "min", t->hoursminutes.minutes);
+	la_json_append_long(p.vstr, "sec", t->seconds);
+	la_json_object_end(p.vstr);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Time_as_json) {
-	UNUSED(td);
-	UNUSED(indent);
-	CAST_PTR(t, Time_t *, sptr);
-	la_json_object_start(vstr, label);
-	la_json_append_long(vstr, "hour", t->hours);
-	la_json_append_long(vstr, "min", t->minutes);
-	la_json_object_end(vstr);
+	CAST_PTR(t, Time_t *, p.sptr);
+	la_json_object_start(p.vstr, p.label);
+	la_json_append_long(p.vstr, "hour", t->hours);
+	la_json_append_long(p.vstr, "min", t->minutes);
+	la_json_object_end(p.vstr);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Latitude_as_json) {
-	UNUSED(td);
-	UNUSED(indent);
-	CAST_PTR(lat, Latitude_t *, sptr);
+	CAST_PTR(lat, Latitude_t *, p.sptr);
 	long const ldir = lat->latitudeDirection;
 	char const *ldir_name = value2enum(&asn_DEF_LatitudeDirection, ldir);
-	la_json_object_start(vstr, label);
+	la_json_object_start(p.vstr, p.label);
 	switch(lat->latitudeType.present) {
 		case LatitudeType_PR_latitudeDegrees:
-			la_json_append_long(vstr, "deg", lat->latitudeType.choice.latitudeDegrees);
+			la_json_append_long(p.vstr, "deg", lat->latitudeType.choice.latitudeDegrees);
 			break;
 		case LatitudeType_PR_latitudeDegreesMinutes:
-			la_json_append_long(vstr, "deg", lat->latitudeType.choice.latitudeDegreesMinutes.latitudeWholeDegrees);
-			la_json_append_double(vstr, "min", lat->latitudeType.choice.latitudeDegreesMinutes.minutesLatLon / 100.0);
+			la_json_append_long(p.vstr, "deg", lat->latitudeType.choice.latitudeDegreesMinutes.latitudeWholeDegrees);
+			la_json_append_double(p.vstr, "min", lat->latitudeType.choice.latitudeDegreesMinutes.minutesLatLon / 100.0);
 			break;
 		case LatitudeType_PR_latitudeDMS:
-			la_json_append_long(vstr, "deg", lat->latitudeType.choice.latitudeDMS.latitudeWholeDegrees);
-			la_json_append_long(vstr, "min", lat->latitudeType.choice.latitudeDMS.latlonWholeMinutes);
-			la_json_append_long(vstr, "sec", lat->latitudeType.choice.latitudeDMS.secondsLatLon);
+			la_json_append_long(p.vstr, "deg", lat->latitudeType.choice.latitudeDMS.latitudeWholeDegrees);
+			la_json_append_long(p.vstr, "min", lat->latitudeType.choice.latitudeDMS.latlonWholeMinutes);
+			la_json_append_long(p.vstr, "sec", lat->latitudeType.choice.latitudeDMS.secondsLatLon);
 			break;
 		case LatitudeType_PR_NOTHING:
 			break;
 	}
-	la_json_append_string(vstr, "dir", ldir_name);
-	la_json_object_end(vstr);
+	la_json_append_string(p.vstr, "dir", ldir_name);
+	la_json_object_end(p.vstr);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Longitude_as_json) {
-	UNUSED(td);
-	UNUSED(indent);
-	CAST_PTR(lon, Longitude_t *, sptr);
+	CAST_PTR(lon, Longitude_t *, p.sptr);
 	long const ldir = lon->longitudeDirection;
 	char const *ldir_name = value2enum(&asn_DEF_LongitudeDirection, ldir);
-	la_json_object_start(vstr, label);
+	la_json_object_start(p.vstr, p.label);
 	switch(lon->longitudeType.present) {
 		case LongitudeType_PR_longitudeDegrees:
-			la_json_append_long(vstr, "deg", lon->longitudeType.choice.longitudeDegrees);
+			la_json_append_long(p.vstr, "deg", lon->longitudeType.choice.longitudeDegrees);
 			break;
 		case LongitudeType_PR_longitudeDegreesMinutes:
-			la_json_append_long(vstr, "deg", lon->longitudeType.choice.longitudeDegreesMinutes.longitudeWholeDegrees);
-			la_json_append_double(vstr, "min", lon->longitudeType.choice.longitudeDegreesMinutes.minutesLatLon / 100.0);
+			la_json_append_long(p.vstr, "deg", lon->longitudeType.choice.longitudeDegreesMinutes.longitudeWholeDegrees);
+			la_json_append_double(p.vstr, "min", lon->longitudeType.choice.longitudeDegreesMinutes.minutesLatLon / 100.0);
 			break;
 		case LongitudeType_PR_longitudeDMS:
-			la_json_append_long(vstr, "deg", lon->longitudeType.choice.longitudeDMS.longitudeWholeDegrees);
-			la_json_append_long(vstr, "min", lon->longitudeType.choice.longitudeDMS.latLonWholeMinutes);
-			la_json_append_long(vstr, "sec", lon->longitudeType.choice.longitudeDMS.secondsLatLon);
+			la_json_append_long(p.vstr, "deg", lon->longitudeType.choice.longitudeDMS.longitudeWholeDegrees);
+			la_json_append_long(p.vstr, "min", lon->longitudeType.choice.longitudeDMS.latLonWholeMinutes);
+			la_json_append_long(p.vstr, "sec", lon->longitudeType.choice.longitudeDMS.secondsLatLon);
 			break;
 		case LongitudeType_PR_NOTHING:
 			break;
 	}
-	la_json_append_string(vstr, "dir", ldir_name);
-	la_json_object_end(vstr);
+	la_json_append_string(p.vstr, "dir", ldir_name);
+	la_json_object_end(p.vstr);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_AltimeterEnglish_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "inHg", 0.01, 2);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "inHg", 0.01, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_AltimeterMetric_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "hPa", 0.1, 1);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "hPa", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Deg_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "deg", 1, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "deg", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DepartureMinimumInterval_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "min", 0.1, 1);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "min", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceKm_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "km", 0.25, 2);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "km", 0.25, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceNm_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "nm", 0.1, 1);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "nm", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Humidity_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "%%", 1, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "%%", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceEnglish_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "nm", 1, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "nm", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceMetric_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "km", 1, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "km", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyvhf_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "MHz", 0.005, 3);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "MHz", 0.005, 3);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyuhf_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "MHz", 0.025, 3);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "MHz", 0.025, 3);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyhf_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "kHz", 1, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "kHz", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_LegTime_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "min", 1, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "min", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_LevelFeet_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "ft", 10, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "ft", 10, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_LevelFlightLevelMetric_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "m", 10, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "m", 10, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Meters_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "m", 1, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "m", 1, 0);
 }
 
 // RejectDetails is a CHOICE whose all values are NULLs.  Aliasing them all to
@@ -274,203 +258,192 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_Meters_as_json) {
 // unnecessary overengineering.  Handling all values in a single routine is
 // simpler, albeit less elegant at first glance.
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_RejectDetails_as_json) {
-	UNUSED(td);
-	UNUSED(indent);
-	CAST_PTR(det, RejectDetails_t *, sptr);
+	CAST_PTR(det, RejectDetails_t *, p.sptr);
 	switch(det->present) {
 		case RejectDetails_PR_aDS_service_unavailable:
-			la_json_append_string(vstr, label, "ADS_service_unavailable");
+			la_json_append_string(p.vstr, p.label, "ADS_service_unavailable");
 			break;
 		case RejectDetails_PR_undefined_reason:
-			la_json_append_string(vstr, label, "undefined_reason");
+			la_json_append_string(p.vstr, p.label, "undefined_reason");
 			break;
 		case RejectDetails_PR_maximum_capacity_exceeded:
-			la_json_append_string(vstr, label, "max_capacity_exceeded");
+			la_json_append_string(p.vstr, p.label, "max_capacity_exceeded");
 			break;
 		case RejectDetails_PR_reserved:
-			la_json_append_string(vstr, label, "(reserved)");
+			la_json_append_string(p.vstr, p.label, "(reserved)");
 			break;
 		case RejectDetails_PR_waypoint_in_request_not_on_the_route:
-			la_json_append_string(vstr, label, "requested_waypoint_not_on_the_route");
+			la_json_append_string(p.vstr, p.label, "requested_waypoint_not_on_the_route");
 			break;
 		case RejectDetails_PR_aDS_contract_not_supported:
-			la_json_append_string(vstr, label, "ADS_contract_not_supported");
+			la_json_append_string(p.vstr, p.label, "ADS_contract_not_supported");
 			break;
 		case RejectDetails_PR_noneOfReportTypesSupported:
-			la_json_append_string(vstr, label, "none_of_report_types_supported");
+			la_json_append_string(p.vstr, p.label, "none_of_report_types_supported");
 			break;
 		case RejectDetails_PR_noneOfEventTypesSupported:
-			la_json_append_string(vstr, label, "none_of_event_types_supported");
+			la_json_append_string(p.vstr, p.label, "none_of_event_types_supported");
 			break;
 		case RejectDetails_PR_NOTHING:
 		default:
-			la_json_append_string(vstr, label, "none");
+			la_json_append_string(p.vstr, p.label, "none");
 	}
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_RTASecTolerance_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "sec", 1, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "sec", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_RTATolerance_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "min", 0.1, 1);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "min", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Feet_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "ft", 1, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "ft", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedMetric_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "km/h", 1, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "km/h", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedEnglish_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "kts", 1, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "kts", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedIndicated_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "kts", 1, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "kts", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedMach_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "", 0.001, 3);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "", 0.001, 3);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Temperature_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "C", 1, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "C", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateEnglish_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "ft/min", 10, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "ft/min", 10, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateMetric_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "m/min", 10, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "m/min", 10, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EstimatedPositionUncertainty_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "nm", 0.01, 2);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "nm", 0.01, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Latitude_as_json) {
-	UNUSED(td);
-	UNUSED(indent);
-	CAST_PTR(lat, ADSv2Latitude_t *, sptr);
+	CAST_PTR(lat, ADSv2Latitude_t *, p.sptr);
 	long const ldir = lat->direction;
 	char const *ldir_name = value2enum(&asn_DEF_LatitudeDirection, ldir);
-	la_json_object_start(vstr, label);
-	la_json_append_long(vstr, "deg", lat->degrees);
-	la_json_append_long(vstr, "min", lat->minutes);
-	la_json_append_double(vstr, "sec", lat->seconds / 10.0);
-	la_json_append_string(vstr, "dir", ldir_name);
-	la_json_object_end(vstr);
+	la_json_object_start(p.vstr, p.label);
+	la_json_append_long(p.vstr, "deg", lat->degrees);
+	la_json_append_long(p.vstr, "min", lat->minutes);
+	la_json_append_double(p.vstr, "sec", lat->seconds / 10.0);
+	la_json_append_string(p.vstr, "dir", ldir_name);
+	la_json_object_end(p.vstr);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Longitude_as_json) {
-	UNUSED(td);
-	UNUSED(indent);
-	CAST_PTR(lon, ADSv2Longitude_t *, sptr);
+	CAST_PTR(lon, ADSv2Longitude_t *, p.sptr);
 	long const ldir = lon->direction;
 	char const *ldir_name = value2enum(&asn_DEF_LongitudeDirection, ldir);
-	la_json_object_start(vstr, label);
-	la_json_append_long(vstr, "deg", lon->degrees);
-	la_json_append_long(vstr, "min", lon->minutes);
-	la_json_append_double(vstr, "sec", lon->seconds / 10.0);
-	la_json_append_string(vstr, "dir", ldir_name);
-	la_json_object_end(vstr);
+	la_json_object_start(p.vstr, p.label);
+	la_json_append_long(p.vstr, "deg", lon->degrees);
+	la_json_append_long(p.vstr, "min", lon->minutes);
+	la_json_append_double(p.vstr, "sec", lon->seconds / 10.0);
+	la_json_append_string(p.vstr, "dir", ldir_name);
+	la_json_object_end(p.vstr);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Temperature_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "C", 0.25, 2);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "C", 0.25, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2WindSpeedKts_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "kts", 1, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "kts", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2WindSpeedKmh_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "km/h", 2, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "km/h", 2, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EmergencyUrgencyStatus_as_json) {
-	UNUSED(td);
-	_format_BIT_STRING_as_json(vstr, label, EmergencyUrgencyStatus_bit_labels, sptr, indent);
+	_format_BIT_STRING_as_json(p.vstr, p.label, EmergencyUrgencyStatus_bit_labels, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPPTimeInterval_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "minutes", 1, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "minutes", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EventTypeNotSupported_as_json) {
-	UNUSED(td);
-	_format_BIT_STRING_as_json(vstr, label, EventTypeNotSupported_bit_labels, sptr, indent);
+	_format_BIT_STRING_as_json(p.vstr, p.label, EventTypeNotSupported_bit_labels, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_GrossMass_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "kg", 10, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "kg", 10, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPPLimitations_as_json) {
-	UNUSED(td);
-	_format_BIT_STRING_as_json(vstr, label, EPPLimitations_bit_labels, sptr, indent);
+	_format_BIT_STRING_as_json(p.vstr, p.label, EPPLimitations_bit_labels, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPPTolETA_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "min", 0.1, 1);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "min", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPPTolGCDistance_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "nm", 0.01, 2);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "nm", 0.01, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPUChangeTolerance_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "nm", 0.01, 2);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "nm", 0.01, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_GroundSpeed_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "kts", 0.5, 1);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "kts", 0.5, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_GroundTrack_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "deg", 0.05, 2);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "deg", 0.05, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_LateralDeviationThreshold_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "nm", 0.1, 1);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "nm", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_MachNumberTolerance_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "", 0.01, 2);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "", 0.01, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ReportTypeNotSupported_as_json) {
-	UNUSED(td);
-	_format_BIT_STRING_as_json(vstr, label, ReportTypeNotSupported_bit_labels, sptr, indent);
+	_format_BIT_STRING_as_json(p.vstr, p.label, ReportTypeNotSupported_bit_labels, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_RNPValue_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "nm", 0.1, 1);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "nm", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_TurbulenceEDRValue_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "m^2/s^3", 0.01, 2);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "m^2/s^3", 0.01, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_TurbulenceMinutesInThePast_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "min", 0.5, 1);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "min", 0.5, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_TurbulenceObservationWindow_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "min", 1, 0);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "min", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_TurnRadius_as_json) {
-	_format_INTEGER_with_unit_as_json(vstr, label, td, sptr, indent, "nm", 0.1, 1);
+	_format_INTEGER_with_unit_as_json(p.vstr, p.label, p.td, p.sptr, p.indent, "nm", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalType_as_json) {
-	UNUSED(td);
-	_format_BIT_STRING_as_json(vstr, label, VerticalType_bit_labels, sptr, indent);
+	_format_BIT_STRING_as_json(p.vstr, p.label, VerticalType_bit_labels, p.sptr, p.indent);
 }
 
 asn_formatter_t const asn1_icao_formatter_table_json[] = {

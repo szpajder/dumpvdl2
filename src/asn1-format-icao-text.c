@@ -519,59 +519,54 @@ static GByteArray *_stringify_ShortTsap(GByteArray *array, ShortTsap_t *tsap) {
  ************************/
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_acse_as_text) {
-	_format_SEQUENCE_as_text(vstr, label, &asn1_output_acse_as_text, td, sptr, indent);
+	_format_SEQUENCE_as_text(p.vstr, p.label, &asn1_output_acse_as_text, p.td, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_CHOICE_acse_as_text) {
-	_format_CHOICE_as_text(vstr, label, NULL, &asn1_output_acse_as_text, td, sptr, indent);
+	_format_CHOICE_as_text(p.vstr, p.label, NULL, &asn1_output_acse_as_text, p.td, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Associate_result_as_text) {
-	UNUSED(td);
-	_format_INTEGER_as_ENUM_as_text(vstr, label, Associate_result_labels, sptr, indent);
+	_format_INTEGER_as_ENUM_as_text(p.vstr, p.label, Associate_result_labels, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Release_request_reason_as_text) {
-	UNUSED(td);
-	_format_INTEGER_as_ENUM_as_text(vstr, label, Release_request_reason_labels, sptr, indent);
+	_format_INTEGER_as_ENUM_as_text(p.vstr, p.label, Release_request_reason_labels, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Release_response_reason_as_text) {
-	UNUSED(td);
-	_format_INTEGER_as_ENUM_as_text(vstr, label, Release_response_reason_labels, sptr, indent);
+	_format_INTEGER_as_ENUM_as_text(p.vstr, p.label, Release_response_reason_labels, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ABRT_source_as_text) {
-	UNUSED(td);
-	_format_INTEGER_as_ENUM_as_text(vstr, label, ABRT_source_labels, sptr, indent);
+	_format_INTEGER_as_ENUM_as_text(p.vstr, p.label, ABRT_source_labels, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_CHOICE_icao_as_text) {
-	_format_CHOICE_as_text(vstr, label, NULL, &asn1_output_icao_as_text, td, sptr, indent);
+	_format_CHOICE_as_text(p.vstr, p.label, NULL, &asn1_output_icao_as_text, p.td, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_icao_as_text) {
-	_format_SEQUENCE_as_text(vstr, label, &asn1_output_icao_as_text, td, sptr, indent);
+	_format_SEQUENCE_as_text(p.vstr, p.label, &asn1_output_icao_as_text, p.td, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_OF_icao_as_text) {
-	_format_SEQUENCE_OF_as_text(vstr, label, &asn1_output_icao_as_text, td, sptr, indent);
+	_format_SEQUENCE_OF_as_text(p.vstr, p.label, &asn1_output_icao_as_text, p.td, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCDownlinkMsgElementId_as_text) {
-	_format_CHOICE_as_text(vstr, label, ATCDownlinkMsgElementId_labels, &asn1_output_icao_as_text, td, sptr, indent);
+	_format_CHOICE_as_text(p.vstr, p.label, ATCDownlinkMsgElementId_labels, &asn1_output_icao_as_text, p.td, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCUplinkMsgElementId_as_text) {
-	_format_CHOICE_as_text(vstr, label, ATCUplinkMsgElementId_labels, &asn1_output_icao_as_text, td, sptr, indent);
+	_format_CHOICE_as_text(p.vstr, p.label, ATCUplinkMsgElementId_labels, &asn1_output_icao_as_text, p.td, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Code_as_text) {
-	UNUSED(td);
-	CAST_PTR(code, Code_t *, sptr);
+	CAST_PTR(code, Code_t *, p.sptr);
 	long **cptr = code->list.array;
-	LA_ISPRINTF(vstr, indent, "%s: %ld%ld%ld%ld\n",
-			label,
+	LA_ISPRINTF(p.vstr, p.indent, "%s: %ld%ld%ld%ld\n",
+			p.label,
 			*cptr[0],
 			*cptr[1],
 			*cptr[2],
@@ -580,55 +575,51 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_Code_as_text) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTime_as_text) {
-	UNUSED(td);
-	CAST_PTR(dtg, DateTime_t *, sptr);
+	CAST_PTR(dtg, DateTime_t *, p.sptr);
 	Date_t *d = &dtg->date;
 	Time_t *t = &dtg->time;
-	LA_ISPRINTF(vstr, indent, "%s: %04ld-%02ld-%02ld %02ld:%02ld\n", label,
+	LA_ISPRINTF(p.vstr, p.indent, "%s: %04ld-%02ld-%02ld %02ld:%02ld\n", p.label,
 			d->year, d->month, d->day,
 			t->hours, t->minutes);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTimeGroup_as_text) {
-	UNUSED(td);
-	CAST_PTR(dtg, DateTimeGroup_t *, sptr);
+	CAST_PTR(dtg, DateTimeGroup_t *, p.sptr);
 	Date_t *d = &dtg->date;
 	Timehhmmss_t *t = &dtg->timehhmmss;
-	LA_ISPRINTF(vstr, indent, "%s: %04ld-%02ld-%02ld %02ld:%02ld:%02ld\n", label,
+	LA_ISPRINTF(p.vstr, p.indent, "%s: %04ld-%02ld-%02ld %02ld:%02ld:%02ld\n", p.label,
 			d->year, d->month, d->day,
 			t->hoursminutes.hours, t->hoursminutes.minutes, t->seconds);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Time_as_text) {
-	UNUSED(td);
-	CAST_PTR(t, Time_t *, sptr);
-	LA_ISPRINTF(vstr, indent, "%s: %02ld:%02ld\n", label, t->hours, t->minutes);
+	CAST_PTR(t, Time_t *, p.sptr);
+	LA_ISPRINTF(p.vstr, p.indent, "%s: %02ld:%02ld\n", p.label, t->hours, t->minutes);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Latitude_as_text) {
-	UNUSED(td);
-	CAST_PTR(lat, Latitude_t *, sptr);
+	CAST_PTR(lat, Latitude_t *, p.sptr);
 	long const ldir = lat->latitudeDirection;
 	char const *ldir_name = value2enum(&asn_DEF_LatitudeDirection, ldir);
 	switch(lat->latitudeType.present) {
 		case LatitudeType_PR_latitudeDegrees:
-			LA_ISPRINTF(vstr, indent, "%s:   %02ld %s\n",
-					label,
+			LA_ISPRINTF(p.vstr, p.indent, "%s:   %02ld %s\n",
+					p.label,
 					lat->latitudeType.choice.latitudeDegrees,
 					ldir_name
 					);
 			break;
 		case LatitudeType_PR_latitudeDegreesMinutes:
-			LA_ISPRINTF(vstr, indent, "%s:   %02ld %05.2f' %s\n",
-					label,
+			LA_ISPRINTF(p.vstr, p.indent, "%s:   %02ld %05.2f' %s\n",
+					p.label,
 					lat->latitudeType.choice.latitudeDegreesMinutes.latitudeWholeDegrees,
 					lat->latitudeType.choice.latitudeDegreesMinutes.minutesLatLon / 100.0,
 					ldir_name
 					);
 			break;
 		case LatitudeType_PR_latitudeDMS:
-			LA_ISPRINTF(vstr, indent, "%s:   %02ld %02ld' %02ld\" %s\n",
-					label,
+			LA_ISPRINTF(p.vstr, p.indent, "%s:   %02ld %02ld' %02ld\" %s\n",
+					p.label,
 					lat->latitudeType.choice.latitudeDMS.latitudeWholeDegrees,
 					lat->latitudeType.choice.latitudeDMS.latlonWholeMinutes,
 					lat->latitudeType.choice.latitudeDMS.secondsLatLon,
@@ -637,35 +628,34 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_Latitude_as_text) {
 			break;
 		case LatitudeType_PR_NOTHING:
 		default:
-			LA_ISPRINTF(vstr, indent, "%s: none\n", label);
+			LA_ISPRINTF(p.vstr, p.indent, "%s: none\n", p.label);
 			break;
 	}
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Longitude_as_text) {
-	UNUSED(td);
-	CAST_PTR(lon, Longitude_t *, sptr);
+	CAST_PTR(lon, Longitude_t *, p.sptr);
 	long const ldir = lon->longitudeDirection;
 	char const *ldir_name = value2enum(&asn_DEF_LongitudeDirection, ldir);
 	switch(lon->longitudeType.present) {
 		case LongitudeType_PR_longitudeDegrees:
-			LA_ISPRINTF(vstr, indent, "%s: %03ld %s\n",
-					label,
+			LA_ISPRINTF(p.vstr, p.indent, "%s: %03ld %s\n",
+					p.label,
 					lon->longitudeType.choice.longitudeDegrees,
 					ldir_name
 					);
 			break;
 		case LongitudeType_PR_longitudeDegreesMinutes:
-			LA_ISPRINTF(vstr, indent, "%s: %03ld %05.2f' %s\n",
-					label,
+			LA_ISPRINTF(p.vstr, p.indent, "%s: %03ld %05.2f' %s\n",
+					p.label,
 					lon->longitudeType.choice.longitudeDegreesMinutes.longitudeWholeDegrees,
 					lon->longitudeType.choice.longitudeDegreesMinutes.minutesLatLon / 100.0,
 					ldir_name
 					);
 			break;
 		case LongitudeType_PR_longitudeDMS:
-			LA_ISPRINTF(vstr, indent, "%s: %03ld %02ld' %02ld\" %s\n",
-					label,
+			LA_ISPRINTF(p.vstr, p.indent, "%s: %03ld %02ld' %02ld\" %s\n",
+					p.label,
 					lon->longitudeType.choice.longitudeDMS.longitudeWholeDegrees,
 					lon->longitudeType.choice.longitudeDMS.latLonWholeMinutes,
 					lon->longitudeType.choice.longitudeDMS.secondsLatLon,
@@ -674,73 +664,73 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_Longitude_as_text) {
 			break;
 		case LongitudeType_PR_NOTHING:
 		default:
-			LA_ISPRINTF(vstr, indent, "%s: none\n", label);
+			LA_ISPRINTF(p.vstr, p.indent, "%s: none\n", p.label);
 			break;
 	}
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_AltimeterEnglish_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " inHg", 0.01, 2);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " inHg", 0.01, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_AltimeterMetric_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " hPa", 0.1, 1);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " hPa", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Deg_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " deg", 1, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " deg", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DepartureMinimumInterval_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " min", 0.1, 1);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " min", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceKm_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " km", 0.25, 2);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " km", 0.25, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceNm_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " nm", 0.1, 1);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " nm", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Humidity_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, "%%", 1, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, "%%", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceEnglish_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " nm", 1, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " nm", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceMetric_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " km", 1, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " km", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyvhf_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " MHz", 0.005, 3);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " MHz", 0.005, 3);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyuhf_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " MHz", 0.025, 3);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " MHz", 0.025, 3);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyhf_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " kHz", 1, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " kHz", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_LegTime_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " min", 1, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " min", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_LevelFeet_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " ft", 10, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " ft", 10, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_LevelFlightLevelMetric_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " m", 10, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " m", 10, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Meters_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " m", 1, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " m", 1, 0);
 }
 
 // RejectDetails is a CHOICE whose all values are NULLs.  Aliasing them all to
@@ -748,53 +738,51 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_Meters_as_text) {
 // unnecessary overengineering.  Handling all values in a single routine is
 // simpler, albeit less elegant at first glance.
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_RejectDetails_as_text) {
-	UNUSED(td);
-	CAST_PTR(det, RejectDetails_t *, sptr);
-	if(label != NULL) {
-		LA_ISPRINTF(vstr, indent, "%s: ", label);
+	CAST_PTR(det, RejectDetails_t *, p.sptr);
+	if(p.label != NULL) {
+		LA_ISPRINTF(p.vstr, p.indent, "%s: ", p.label);
 	}
 	switch(det->present) {
 		case RejectDetails_PR_aDS_service_unavailable:
-			la_vstring_append_sprintf(vstr, "ADS service unavailable\n");
+			la_vstring_append_sprintf(p.vstr, "ADS service unavailable\n");
 			break;
 		case RejectDetails_PR_undefined_reason:
-			la_vstring_append_sprintf(vstr, "undefined reason\n");
+			la_vstring_append_sprintf(p.vstr, "undefined reason\n");
 			break;
 		case RejectDetails_PR_maximum_capacity_exceeded:
-			la_vstring_append_sprintf(vstr, "max. capacity exceeded\n");
+			la_vstring_append_sprintf(p.vstr, "max. capacity exceeded\n");
 			break;
 		case RejectDetails_PR_reserved:
-			la_vstring_append_sprintf(vstr, "(reserved)\n");
+			la_vstring_append_sprintf(p.vstr, "(reserved)\n");
 			break;
 		case RejectDetails_PR_waypoint_in_request_not_on_the_route:
-			la_vstring_append_sprintf(vstr, "requested waypoint not on the route\n");
+			la_vstring_append_sprintf(p.vstr, "requested waypoint not on the route\n");
 			break;
 		case RejectDetails_PR_aDS_contract_not_supported:
-			la_vstring_append_sprintf(vstr, "ADS contract not supported\n");
+			la_vstring_append_sprintf(p.vstr, "ADS contract not supported\n");
 			break;
 		case RejectDetails_PR_noneOfReportTypesSupported:
-			la_vstring_append_sprintf(vstr, "none of report types supported\n");
+			la_vstring_append_sprintf(p.vstr, "none of report types supported\n");
 			break;
 		case RejectDetails_PR_noneOfEventTypesSupported:
-			la_vstring_append_sprintf(vstr, "none of event types supported\n");
+			la_vstring_append_sprintf(p.vstr, "none of event types supported\n");
 			break;
 		case RejectDetails_PR_NOTHING:
 		default:
-			la_vstring_append_sprintf(vstr, "none\n");
+			la_vstring_append_sprintf(p.vstr, "none\n");
 	}
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ReportingRate_as_text) {
-	UNUSED(td);
-	CAST_PTR(rate, ReportingRate_t *, sptr);
+	CAST_PTR(rate, ReportingRate_t *, p.sptr);
 	switch(rate->present) {
 		case ReportingRate_PR_reporting_time_seconds_scale:
-			_format_INTEGER_with_unit_as_text(vstr, label, td,
-					&rate->choice.reporting_time_seconds_scale, indent, " sec", 1, 0);
+			_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td,
+					&rate->choice.reporting_time_seconds_scale, p.indent, " sec", 1, 0);
 			break;
 		case ReportingRate_PR_reporting_time_minutes_scale:
-			_format_INTEGER_with_unit_as_text(vstr, label, td,
-					&rate->choice.reporting_time_minutes_scale, indent, " min", 1, 0);
+			_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td,
+					&rate->choice.reporting_time_minutes_scale, p.indent, " min", 1, 0);
 			break;
 		default:
 			break;
@@ -802,76 +790,73 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ReportingRate_as_text) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_RTASecTolerance_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " sec", 1, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " sec", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_RTATolerance_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " min", 0.1, 1);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " min", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Feet_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " ft", 1, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " ft", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedMetric_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " km/h", 1, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " km/h", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedEnglish_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " kts", 1, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " kts", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedIndicated_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " kts", 1, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " kts", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedMach_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, "", 0.001, 3);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, "", 0.001, 3);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Temperature_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " C", 1, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " C", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateEnglish_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " ft/min", 10, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " ft/min", 10, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateMetric_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " m/min", 10, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " m/min", 10, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_LongTsap_as_text) {
-	UNUSED(td);
-	CAST_PTR(tsap, LongTsap_t *, sptr);
+	CAST_PTR(tsap, LongTsap_t *, p.sptr);
 	GByteArray *tmparray = g_byte_array_new();
 	tmparray = g_byte_array_append(tmparray, tsap->rDP.buf, tsap->rDP.size);
 	tmparray = _stringify_ShortTsap(tmparray, &tsap->shortTsap);
 
-	LA_ISPRINTF(vstr, indent, "%s: ", label);
-	octet_string_with_ascii_format_text(vstr,
+	LA_ISPRINTF(p.vstr, p.indent, "%s: ", p.label);
+	octet_string_with_ascii_format_text(p.vstr,
 			&(octet_string_t){ .buf = tmparray->data, .len = tmparray->len },
 			0);
-	EOL(vstr);
+	EOL(p.vstr);
 	g_byte_array_free(tmparray, TRUE);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ShortTsap_as_text) {
-	UNUSED(td);
-	CAST_PTR(tsap, ShortTsap_t *, sptr);
+	CAST_PTR(tsap, ShortTsap_t *, p.sptr);
 	GByteArray *tmparray = g_byte_array_new();
 	tmparray = _stringify_ShortTsap(tmparray, tsap);
-	LA_ISPRINTF(vstr, indent, "%s: ", label);
-	octet_string_with_ascii_format_text(vstr,
+	LA_ISPRINTF(p.vstr, p.indent, "%s: ", p.label);
+	octet_string_with_ascii_format_text(p.vstr,
 			&(octet_string_t){ .buf = tmparray->data, .len = tmparray->len },
 			0);
-	EOL(vstr);
+	EOL(p.vstr);
 	g_byte_array_free(tmparray, TRUE);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_UnitName_as_text) {
-	UNUSED(td);
-	CAST_PTR(un, UnitName_t *, sptr);
+	CAST_PTR(un, UnitName_t *, p.sptr);
 	char *fdes = XCALLOC(un->facilityDesignation.size + 1, sizeof(char));
 	snprintf(fdes, un->facilityDesignation.size + 1, "%s", un->facilityDesignation.buf);
 	char *fname = NULL;
@@ -882,37 +867,35 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_UnitName_as_text) {
 	}
 	long const ffun = un->facilityFunction;
 	char const *ffun_name = value2enum(&asn_DEF_FacilityFunction, ffun);
-	LA_ISPRINTF(vstr, indent, "%s: %s, %s, %s\n", label, fdes, fname ? fname : "", ffun_name);
+	LA_ISPRINTF(p.vstr, p.indent, "%s: %s, %s, %s\n", p.label, fdes, fname ? fname : "", ffun_name);
 	XFREE(fdes);
 	XFREE(fname);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2DateTimeGroup_as_text) {
-	UNUSED(td);
-	CAST_PTR(dtg, ADSv2DateTimeGroup_t *, sptr);
+	CAST_PTR(dtg, ADSv2DateTimeGroup_t *, p.sptr);
 	Date_t *d = &dtg->date;
 	Timesec_t *t = &dtg->time;
-	LA_ISPRINTF(vstr, indent, "%s: %04ld-%02ld-%02ld %02ld:%02ld:%02ld\n", label,
+	LA_ISPRINTF(p.vstr, p.indent, "%s: %04ld-%02ld-%02ld %02ld:%02ld:%02ld\n", p.label,
 			d->year, d->month, d->day,
 			t->hours, t->minutes, t->seconds);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EstimatedPositionUncertainty_as_text) {
-	CAST_PTR(epu, EstimatedPositionUncertainty_t *, sptr);
+	CAST_PTR(epu, EstimatedPositionUncertainty_t *, p.sptr);
 	if(*epu == 9900) {
-		LA_ISPRINTF(vstr, indent, "%s: complete-loss\n", label);
+		LA_ISPRINTF(p.vstr, p.indent, "%s: complete-loss\n", p.label);
 	} else {
-		_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " nm", 0.01, 2);
+		_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " nm", 0.01, 2);
 	}
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Latitude_as_text) {
-	UNUSED(td);
-	CAST_PTR(lat, ADSv2Latitude_t *, sptr);
+	CAST_PTR(lat, ADSv2Latitude_t *, p.sptr);
 	long const ldir = lat->direction;
 	char const *ldir_name = value2enum(&asn_DEF_LatitudeDirection, ldir);
-	LA_ISPRINTF(vstr, indent, "%s:  %02ld %02ld' %04.1f\" %s\n",
-			label,
+	LA_ISPRINTF(p.vstr, p.indent, "%s:  %02ld %02ld' %04.1f\" %s\n",
+			p.label,
 			lat->degrees,
 			lat->minutes,
 			lat->seconds / 10.0,
@@ -921,12 +904,11 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Latitude_as_text) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Longitude_as_text) {
-	UNUSED(td);
-	CAST_PTR(lon, ADSv2Longitude_t *, sptr);
+	CAST_PTR(lon, ADSv2Longitude_t *, p.sptr);
 	long const ldir = lon->direction;
 	char const *ldir_name = value2enum(&asn_DEF_LongitudeDirection, ldir);
-	LA_ISPRINTF(vstr, indent, "%s: %03ld %02ld' %04.1f\" %s\n",
-			label,
+	LA_ISPRINTF(p.vstr, p.indent, "%s: %03ld %02ld' %04.1f\" %s\n",
+			p.label,
 			lon->degrees,
 			lon->minutes,
 			lon->seconds / 10.0,
@@ -935,124 +917,113 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Longitude_as_text) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSAircraftPDUs_as_text) {
-	UNUSED(td);
-	UNUSED(label);
-	CAST_PTR(apdus, ADSAircraftPDUs_t *, sptr);
+	CAST_PTR(apdus, ADSAircraftPDUs_t *, p.sptr);
 	// Omit the timestamp for brevity, print the PDU only
-	asn1_output_icao_as_text(vstr, &asn_DEF_ADSAircraftPDU, &apdus->adsAircraftPdu, indent);
+	asn1_output_icao_as_text(p.vstr, &asn_DEF_ADSAircraftPDU, &apdus->adsAircraftPdu, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Temperature_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " C", 0.25, 2);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " C", 0.25, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2WindSpeedKts_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " kts", 1, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " kts", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2WindSpeedKmh_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " km/h", 2, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " km/h", 2, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EmergencyUrgencyStatus_as_text) {
-	UNUSED(td);
-	_format_BIT_STRING_as_text(vstr, label, EmergencyUrgencyStatus_bit_labels, sptr, indent);
+	_format_BIT_STRING_as_text(p.vstr, p.label, EmergencyUrgencyStatus_bit_labels, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPPTimeInterval_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " minutes", 1, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " minutes", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EventTypeNotSupported_as_text) {
-	UNUSED(td);
-	_format_BIT_STRING_as_text(vstr, label, EventTypeNotSupported_bit_labels, sptr, indent);
+	_format_BIT_STRING_as_text(p.vstr, p.label, EventTypeNotSupported_bit_labels, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_GrossMass_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " kg", 10, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " kg", 10, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSGroundPDUs_as_text) {
-	UNUSED(td);
-	UNUSED(label);
-	CAST_PTR(apdus, ADSGroundPDUs_t *, sptr);
+	CAST_PTR(apdus, ADSGroundPDUs_t *, p.sptr);
 	// Omit the timestamp for brevity, print the PDU only
-	asn1_output_icao_as_text(vstr, &asn_DEF_ADSGroundPDU, &apdus->adsGroundPdu, indent);
+	asn1_output_icao_as_text(p.vstr, &asn_DEF_ADSGroundPDU, &apdus->adsGroundPdu, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPPLimitations_as_text) {
-	UNUSED(td);
-	_format_BIT_STRING_as_text(vstr, label, EPPLimitations_bit_labels, sptr, indent);
+	_format_BIT_STRING_as_text(p.vstr, p.label, EPPLimitations_bit_labels, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPPTolETA_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " min", 0.1, 1);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " min", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPPTolGCDistance_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " nm", 0.01, 2);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " nm", 0.01, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPUChangeTolerance_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " nm", 0.01, 2);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " nm", 0.01, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_GroundSpeed_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " kts", 0.5, 1);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " kts", 0.5, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_GroundTrack_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " deg", 0.05, 2);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " deg", 0.05, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_LateralDeviationThreshold_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " nm", 0.1, 1);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " nm", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_MachNumberTolerance_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, "", 0.01, 2);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, "", 0.01, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Modulus_as_text) {
-	UNUSED(td);
-	CAST_PTR(val, long *, sptr);
-	LA_ISPRINTF(vstr, indent, "%s: every %ld reports\n", label, *val);
+	CAST_PTR(val, long *, p.sptr);
+	LA_ISPRINTF(p.vstr, p.indent, "%s: every %ld reports\n", p.label, *val);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ReportTypeNotSupported_as_text) {
-	UNUSED(td);
-	_format_BIT_STRING_as_text(vstr, label, ReportTypeNotSupported_bit_labels, sptr, indent);
+	_format_BIT_STRING_as_text(p.vstr, p.label, ReportTypeNotSupported_bit_labels, p.sptr, p.indent);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_RNPValue_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " nm", 0.1, 1);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " nm", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_TurbulenceEDRValue_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " m^2/s^3", 0.01, 2);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " m^2/s^3", 0.01, 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_TurbulenceMinutesInThePast_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " min", 0.5, 1);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " min", 0.5, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_TurbulenceObservationWindow_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " min", 1, 0);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " min", 1, 0);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_TurnRadius_as_text) {
-	_format_INTEGER_with_unit_as_text(vstr, label, td, sptr, indent, " nm", 0.1, 1);
+	_format_INTEGER_with_unit_as_text(p.vstr, p.label, p.td, p.sptr, p.indent, " nm", 0.1, 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Timesec_as_text) {
-	UNUSED(td);
-	CAST_PTR(t, Timesec_t *, sptr);
-	LA_ISPRINTF(vstr, indent, "%s: %02ld:%02ld:%02ld\n", label, t->hours, t->minutes, t->seconds);
+	CAST_PTR(t, Timesec_t *, p.sptr);
+	LA_ISPRINTF(p.vstr, p.indent, "%s: %02ld:%02ld:%02ld\n", p.label, t->hours, t->minutes, t->seconds);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalType_as_text) {
-	UNUSED(td);
-	_format_BIT_STRING_as_text(vstr, label, VerticalType_bit_labels, sptr, indent);
+	_format_BIT_STRING_as_text(p.vstr, p.label, VerticalType_bit_labels, p.sptr, p.indent);
 }
 
 asn_formatter_t const asn1_icao_formatter_table_text[] = {

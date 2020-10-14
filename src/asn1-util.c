@@ -58,7 +58,8 @@ void asn1_output_as_text(la_vstring *vstr, asn_formatter_t const * const asn1_fo
 	if(formatter != NULL) {
 		// NULL formatting routine is allowed - it means the type should be silently omitted
 		if(formatter->format != NULL) {
-			(*formatter->format)(vstr, formatter->label, td, sptr, indent);
+			(*formatter->format)((asn1_formatter_param_t){ .vstr = vstr, .label = formatter->label,
+					.td = td, .sptr = sptr, .indent = indent });
 		}
 	} else {
 		LA_ISPRINTF(vstr, indent, "-- Formatter for type %s not found, ASN.1 dump follows:\n", td->name);
@@ -75,7 +76,8 @@ void asn1_output_as_json(la_vstring *vstr, asn_formatter_t const * const asn1_fo
 	asn_formatter_t *formatter = lfind(td, asn1_formatter_table, &asn1_formatter_table_len,
 			sizeof(asn_formatter_t), &compare_fmtr);
 	if(formatter != NULL && formatter->format != NULL) {
-		(*formatter->format)(vstr, formatter->label, td, sptr, 0);
+		(*formatter->format)((asn1_formatter_param_t){ .vstr = vstr, .label = formatter->label,
+				.td = td, .sptr = sptr });
 	}
 }
 
