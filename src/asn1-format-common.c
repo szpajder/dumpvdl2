@@ -43,8 +43,7 @@ void format_INTEGER_with_unit_as_text(asn1_formatter_param_t p,
 }
 
 void format_INTEGER_with_unit_as_json(asn1_formatter_param_t p,
-		char const * const unit, double multiplier, int decimal_places) {
-	UNUSED(decimal_places);
+		char const * const unit, double multiplier) {
 	CAST_PTR(val, long *, p.sptr);
 	la_json_object_start(p.vstr, p.label);
 	la_json_append_double(p.vstr, "val", (double)(*val) * multiplier);

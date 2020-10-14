@@ -39,7 +39,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_ENUM_as_text);
 
 // JSON formatters
 void format_INTEGER_with_unit_as_json(asn1_formatter_param_t p,
-		char const * const unit, double multiplier, int decimal_places);
+		char const * const unit, double multiplier);
 void format_INTEGER_as_ENUM_as_json(asn1_formatter_param_t p, dict const * const value_labels);
 void format_CHOICE_as_json(asn1_formatter_param_t p, dict const * const choice_labels,
 		asn1_formatter_fun_t cb);

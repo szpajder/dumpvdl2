@@ -200,67 +200,67 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_Longitude_as_json) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_AltimeterEnglish_as_json) {
-	format_INTEGER_with_unit_as_json(p, "inHg", 0.01, 2);
+	format_INTEGER_with_unit_as_json(p, "inHg", 0.01);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_AltimeterMetric_as_json) {
-	format_INTEGER_with_unit_as_json(p, "hPa", 0.1, 1);
+	format_INTEGER_with_unit_as_json(p, "hPa", 0.1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Deg_as_json) {
-	format_INTEGER_with_unit_as_json(p, "deg", 1, 0);
+	format_INTEGER_with_unit_as_json(p, "deg", 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DepartureMinimumInterval_as_json) {
-	format_INTEGER_with_unit_as_json(p, "min", 0.1, 1);
+	format_INTEGER_with_unit_as_json(p, "min", 0.1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceKm_as_json) {
-	format_INTEGER_with_unit_as_json(p, "km", 0.25, 2);
+	format_INTEGER_with_unit_as_json(p, "km", 0.25);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceNm_as_json) {
-	format_INTEGER_with_unit_as_json(p, "nm", 0.1, 1);
+	format_INTEGER_with_unit_as_json(p, "nm", 0.1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Humidity_as_json) {
-	format_INTEGER_with_unit_as_json(p, "%%", 1, 0);
+	format_INTEGER_with_unit_as_json(p, "%%", 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceEnglish_as_json) {
-	format_INTEGER_with_unit_as_json(p, "nm", 1, 0);
+	format_INTEGER_with_unit_as_json(p, "nm", 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_DistanceMetric_as_json) {
-	format_INTEGER_with_unit_as_json(p, "km", 1, 0);
+	format_INTEGER_with_unit_as_json(p, "km", 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyvhf_as_json) {
-	format_INTEGER_with_unit_as_json(p, "MHz", 0.005, 3);
+	format_INTEGER_with_unit_as_json(p, "MHz", 0.005);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyuhf_as_json) {
-	format_INTEGER_with_unit_as_json(p, "MHz", 0.025, 3);
+	format_INTEGER_with_unit_as_json(p, "MHz", 0.025);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Frequencyhf_as_json) {
-	format_INTEGER_with_unit_as_json(p, "kHz", 1, 0);
+	format_INTEGER_with_unit_as_json(p, "kHz", 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_LegTime_as_json) {
-	format_INTEGER_with_unit_as_json(p, "min", 1, 0);
+	format_INTEGER_with_unit_as_json(p, "min", 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_LevelFeet_as_json) {
-	format_INTEGER_with_unit_as_json(p, "ft", 10, 0);
+	format_INTEGER_with_unit_as_json(p, "ft", 10);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_LevelFlightLevelMetric_as_json) {
-	format_INTEGER_with_unit_as_json(p, "m", 10, 0);
+	format_INTEGER_with_unit_as_json(p, "m", 10);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Meters_as_json) {
-	format_INTEGER_with_unit_as_json(p, "m", 1, 0);
+	format_INTEGER_with_unit_as_json(p, "m", 1);
 }
 
 // RejectDetails is a CHOICE whose all values are NULLs.  Aliasing them all to
@@ -301,47 +301,47 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_RejectDetails_as_json) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_RTASecTolerance_as_json) {
-	format_INTEGER_with_unit_as_json(p, "sec", 1, 0);
+	format_INTEGER_with_unit_as_json(p, "sec", 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_RTATolerance_as_json) {
-	format_INTEGER_with_unit_as_json(p, "min", 0.1, 1);
+	format_INTEGER_with_unit_as_json(p, "min", 0.1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Feet_as_json) {
-	format_INTEGER_with_unit_as_json(p, "ft", 1, 0);
+	format_INTEGER_with_unit_as_json(p, "ft", 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedMetric_as_json) {
-	format_INTEGER_with_unit_as_json(p, "km/h", 1, 0);
+	format_INTEGER_with_unit_as_json(p, "km/h", 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedEnglish_as_json) {
-	format_INTEGER_with_unit_as_json(p, "kts", 1, 0);
+	format_INTEGER_with_unit_as_json(p, "kts", 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedIndicated_as_json) {
-	format_INTEGER_with_unit_as_json(p, "kts", 1, 0);
+	format_INTEGER_with_unit_as_json(p, "kts", 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SpeedMach_as_json) {
-	format_INTEGER_with_unit_as_json(p, "", 0.001, 3);
+	format_INTEGER_with_unit_as_json(p, "", 0.001);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Temperature_as_json) {
-	format_INTEGER_with_unit_as_json(p, "C", 1, 0);
+	format_INTEGER_with_unit_as_json(p, "C", 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateEnglish_as_json) {
-	format_INTEGER_with_unit_as_json(p, "ft/min", 10, 0);
+	format_INTEGER_with_unit_as_json(p, "ft/min", 10);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalRateMetric_as_json) {
-	format_INTEGER_with_unit_as_json(p, "m/min", 10, 0);
+	format_INTEGER_with_unit_as_json(p, "m/min", 10);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EstimatedPositionUncertainty_as_json) {
-	format_INTEGER_with_unit_as_json(p, "nm", 0.01, 2);
+	format_INTEGER_with_unit_as_json(p, "nm", 0.01);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Latitude_as_json) {
@@ -369,15 +369,15 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Longitude_as_json) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Temperature_as_json) {
-	format_INTEGER_with_unit_as_json(p, "C", 0.25, 2);
+	format_INTEGER_with_unit_as_json(p, "C", 0.25);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2WindSpeedKts_as_json) {
-	format_INTEGER_with_unit_as_json(p, "kts", 1, 0);
+	format_INTEGER_with_unit_as_json(p, "kts", 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2WindSpeedKmh_as_json) {
-	format_INTEGER_with_unit_as_json(p, "km/h", 2, 0);
+	format_INTEGER_with_unit_as_json(p, "km/h", 2);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EmergencyUrgencyStatus_as_json) {
@@ -385,7 +385,7 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_EmergencyUrgencyStatus_as_json) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPPTimeInterval_as_json) {
-	format_INTEGER_with_unit_as_json(p, "minutes", 1, 0);
+	format_INTEGER_with_unit_as_json(p, "minutes", 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EventTypeNotSupported_as_json) {
@@ -393,7 +393,7 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_EventTypeNotSupported_as_json) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_GrossMass_as_json) {
-	format_INTEGER_with_unit_as_json(p, "kg", 10, 0);
+	format_INTEGER_with_unit_as_json(p, "kg", 10);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPPLimitations_as_json) {
@@ -401,31 +401,31 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPPLimitations_as_json) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPPTolETA_as_json) {
-	format_INTEGER_with_unit_as_json(p, "min", 0.1, 1);
+	format_INTEGER_with_unit_as_json(p, "min", 0.1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPPTolGCDistance_as_json) {
-	format_INTEGER_with_unit_as_json(p, "nm", 0.01, 2);
+	format_INTEGER_with_unit_as_json(p, "nm", 0.01);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPUChangeTolerance_as_json) {
-	format_INTEGER_with_unit_as_json(p, "nm", 0.01, 2);
+	format_INTEGER_with_unit_as_json(p, "nm", 0.01);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_GroundSpeed_as_json) {
-	format_INTEGER_with_unit_as_json(p, "kts", 0.5, 1);
+	format_INTEGER_with_unit_as_json(p, "kts", 0.5);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_GroundTrack_as_json) {
-	format_INTEGER_with_unit_as_json(p, "deg", 0.05, 2);
+	format_INTEGER_with_unit_as_json(p, "deg", 0.05);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_LateralDeviationThreshold_as_json) {
-	format_INTEGER_with_unit_as_json(p, "nm", 0.1, 1);
+	format_INTEGER_with_unit_as_json(p, "nm", 0.1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_MachNumberTolerance_as_json) {
-	format_INTEGER_with_unit_as_json(p, "", 0.01, 2);
+	format_INTEGER_with_unit_as_json(p, "", 0.01);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ReportTypeNotSupported_as_json) {
@@ -433,23 +433,23 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ReportTypeNotSupported_as_json) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_RNPValue_as_json) {
-	format_INTEGER_with_unit_as_json(p, "nm", 0.1, 1);
+	format_INTEGER_with_unit_as_json(p, "nm", 0.1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_TurbulenceEDRValue_as_json) {
-	format_INTEGER_with_unit_as_json(p, "m^2/s^3", 0.01, 2);
+	format_INTEGER_with_unit_as_json(p, "m^2/s^3", 0.01);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_TurbulenceMinutesInThePast_as_json) {
-	format_INTEGER_with_unit_as_json(p, "min", 0.5, 1);
+	format_INTEGER_with_unit_as_json(p, "min", 0.5);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_TurbulenceObservationWindow_as_json) {
-	format_INTEGER_with_unit_as_json(p, "min", 1, 0);
+	format_INTEGER_with_unit_as_json(p, "min", 1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_TurnRadius_as_json) {
-	format_INTEGER_with_unit_as_json(p, "nm", 0.1, 1);
+	format_INTEGER_with_unit_as_json(p, "nm", 0.1);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_VerticalType_as_json) {
