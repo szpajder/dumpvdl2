@@ -51,7 +51,7 @@ typedef struct {
 	size_t formatter_table_json_len;
 } asn1_pdu_t;
 
-#define ASN1_FORMATTER_PROTOTYPE(x) \
+#define ASN1_FORMATTER_FUN_T(x) \
 	void x(asn1_formatter_param_t p)
 
 // asn1-util.c

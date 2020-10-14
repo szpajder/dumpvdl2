@@ -26,7 +26,7 @@
 #include "asn1/BOOLEAN.h"           // BOOLEAN_t
 #include <libacars/vstring.h>       // la_vstring, LA_ISPRINTF()
 #include <libacars/json.h>
-#include "asn1-util.h"              // ASN1_FORMATTER_PROTOTYPE
+#include "asn1-util.h"              // ASN1_FORMATTER_FUN_T
 #include "dumpvdl2.h"               // CAST_PTR, dict_search()
 
 char const *value2enum(asn_TYPE_descriptor_t *td, long const value) {
@@ -306,7 +306,7 @@ end:
 	la_json_array_end(p.vstr);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_any_as_text) {
+ASN1_FORMATTER_FUN_T(asn1_format_any_as_text) {
 	if(p.label != NULL) {
 		LA_ISPRINTF(p.vstr, p.indent, "%s: ", p.label);
 	} else {
@@ -316,7 +316,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_any_as_text) {
 	EOL(p.vstr);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_any_as_string_as_json) {
+ASN1_FORMATTER_FUN_T(asn1_format_any_as_string_as_json) {
 	UNUSED(p.indent);
 	la_vstring *tmp = la_vstring_new();
 	asn_sprintf(tmp, p.td, p.sptr, 0);
@@ -324,20 +324,20 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_any_as_string_as_json) {
 	la_vstring_destroy(tmp, true);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_label_only_as_text) {
+ASN1_FORMATTER_FUN_T(asn1_format_label_only_as_text) {
 	if(p.label != NULL) {
 		LA_ISPRINTF(p.vstr, p.indent, "%s\n", p.label);
 	}
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_label_only_as_json) {
+ASN1_FORMATTER_FUN_T(asn1_format_label_only_as_json) {
 	if(p.label != NULL) {
 		la_json_object_start(p.vstr, p.label);
 		la_json_object_end(p.vstr);
 	}
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_ENUM_as_text) {
+ASN1_FORMATTER_FUN_T(asn1_format_ENUM_as_text) {
 	long const value = *(long const *)p.sptr;
 	char const *s = value2enum(p.td, value);
 	if(s != NULL) {
@@ -347,7 +347,7 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_ENUM_as_text) {
 	}
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_ENUM_as_json) {
+ASN1_FORMATTER_FUN_T(asn1_format_ENUM_as_json) {
 	long const value = *(long const *)p.sptr;
 	char const *s = value2enum(p.td, value);
 	if(s != NULL) {
@@ -357,17 +357,17 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_ENUM_as_json) {
 	}
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_long_as_json) {
+ASN1_FORMATTER_FUN_T(asn1_format_long_as_json) {
 	CAST_PTR(valptr, long *, p.sptr);
 	la_json_append_long(p.vstr, p.label, *valptr);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_bool_as_json) {
+ASN1_FORMATTER_FUN_T(asn1_format_bool_as_json) {
 	CAST_PTR(valptr, BOOLEAN_t *, p.sptr);
 	la_json_append_bool(p.vstr, p.label, (*valptr) ? true : false);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_OCTET_STRING_as_json) {
+ASN1_FORMATTER_FUN_T(asn1_format_OCTET_STRING_as_json) {
 	CAST_PTR(valptr, OCTET_STRING_t *, p.sptr);
 	la_json_append_octet_string(p.vstr, p.label, valptr->buf, valptr->size);
 }
