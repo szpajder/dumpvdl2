@@ -57,11 +57,11 @@ size_t asn1_icao_formatter_table_json_len;
  ************************/
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_icao_as_json) {
-	asn1_output_as_json(p.vstr, asn1_icao_formatter_table_json, asn1_icao_formatter_table_json_len, p.td, p.sptr);
+	asn1_output_as_json(p, asn1_icao_formatter_table_json, asn1_icao_formatter_table_json_len);
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_format_acse_as_json) {
-	asn1_output_as_json(p.vstr, asn1_acse_formatter_table_json, asn1_acse_formatter_table_json_len, p.td, p.sptr);
+	asn1_output_as_json(p, asn1_acse_formatter_table_json, asn1_acse_formatter_table_json_len);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_acse_as_json) {

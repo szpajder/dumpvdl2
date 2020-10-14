@@ -521,11 +521,11 @@ static GByteArray *_stringify_ShortTsap(GByteArray *array, ShortTsap_t *tsap) {
  ************************/
 
 ASN1_FORMATTER_PROTOTYPE(asn1_output_acse_as_text) {
-	asn1_output_as_text(p.vstr, asn1_acse_formatter_table_text, asn1_acse_formatter_table_text_len, p.td, p.sptr, p.indent);
+	asn1_output_as_text(p, asn1_acse_formatter_table_text, asn1_acse_formatter_table_text_len);
 }
 
 ASN1_FORMATTER_PROTOTYPE(asn1_output_icao_as_text) {
-	asn1_output_as_text(p.vstr, asn1_icao_formatter_table_text, asn1_icao_formatter_table_text_len, p.td, p.sptr, p.indent);
+	asn1_output_as_text(p, asn1_icao_formatter_table_text, asn1_icao_formatter_table_text_len);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_acse_as_text) {

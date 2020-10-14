@@ -26,7 +26,7 @@
 // Parameters to the formatter function
 typedef struct {
 	la_vstring *vstr;
-	char const * const label;
+	char const *label;
 	asn_TYPE_descriptor_t *td;
 	void const *sptr;
 	int indent;
@@ -56,10 +56,10 @@ typedef struct {
 
 // asn1-util.c
 int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, int size);
-void asn1_output_as_text(la_vstring *vstr, asn_formatter_t const * const asn1_formatter_table,
-		size_t asn1_formatter_table_len, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
-void asn1_output_as_json(la_vstring *vstr, asn_formatter_t const * const asn1_formatter_table,
-		size_t asn1_formatter_table_len, asn_TYPE_descriptor_t *td, const void *sptr);
+void asn1_output_as_text(asn1_formatter_param_t p, asn_formatter_t const * const asn1_formatter_table,
+		size_t asn1_formatter_table_len);
+void asn1_output_as_json(asn1_formatter_param_t p, asn_formatter_t const * const asn1_formatter_table,
+		size_t asn1_formatter_table_len);
 void asn1_pdu_format_text(la_vstring *vstr, void const * const data, int indent);
 void asn1_pdu_format_json(la_vstring *vstr, void const * const data);
 void asn1_pdu_destroy(void *data);

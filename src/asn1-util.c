@@ -50,34 +50,34 @@ int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, i
 	return 0;
 }
 
-void asn1_output_as_text(la_vstring *vstr, asn_formatter_t const * const asn1_formatter_table,
-		size_t asn1_formatter_table_len, asn_TYPE_descriptor_t *td, const void *sptr, int indent) {
-	if(td == NULL || sptr == NULL) return;
-	asn_formatter_t *formatter = lfind(td, asn1_formatter_table, &asn1_formatter_table_len,
-			sizeof(asn_formatter_t), &compare_fmtr);
+void asn1_output_as_text(asn1_formatter_param_t p, asn_formatter_t const * const asn1_formatter_table,
+		size_t asn1_formatter_table_len) {
+	if(p.td == NULL || p.sptr == NULL) return;
+	asn_formatter_t *formatter = lfind(p.td, asn1_formatter_table, &asn1_formatter_table_len,
+			sizeof(asn_formatter_t), compare_fmtr);
 	if(formatter != NULL) {
 		// NULL formatting routine is allowed - it means the type should be silently omitted
+		p.label = formatter->label;
 		if(formatter->format != NULL) {
-			(*formatter->format)((asn1_formatter_param_t){ .vstr = vstr, .label = formatter->label,
-					.td = td, .sptr = sptr, .indent = indent });
+			(*formatter->format)(p);
 		}
 	} else {
-		LA_ISPRINTF(vstr, indent, "-- Formatter for type %s not found, ASN.1 dump follows:\n", td->name);
-		LA_ISPRINTF(vstr, indent, "%s", "");    // asn_sprintf does not indent the first line
-		asn_sprintf(vstr, td, sptr, indent+1);
-		EOL(vstr);
-		LA_ISPRINTF(vstr, indent, "%s", "-- ASN.1 dump end\n");
+		LA_ISPRINTF(p.vstr, p.indent, "-- Formatter for type %s not found, ASN.1 dump follows:\n", p.td->name);
+		LA_ISPRINTF(p.vstr, p.indent, "%s", "");    // asn_sprintf does not indent the first line
+		asn_sprintf(p.vstr, p.td, p.sptr, p.indent+1);
+		EOL(p.vstr);
+		LA_ISPRINTF(p.vstr, p.indent, "%s", "-- ASN.1 dump end\n");
 	}
 }
 
-void asn1_output_as_json(la_vstring *vstr, asn_formatter_t const * const asn1_formatter_table,
-		size_t asn1_formatter_table_len, asn_TYPE_descriptor_t *td, const void *sptr) {
-	if(td == NULL || sptr == NULL) return;
-	asn_formatter_t *formatter = lfind(td, asn1_formatter_table, &asn1_formatter_table_len,
-			sizeof(asn_formatter_t), &compare_fmtr);
+void asn1_output_as_json(asn1_formatter_param_t p, asn_formatter_t const * const asn1_formatter_table,
+		size_t asn1_formatter_table_len) {
+	if(p.td == NULL || p.sptr == NULL) return;
+	asn_formatter_t *formatter = lfind(p.td, asn1_formatter_table, &asn1_formatter_table_len,
+			sizeof(asn_formatter_t), compare_fmtr);
 	if(formatter != NULL && formatter->format != NULL) {
-		(*formatter->format)((asn1_formatter_param_t){ .vstr = vstr, .label = formatter->label,
-				.td = td, .sptr = sptr });
+		p.label = formatter->label;
+		(*formatter->format)(p);
 	}
 }
 
@@ -103,8 +103,13 @@ void asn1_pdu_format_text(la_vstring *vstr, void const * const data, int indent)
 		EOL(vstr);
 	}
 	ASSERT(pdu->formatter_table_text != NULL);
-	asn1_output_as_text(vstr, pdu->formatter_table_text, pdu->formatter_table_text_len,
-			pdu->type, pdu->data, indent);
+	asn1_output_as_text((asn1_formatter_param_t){
+		.vstr = vstr,
+		.td = pdu->type,
+		.sptr = pdu->data,
+		.indent = indent
+		},
+		pdu->formatter_table_text, pdu->formatter_table_text_len);
 }
 
 void asn1_pdu_format_json(la_vstring *vstr, void const * const data) {
@@ -119,8 +124,12 @@ void asn1_pdu_format_json(la_vstring *vstr, void const * const data) {
 		return;
 	}
 	ASSERT(pdu->formatter_table_json != NULL);
-	asn1_output_as_json(vstr, pdu->formatter_table_json, pdu->formatter_table_json_len,
-			pdu->type, pdu->data);
+	asn1_output_as_json((asn1_formatter_param_t){
+		.vstr = vstr,
+		.td = pdu->type,
+		.sptr = pdu->data,
+		},
+		pdu->formatter_table_json, pdu->formatter_table_json_len);
 }
 
 // a destructor for la_proto_nodes containing asn1_pdu_t data
