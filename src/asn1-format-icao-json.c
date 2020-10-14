@@ -130,16 +130,11 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTime_as_json) {
 	la_json_object_end(vstr);
 }
 
-static ASN1_FORMATTER_PROTOTYPE(asn1_format_DateTimeGroup_as_json) {
+static ASN1_FORMATTER_PROTOTYPE(asn1_format_Timehhmmss_as_json) {
 	UNUSED(td);
 	UNUSED(indent);
-	CAST_PTR(dtg, DateTimeGroup_t *, sptr);
-	Date_t *d = &dtg->date;
-	Timehhmmss_t *t = &dtg->timehhmmss;
+	CAST_PTR(t, Timehhmmss_t *, sptr);
 	la_json_object_start(vstr, label);
-	la_json_append_long(vstr, "year", d->year);
-	la_json_append_long(vstr, "month", d->month);
-	la_json_append_long(vstr, "day", d->day);
 	la_json_append_long(vstr, "hour", t->hoursminutes.hours);
 	la_json_append_long(vstr, "min", t->hoursminutes.minutes);
 	la_json_append_long(vstr, "sec", t->seconds);
@@ -508,7 +503,7 @@ asn_formatter_t const asn1_icao_formatter_table_json[] = {
 	{ .type = &asn_DEF_Code, .format = asn1_format_Code_as_json, .label = "code" },
 	{ .type = &asn_DEF_ControlledTime, .format = asn1_format_SEQUENCE_icao_as_json, .label = "controlled_time" },
 	{ .type = &asn_DEF_DateTimeDepartureETD, .format = asn1_format_DateTime_as_json, .label = "departure_time" },
-	{ .type = &asn_DEF_DateTimeGroup, .format = asn1_format_DateTimeGroup_as_json, .label = "timestamp" },
+	{ .type = &asn_DEF_DateTimeGroup, .format = asn1_format_SEQUENCE_icao_as_json, .label = "timestamp" },
 	{ .type = &asn_DEF_DegreeIncrement, .format = asn1_format_Deg_as_json, .label = "degree_increment" },
 	{ .type = &asn_DEF_Degrees, .format = asn1_format_CHOICE_icao_as_json, .label = "degrees" },
 	{ .type = &asn_DEF_DegreesMagnetic, .format = asn1_format_Deg_as_json, .label = "degrees_magnetic"},
@@ -674,7 +669,6 @@ asn_formatter_t const asn1_icao_formatter_table_json[] = {
 	{ .type = &asn_DEF_TimeDistanceToFromPosition, .format = asn1_format_SEQUENCE_icao_as_json, .label = "time_distance_to_from_position" },
 	{ .type = &asn_DEF_TimeETAatFixNext, .format = asn1_format_Time_as_json, .label = "eta_at_fix_next" },
 	{ .type = &asn_DEF_TimeETAatDest, .format = asn1_format_Time_as_json, .label = "eta_at_dest" },
-	{ .type = &asn_DEF_Timehhmmss, .format = asn1_format_SEQUENCE_icao_as_json, .label = "time_hhmmss" },
 	{ .type = &asn_DEF_TimeLevel, .format = asn1_format_SEQUENCE_icao_as_json, .label = "time_level" },
 	{ .type = &asn_DEF_TimePosition, .format = asn1_format_SEQUENCE_icao_as_json, .label = "time_position" },
 	{ .type = &asn_DEF_TimePositionLevel, .format = asn1_format_SEQUENCE_icao_as_json, .label = "time_position_level" },
@@ -686,6 +680,7 @@ asn_formatter_t const asn1_icao_formatter_table_json[] = {
 	{ .type = &asn_DEF_TimeToFromPosition, .format = asn1_format_SEQUENCE_icao_as_json, .label = "time_to_from_position" },
 	{ .type = &asn_DEF_TimeTolerance, .format = asn1_format_ENUM_as_json, .label = "time_tolerance" },
 	{ .type = &asn_DEF_TimeUnitNameFrequency, .format = asn1_format_SEQUENCE_icao_as_json, .label = "time_unit_name_frequency" },
+	{ .type = &asn_DEF_Timehhmmss, .format = asn1_format_Timehhmmss_as_json, .label = "time" },
 	{ .type = &asn_DEF_ToFrom, .format = asn1_format_ENUM_as_json, .label = "to_from" },
 	{ .type = &asn_DEF_ToFromPosition, .format = asn1_format_SEQUENCE_icao_as_json, .label = "to_from_position" },
 	{ .type = &asn_DEF_TrafficType, .format = asn1_format_ENUM_as_json, .label = "traffic_type" },
@@ -743,7 +738,7 @@ asn_formatter_t const asn1_icao_formatter_table_json[] = {
 	{ .type = &asn_DEF_CancelPositiveAcknowledgement, .format = asn1_format_ENUM_as_json, .label = "ads_c_v2_cancel_ack" },
 	{ .type = &asn_DEF_CancelRejectReason, .format = asn1_format_SEQUENCE_icao_as_json, .label = "ads_c_v2_cancel_nak" },
 	{ .type = &asn_DEF_ProviderAbortReason, .format = asn1_format_ENUM_as_json, .label = "ads_c_v2_provider_abort" },
-	{ .type = &asn_DEF_PMADSCDateTimeGroup, .format = asn1_format_SEQUENCE_icao_as_json, .label = "adsc_datetime_group" },
+	{ .type = &asn_DEF_PMADSCDateTimeGroup, .format = asn1_format_SEQUENCE_icao_as_json, .label = "adsc_msg_timestamp" },
 	{ .type = &asn_DEF_PMADSCTime, .format = asn1_format_SEQUENCE_icao_as_json, .label = "time" },
 	{ .type = &asn_DEF_RejectReason, .format = asn1_format_ENUM_as_json, .label = "reject_reason" },
 	{ .type = &asn_DEF_RequestType, .format = asn1_format_ENUM_as_json, .label = "request_type" },
@@ -758,7 +753,7 @@ asn_formatter_t const asn1_icao_formatter_table_json[] = {
 	{ .type = &asn_DEF_ADSReject, .format = asn1_format_SEQUENCE_icao_as_json, .label = "ads_c_v2_reject" },
 	{ .type = &asn_DEF_ADSReport, .format = asn1_format_CHOICE_icao_as_json, .label = "ads_c_v2_report" },
 	{ .type = &asn_DEF_ADSRequestContract, .format = asn1_format_CHOICE_icao_as_json, .label = "request_contract" },
-	{ .type = &asn_DEF_ADSv2DateTimeGroup, .format = asn1_format_SEQUENCE_icao_as_json, .label = "datetime_group" },
+	{ .type = &asn_DEF_ADSv2DateTimeGroup, .format = asn1_format_SEQUENCE_icao_as_json, .label = "timestamp" },
 	{ .type = &asn_DEF_ADSv2Latitude, .format = asn1_format_ADSv2Latitude_as_json, .label = "lat" },
 	{ .type = &asn_DEF_ADSv2LatitudeLongitude, .format = asn1_format_SEQUENCE_icao_as_json, .label = "ads_lat_lon" },
 	{ .type = &asn_DEF_ADSv2Level, .format = asn1_format_LevelFeet_as_json, .label = "alt" },
