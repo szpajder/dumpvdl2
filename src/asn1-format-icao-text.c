@@ -1285,7 +1285,8 @@ asn_formatter_t const asn1_icao_formatter_table_text[] = {
 	{ .type = &asn_DEF_CMLogonRequest, .format = asn1_format_SEQUENCE_icao_as_text, .label = "ATN Context Management - Logon Request" },
 	{ .type = &asn_DEF_CMLogonResponse, .format = asn1_format_SEQUENCE_icao_as_text, .label = "ATN Context Management - Logon Response" },
 	{ .type = &asn_DEF_CMUpdate, .format = asn1_format_SEQUENCE_icao_as_text, .label = "ATN Context Management - Update" },
-	{ .type = &asn_DEF_LocSysNselTsel, .format = asn1_format_any_as_text, .label = "LOC/SYS/NSEL/TSEL" },
+	// Handled by asn_DEF_ShortTsap formatter
+	//{ .type = &asn_DEF_LocSysNselTsel, .format = asn1_format_any_as_text, .label = "LOC/SYS/NSEL/TSEL" },
 	{ .type = &asn_DEF_LongTsap, .format = asn1_format_LongTsap_as_text, .label = "Long TSAP" },
 	{ .type = &asn_DEF_OCTET_STRING, .format = asn1_format_any_as_text, .label = NULL },
 	{ .type = &asn_DEF_RDP, .format = asn1_format_any_as_text, .label = "RDP" },
