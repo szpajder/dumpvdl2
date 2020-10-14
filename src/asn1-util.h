@@ -41,9 +41,6 @@ typedef struct {
 	char const * const label;
 } asn_formatter_t;
 
-// Callback invoked by formatters of complex ASN.1 types to format individual fields
-typedef void (*asn1_output_fun_t)(la_vstring *, asn_TYPE_descriptor_t *, void const *, int);
-
 // A structure for storing decoded ASN.1 payloads in a la_proto_node
 typedef struct {
 	asn_TYPE_descriptor_t *type;

@@ -46,8 +46,10 @@
 #include "asn1-format-common.h"                 // common formatters and helper functions
 
 // forward declarations
-void asn1_output_icao_as_text(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
-void asn1_output_acse_as_text(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
+asn_formatter_t const asn1_icao_formatter_table_text[];
+size_t asn1_icao_formatter_table_text_len;
+asn_formatter_t const asn1_acse_formatter_table_text[];
+size_t asn1_acse_formatter_table_text_len;
 
 dict const Associate_result_labels[] = {
 	{ .id = Associate_result_accepted, .val = "accept" },
@@ -518,6 +520,14 @@ static GByteArray *_stringify_ShortTsap(GByteArray *array, ShortTsap_t *tsap) {
  * ASN.1 type formatters
  ************************/
 
+ASN1_FORMATTER_PROTOTYPE(asn1_output_acse_as_text) {
+	asn1_output_as_text(p.vstr, asn1_acse_formatter_table_text, asn1_acse_formatter_table_text_len, p.td, p.sptr, p.indent);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_output_icao_as_text) {
+	asn1_output_as_text(p.vstr, asn1_icao_formatter_table_text, asn1_icao_formatter_table_text_len, p.td, p.sptr, p.indent);
+}
+
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_acse_as_text) {
 	format_SEQUENCE_as_text(p, asn1_output_acse_as_text);
 }
@@ -919,7 +929,9 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Longitude_as_text) {
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSAircraftPDUs_as_text) {
 	CAST_PTR(apdus, ADSAircraftPDUs_t *, p.sptr);
 	// Omit the timestamp for brevity, print the PDU only
-	asn1_output_icao_as_text(p.vstr, &asn_DEF_ADSAircraftPDU, &apdus->adsAircraftPdu, p.indent);
+	p.td = &asn_DEF_ADSAircraftPDU;
+	p.sptr = &apdus->adsAircraftPdu;
+	asn1_output_icao_as_text(p);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSv2Temperature_as_text) {
@@ -953,7 +965,9 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_GrossMass_as_text) {
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ADSGroundPDUs_as_text) {
 	CAST_PTR(apdus, ADSGroundPDUs_t *, p.sptr);
 	// Omit the timestamp for brevity, print the PDU only
-	asn1_output_icao_as_text(p.vstr, &asn_DEF_ADSGroundPDU, &apdus->adsGroundPdu, p.indent);
+	p.td = &asn_DEF_ADSGroundPDU;
+	p.sptr = &apdus->adsGroundPdu;
+	asn1_output_icao_as_text(p);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_EPPLimitations_as_text) {
@@ -1480,10 +1494,6 @@ asn_formatter_t const asn1_icao_formatter_table_text[] = {
 
 size_t asn1_icao_formatter_table_text_len = sizeof(asn1_icao_formatter_table_text) / sizeof(asn_formatter_t);
 
-void asn1_output_icao_as_text(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *sptr, int indent) {
-	asn1_output_as_text(vstr, asn1_icao_formatter_table_text, asn1_icao_formatter_table_text_len, td, sptr, indent);
-}
-
 asn_formatter_t const asn1_acse_formatter_table_text[] = {
 	{ .type = &asn_DEF_AARE_apdu, .format = asn1_format_SEQUENCE_acse_as_text, .label = "X.227 ACSE Associate Response" },
 	{ .type = &asn_DEF_AARQ_apdu, .format = asn1_format_SEQUENCE_acse_as_text, .label = "X.227 ACSE Associate Request" },
@@ -1522,7 +1532,3 @@ asn_formatter_t const asn1_acse_formatter_table_text[] = {
 };
 
 size_t asn1_acse_formatter_table_text_len = sizeof(asn1_acse_formatter_table_text) / sizeof(asn_formatter_t);
-
-void asn1_output_acse_as_text(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *sptr, int indent) {
-	asn1_output_as_text(vstr, asn1_acse_formatter_table_text, asn1_acse_formatter_table_text_len, td, sptr, indent);
-}

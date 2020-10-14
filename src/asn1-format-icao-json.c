@@ -47,19 +47,29 @@
 #include "asn1-format-icao.h"                   // *_labels dictionaries
 
 // forward declarations
-void asn1_output_icao_as_json(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
-void asn1_output_acse_as_json(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
+asn_formatter_t const asn1_acse_formatter_table_json[];
+size_t asn1_acse_formatter_table_json_len;
+asn_formatter_t const asn1_icao_formatter_table_json[];
+size_t asn1_icao_formatter_table_json_len;
 
 /************************
  * ASN.1 type formatters
  ************************/
 
+ASN1_FORMATTER_PROTOTYPE(asn1_format_icao_as_json) {
+	asn1_output_as_json(p.vstr, asn1_icao_formatter_table_json, asn1_icao_formatter_table_json_len, p.td, p.sptr);
+}
+
+ASN1_FORMATTER_PROTOTYPE(asn1_format_acse_as_json) {
+	asn1_output_as_json(p.vstr, asn1_acse_formatter_table_json, asn1_acse_formatter_table_json_len, p.td, p.sptr);
+}
+
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_acse_as_json) {
-	format_SEQUENCE_as_json(p, asn1_output_acse_as_json);
+	format_SEQUENCE_as_json(p, asn1_format_acse_as_json);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_CHOICE_acse_as_json) {
-	format_CHOICE_as_json(p, NULL, asn1_output_acse_as_json);
+	format_CHOICE_as_json(p, NULL, asn1_format_acse_as_json);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Associate_result_as_json) {
@@ -79,23 +89,23 @@ static ASN1_FORMATTER_PROTOTYPE(asn1_format_ABRT_source_as_json) {
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_CHOICE_icao_as_json) {
-	format_CHOICE_as_json(p, NULL, asn1_output_icao_as_json);
+	format_CHOICE_as_json(p, NULL, asn1_format_icao_as_json);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_icao_as_json) {
-	format_SEQUENCE_as_json(p, asn1_output_icao_as_json);
+	format_SEQUENCE_as_json(p, asn1_format_icao_as_json);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_SEQUENCE_OF_icao_as_json) {
-	format_SEQUENCE_OF_as_json(p, asn1_output_icao_as_json);
+	format_SEQUENCE_OF_as_json(p, asn1_format_icao_as_json);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCDownlinkMsgElementId_as_json) {
-	format_CHOICE_as_json(p, ATCDownlinkMsgElementId_labels, asn1_output_icao_as_json);
+	format_CHOICE_as_json(p, ATCDownlinkMsgElementId_labels, asn1_format_icao_as_json);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_ATCUplinkMsgElementId_as_json) {
-	format_CHOICE_as_json(p, ATCUplinkMsgElementId_labels, asn1_output_icao_as_json);
+	format_CHOICE_as_json(p, ATCUplinkMsgElementId_labels, asn1_format_icao_as_json);
 }
 
 static ASN1_FORMATTER_PROTOTYPE(asn1_format_Code_as_json) {
@@ -909,11 +919,6 @@ asn_formatter_t const asn1_icao_formatter_table_json[] = {
 
 size_t asn1_icao_formatter_table_json_len = sizeof(asn1_icao_formatter_table_json) / sizeof(asn_formatter_t);
 
-void asn1_output_icao_as_json(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *sptr, int indent) {
-	UNUSED(indent);
-	asn1_output_as_json(vstr, asn1_icao_formatter_table_json, asn1_icao_formatter_table_json_len, td, sptr);
-}
-
 asn_formatter_t const asn1_acse_formatter_table_json[] = {
 	{ .type = &asn_DEF_AARE_apdu, .format = asn1_format_SEQUENCE_acse_as_json, .label = "assoc_response" },
 	{ .type = &asn_DEF_AARQ_apdu, .format = asn1_format_SEQUENCE_acse_as_json, .label = "assoc_request" },
@@ -952,8 +957,3 @@ asn_formatter_t const asn1_acse_formatter_table_json[] = {
 };
 
 size_t asn1_acse_formatter_table_json_len = sizeof(asn1_acse_formatter_table_json) / sizeof(asn_formatter_t);
-
-void asn1_output_acse_as_json(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *sptr, int indent) {
-	UNUSED(indent);
-	asn1_output_as_json(vstr, asn1_acse_formatter_table_json, asn1_acse_formatter_table_json_len, td, sptr);
-}

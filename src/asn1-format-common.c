@@ -72,7 +72,7 @@ void format_INTEGER_as_ENUM_as_json(asn1_formatter_param_t p, dict const * const
 }
 
 void format_CHOICE_as_text(asn1_formatter_param_t p, dict const * const choice_labels,
-		asn1_output_fun_t cb) {
+		asn1_formatter_fun_t cb) {
 	CAST_PTR(specs, asn_CHOICE_specifics_t *, p.td->specifics);
 	int present = _fetch_present_idx(p.sptr, specs->pres_offset, specs->pres_size);
 	if(p.label != NULL) {
@@ -102,14 +102,16 @@ void format_CHOICE_as_text(asn1_formatter_param_t p, dict const * const choice_l
 			memb_ptr = (const void *)((const char *)p.sptr + elm->memb_offset);
 		}
 
-		cb(p.vstr, elm->type, memb_ptr, p.indent);
+		p.td = elm->type;
+		p.sptr = memb_ptr;
+		cb(p);
 	} else {
 		LA_ISPRINTF(p.vstr, p.indent, "-- %s: value %d out of range\n", p.td->name, present);
 	}
 }
 
 void format_CHOICE_as_json(asn1_formatter_param_t p, dict const * const choice_labels,
-		asn1_output_fun_t cb) {
+		asn1_formatter_fun_t cb) {
 	asn_CHOICE_specifics_t *specs = (asn_CHOICE_specifics_t *)p.td->specifics;
 	int present = _fetch_present_idx(p.sptr, specs->pres_offset, specs->pres_size);
 	la_json_object_start(p.vstr, p.label);
@@ -131,18 +133,21 @@ void format_CHOICE_as_json(asn1_formatter_param_t p, dict const * const choice_l
 		}
 		la_json_append_string(p.vstr, "choice", elm->name);
 		la_json_object_start(p.vstr, "data");
-		cb(p.vstr, elm->type, memb_ptr, 0);
+		p.td = elm->type;
+		p.sptr = memb_ptr;
+		cb(p);
 		la_json_object_end(p.vstr);
 	}
 end:
 	la_json_object_end(p.vstr);
 }
 
-void format_SEQUENCE_as_text(asn1_formatter_param_t p, asn1_output_fun_t cb) {
+void format_SEQUENCE_as_text(asn1_formatter_param_t p, asn1_formatter_fun_t cb) {
 	if(p.label != NULL) {
 		LA_ISPRINTF(p.vstr, p.indent, "%s:\n", p.label);
 		p.indent++;
 	}
+	asn1_formatter_param_t cb_p = p;
 	for(int edx = 0; edx < p.td->elements_count; edx++) {
 		asn_TYPE_member_t *elm = &p.td->elements[edx];
 		const void *memb_ptr;
@@ -155,14 +160,17 @@ void format_SEQUENCE_as_text(asn1_formatter_param_t p, asn1_output_fun_t cb) {
 		} else {
 			memb_ptr = (const void *)((const char *)p.sptr + elm->memb_offset);
 		}
-		cb(p.vstr, elm->type, memb_ptr, p.indent);
+		cb_p.td = elm->type;
+		cb_p.sptr = memb_ptr;
+		cb(cb_p);
 	}
 }
 
 // Prints ASN.1 SEQUENCE as JSON object.
 // All fields in the sequence must have unique types (and p.labels), otherwise
 // JSON keys will clash.
-void format_SEQUENCE_as_json(asn1_formatter_param_t p, asn1_output_fun_t cb) {
+void format_SEQUENCE_as_json(asn1_formatter_param_t p, asn1_formatter_fun_t cb) {
+	asn1_formatter_param_t cb_p = p;
 	la_json_object_start(p.vstr, p.label);
 	for(int edx = 0; edx < p.td->elements_count; edx++) {
 		asn_TYPE_member_t *elm = &p.td->elements[edx];
@@ -176,12 +184,14 @@ void format_SEQUENCE_as_json(asn1_formatter_param_t p, asn1_output_fun_t cb) {
 		} else {
 			memb_ptr = (const void *)((const char *)p.sptr + elm->memb_offset);
 		}
-		cb(p.vstr, elm->type, memb_ptr, 0);
+		cb_p.td = elm->type;
+		cb_p.sptr = memb_ptr;
+		cb(cb_p);
 	}
 	la_json_object_end(p.vstr);
 }
 
-void format_SEQUENCE_OF_as_text(asn1_formatter_param_t p, asn1_output_fun_t cb) {
+void format_SEQUENCE_OF_as_text(asn1_formatter_param_t p, asn1_formatter_fun_t cb) {
 	if(p.label != NULL) {
 		LA_ISPRINTF(p.vstr, p.indent, "%s:\n", p.label);
 		p.indent++;
@@ -193,11 +203,13 @@ void format_SEQUENCE_OF_as_text(asn1_formatter_param_t p, asn1_output_fun_t cb) 
 		if(memb_ptr == NULL) {
 			continue;
 		}
-		cb(p.vstr, elm->type, memb_ptr, p.indent);
+		p.td = elm->type;
+		p.sptr = memb_ptr;
+		cb(p);
 	}
 }
 
-void format_SEQUENCE_OF_as_json(asn1_formatter_param_t p, asn1_output_fun_t cb) {
+void format_SEQUENCE_OF_as_json(asn1_formatter_param_t p, asn1_formatter_fun_t cb) {
 	la_json_array_start(p.vstr, p.label);
 	asn_TYPE_member_t *elm = p.td->elements;
 	const asn_anonymous_set_ *list = _A_CSET_FROM_VOID(p.sptr);
@@ -207,7 +219,9 @@ void format_SEQUENCE_OF_as_json(asn1_formatter_param_t p, asn1_output_fun_t cb) 
 			continue;
 		}
 		la_json_object_start(p.vstr, NULL);
-		cb(p.vstr, elm->type, memb_ptr, 0);
+		p.td = elm->type;
+		p.sptr = memb_ptr;
+		cb(p);
 		la_json_object_end(p.vstr);
 	}
 	la_json_array_end(p.vstr);
