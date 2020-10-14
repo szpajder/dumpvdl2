@@ -38,7 +38,6 @@ void _format_SEQUENCE_OF_as_text(la_vstring *vstr, char const * const label, asn
 void _format_BIT_STRING_as_text(la_vstring *vstr, char const * const label, dict const * const bit_labels,
 		void const *sptr, int indent);
 ASN1_FORMATTER_PROTOTYPE(asn1_format_any_as_text);
-ASN1_FORMATTER_PROTOTYPE(asn1_format_NULL);
 ASN1_FORMATTER_PROTOTYPE(asn1_format_label_only_as_text);
 ASN1_FORMATTER_PROTOTYPE(asn1_format_ENUM_as_text);
 ASN1_FORMATTER_PROTOTYPE(asn1_format_Deg_as_text);

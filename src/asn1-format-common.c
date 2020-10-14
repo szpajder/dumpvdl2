@@ -328,15 +328,6 @@ ASN1_FORMATTER_PROTOTYPE(asn1_format_any_as_string_as_json) {
 	la_vstring_destroy(tmp, true);
 }
 
-ASN1_FORMATTER_PROTOTYPE(asn1_format_NULL) {
-	UNUSED(td);
-	UNUSED(label);
-	UNUSED(vstr);
-	UNUSED(sptr);
-	UNUSED(indent);
-	// NOOP
-}
-
 ASN1_FORMATTER_PROTOTYPE(asn1_format_label_only_as_text) {
 	UNUSED(td);
 	UNUSED(sptr);

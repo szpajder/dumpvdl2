@@ -585,7 +585,6 @@ asn_formatter_t const asn1_icao_formatter_table_json[] = {
 	{ .type = &asn_DEF_MsgReferenceNumber, .format = asn1_format_long_as_json, .label = "msg_ref" },
 	{ .type = &asn_DEF_Navaid, .format = asn1_format_SEQUENCE_icao_as_json, .label = "navaid" },
 	{ .type = &asn_DEF_NavaidName, .format = asn1_format_any_as_string_as_json, .label = "navaid" },
-	{ .type = &asn_DEF_NULL, .format = NULL, .label = NULL }, // ?
 	{ .type = &asn_DEF_PersonsOnBoard, .format = asn1_format_long_as_json, .label = "persons_on_board" },
 	{ .type = &asn_DEF_PlaceBearing, .format = asn1_format_SEQUENCE_icao_as_json, .label = "place_bearing" },
 	{ .type = &asn_DEF_PlaceBearingDistance, .format = asn1_format_SEQUENCE_icao_as_json, .label = "place_bearing_distance" },

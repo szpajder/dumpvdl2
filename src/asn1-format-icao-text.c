@@ -1166,7 +1166,7 @@ asn_formatter_t const asn1_icao_formatter_table_text[] = {
 	{ .type = &asn_DEF_MsgReferenceNumber, .format = asn1_format_any_as_text, .label = "Msg Ref" },
 	{ .type = &asn_DEF_Navaid, .format = asn1_format_SEQUENCE_icao_as_text, .label = NULL },
 	{ .type = &asn_DEF_NavaidName, .format = asn1_format_any_as_text, .label = "Navaid" },
-	{ .type = &asn_DEF_NULL, .format = asn1_format_NULL, .label = NULL },
+	{ .type = &asn_DEF_NULL, .format = NULL, .label = NULL },
 	{ .type = &asn_DEF_PersonsOnBoard, .format = asn1_format_any_as_text, .label = "Persons on board" },
 	{ .type = &asn_DEF_PlaceBearing, .format = asn1_format_SEQUENCE_icao_as_text, .label = NULL },
 	{ .type = &asn_DEF_PlaceBearingDistance, .format = asn1_format_SEQUENCE_icao_as_text, .label = NULL },
@@ -1527,23 +1527,23 @@ asn_formatter_t const asn1_acse_formatter_table_text[] = {
 	{ .type = &asn_DEF_RLRE_apdu, .format = asn1_format_SEQUENCE_acse_as_text, .label = "X.227 ACSE Release Response" },
 	{ .type = &asn_DEF_RLRQ_apdu, .format = asn1_format_SEQUENCE_acse_as_text, .label = "X.227 ACSE Release Request" },
 	// Supported in ATN ULCS, but not included in text output
-	{ .type = &asn_DEF_ACSE_requirements  , .format = asn1_format_NULL, .label = NULL },
-	{ .type = &asn_DEF_Associate_source_diagnostic , .format = asn1_format_NULL, .label = NULL },
-	{ .type = &asn_DEF_Association_information, .format = asn1_format_NULL, .label = NULL },
-	{ .type = &asn_DEF_Authentication_value , .format = asn1_format_NULL, .label = NULL }
+	{ .type = &asn_DEF_ACSE_requirements  , .format = NULL, .label = NULL },
+	{ .type = &asn_DEF_Associate_source_diagnostic , .format = NULL, .label = NULL },
+	{ .type = &asn_DEF_Association_information, .format = NULL, .label = NULL },
+	{ .type = &asn_DEF_Authentication_value , .format = NULL, .label = NULL }
 	// Not supported in ATN ULCS
-	// { .type = &asn_DEF_AE_invocation_identifier, .format = asn1_format_NULL, .label = NULL },
-	// { .type = &asn_DEF_AE_qualifier_form1, .format = asn1_format_NULL, .label = NULL },
-	// { .type = &asn_DEF_AP_invocation_identifier, .format = asn1_format_NULL, .label = NULL },
-	// { .type = &asn_DEF_AP_title_form1, .format = asn1_format_NULL, .label = NULL },
-	// { .type = &asn_DEF_Application_context_name_list, .format = asn1_format_NULL, .label = NULL },
-	// { .type = &asn_DEF_AttributeTypeAndValue, .format = asn1_format_NULL, .label = NULL },
-	// { .type = &asn_DEF_EXTERNALt, .format = asn1_format_NULL, .label = NULL },
-	// { .type = &asn_DEF_Implementation_data, .format = asn1_format_NULL, .label = NULL },
-	// { .type = &asn_DEF_Mechanism_name, .format = asn1_format_NULL, .label = NULL },
-	// { .type = &asn_DEF_Name, .format = asn1_format_NULL, .label = NULL },
-	// { .type = &asn_DEF_RDNSequence , .format = asn1_format_NULL, .label = NULL },
-	// { .type = &asn_DEF_RelativeDistinguishedName, .format = asn1_format_NULL, .label = NULL },
+	// { .type = &asn_DEF_AE_invocation_identifier, .format = NULL, .label = NULL },
+	// { .type = &asn_DEF_AE_qualifier_form1, .format = NULL, .label = NULL },
+	// { .type = &asn_DEF_AP_invocation_identifier, .format = NULL, .label = NULL },
+	// { .type = &asn_DEF_AP_title_form1, .format = NULL, .label = NULL },
+	// { .type = &asn_DEF_Application_context_name_list, .format = NULL, .label = NULL },
+	// { .type = &asn_DEF_AttributeTypeAndValue, .format = NULL, .label = NULL },
+	// { .type = &asn_DEF_EXTERNALt, .format = NULL, .label = NULL },
+	// { .type = &asn_DEF_Implementation_data, .format = NULL, .label = NULL },
+	// { .type = &asn_DEF_Mechanism_name, .format = NULL, .label = NULL },
+	// { .type = &asn_DEF_Name, .format = NULL, .label = NULL },
+	// { .type = &asn_DEF_RDNSequence , .format = NULL, .label = NULL },
+	// { .type = &asn_DEF_RelativeDistinguishedName, .format = NULL, .label = NULL },
 };
 
 size_t asn1_acse_formatter_table_text_len = sizeof(asn1_acse_formatter_table_text) / sizeof(asn_formatter_t);

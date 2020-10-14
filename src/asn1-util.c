@@ -56,7 +56,10 @@ void asn1_output_as_text(la_vstring *vstr, asn_formatter_t const * const asn1_fo
 	asn_formatter_t *formatter = lfind(td, asn1_formatter_table, &asn1_formatter_table_len,
 			sizeof(asn_formatter_t), &compare_fmtr);
 	if(formatter != NULL) {
-		(*formatter->format)(vstr, formatter->label, td, sptr, indent);
+		// NULL formatting routine is allowed - it means the type should be silently omitted
+		if(formatter->format != NULL) {
+			(*formatter->format)(vstr, formatter->label, td, sptr, indent);
+		}
 	} else {
 		LA_ISPRINTF(vstr, indent, "-- Formatter for type %s not found, ASN.1 dump follows:\n", td->name);
 		LA_ISPRINTF(vstr, indent, "%s", "");    // asn_sprintf does not indent the first line
