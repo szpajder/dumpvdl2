@@ -300,6 +300,22 @@ static ASN1_FORMATTER_FUN_T(asn1_format_RejectDetails_as_json) {
 	}
 }
 
+static ASN1_FORMATTER_FUN_T(asn1_format_ReportingRate_as_json) {
+	CAST_PTR(rate, ReportingRate_t *, p.sptr);
+	switch(rate->present) {
+		case ReportingRate_PR_reporting_time_seconds_scale:
+			p.sptr = &rate->choice.reporting_time_seconds_scale;
+			format_INTEGER_with_unit_as_json(p, "sec", 1);
+			break;
+		case ReportingRate_PR_reporting_time_minutes_scale:
+			p.sptr = &rate->choice.reporting_time_minutes_scale;
+			format_INTEGER_with_unit_as_json(p, "min", 1);
+			break;
+		default:
+			break;
+	}
+}
+
 static ASN1_FORMATTER_FUN_T(asn1_format_RTASecTolerance_as_json) {
 	format_INTEGER_with_unit_as_json(p, "sec", 1);
 }
@@ -873,7 +889,7 @@ asn_formatter_t const asn1_icao_formatter_table_json[] = {
 	{ .type = &asn_DEF_RTAType, .format = asn1_format_ENUM_as_json, .label = "rta_type" },
 	{ .type = &asn_DEF_ReportTypeAndPeriodNotSupported, .format = asn1_format_SEQUENCE_icao_as_json, .label = "report_type_and_period_not_supported" },
 	{ .type = &asn_DEF_ReportTypeNotSupported, .format = asn1_format_ReportTypeNotSupported_as_json, .label = "unsupported_reports" },
-	{ .type = &asn_DEF_ReportingRate, .format = asn1_format_CHOICE_icao_as_json, .label = "reporting_rate" },
+	{ .type = &asn_DEF_ReportingRate, .format = asn1_format_ReportingRate_as_json, .label = "reporting_rate" },
 	{ .type = &asn_DEF_SingleLevel, .format = asn1_format_SEQUENCE_icao_as_json, .label = "single_level" },
 	{ .type = &asn_DEF_SingleLevelSequence, .format = asn1_format_SEQUENCE_OF_icao_as_json, .label = "single_level_sequence" },
 	{ .type = &asn_DEF_SpeedConstraint, .format = asn1_format_SEQUENCE_icao_as_json, .label = "speed_constraint" },
