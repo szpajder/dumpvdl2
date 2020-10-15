@@ -680,6 +680,6 @@ la_type_descriptor const proto_DEF_adsc_v2 = {
 la_type_descriptor const proto_DEF_x227_acse_apdu = {
 	.format_text    = asn1_pdu_format_text,
 	.format_json    = asn1_pdu_format_json,
-	.json_key       = "x227_acse_apdu",
+	.json_key       = "x227_apdu",
 	.destroy        = asn1_pdu_destroy
 };
