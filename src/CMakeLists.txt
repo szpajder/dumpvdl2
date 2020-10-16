@@ -33,6 +33,11 @@ if(CC_HAS_FFAST_MATH)
 	add_definitions(-ffast-math)
 endif()
 
+CHECK_C_COMPILER_FLAG(-fno-common CC_HAS_FNO_COMMON)
+if(CC_HAS_FNO_COMMON)
+	add_definitions(-fno-common)
+endif()
+
 TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
 
 set(CMAKE_REQUIRED_FLAGS_ORIG ${CMAKE_REQUIRED_FLAGS})
