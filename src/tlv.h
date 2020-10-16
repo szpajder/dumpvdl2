@@ -79,5 +79,4 @@ TLV_FORMATTER(tlv_octet_string_with_ascii_format_text);
 TLV_FORMATTER(tlv_single_octet_format_text);
 // tlv_single_octet_format_json is handled by tlv_octet_string_format_json
 TLV_FORMATTER(tlv_octet_string_format_json);
-TLV_FORMATTER(tlv_format_noop);
 #endif // !_TLV_H

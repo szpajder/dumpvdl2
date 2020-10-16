@@ -248,7 +248,7 @@ static const dict x25_facilities[] = {
 			// This is just a separator - don't parse nor print it
 			// .label = "Marker (X.25 facilities follow)",
 			.parse = tlv_parser_noop,
-			.format_text = tlv_format_noop,
+			.format_text = NULL,
 			.format_json = NULL,
 			.destroy = NULL
 		}

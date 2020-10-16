@@ -261,7 +261,7 @@ TLV_FORMATTER(tlv_uint_format_json) {
 	la_json_append_long(ctx->vstr, label, *(uint32_t *)data);
 }
 
-// No-op parser and formatter
+// No-op parser
 // Can be used to skip over a TLV without outputting it
 TLV_PARSER(tlv_parser_noop) {
 	UNUSED(typecode);
@@ -269,12 +269,6 @@ TLV_PARSER(tlv_parser_noop) {
 	UNUSED(len);
 	// Have to return something free()'able to indicate a success
 	return XCALLOC(1, 1);
-}
-
-TLV_FORMATTER(tlv_format_noop) {
-	UNUSED(ctx);
-	UNUSED(label);
-	UNUSED(data);
 }
 
 typedef struct {
