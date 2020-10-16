@@ -57,37 +57,40 @@ void *dict_search(const dict *list, int id) {
 	}
 }
 
-static char *fmt_hexstring(uint8_t *data, uint16_t len) {
+static char *fmt_hexstring(octet_string_t const * const ostring) {
 	static const char hex[] = "0123456789abcdef";
-	ASSERT(data != NULL);
+	ASSERT(ostring != NULL);
 	char *buf = NULL;
-	if(len == 0) {
+	if(ostring->len == 0) {
 		return strdup("none");
 	}
-	buf = XCALLOC(3 * len + 1, sizeof(char));
+	buf = XCALLOC(3 * ostring->len + 1, sizeof(char));
 	char *ptr = buf;
-	for(uint16_t i = 0; i < len; i++) {
-		*ptr++ = hex[((data[i] >> 4) & 0xf)];
-		*ptr++ = hex[data[i] & 0xf];
+	uint8_t *ibuf = ostring->buf;
+	for(uint16_t i = 0; i < ostring->len; i++) {
+		*ptr++ = hex[((ibuf[i] >> 4) & 0xf)];
+		*ptr++ = hex[ibuf[i] & 0xf];
 		*ptr++ = ' ';
 	}
-	if(ptr != buf)
+	if(ptr != buf) {
 		ptr[-1] = '\0';         // trim trailing space
+	}
 	return buf;
 }
 
-static char *replace_nonprintable_chars(uint8_t *data, size_t len) {
-	ASSERT(data != NULL);
-	if(len == 0) {
+static char *replace_nonprintable_chars(octet_string_t const * const ostring) {
+	ASSERT(ostring != NULL);
+	if(ostring->len == 0) {
 		return strdup("");
 	}
-	char *buf = XCALLOC(len + 1, sizeof(char));
+	char *buf = XCALLOC(ostring->len + 1, sizeof(char));
 	char *ptr = buf;
-	for(size_t i = 0; i < len; i++) {
-		if(data[i] < 32 || data[i] > 126) {
+	uint8_t *ibuf = ostring->buf;
+	for(size_t i = 0; i < ostring->len; i++) {
+		if(ibuf[i] < 32 || ibuf[i] > 126) {
 			*ptr++ = '.';
 		} else {
-			*ptr++ = data[i];
+			*ptr++ = ibuf[i];
 		}
 	}
 	*ptr = '\0';
@@ -170,41 +173,38 @@ int octet_string_parse(uint8_t *buf, size_t len, octet_string_t *result) {
 	return 1 + buflen;  // total number of consumed octets
 }
 
-void octet_string_format_text(la_vstring * const vstr, void const * const data, int indent) {
+void octet_string_format_text(la_vstring * const vstr, octet_string_t const * const ostring, int indent) {
 	ASSERT(vstr != NULL);
-	ASSERT(data != NULL);
+	ASSERT(ostring != NULL);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(ostring, octet_string_t *, data);
-	char *h = fmt_hexstring(ostring->buf, ostring->len);
+	char *h = fmt_hexstring(ostring);
 	LA_ISPRINTF(vstr, indent, "%s", h);
 	XFREE(h);
 }
 
-void octet_string_with_ascii_format_text(la_vstring * const vstr, void const * const data, int indent) {
+void octet_string_with_ascii_format_text(la_vstring * const vstr, octet_string_t const * const ostring, int indent) {
 	ASSERT(vstr != NULL);
-	ASSERT(data != NULL);
+	ASSERT(ostring != NULL);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(ostring, octet_string_t *, data);
-	char *hex = fmt_hexstring(ostring->buf, ostring->len);
-	char *ascii = replace_nonprintable_chars(ostring->buf, ostring->len);
+	char *hex = fmt_hexstring(ostring);
+	char *ascii = replace_nonprintable_chars(ostring);
 	LA_ISPRINTF(vstr, indent, "%s\t\"%s\"", hex, ascii);
 	XFREE(hex);
 	XFREE(ascii);
 }
 
-void octet_string_as_ascii_format_text(la_vstring * const vstr, void const * const data, int indent) {
+void octet_string_as_ascii_format_text(la_vstring * const vstr, octet_string_t const * const ostring, int indent) {
 	ASSERT(vstr != NULL);
-	ASSERT(data != NULL);
+	ASSERT(ostring != NULL);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(ostring, octet_string_t *, data);
 	LA_ISPRINTF(vstr, indent, "%s", "");
 	if(ostring->len == 0) {
 		return;
 	}
-	char *replaced = replace_nonprintable_chars(ostring->buf, ostring->len);
+	char *replaced = replace_nonprintable_chars(ostring);
 	la_vstring_append_buffer(vstr, replaced, ostring->len);
 	XFREE(replaced);
 }
@@ -214,7 +214,7 @@ void octet_string_as_ascii_format_json(la_vstring * const vstr, char const * con
 	ASSERT(vstr != NULL);
 	ASSERT(ostring != NULL);
 
-	char *replaced = replace_nonprintable_chars(ostring->buf, ostring->len);
+	char *replaced = replace_nonprintable_chars(ostring);
 	la_json_append_string(vstr, key, replaced);
 	XFREE(replaced);
 }

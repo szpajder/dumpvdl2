@@ -435,11 +435,11 @@ void bitfield_format_json(la_vstring *vstr, char const * const key, uint8_t *buf
 octet_string_t *octet_string_new(void *buf, size_t len);
 octet_string_t *octet_string_copy(octet_string_t const * const ostring);
 int octet_string_parse(uint8_t *buf, size_t len, octet_string_t *result);
-void octet_string_format_text(la_vstring * const vstr, void const * const data, int indent);
-void octet_string_as_ascii_format_text(la_vstring * const vstr, void const * const data, int indent);
+void octet_string_format_text(la_vstring * const vstr, octet_string_t const * const ostring, int indent);
+void octet_string_as_ascii_format_text(la_vstring * const vstr, octet_string_t const * const ostring, int indent);
 void octet_string_as_ascii_format_json(la_vstring * const vstr, char const * const key,
 		octet_string_t const * const ostring);
-void octet_string_with_ascii_format_text(la_vstring * const vstr, void const * const data, int indent);
+void octet_string_with_ascii_format_text(la_vstring * const vstr, octet_string_t const * const ostring, int indent);
 void octet_string_destroy(octet_string_t *ostring);
 
 size_t slurp_hexstring(char* string, uint8_t **buf);
