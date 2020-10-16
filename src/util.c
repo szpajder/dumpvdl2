@@ -205,7 +205,7 @@ void octet_string_as_ascii_format_text(la_vstring * const vstr, octet_string_t c
 		return;
 	}
 	char *replaced = replace_nonprintable_chars(ostring);
-	la_vstring_append_buffer(vstr, replaced, ostring->len);
+	la_vstring_append_sprintf(vstr, "%s", replaced);
 	XFREE(replaced);
 }
 
