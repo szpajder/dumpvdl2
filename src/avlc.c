@@ -108,7 +108,6 @@ typedef union {
 #define IS_GS(addr) ((addr).a_addr.type == ADDRTYPE_GS_ADM || (addr).a_addr.type == ADDRTYPE_GS_DEL)
 
 typedef struct {
-	uint32_t num;
 	avlc_addr_t src;
 	avlc_addr_t dst;
 	lcf_t lcf;
@@ -195,7 +194,6 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 	frame->q = q;
 
 	uint8_t *ptr = buf;
-	frame->num = q->metadata->idx;
 	frame->dst.val = parse_dlc_addr(ptr);
 	ptr += 4; len -= 4;
 	frame->src.val = parse_dlc_addr(ptr);
