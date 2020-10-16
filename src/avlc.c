@@ -242,7 +242,9 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 	if(IS_S(frame->lcf)) {
 		*msg_type |= MSGFLT_AVLC_S;
 		/* TODO */
-		node->next = unknown_proto_pdu_new(ptr, len);
+		if(len > 0) {
+			node->next = unknown_proto_pdu_new(ptr, len);
+		}
 	} else if(IS_U(frame->lcf)) {
 		*msg_type |= MSGFLT_AVLC_U;
 		if(U_MFUNC(frame->lcf) == XID) {
