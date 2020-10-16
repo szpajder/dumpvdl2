@@ -263,6 +263,33 @@ static ASN1_FORMATTER_FUN_T(asn1_format_Meters_as_json) {
 	format_INTEGER_with_unit_as_json(p, "m", 1);
 }
 
+static ASN1_FORMATTER_FUN_T(asn1_format_OBJECT_IDENTIFIER_as_json) {
+	CAST_PTR(oid, OBJECT_IDENTIFIER_t *, p.sptr);
+	uint64_t fixed_arcs[10];	// Try with fixed space first
+	uint64_t *arcs = fixed_arcs;
+	int arc_type_size = sizeof(fixed_arcs[0]);
+	int arc_slots = sizeof(fixed_arcs)/sizeof(fixed_arcs[0]);
+
+	int count = OBJECT_IDENTIFIER_get_arcs(oid, arcs, arc_type_size, arc_slots);
+	// If necessary, reallocate arcs array and try again.
+	if(count > arc_slots) {
+		arc_slots = count;
+		arcs = XCALLOC(arc_slots, arc_type_size);
+		count = OBJECT_IDENTIFIER_get_arcs(oid, arcs, arc_type_size, arc_slots);
+		ASSERT(count == arc_slots);
+	}
+
+	la_json_array_start(p.vstr, p.label);
+	for(int i = 0; i < count; i++) {
+		la_json_append_long(p.vstr, NULL, arcs[i]);
+	}
+	la_json_array_end(p.vstr);
+	
+	if(arcs != fixed_arcs) {
+		XFREE(arcs);
+	}
+}
+
 // RejectDetails is a CHOICE whose all values are NULLs.  Aliasing them all to
 // unique types just to print them with asn1_format_label_only_as_json would be an
 // unnecessary overengineering.  Handling all values in a single routine is
@@ -945,8 +972,8 @@ asn_formatter_t const asn1_acse_formatter_table_json[] = {
 	{ .type = &asn_DEF_AE_qualifier, .format = asn1_format_CHOICE_acse_as_json, .label = "ae_qualifier" },
 	{ .type = &asn_DEF_AE_qualifier_form2, .format = asn1_format_long_as_json, .label = "ae_qualifier_form2" },
 	{ .type = &asn_DEF_AP_title, .format = asn1_format_CHOICE_acse_as_json, .label = "ap_title" },
-	{ .type = &asn_DEF_AP_title_form2, .format = asn1_format_any_as_string_as_json, .label = "ap_title" },
-	{ .type = &asn_DEF_Application_context_name, .format = asn1_format_any_as_string_as_json, .label = "app_ctx_name" },
+	{ .type = &asn_DEF_AP_title_form2, .format = asn1_format_OBJECT_IDENTIFIER_as_json, .label = "ap_title_form2" },
+	{ .type = &asn_DEF_Application_context_name, .format = asn1_format_OBJECT_IDENTIFIER_as_json, .label = "app_ctx_name" },
 	{ .type = &asn_DEF_Associate_result, .format = asn1_format_Associate_result_as_json, .label = "assoc_result" },
 	{ .type = &asn_DEF_Release_request_reason, .format = asn1_format_Release_request_reason_as_json, .label = "reason" },
 	{ .type = &asn_DEF_Release_response_reason, .format = asn1_format_Release_response_reason_as_json, .label = "reason" },
