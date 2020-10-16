@@ -339,7 +339,7 @@ static void unknown_proto_format_text(la_vstring * const vstr, void const * cons
 	CAST_PTR(ostring, octet_string_t *, data);
 	// fmt_hexstring also checks this conditon, but when it hits, it prints "empty" or "none",
 	// which we want to avoid here
-	if(ostring-> buf == NULL || ostring->len == 0) {
+	if(ostring->buf == NULL || ostring->len == 0) {
 		return;
 	}
 	LA_ISPRINTF(vstr, indent, "Data (%zu bytes):\n", ostring->len);
@@ -352,7 +352,7 @@ static void unknown_proto_format_json(la_vstring * const vstr, void const * cons
 	ASSERT(data != NULL);
 
 	octet_string_t const *ostring = data;
-	if(ostring-> buf == NULL && ostring->len == 0) {
+	if(ostring->buf == NULL || ostring->len == 0) {
 		return;
 	}
 	la_json_append_octet_string(vstr, "data", ostring->buf, ostring->len);
