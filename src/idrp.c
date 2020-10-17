@@ -523,8 +523,7 @@ static attr_parse_result_t parse_idrp_ribatt(uint8_t *buf, uint32_t len) {
 	uint8_t attrs_cnt = buf[0];
 	buf++; consumed++; len--;
 
-	uint8_t i = 0;
-	while(i < attrs_cnt && len > 0) {
+	for(uint8_t i = 0; i < attrs_cnt && len > 0; i++) {
 		uint8_t typecode = buf[0];
 		buf++; consumed++; len--;
 		if(typecode == 11 || typecode == 14) {
@@ -551,7 +550,6 @@ static attr_parse_result_t parse_idrp_ribatt(uint8_t *buf, uint32_t len) {
 				attr_list = tlv_list_append(attr_list, typecode, td, TLV_NO_VALUE_PTR);
 			}
 		}
-		i++;
 	}
 	return (attr_parse_result_t){ .list = attr_list, .consumed = consumed };
 fail:
@@ -573,8 +571,7 @@ static attr_parse_result_t parse_idrp_ribatts_set(uint8_t *buf, uint32_t len) {
 	uint8_t ribatts_cnt = buf[0];
 	buf++; consumed++; len--;
 
-	uint8_t i = 0;
-	while(i < ribatts_cnt && len > 0) {
+	for(uint8_t i = 0; i < ribatts_cnt && len > 0; i++) {
 		attr_parse_result_t result = parse_idrp_ribatt(buf, len);
 		debug_print(D_PROTO_DETAIL, "RibAtt #%u: parse_idrp_ribatt consumed %d octets\n", i, result.consumed);
 		if(result.consumed < 0) {
@@ -585,7 +582,6 @@ static attr_parse_result_t parse_idrp_ribatts_set(uint8_t *buf, uint32_t len) {
 		ribatt->num = i;
 		ribatt->attr_list = result.list;
 		ribatt_list = tlv_list_append(ribatt_list, i, &tlv_DEF_idrp_ribatt, ribatt);
-		i++;
 	}
 	return (attr_parse_result_t){ .list = ribatt_list, .consumed = consumed };
 fail:
@@ -639,8 +635,8 @@ static attr_parse_result_t parse_idrp_confed_ids(uint8_t *buf, uint32_t len) {
 	uint8_t confed_id_cnt = buf[0];
 	buf++; consumed++; len--;
 
-	uint8_t i = 0;
-	while(i < confed_id_cnt && len > 0) {
+	
+	for(uint8_t i = 0; i < confed_id_cnt && len > 0; i++) {
 		uint8_t confed_id_len = buf[0];
 		buf++; consumed++; len--;
 		if(len < confed_id_len) {
@@ -650,7 +646,6 @@ static attr_parse_result_t parse_idrp_confed_ids(uint8_t *buf, uint32_t len) {
 		}
 		confed_id_list = la_list_append(confed_id_list, octet_string_new(buf, confed_id_len));
 		buf += confed_id_len; consumed += confed_id_len; len -= confed_id_len;
-		i++;
 	}
 	return (attr_parse_result_t){ .list = confed_id_list, .consumed = consumed };
 fail:
@@ -1048,8 +1043,7 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 			}
 
 			if(pdu->nlri_list != NULL) {
-				la_list *n = pdu->nlri_list;
-				while(n != NULL) {
+				for(la_list *n = pdu->nlri_list; n != NULL; n = la_list_next(n)) {
 					LA_ISPRINTF(vstr, indent, "%s:\n", "Reachability info");
 					indent++;
 					CAST_PTR(dest, idrp_nlri_t *, n->data);
@@ -1065,7 +1059,6 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 					octet_string_with_ascii_format_text(vstr, &dest->prefix, 0);
 					EOL(vstr);
 					indent--;
-					n = la_list_next(n);
 				}
 			} else if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
 				LA_ISPRINTF(vstr, indent, "%s\n", "-- Unparseable NLRI");
