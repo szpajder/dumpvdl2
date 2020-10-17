@@ -32,6 +32,9 @@ static void tlv_tag_destroy(void *tag) {
 		return;
 	}
 	CAST_PTR(t, tlv_tag_t *, tag);
+	if(t->data == TLV_NO_VALUE_PTR) {
+		return;
+	}
 	if(t->td != NULL) {
 		if(t->td->destroy != NULL) {
 			t->td->destroy(t->data);
@@ -127,9 +130,14 @@ static void tlv_tag_output_text(void const * const p, void *ctx) {
 	ASSERT(ctx);
 
 	CAST_PTR(t, tlv_tag_t *, p);
+	CAST_PTR(c, tlv_formatter_ctx_t *, ctx);
 	ASSERT(t->td != NULL);
 	if(t->td->format_text != NULL) {
-		t->td->format_text(ctx, t->td->label, t->data);
+		if(t->data == TLV_NO_VALUE_PTR) {
+			LA_ISPRINTF(c->vstr, c->indent, "%s\n", t->td->label);
+		} else {
+			t->td->format_text(ctx, t->td->label, t->data);
+		}
 	}
 }
 
@@ -143,7 +151,12 @@ static void tlv_tag_output_json(void const * const p, void *ctx) {
 	if(t->td->format_json != NULL) {
 		la_json_object_start(c->vstr, NULL);
 		la_json_append_string(c->vstr, "name", t->td->json_key);
-		t->td->format_json(c, "value", t->data);
+		if(t->data == TLV_NO_VALUE_PTR) {
+			la_json_object_start(c->vstr, "value");
+			la_json_object_end(c->vstr);
+		} else {
+			t->td->format_json(c, "value", t->data);
+		}
 		la_json_object_end(c->vstr);
 	}
 }

@@ -53,6 +53,9 @@ typedef struct {
 	void *data;
 } tlv_tag_t;
 
+// Special value for tlv_tag_t.data to indicate a tag without a value
+#define TLV_NO_VALUE_PTR (void *)(~0)
+
 // tlv.c
 // Generic TLV API
 la_list *tlv_parse(uint8_t *buf, size_t len, dict const *tag_table, size_t const len_octets);
