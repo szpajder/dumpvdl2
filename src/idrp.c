@@ -33,7 +33,7 @@
 
 // Forward declarations
 la_type_descriptor const proto_DEF_idrp_pdu;
-static tlv_type_descriptor_t tlv_DEF_idrp_attr_no_value;
+static tlv_type_descriptor_t tlv_DEV_idrp_path_attr_presence;
 static tlv_type_descriptor_t tlv_DEF_idrp_ribatt;
 
 static dict const bispdu_types[] = {
@@ -510,7 +510,7 @@ static dict const path_attributes[] = {
 	}
 };
 
-TLV_FORMATTER(idrp_attr_no_value_format_text) {
+TLV_FORMATTER(idrp_path_attr_presence_format_text) {
 	UNUSED(label);
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
@@ -526,16 +526,16 @@ TLV_FORMATTER(idrp_attr_no_value_format_text) {
 	}
 }
 
-TLV_FORMATTER(idrp_attr_no_value_format_json) {
+TLV_FORMATTER(idrp_path_attr_presence_format_json) {
 	UNUSED(label);
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
 	CAST_PTR(typecode, uint8_t *, data);
-	la_json_append_long(ctx->vstr, "attr_type", *typecode);
 	CAST_PTR(td, tlv_type_descriptor_t *, dict_search(path_attributes, *typecode));
 	if(td != NULL) {
-		la_json_append_string(ctx->vstr, "attr_name", td->json_key);
+		la_json_object_start(ctx->vstr, td->json_key);
+		la_json_object_end(ctx->vstr);
 	}
 }
 
@@ -579,7 +579,7 @@ static attr_parse_result_t parse_idrp_ribatt(uint8_t *buf, uint32_t len) {
 			NEW(uint8_t, u);
 			*u = typecode;
 			attr_list = tlv_list_append(attr_list, typecode,
-					&tlv_DEF_idrp_attr_no_value, u);
+					&tlv_DEV_idrp_path_attr_presence, u);
 		}
 		i++;
 	}
@@ -635,7 +635,6 @@ TLV_FORMATTER(idrp_ribatt_format_text) {
 }
 
 TLV_FORMATTER(idrp_ribatt_format_json) {
-	UNUSED(label);
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
@@ -652,13 +651,12 @@ TLV_DESTRUCTOR(idrp_ribatt_destroy) {
 	XFREE(data);
 }
 
-// A pseudo-type which only prints its label
-static tlv_type_descriptor_t tlv_DEF_idrp_attr_no_value = {
+static tlv_type_descriptor_t tlv_DEV_idrp_path_attr_presence = {
 	.label = "",
-	.json_key = "",
+	.json_key = "path_attribute",
 	.parse = NULL,
-	.format_text = idrp_attr_no_value_format_text,
-	.format_json = idrp_attr_no_value_format_json,
+	.format_text = idrp_path_attr_presence_format_text,
+	.format_json = idrp_path_attr_presence_format_json,
 	.destroy = NULL
 };
 
