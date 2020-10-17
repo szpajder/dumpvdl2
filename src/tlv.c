@@ -27,11 +27,10 @@
 tlv_type_descriptor_t tlv_DEF_unknown_tag;
 tlv_type_descriptor_t tlv_DEF_unparseable_tag;
 
-static void tlv_tag_destroy(void *tag) {
-	if(tag == NULL) {
+static void tlv_tag_destroy(tlv_tag_t *t) {
+	if(t == NULL) {
 		return;
 	}
-	CAST_PTR(t, tlv_tag_t *, tag);
 	if(t->data != TLV_NO_VALUE_PTR && t->td != NULL) {
 		if(t->td->destroy != NULL) {
 			t->td->destroy(t->data);
@@ -39,7 +38,7 @@ static void tlv_tag_destroy(void *tag) {
 			XFREE(t->data);
 		}
 	}
-	XFREE(tag);
+	XFREE(t);
 }
 
 void tlv_list_destroy(la_list *p) {
@@ -122,11 +121,10 @@ la_list *tlv_parse(uint8_t *buf, size_t len, dict const *tag_table, size_t const
 	return head;
 }
 
-static void tlv_tag_output_text(void const * const p, void *ctx) {
-	ASSERT(p);
+static void tlv_tag_output_text(tlv_tag_t const *t, void *ctx) {
+	ASSERT(t);
 	ASSERT(ctx);
 
-	CAST_PTR(t, tlv_tag_t *, p);
 	CAST_PTR(c, tlv_formatter_ctx_t *, ctx);
 	ASSERT(t->td != NULL);
 	if(t->td->format_text != NULL) {
@@ -138,11 +136,10 @@ static void tlv_tag_output_text(void const * const p, void *ctx) {
 	}
 }
 
-static void tlv_tag_output_json(void const * const p, void *ctx) {
-	ASSERT(p);
+static void tlv_tag_output_json(tlv_tag_t const *t, void *ctx) {
+	ASSERT(t);
 	ASSERT(ctx);
 
-	CAST_PTR(t, tlv_tag_t *, p);
 	CAST_PTR(c, tlv_formatter_ctx_t *, ctx);
 	ASSERT(t->td != NULL);
 	if(t->td->format_json != NULL) {
