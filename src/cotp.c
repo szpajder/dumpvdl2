@@ -712,7 +712,7 @@ static void output_cotp_pdu_as_json(void *data, void *ctx_ptr) {
 	la_json_object_start(vstr, NULL);
 	la_json_append_bool(vstr, "err", pdu->err);
 	if(pdu->err == true) {
-		return;
+		goto end;
 	}
 
 	la_json_append_long(vstr, "tpdu_code", pdu->code);
@@ -774,8 +774,10 @@ static void output_cotp_pdu_as_json(void *data, void *ctx_ptr) {
 		la_json_append_string(vstr, "x225_spm_transport_disconnect_reason",
 				x225_transport_disc_reason_codes[pdu->x225_transport_disc_reason]);
 	}
+end:
 	la_json_object_end(vstr);
 }
+
 void cotp_concatenated_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
