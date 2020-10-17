@@ -33,7 +33,6 @@
 
 // Forward declarations
 la_type_descriptor const proto_DEF_idrp_pdu;
-static tlv_type_descriptor_t tlv_DEV_idrp_path_attr_presence;
 static tlv_type_descriptor_t tlv_DEF_idrp_ribatt;
 
 static dict const bispdu_types[] = {
@@ -510,35 +509,6 @@ static dict const path_attributes[] = {
 	}
 };
 
-TLV_FORMATTER(idrp_path_attr_presence_format_text) {
-	UNUSED(label);
-	ASSERT(ctx != NULL);
-	ASSERT(ctx->vstr != NULL);
-	ASSERT(ctx->indent >= 0);
-
-	// Find the attribute label and print it to indicate its presence in RIB-Att)
-	CAST_PTR(typecode, uint8_t *, data);
-	CAST_PTR(td, tlv_type_descriptor_t *, dict_search(path_attributes, *typecode));
-	if(td != NULL) {
-		LA_ISPRINTF(ctx->vstr, ctx->indent, "%s\n", td->label);
-	} else {
-		LA_ISPRINTF(ctx->vstr, ctx->indent, "Unknown attribute %u\n", *typecode);
-	}
-}
-
-TLV_FORMATTER(idrp_path_attr_presence_format_json) {
-	UNUSED(label);
-	ASSERT(ctx != NULL);
-	ASSERT(ctx->vstr != NULL);
-
-	CAST_PTR(typecode, uint8_t *, data);
-	CAST_PTR(td, tlv_type_descriptor_t *, dict_search(path_attributes, *typecode));
-	if(td != NULL) {
-		la_json_object_start(ctx->vstr, td->json_key);
-		la_json_object_end(ctx->vstr);
-	}
-}
-
 typedef struct {
 	la_list *list;
 	int consumed;
@@ -574,12 +544,12 @@ static attr_parse_result_t parse_idrp_ribatt(uint8_t *buf, uint32_t len) {
 					path_attributes, attr_list);
 			buf += tag_len; consumed += tag_len; len -= tag_len;
 		} else {
-			// Other attributes are encoded as value only.
-			// Can't store a NULL value in tlv_tag_t, so just store the typecode as value
-			NEW(uint8_t, u);
-			*u = typecode;
-			attr_list = tlv_list_append(attr_list, typecode,
-					&tlv_DEV_idrp_path_attr_presence, u);
+			// Other attributes are presence-only (ie. only the type is encoded without value,
+			// so there is nothing to parse)
+			CAST_PTR(td, tlv_type_descriptor_t *, dict_search(path_attributes, typecode));
+			if(td != NULL) {
+				attr_list = tlv_list_append(attr_list, typecode, td, TLV_NO_VALUE_PTR);
+			}
 		}
 		i++;
 	}
@@ -650,15 +620,6 @@ TLV_DESTRUCTOR(idrp_ribatt_destroy) {
 	tlv_list_destroy(ribatt->attr_list);
 	XFREE(data);
 }
-
-static tlv_type_descriptor_t tlv_DEV_idrp_path_attr_presence = {
-	.label = "",
-	.json_key = "path_attribute",
-	.parse = NULL,
-	.format_text = idrp_path_attr_presence_format_text,
-	.format_json = idrp_path_attr_presence_format_json,
-	.destroy = NULL
-};
 
 static tlv_type_descriptor_t tlv_DEF_idrp_ribatt = {
 	.label = "",
