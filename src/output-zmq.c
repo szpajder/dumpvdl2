@@ -39,7 +39,7 @@ typedef struct {
 } out_zmq_ctx_t;
 
 static bool out_zmq_supports_format(output_format_t format) {
-	return(format == OFMT_TEXT || format == OFMT_PP_ACARS);
+	return(format == OFMT_TEXT || format == OFMT_JSON || format == OFMT_PP_ACARS);
 }
 
 static void *out_zmq_configure(kvargs *kv) {
@@ -126,7 +126,7 @@ static void out_zmq_produce_text(out_zmq_ctx_t *self, vdl2_msg_metadata *metadat
 static int out_zmq_produce(void *selfptr, output_format_t format, vdl2_msg_metadata *metadata, octet_string_t *msg) {
 	ASSERT(selfptr != NULL);
 	CAST_PTR(self, out_zmq_ctx_t *, selfptr);
-	if(format == OFMT_TEXT || format == OFMT_PP_ACARS) {
+	if(format == OFMT_TEXT || format == OFMT_JSON || format == OFMT_PP_ACARS) {
 		out_zmq_produce_text(self, metadata, msg);
 	}
 	return 0;

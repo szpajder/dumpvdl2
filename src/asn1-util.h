@@ -23,30 +23,45 @@
 #include <libacars/libacars.h>      // la_type_descriptor
 #include "asn1/constr_TYPE.h"       // asn_TYPE_descriptor_t
 
+// Parameters to the formatter function
+typedef struct {
+	la_vstring *vstr;
+	char const *label;
+	asn_TYPE_descriptor_t *td;
+	void const *sptr;
+	int indent;
+} asn1_formatter_param_t;
+
+// Formatter function prototype
+typedef void (*asn1_formatter_fun_t)(asn1_formatter_param_t);
+
 typedef struct {
 	asn_TYPE_descriptor_t *type;
-	void (*format)(la_vstring *, char const * const label, asn_TYPE_descriptor_t *, const void *, int);
+	asn1_formatter_fun_t format;
 	char const * const label;
 } asn_formatter_t;
-typedef void (*asn1_output_fun_t)(la_vstring *, asn_TYPE_descriptor_t *, const void *, int);
 
 // A structure for storing decoded ASN.1 payloads in a la_proto_node
 typedef struct {
 	asn_TYPE_descriptor_t *type;
 	void *data;
 	asn_formatter_t const *formatter_table_text;
+	asn_formatter_t const *formatter_table_json;
 	size_t formatter_table_text_len;
+	size_t formatter_table_json_len;
 } asn1_pdu_t;
 
-#define ASN1_FORMATTER_PROTOTYPE(x) \
-	void x(la_vstring *vstr, char const * const label, asn_TYPE_descriptor_t *td, void const *sptr, int indent)
+#define ASN1_FORMATTER_FUN_T(x) \
+	void x(asn1_formatter_param_t p)
 
 // asn1-util.c
-extern la_type_descriptor const proto_DEF_asn1_pdu;
 int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, int size);
-void asn1_output(la_vstring *vstr, asn_formatter_t const * const asn1_formatter_table,
-		size_t asn1_formatter_table_len, asn_TYPE_descriptor_t *td, const void *sptr, int indent);
+void asn1_output_as_text(asn1_formatter_param_t p, asn_formatter_t const * const asn1_formatter_table,
+		size_t asn1_formatter_table_len);
+void asn1_output_as_json(asn1_formatter_param_t p, asn_formatter_t const * const asn1_formatter_table,
+		size_t asn1_formatter_table_len);
 void asn1_pdu_format_text(la_vstring *vstr, void const * const data, int indent);
+void asn1_pdu_format_json(la_vstring *vstr, void const * const data);
 void asn1_pdu_destroy(void *data);
 
 #endif // _ASN1_UTIL_H

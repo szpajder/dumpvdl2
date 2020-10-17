@@ -21,13 +21,14 @@
 #include <string.h>                 // strdup()
 #include <libacars/libacars.h>      // la_proto_node
 #include <libacars/vstring.h>       // la_vstring
+#include <libacars/json.h>
 #include "dumpvdl2.h"
 #include "tlv.h"
 #include "clnp.h"
 #include "esis.h"                   // esis_pdu_parse()
 #include "idrp.h"                   // idrp_pdu_parse()
 #include "cotp.h"                   // cotp_concatenated_pdu_parse()
-#include "atn.h"                    // atn_sec_label_parse, atn_sec_label_format_text
+#include "atn.h"                    // atn_sec_label_parse, atn_sec_label_format_{text,json}
 
 static la_proto_node *parse_clnp_pdu_payload(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	if(len == 0) {
@@ -57,6 +58,7 @@ la_type_descriptor const proto_DEF_clnp_pdu;
 TLV_PARSER(clnp_error_code_parse);
 TLV_PARSER(clnp_security_parse);
 TLV_FORMATTER(clnp_error_code_format_text);
+TLV_FORMATTER(clnp_error_code_format_json);
 
 static dict const clnp_options[] = {
 	// Doc 9705, 5.7.6.3.2.4.10
@@ -64,8 +66,10 @@ static dict const clnp_options[] = {
 		.id = 0x05,
 		.val = &(tlv_type_descriptor_t){
 			.label = "LRef",
+			.json_key = "lref",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_single_octet_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -74,8 +78,10 @@ static dict const clnp_options[] = {
 		.id = 0xc3,
 		.val = &(tlv_type_descriptor_t){
 			.label = "QoS maintenance",
+			.json_key = "qos_maintenance",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_single_octet_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -83,8 +89,10 @@ static dict const clnp_options[] = {
 		.id = 0xc1,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Discard reason",
+			.json_key = "discard_reason",
 			.parse = clnp_error_code_parse,
 			.format_text = clnp_error_code_format_text,
+			.format_json = clnp_error_code_format_json,
 			.destroy = NULL
 		},
 	},
@@ -92,8 +100,10 @@ static dict const clnp_options[] = {
 		.id = 0xc4,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Prefix-based scope control",
+			.json_key = "prefix_based_scope_control",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -101,8 +111,10 @@ static dict const clnp_options[] = {
 		.id = 0xc5,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Security",
+			.json_key = "security",
 			.parse = clnp_security_parse,
 			.format_text = atn_sec_label_format_text,
+			.format_json = atn_sec_label_format_json,
 			.destroy = atn_sec_label_destroy
 		},
 	},
@@ -110,8 +122,10 @@ static dict const clnp_options[] = {
 		.id = 0xc6,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Radius scope control",
+			.json_key = "radius_scope_control",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -119,8 +133,10 @@ static dict const clnp_options[] = {
 		.id = 0xc8,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Source routing",
+			.json_key = "source_routing",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -128,8 +144,10 @@ static dict const clnp_options[] = {
 		.id = 0xcb,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Record route",
+			.json_key = "record_route",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -137,8 +155,10 @@ static dict const clnp_options[] = {
 		.id = 0xcc,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Padding",
+			.json_key = "padding",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -146,8 +166,10 @@ static dict const clnp_options[] = {
 		.id = 0xcd,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Priority",
+			.json_key = "priority",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_single_octet_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		},
 	},
@@ -263,34 +285,35 @@ TLV_PARSER(clnp_error_code_parse) {
 	return e;
 }
 
+static dict const clnp_error_codes[] = {
+	{ .id = 0x00, .val = "Reason not specified" },
+	{ .id = 0x01, .val = "Protocol procedure error" },
+	{ .id = 0x02, .val = "Incorrect checksum" },
+	{ .id = 0x03, .val = "PDU discarded due to congestion" },
+	{ .id = 0x04, .val = "Header syntax error" },
+	{ .id = 0x05, .val = "Segmentation needed but not permitted" },
+	{ .id = 0x06, .val = "Incomplete PDU received" },
+	{ .id = 0x07, .val = "Duplicate option" },
+	{ .id = 0x08, .val = "Unknown PDU type" },
+	{ .id = 0x80, .val = "Destination address unreachable" },
+	{ .id = 0x81, .val = "Destination address unknown" },
+	{ .id = 0x90, .val = "Unspecified source routing error" },
+	{ .id = 0x91, .val = "Syntax error in source routing field" },
+	{ .id = 0x92, .val = "Unknown address in source routing field" },
+	{ .id = 0x93, .val = "Path not acceptable" },
+	{ .id = 0xa0, .val = "Lifetime expired in transit" },
+	{ .id = 0xa1, .val = "Lifetime expired during reassembly" },
+	{ .id = 0xb0, .val = "Unsupported option" },
+	{ .id = 0xb1, .val = "Unsupported protocol version" },
+	{ .id = 0xb2, .val = "Unsupported security option" },
+	{ .id = 0xb3, .val = "Unsupported source routing option" },
+	{ .id = 0xb4, .val = "Unsupported record route option" },
+	{ .id = 0xb5, .val = "Unsupported or unavailable QoS" },
+	{ .id = 0xc0, .val = "Reassembly interference" },
+	{ .id = 0, .val = NULL }
+};
+
 TLV_FORMATTER(clnp_error_code_format_text) {
-	static dict const clnp_error_codes[] = {
-		{ .id = 0x00, .val = "Reason not specified" },
-		{ .id = 0x01, .val = "Protocol procedure error" },
-		{ .id = 0x02, .val = "Incorrect checksum" },
-		{ .id = 0x03, .val = "PDU discarded due to congestion" },
-		{ .id = 0x04, .val = "Header syntax error" },
-		{ .id = 0x05, .val = "Segmentation needed but not permitted" },
-		{ .id = 0x06, .val = "Incomplete PDU received" },
-		{ .id = 0x07, .val = "Duplicate option" },
-		{ .id = 0x08, .val = "Unknown PDU type" },
-		{ .id = 0x80, .val = "Destination address unreachable" },
-		{ .id = 0x81, .val = "Destination address unknown" },
-		{ .id = 0x90, .val = "Unspecified source routing error" },
-		{ .id = 0x91, .val = "Syntax error in source routing field" },
-		{ .id = 0x92, .val = "Unknown address in source routing field" },
-		{ .id = 0x93, .val = "Path not acceptable" },
-		{ .id = 0xa0, .val = "Lifetime expired in transit" },
-		{ .id = 0xa1, .val = "Lifetime expired during reassembly" },
-		{ .id = 0xb0, .val = "Unsupported option" },
-		{ .id = 0xb1, .val = "Unsupported protocol version" },
-		{ .id = 0xb2, .val = "Unsupported security option" },
-		{ .id = 0xb3, .val = "Unsupported source routing option" },
-		{ .id = 0xb4, .val = "Unsupported record route option" },
-		{ .id = 0xb5, .val = "Unsupported or unavailable QoS" },
-		{ .id = 0xc0, .val = "Reassembly interference" },
-		{ .id = 0, .val = NULL }
-	};
 	CAST_PTR(e, clnp_error_t *, data);
 	char *str = dict_search(clnp_error_codes, e->code);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %u (%s)", label, e->code, str ? str : "unknown");
@@ -298,6 +321,18 @@ TLV_FORMATTER(clnp_error_code_format_text) {
 		la_vstring_append_sprintf(ctx->vstr, ", erroneous octet value: 0x%02x", e->erroneous_octet);
 	}
 	EOL(ctx->vstr);
+}
+
+TLV_FORMATTER(clnp_error_code_format_json) {
+	CAST_PTR(e, clnp_error_t *, data);
+	la_json_object_start(ctx->vstr, label);
+	la_json_append_long(ctx->vstr, "error_code", e->code);
+	char *str = dict_search(clnp_error_codes, e->code);
+	JSON_APPEND_STRING(ctx->vstr, "error_descr", str);
+	if(e->erroneous_octet != 0) {
+		la_json_append_long(ctx->vstr, "erroneous_octet", e->erroneous_octet);
+	}
+	la_json_object_end(ctx->vstr);
 }
 
 TLV_PARSER(clnp_security_parse) {
@@ -312,16 +347,16 @@ TLV_PARSER(clnp_security_parse) {
 	return atn_sec_label_parse(typecode, buf + 1, len - 1);
 }
 
-void clnp_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
-	static dict const clnp_pdu_types[] = {
-		{ .id = CLNP_NPDU_DT, .val = "Data" },
-		{ .id = CLNP_NDPU_MD, .val = "Multicast Data" },
-		{ .id = CLNP_NDPU_ER, .val = "Error Report" },
-		{ .id = CLNP_NDPU_ERP, .val = "Echo Request" },
-		{ .id = CLNP_NDPU_ERQ, .val = "Echo Reply" },
-		{ .id = 0, .val = NULL }
-	};
+static dict const clnp_pdu_types[] = {
+	{ .id = CLNP_NPDU_DT, .val = "Data" },
+	{ .id = CLNP_NDPU_MD, .val = "Multicast Data" },
+	{ .id = CLNP_NDPU_ER, .val = "Error Report" },
+	{ .id = CLNP_NDPU_ERP, .val = "Echo Request" },
+	{ .id = CLNP_NDPU_ERQ, .val = "Echo Reply" },
+	{ .id = 0, .val = NULL }
+};
 
+void clnp_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
@@ -372,6 +407,42 @@ void clnp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 	}
 }
 
+void clnp_pdu_format_json(la_vstring * const vstr, void const * const data) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+
+	CAST_PTR(pdu, clnp_pdu_t *, data);
+	la_json_append_bool(vstr, "err", pdu->err);
+	if(pdu->err == true) {
+		return;
+	}
+	la_json_append_bool(vstr, "compressed", false);
+	la_json_append_long(vstr, "pdu_type", pdu->hdr->type);
+	char *pdu_type = dict_search(clnp_pdu_types, pdu->hdr->type);
+	JSON_APPEND_STRING(vstr, "pdu_type_name", pdu_type);
+	la_json_append_octet_string(vstr, "src_nsap", pdu->src_nsap.buf, pdu->src_nsap.len);
+	la_json_append_octet_string(vstr, "dst_nsap", pdu->dst_nsap.buf, pdu->dst_nsap.len);
+	la_json_append_double(vstr, "lifetime", pdu->lifetime_sec);
+
+	la_json_object_start(vstr, "flags");
+	la_json_append_bool(vstr, "SP", pdu->hdr->sp);
+	la_json_append_bool(vstr, "MS", pdu->hdr->ms);
+	la_json_append_bool(vstr, "ER", pdu->hdr->er);
+	la_json_object_end(vstr);
+
+	if(pdu->hdr->sp != 0) {
+	    la_json_object_start(vstr, "segmentation");
+	    la_json_append_long(vstr, "pdu_id", pdu->pdu_id);
+	    la_json_append_long(vstr, "segment_offset", pdu->seg_off);
+	    la_json_append_long(vstr, "pdu_total_len", pdu->total_init_pdu_len);
+	    la_json_object_end(vstr);
+	}
+
+	if(pdu->options != NULL) {
+		tlv_list_format_json(vstr, "options", pdu->options);
+	}
+}
+
 void clnp_pdu_destroy(void *data) {
 	if(data == NULL) {
 		return;
@@ -384,6 +455,8 @@ void clnp_pdu_destroy(void *data) {
 
 la_type_descriptor const proto_DEF_clnp_pdu = {
 	.format_text = clnp_pdu_format_text,
+	.format_json = clnp_pdu_format_json,
+	.json_key = "clnp",
 	.destroy = clnp_pdu_destroy,
 };
 
@@ -462,7 +535,28 @@ void clnp_compressed_init_data_pdu_format_text(la_vstring * const vstr, void con
 	}
 }
 
+void clnp_compressed_init_data_pdu_format_json(la_vstring * const vstr, void const * const data) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+
+	CAST_PTR(pdu, clnp_compressed_init_data_pdu_t *, data);
+	la_json_append_bool(vstr, "err", pdu->err);
+	if(pdu->err == true) {
+		return;
+	}
+	la_json_append_bool(vstr, "compressed", true);
+	la_json_append_long(vstr, "local_ref_a", pdu->lref);
+	la_json_append_long(vstr, "priority", pdu->hdr->priority);
+	la_json_append_long(vstr, "lifetime", pdu->hdr->lifetime);
+	la_json_append_long(vstr, "flags", pdu->hdr->flags.val);
+	if(pdu->pdu_id_present) {
+		la_json_append_long(vstr, "pdu_id", pdu->pdu_id);
+	}
+}
+
 la_type_descriptor const proto_DEF_clnp_compressed_init_data_pdu = {
 	.format_text = clnp_compressed_init_data_pdu_format_text,
+	.format_json = clnp_compressed_init_data_pdu_format_json,
+	.json_key = "clnp",
 	.destroy = NULL,
 };

@@ -11,7 +11,7 @@ static asn_TYPE_member_t asn_MBR_TimeDeparture_1[] = {
 	{ ATF_POINTER, 4, offsetof(struct TimeDeparture, timeDepartureAllocated),
 		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Time,
+		&asn_DEF_TimeDepAllocated,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -29,7 +29,7 @@ static asn_TYPE_member_t asn_MBR_TimeDeparture_1[] = {
 	{ ATF_POINTER, 2, offsetof(struct TimeDeparture, timeDepartureClearanceExpected),
 		(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Time,
+		&asn_DEF_TimeDepClearanceExpected,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

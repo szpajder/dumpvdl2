@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <libacars/list.h>          // la_list
 #include <libacars/vstring.h>       // la_vstring
+#include <libacars/json.h>
 #include "dumpvdl2.h"               // XCALLOC, XFREE
 #include "tlv.h"
 
@@ -31,7 +32,7 @@ static void tlv_tag_destroy(void *tag) {
 		return;
 	}
 	CAST_PTR(t, tlv_tag_t *, tag);
-	if(t->td != NULL) {
+	if(t->data != TLV_NO_VALUE_PTR && t->td != NULL) {
 		if(t->td->destroy != NULL) {
 			t->td->destroy(t->data);
 		} else {
@@ -126,9 +127,34 @@ static void tlv_tag_output_text(void const * const p, void *ctx) {
 	ASSERT(ctx);
 
 	CAST_PTR(t, tlv_tag_t *, p);
+	CAST_PTR(c, tlv_formatter_ctx_t *, ctx);
 	ASSERT(t->td != NULL);
 	if(t->td->format_text != NULL) {
-		t->td->format_text(ctx, t->td->label, t->data);
+		if(t->data == TLV_NO_VALUE_PTR) {
+			LA_ISPRINTF(c->vstr, c->indent, "%s\n", t->td->label);
+		} else {
+			t->td->format_text(ctx, t->td->label, t->data);
+		}
+	}
+}
+
+static void tlv_tag_output_json(void const * const p, void *ctx) {
+	ASSERT(p);
+	ASSERT(ctx);
+
+	CAST_PTR(t, tlv_tag_t *, p);
+	CAST_PTR(c, tlv_formatter_ctx_t *, ctx);
+	ASSERT(t->td != NULL);
+	if(t->td->format_json != NULL) {
+		la_json_object_start(c->vstr, NULL);
+		la_json_append_string(c->vstr, "name", t->td->json_key);
+		if(t->data == TLV_NO_VALUE_PTR) {
+			la_json_object_start(c->vstr, "value");
+			la_json_object_end(c->vstr);
+		} else {
+			t->td->format_json(c, "value", t->data);
+		}
+		la_json_object_end(c->vstr);
 	}
 }
 
@@ -145,6 +171,20 @@ void tlv_list_format_text(la_vstring * const vstr, la_list *tlv_list, int indent
 	la_list_foreach(tlv_list, tlv_tag_output_text, &ctx);
 }
 
+void tlv_list_format_json(la_vstring * const vstr, char const * const key, la_list *tlv_list) {
+	ASSERT(vstr);
+	if(tlv_list == NULL) {
+		return;
+	}
+	tlv_formatter_ctx_t ctx = {
+		.vstr = vstr,
+		.indent = 0
+	};
+	la_json_array_start(vstr, key);
+	la_list_foreach(tlv_list, tlv_tag_output_json, &ctx);
+	la_json_array_end(vstr);
+}
+
 // Parsers and formatters for common data types
 
 TLV_PARSER(tlv_octet_string_parse) {
@@ -156,6 +196,11 @@ TLV_FORMATTER(tlv_octet_string_format_text) {
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
 	octet_string_format_text(ctx->vstr, data, 0);
 	EOL(ctx->vstr);
+}
+
+TLV_FORMATTER(tlv_octet_string_format_json) {
+	octet_string_t const *ostring = data;
+	la_json_append_octet_string(ctx->vstr, label, ostring->buf, ostring->len);
 }
 
 TLV_FORMATTER(tlv_octet_string_with_ascii_format_text) {
@@ -170,6 +215,10 @@ TLV_FORMATTER(tlv_octet_string_as_ascii_format_text) {
 	EOL(ctx->vstr);
 }
 
+TLV_FORMATTER(tlv_octet_string_as_ascii_format_json) {
+	octet_string_as_ascii_format_json(ctx->vstr, label, data);
+}
+
 TLV_FORMATTER(tlv_single_octet_format_text) {
 	CAST_PTR(octet, octet_string_t *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
@@ -182,7 +231,6 @@ TLV_FORMATTER(tlv_single_octet_format_text) {
 	octet_string_format_text(ctx->vstr, octet, 0);
 	EOL(ctx->vstr);
 }
-
 
 TLV_PARSER(tlv_uint8_parse) {
 	UNUSED(typecode);
@@ -219,7 +267,11 @@ TLV_FORMATTER(tlv_uint_format_text) {
 			label, *(uint32_t *)data);
 }
 
-// No-op parser and formatter
+TLV_FORMATTER(tlv_uint_format_json) {
+	la_json_append_long(ctx->vstr, label, *(uint32_t *)data);
+}
+
+// No-op parser
 // Can be used to skip over a TLV without outputting it
 TLV_PARSER(tlv_parser_noop) {
 	UNUSED(typecode);
@@ -227,12 +279,6 @@ TLV_PARSER(tlv_parser_noop) {
 	UNUSED(len);
 	// Have to return something free()'able to indicate a success
 	return XCALLOC(1, 1);
-}
-
-TLV_FORMATTER(tlv_format_text_noop) {
-	UNUSED(ctx);
-	UNUSED(label);
-	UNUSED(data);
 }
 
 typedef struct {
@@ -281,11 +327,20 @@ TLV_FORMATTER(tlv_unparseable_tag_format_text) {
 	EOL(ctx->vstr);
 }
 
+TLV_FORMATTER(tlv_unparseable_tag_format_json) {
+	UNUSED(label);
+	CAST_PTR(t, tlv_unparsed_tag_t *, data);
+	la_json_object_start(ctx->vstr, label);
+	la_json_append_long(ctx->vstr, "typecode",  t->typecode);
+	la_json_append_octet_string(ctx->vstr, "data", t->data->buf, t->data->len);
+	la_json_object_end(ctx->vstr);
+}
+
 tlv_type_descriptor_t tlv_DEF_unparseable_tag = {
 	.label = "Unparseable tag",
-	.json_key = NULL,
+	.json_key = "__unparseable_tlv_tag",
 	.parse = tlv_unknown_tag_parse,
 	.format_text = tlv_unparseable_tag_format_text,
-	.format_json = NULL,
+	.format_json = tlv_unparseable_tag_format_json,
 	.destroy = tlv_unknown_tag_destroy
 };

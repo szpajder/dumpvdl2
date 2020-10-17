@@ -30,6 +30,7 @@ extern dict const atn_traffic_types[];
 extern dict const atsc_traffic_classes[];
 TLV_PARSER(atn_sec_label_parse);
 TLV_FORMATTER(atn_sec_label_format_text);
+TLV_FORMATTER(atn_sec_label_format_json);
 TLV_DESTRUCTOR(atn_sec_label_destroy);
 
 #endif // !_ATN_H

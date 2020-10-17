@@ -38,7 +38,7 @@ static asn_TYPE_member_t asn_MBR_PositionReport_1[] = {
 	{ ATF_POINTER, 19, offsetof(struct PositionReport, fixnext),
 		(ASN_TAG_CLASS_CONTEXT | (3 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Position,
+		&asn_DEF_FixNext,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -47,7 +47,7 @@ static asn_TYPE_member_t asn_MBR_PositionReport_1[] = {
 	{ ATF_POINTER, 18, offsetof(struct PositionReport, timeetaatfixnext),
 		(ASN_TAG_CLASS_CONTEXT | (4 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Time,
+		&asn_DEF_TimeETAatFixNext,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -56,7 +56,7 @@ static asn_TYPE_member_t asn_MBR_PositionReport_1[] = {
 	{ ATF_POINTER, 17, offsetof(struct PositionReport, fixnextplusone),
 		(ASN_TAG_CLASS_CONTEXT | (5 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Position,
+		&asn_DEF_FixNextPlusOne,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -65,7 +65,7 @@ static asn_TYPE_member_t asn_MBR_PositionReport_1[] = {
 	{ ATF_POINTER, 16, offsetof(struct PositionReport, timeetaatdestination),
 		(ASN_TAG_CLASS_CONTEXT | (6 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Time,
+		&asn_DEF_TimeETAatDest,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -146,7 +146,7 @@ static asn_TYPE_member_t asn_MBR_PositionReport_1[] = {
 	{ ATF_POINTER, 7, offsetof(struct PositionReport, trackAngle),
 		(ASN_TAG_CLASS_CONTEXT | (15 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Degrees,
+		&asn_DEF_PosReportTrackAngle,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -155,7 +155,7 @@ static asn_TYPE_member_t asn_MBR_PositionReport_1[] = {
 	{ ATF_POINTER, 6, offsetof(struct PositionReport, heading),
 		(ASN_TAG_CLASS_CONTEXT | (16 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Degrees,
+		&asn_DEF_PosReportHeading,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -182,7 +182,7 @@ static asn_TYPE_member_t asn_MBR_PositionReport_1[] = {
 	{ ATF_POINTER, 3, offsetof(struct PositionReport, reportedWaypointPosition),
 		(ASN_TAG_CLASS_CONTEXT | (19 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Position,
+		&asn_DEF_ReportedWaypointPosition,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -191,7 +191,7 @@ static asn_TYPE_member_t asn_MBR_PositionReport_1[] = {
 	{ ATF_POINTER, 2, offsetof(struct PositionReport, reportedWaypointTime),
 		(ASN_TAG_CLASS_CONTEXT | (20 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Time,
+		&asn_DEF_ReportedWaypointTime,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -200,7 +200,7 @@ static asn_TYPE_member_t asn_MBR_PositionReport_1[] = {
 	{ ATF_POINTER, 1, offsetof(struct PositionReport, reportedWaypointLevel),
 		(ASN_TAG_CLASS_CONTEXT | (21 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Level,
+		&asn_DEF_ReportedWaypointLevel,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

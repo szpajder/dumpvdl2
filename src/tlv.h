@@ -53,6 +53,9 @@ typedef struct {
 	void *data;
 } tlv_tag_t;
 
+// Special value for tlv_tag_t.data to indicate a tag without a value
+#define TLV_NO_VALUE_PTR (void *)(~0)
+
 // tlv.c
 // Generic TLV API
 la_list *tlv_parse(uint8_t *buf, size_t len, dict const *tag_table, size_t const len_octets);
@@ -60,6 +63,7 @@ la_list *tlv_single_tag_parse(uint8_t typecode, uint8_t *buf, size_t tag_len, di
 tlv_tag_t *tlv_list_search(la_list *ptr, uint8_t const typecode);
 la_list *tlv_list_append(la_list *head, uint8_t typecode, tlv_type_descriptor_t *td, void *data);
 void tlv_list_format_text(la_vstring * const vstr, la_list *tlv_list, int indent);
+void tlv_list_format_json(la_vstring * const vstr, char const * const key, la_list *tlv_list);
 void tlv_list_destroy(la_list *p);
 
 // Parsers and formatters for common data types
@@ -71,8 +75,11 @@ TLV_PARSER(tlv_uint16_msbfirst_parse);
 TLV_PARSER(tlv_uint32_msbfirst_parse);
 TLV_PARSER(tlv_parser_noop);
 TLV_FORMATTER(tlv_uint_format_text);
+TLV_FORMATTER(tlv_uint_format_json);
 TLV_FORMATTER(tlv_octet_string_as_ascii_format_text);
+TLV_FORMATTER(tlv_octet_string_as_ascii_format_json);
 TLV_FORMATTER(tlv_octet_string_with_ascii_format_text);
 TLV_FORMATTER(tlv_single_octet_format_text);
-TLV_FORMATTER(tlv_format_text_noop);
+// tlv_single_octet_format_json is handled by tlv_octet_string_format_json
+TLV_FORMATTER(tlv_octet_string_format_json);
 #endif // !_TLV_H

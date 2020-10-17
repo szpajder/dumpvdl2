@@ -22,6 +22,7 @@
 #include <string.h>
 #include <libacars/libacars.h>      // la_type_descriptor, la_proto_node
 #include <libacars/vstring.h>       // la_vstring, LA_ISPRINTF()
+#include <libacars/json.h>
 #include "atn.h"                    // atn_traffic_types, atsc_traffic_classes
 #include "esis.h"
 #include "dumpvdl2.h"
@@ -75,6 +76,19 @@ TLV_FORMATTER(esis_subnet_caps_format_text) {
 	EOL(ctx->vstr);
 }
 
+TLV_FORMATTER(esis_subnet_caps_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	CAST_PTR(c, esis_subnet_caps_t *, data);
+	la_json_object_start(ctx->vstr, label);
+	bitfield_format_json(ctx->vstr, "permitted_traffic", &c->atn_traffic_types, 1, atn_traffic_types);
+	if(c->atsc_traffic_classes_present) {
+		bitfield_format_json(ctx->vstr, "supported_atsc_classes", &c->atsc_traffic_classes, 1, atsc_traffic_classes);
+	}
+	la_json_object_end(ctx->vstr);
+}
+
 static const dict esis_pdu_types[] = {
 	{ ESIS_PDU_TYPE_ESH,    "ES Hello" },
 	{ ESIS_PDU_TYPE_ISH,    "IS Hello" },
@@ -86,8 +100,10 @@ static const dict esis_options[] = {
 		.id = 0xc5,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Security",
+			.json_key = "security",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -95,8 +111,10 @@ static const dict esis_options[] = {
 		.id = 0xcf,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Priority",
+			.json_key = "priority",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -105,8 +123,10 @@ static const dict esis_options[] = {
 		.id = 0x81,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Mobile Subnetwork Capabilities",
+			.json_key = "mobile_subnet_caps",
 			.parse = esis_subnet_caps_parse,
 			.format_text = esis_subnet_caps_format_text,
+			.format_json = esis_subnet_caps_format_json,
 			.destroy = NULL
 		}
 	},
@@ -114,8 +134,10 @@ static const dict esis_options[] = {
 		.id = 0x88,
 		.val = &(tlv_type_descriptor_t){
 			.label = "ATN Data Link Capabilities",
+			.json_key = "atn_datalink_caps",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -198,19 +220,40 @@ static void esis_pdu_format_text(la_vstring * const vstr, void const * const dat
 	LA_ISPRINTF(vstr, indent, "ES-IS %s: Hold Time: %u sec\n", pdu_name, pdu->holdtime);
 	indent++;
 
-	switch(hdr->type) {
-		case ESIS_PDU_TYPE_ESH:
-			LA_ISPRINTF(vstr, indent, "%s", "SA : ");
-			break;
-		case ESIS_PDU_TYPE_ISH:
-			LA_ISPRINTF(vstr, indent, "%s", "NET: ");
-			break;
+	if(hdr->type == ESIS_PDU_TYPE_ESH) {
+		LA_ISPRINTF(vstr, indent, "%s", "SA : ");
+	} else if(hdr->type == ESIS_PDU_TYPE_ISH) {
+		LA_ISPRINTF(vstr, indent, "%s", "NET: ");
 	}
 	octet_string_with_ascii_format_text(vstr, &pdu->net_addr, 0);
 	EOL(vstr);
 	if(pdu->options != NULL) {
 		LA_ISPRINTF(vstr, indent, "%s", "Options:\n");
 		tlv_list_format_text(vstr, pdu->options, indent+1);
+	}
+}
+
+static void esis_pdu_format_json(la_vstring * const vstr, void const * const data) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+
+	CAST_PTR(pdu, esis_pdu_t *, data);
+	la_json_append_bool(vstr, "err", pdu->err);
+	if(pdu->err == true) {
+		return;
+	}
+	esis_hdr_t *hdr = pdu->hdr;
+	CAST_PTR(pdu_name, char *, dict_search(esis_pdu_types, hdr->type));
+	la_json_append_long(vstr, "pdu_type", hdr->type);
+	la_json_append_string(vstr, "pdu_type_name", pdu_name);
+	la_json_append_long(vstr, "hold_time", pdu->holdtime);
+	if(hdr->type == ESIS_PDU_TYPE_ESH) {
+		la_json_append_octet_string(vstr, "sa", pdu->net_addr.buf, pdu->net_addr.len);
+	} else if(hdr->type == ESIS_PDU_TYPE_ISH) {
+		la_json_append_octet_string(vstr, "net", pdu->net_addr.buf, pdu->net_addr.len);
+	}
+	if(pdu->options != NULL) {
+		tlv_list_format_json(vstr, "options", pdu->options);
 	}
 }
 
@@ -226,5 +269,7 @@ void esis_pdu_destroy(void *data) {
 
 la_type_descriptor const proto_DEF_esis_pdu = {
 	.format_text = esis_pdu_format_text,
+	.format_json = esis_pdu_format_json,
+	.json_key = "esis",
 	.destroy = esis_pdu_destroy
 };

@@ -20,7 +20,7 @@ static asn_TYPE_member_t asn_MBR_Holdatwaypoint_1[] = {
 	{ ATF_POINTER, 7, offsetof(struct Holdatwaypoint, holdatwaypointspeedlow),
 		(ASN_TAG_CLASS_CONTEXT | (1 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Speed,
+		&asn_DEF_HoldatwaypointSpeedLow,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,
@@ -38,7 +38,7 @@ static asn_TYPE_member_t asn_MBR_Holdatwaypoint_1[] = {
 	{ ATF_POINTER, 5, offsetof(struct Holdatwaypoint, holdatwaypointspeedhigh),
 		(ASN_TAG_CLASS_CONTEXT | (3 << 2)),
 		+1,	/* EXPLICIT tag at current level */
-		&asn_DEF_Speed,
+		&asn_DEF_HoldatwaypointSpeedHigh,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

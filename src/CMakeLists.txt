@@ -33,6 +33,11 @@ if(CC_HAS_FFAST_MATH)
 	add_definitions(-ffast-math)
 endif()
 
+CHECK_C_COMPILER_FLAG(-fno-common CC_HAS_FNO_COMMON)
+if(CC_HAS_FNO_COMMON)
+	add_definitions(-fno-common)
+endif()
+
 TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
 
 set(CMAKE_REQUIRED_FLAGS_ORIG ${CMAKE_REQUIRED_FLAGS})
@@ -243,7 +248,8 @@ add_library (dumpvdl2_base OBJECT
 	acars.c
 	ac_data.c
 	asn1-format-common.c
-	asn1-format-icao.c
+	asn1-format-icao-json.c
+	asn1-format-icao-text.c
 	asn1-util.c
 	atn.c
 	avlc.c
@@ -256,6 +262,7 @@ add_library (dumpvdl2_base OBJECT
 	demod.c
 	dumpvdl2.c
 	esis.c
+	fmtr-json.c
 	fmtr-pp_acars.c
 	fmtr-text.c
 	gs_data.c
