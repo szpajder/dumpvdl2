@@ -32,10 +32,7 @@ static void tlv_tag_destroy(void *tag) {
 		return;
 	}
 	CAST_PTR(t, tlv_tag_t *, tag);
-	if(t->data == TLV_NO_VALUE_PTR) {
-		return;
-	}
-	if(t->td != NULL) {
+	if(t->data != TLV_NO_VALUE_PTR && t->td != NULL) {
 		if(t->td->destroy != NULL) {
 			t->td->destroy(t->data);
 		} else {
