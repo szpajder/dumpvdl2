@@ -345,7 +345,7 @@ TLV_FORMATTER(flow_control_confirmation_format_text) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
-	CAST_PTR(f, cotp_flow_control_confirm_t *, data);
+	CAST_PTR(f, cotp_flow_control_confirm_t const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Acked TPDU nr: %u\n", f->acked_tpdu_nr);
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Acked subsequence: %hu\n", f->acked_subseq);
@@ -355,7 +355,7 @@ TLV_FORMATTER(flow_control_confirmation_format_text) {
 TLV_FORMATTER(flow_control_confirmation_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
-	CAST_PTR(f, cotp_flow_control_confirm_t *, data);
+	CAST_PTR(f, cotp_flow_control_confirm_t const *, data);
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "acked_tpdu_nr", f->acked_tpdu_nr);
 	la_json_append_long(ctx->vstr, "acked_subseq", f->acked_subseq);
@@ -577,7 +577,7 @@ la_proto_node *cotp_concatenated_pdu_parse(uint8_t *buf, uint32_t len, uint32_t 
 	return node;
 }
 
-static char const * const x225_transport_disc_reason_codes[] = {
+static char const *x225_transport_disc_reason_codes[] = {
 	[SPM_PROTOCOL_ERROR] = "Protocol error, cannnot sent ABORT SPDU",
 	[SPM_DISC_NORMAL_NO_REUSE] = "OK, transport connection not reused",
 	[SPM_DISC_NORMAL_REUSE_NOT_POSSIBLE] = "OK, transport connection reuse not possible"
@@ -597,7 +597,7 @@ static const dict cotp_tpdu_codes[] = {
 	{ 0, NULL }
 };
 
-static const dict cotp_dr_reasons[] = {
+static dict const cotp_dr_reasons[] = {
 	{   0, "Reason not specified" },
 	{   1, "TSAP congestion" },
 	{   2, "Session entity not attached to TSAP" },
@@ -614,7 +614,7 @@ static const dict cotp_dr_reasons[] = {
 	{   0, NULL }
 };
 
-static const dict cotp_er_reject_causes[] = {
+static dict const cotp_er_reject_causes[] = {
 	{ 0, "Reason not specified" },
 	{ 1, "Invalid parameter code" },
 	{ 2, "Invalid TPDU type" },
@@ -778,22 +778,24 @@ end:
 	la_json_object_end(vstr);
 }
 
-void cotp_concatenated_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
+void cotp_concatenated_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(pdu_list, la_list *, data);
-	la_list_foreach(pdu_list, output_cotp_pdu_as_text, &(tlv_formatter_ctx_t){ .vstr = vstr, .indent = indent});
+	CAST_PTR(pdu_list, la_list const *, data);
+	la_list_foreach((la_list *)pdu_list, output_cotp_pdu_as_text,
+			&(tlv_formatter_ctx_t){ .vstr = vstr, .indent = indent});
 }
 
-void cotp_concatenated_pdu_format_json(la_vstring * const vstr, void const * const data) {
+void cotp_concatenated_pdu_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(pdu_list, la_list *, data);
+	CAST_PTR(pdu_list, la_list const *, data);
 	la_json_array_start(vstr, "pdu_list");
-	la_list_foreach(pdu_list, output_cotp_pdu_as_json, &(tlv_formatter_ctx_t){ .vstr = vstr, .indent = 0});
+	la_list_foreach((la_list *)pdu_list, output_cotp_pdu_as_json,
+			&(tlv_formatter_ctx_t){ .vstr = vstr, .indent = 0});
 	la_json_array_end(vstr);
 }
 

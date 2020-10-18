@@ -574,12 +574,12 @@ fail:
 	return NULL;    // the caller will convert this to unknown_proto_pdu
 }
 
-void x225_spdu_format_text(la_vstring *vstr, void const * const data, int indent) {
+void x225_spdu_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(spdu, x225_spdu_t *, data);
+	CAST_PTR(spdu, x225_spdu_t const *, data);
 	char *str = dict_search(x225_spdu_names, spdu->spdu_id);
 	if(str != NULL) {
 		LA_ISPRINTF(vstr, indent, "X.225 Session SPDU: %s\n", str);
@@ -595,11 +595,11 @@ void x225_spdu_format_text(la_vstring *vstr, void const * const data, int indent
 	}
 }
 
-void x225_spdu_format_json(la_vstring *vstr, void const * const data) {
+void x225_spdu_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(spdu, x225_spdu_t *, data);
+	CAST_PTR(spdu, x225_spdu_t const *, data);
 	la_json_append_long(vstr, "spdu_id", spdu->spdu_id);
 	char *str = dict_search(x225_spdu_names, spdu->spdu_id);
 	JSON_APPEND_STRING(vstr, "spdu_type", str);

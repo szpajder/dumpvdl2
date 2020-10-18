@@ -56,7 +56,7 @@ TLV_FORMATTER(esis_subnet_caps_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(c, esis_subnet_caps_t *, data);
+	CAST_PTR(c, esis_subnet_caps_t const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "%s: ", "Permitted traffic");
 	if((c->atn_traffic_types & ATN_TRAFFIC_TYPES_ALL) == ATN_TRAFFIC_TYPES_ALL) {
@@ -80,7 +80,7 @@ TLV_FORMATTER(esis_subnet_caps_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(c, esis_subnet_caps_t *, data);
+	CAST_PTR(c, esis_subnet_caps_t const *, data);
 	la_json_object_start(ctx->vstr, label);
 	bitfield_format_json(ctx->vstr, "permitted_traffic", &c->atn_traffic_types, 1, atn_traffic_types);
 	if(c->atsc_traffic_classes_present) {
@@ -89,13 +89,13 @@ TLV_FORMATTER(esis_subnet_caps_format_json) {
 	la_json_object_end(ctx->vstr);
 }
 
-static const dict esis_pdu_types[] = {
+static dict const esis_pdu_types[] = {
 	{ ESIS_PDU_TYPE_ESH,    "ES Hello" },
 	{ ESIS_PDU_TYPE_ISH,    "IS Hello" },
 	{ 0,                    NULL }
 };
 
-static const dict esis_options[] = {
+static dict const esis_options[] = {
 	{
 		.id = 0xc5,
 		.val = &(tlv_type_descriptor_t){
@@ -161,7 +161,7 @@ la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		debug_print(D_PROTO, "Too short (len %u < min len %u)\n", remaining, ESIS_HDR_LEN);
 		goto end;
 	}
-	CAST_PTR(hdr, esis_hdr_t *, ptr);
+	esis_hdr_t *hdr = (esis_hdr_t *)ptr;
 	if(hdr->version != 1) {
 		debug_print(D_PROTO, "Unsupported PDU version %u\n", hdr->version);
 		goto end;
@@ -205,12 +205,12 @@ end:
 	return node;
 }
 
-static void esis_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
+static void esis_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(pdu, esis_pdu_t *, data);
+	CAST_PTR(pdu, esis_pdu_t const *, data);
 	if(pdu->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable ES-IS PDU\n");
 		return;
@@ -233,11 +233,11 @@ static void esis_pdu_format_text(la_vstring * const vstr, void const * const dat
 	}
 }
 
-static void esis_pdu_format_json(la_vstring * const vstr, void const * const data) {
+static void esis_pdu_format_json(la_vstring * vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(pdu, esis_pdu_t *, data);
+	CAST_PTR(pdu, esis_pdu_t const *, data);
 	la_json_append_bool(vstr, "err", pdu->err);
 	if(pdu->err == true) {
 		return;

@@ -28,11 +28,11 @@
 // forward declarations
 la_type_descriptor const la_DEF_vdl2_message;
 
-void la_vdl2_format_json(la_vstring *vstr, void const * const data) {
+void la_vdl2_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(vstr);
 	ASSERT(data);
 
-	CAST_PTR(m, vdl2_msg_metadata *, data);
+	CAST_PTR(m, vdl2_msg_metadata const *, data);
 	la_json_append_string(vstr, "app", "dumpvdl2");
 	la_json_append_string(vstr, "ver", DUMPVDL2_VERSION);
 	if(m->station_id != NULL) {

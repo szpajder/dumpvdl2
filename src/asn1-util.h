@@ -38,7 +38,7 @@ typedef void (*asn1_formatter_fun_t)(asn1_formatter_param_t);
 typedef struct {
 	asn_TYPE_descriptor_t *type;
 	asn1_formatter_fun_t format;
-	char const * const label;
+	char const *label;
 } asn_formatter_t;
 
 // A structure for storing decoded ASN.1 payloads in a la_proto_node
@@ -56,12 +56,12 @@ typedef struct {
 
 // asn1-util.c
 int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, int size);
-void asn1_output_as_text(asn1_formatter_param_t p, asn_formatter_t const * const asn1_formatter_table,
+void asn1_output_as_text(asn1_formatter_param_t p, asn_formatter_t const *asn1_formatter_table,
 		size_t asn1_formatter_table_len);
-void asn1_output_as_json(asn1_formatter_param_t p, asn_formatter_t const * const asn1_formatter_table,
+void asn1_output_as_json(asn1_formatter_param_t p, asn_formatter_t const *asn1_formatter_table,
 		size_t asn1_formatter_table_len);
-void asn1_pdu_format_text(la_vstring *vstr, void const * const data, int indent);
-void asn1_pdu_format_json(la_vstring *vstr, void const * const data);
+void asn1_pdu_format_text(la_vstring *vstr, void const *data, int indent);
+void asn1_pdu_format_json(la_vstring *vstr, void const *data);
 void asn1_pdu_destroy(void *data);
 
 #endif // _ASN1_UTIL_H

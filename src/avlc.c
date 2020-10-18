@@ -114,17 +114,17 @@ typedef struct {
 	avlc_frame_qentry_t *q;
 } avlc_frame_t;
 
-static const char *status_ag_descr[] = {
+static char const *status_ag_descr[] = {
 	"Airborne",
 	"On ground"
 };
 
-static const char *status_cr_descr[] = {
+static char const *status_cr_descr[] = {
 	"Command",
 	"Response"
 };
 
-static const char *addrtype_descr[] = {
+static char const *addrtype_descr[] = {
 	"reserved",
 	"Aircraft",
 	"reserved",
@@ -135,14 +135,14 @@ static const char *addrtype_descr[] = {
 	"All stations"
 };
 
-static const char *S_cmd[] = {
+static char const *S_cmd[] = {
 	"Receive Ready",
 	"Receive not Ready",
 	"Reject",
 	"Selective Reject"
 };
 
-static const char *U_cmd[] = {
+static char const *U_cmd[] = {
 	"UI",     "(0x01)", "(0x02)", "DM",     "(0x04)", "(0x05)", "(0x06)", "(0x07)",
 	"(0x08)", "(0x09)", "(0x0a)", "(0x0b)", "(0x0c)", "(0x0d)", "(0x0e)", "(0x0f)",
 	"DISC",   "(0x11)", "(0x12)", "(0x13)", "(0x14)", "(0x15)", "(0x16)", "(0x17)",
@@ -264,7 +264,7 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 	return node;
 }
 
-static void addrinfo_format_as_text(la_vstring *vstr, int indent, avlc_addr_t const addr) {
+static void addrinfo_format_as_text(la_vstring *vstr, int indent, avlc_addr_t addr) {
 	if(IS_AIRCRAFT(addr)) {
 		if(Config.ac_addrinfo_db_available == true) {
 			ac_data_entry *ac = ac_data_entry_lookup(addr.a_addr.addr);
@@ -308,12 +308,12 @@ static void addrinfo_format_as_text(la_vstring *vstr, int indent, avlc_addr_t co
 	}
 }
 
-static void avlc_format_text(la_vstring * const vstr, void const * const data, int indent) {
+static void avlc_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(f, avlc_frame_t *, data);
+	CAST_PTR(f, avlc_frame_t const *, data);
 
 	if(Config.output_raw_frames == true && f->q->frame->len > 0) {
 		append_hexdump_with_indent(vstr, f->q->frame->buf, f->q->frame->len, indent+1);
@@ -360,7 +360,7 @@ static void avlc_format_text(la_vstring * const vstr, void const * const data, i
 	}
 }
 
-static void addrinfo_format_as_json(la_vstring *vstr, avlc_addr_t const addr) {
+static void addrinfo_format_as_json(la_vstring *vstr, avlc_addr_t addr) {
 	if(IS_AIRCRAFT(addr)) {
 		if(Config.ac_addrinfo_db_available == true) {
 			ac_data_entry *ac = ac_data_entry_lookup(addr.a_addr.addr);
@@ -395,8 +395,8 @@ static void addrinfo_format_as_json(la_vstring *vstr, avlc_addr_t const addr) {
 	}
 }
 
-static void avlc_addr_format_as_json(la_vstring *vstr, char const *name, avlc_addr_t const addr,
-		int const ag_status) {
+static void avlc_addr_format_as_json(la_vstring *vstr, char const *name, avlc_addr_t addr,
+		int ag_status) {
 	ASSERT(vstr != NULL);
 	ASSERT(name != NULL);
 
@@ -412,11 +412,11 @@ static void avlc_addr_format_as_json(la_vstring *vstr, char const *name, avlc_ad
 	la_json_object_end(vstr);
 }
 
-static void avlc_format_json(la_vstring * const vstr, void const * const data) {
+static void avlc_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(f, avlc_frame_t *, data);
+	CAST_PTR(f, avlc_frame_t const *, data);
 	// Air/Ground bit applies to the src addr, but it resides in the dst address field
 	avlc_addr_format_as_json(vstr, "src", f->src, f->dst.a_addr.status);
 	avlc_addr_format_as_json(vstr, "dst", f->dst, -1);

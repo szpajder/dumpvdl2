@@ -25,8 +25,8 @@
 #include "dumpvdl2.h"               // debug_print(D_PROTO, )
 #include "asn1-util.h"              // asn_formatter_table
 
-static int compare_fmtr(const void *k, const void *m) {
-	CAST_PTR(memb, asn_formatter_t *, m);
+static int compare_fmtr(void const *k, void const *m) {
+	CAST_PTR(memb, asn_formatter_t const *, m);
 	return(k == memb->type ? 0 : 1);
 }
 
@@ -50,7 +50,7 @@ int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, i
 	return 0;
 }
 
-void asn1_output_as_text(asn1_formatter_param_t p, asn_formatter_t const * const asn1_formatter_table,
+void asn1_output_as_text(asn1_formatter_param_t p, asn_formatter_t const *asn1_formatter_table,
 		size_t asn1_formatter_table_len) {
 	if(p.td == NULL || p.sptr == NULL) return;
 	asn_formatter_t *formatter = lfind(p.td, asn1_formatter_table, &asn1_formatter_table_len,
@@ -70,7 +70,7 @@ void asn1_output_as_text(asn1_formatter_param_t p, asn_formatter_t const * const
 	}
 }
 
-void asn1_output_as_json(asn1_formatter_param_t p, asn_formatter_t const * const asn1_formatter_table,
+void asn1_output_as_json(asn1_formatter_param_t p, asn_formatter_t const *asn1_formatter_table,
 		size_t asn1_formatter_table_len) {
 	if(p.td == NULL || p.sptr == NULL) return;
 	asn_formatter_t *formatter = lfind(p.td, asn1_formatter_table, &asn1_formatter_table_len,
@@ -82,12 +82,12 @@ void asn1_output_as_json(asn1_formatter_param_t p, asn_formatter_t const * const
 }
 
 // text formatter for la_proto_nodes containing asn1_pdu_t data
-void asn1_pdu_format_text(la_vstring *vstr, void const * const data, int indent) {
+void asn1_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(pdu, asn1_pdu_t *, data);
+	CAST_PTR(pdu, asn1_pdu_t const *, data);
 	if(pdu->type == NULL) {   // No user data in APDU, so no decoding was attempted
 		return;
 	}
@@ -112,11 +112,11 @@ void asn1_pdu_format_text(la_vstring *vstr, void const * const data, int indent)
 		pdu->formatter_table_text, pdu->formatter_table_text_len);
 }
 
-void asn1_pdu_format_json(la_vstring *vstr, void const * const data) {
+void asn1_pdu_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(pdu, asn1_pdu_t *, data);
+	CAST_PTR(pdu, asn1_pdu_t const *, data);
 	if(pdu->type == NULL) {     // No user data in APDU - no decoding was attempted
 		return;
 	}

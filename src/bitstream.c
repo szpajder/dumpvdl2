@@ -43,20 +43,20 @@ void bitstream_destroy(bitstream_t *bs) {
 	XFREE(bs);
 }
 
-int bitstream_append_msbfirst(bitstream_t *bs, const uint8_t *v,
-		const uint32_t numbytes, const uint32_t numbits) {
+int bitstream_append_msbfirst(bitstream_t *bs, uint8_t const *bytes,
+		uint32_t numbytes, uint32_t numbits) {
 	if(bs->end + numbits * numbytes > bs->len)
 		return -1;
 	for(uint32_t i = 0; i < numbytes; i++) {
-		uint8_t t = v[i];
+		uint8_t t = bytes[i];
 		for(int j = numbits - 1; j >= 0; j--)
 			bs->buf[bs->end++] = (t >> j) & 0x01;
 	}
 	return 0;
 }
 
-int bitstream_append_lsbfirst(bitstream_t *bs, const uint8_t *bytes,
-		const uint32_t numbytes, const uint32_t numbits) {
+int bitstream_append_lsbfirst(bitstream_t *bs, uint8_t const *bytes,
+		uint32_t numbytes, uint32_t numbits) {
 	if(bs->end + numbits * numbytes > bs->len)
 		return -1;
 	for(uint32_t i = 0; i < numbytes; i++) {
@@ -68,7 +68,7 @@ int bitstream_append_lsbfirst(bitstream_t *bs, const uint8_t *bytes,
 }
 
 int bitstream_read_lsbfirst(bitstream_t *bs, uint8_t *bytes,
-		const uint32_t numbytes, const uint32_t numbits) {
+		uint32_t numbytes, uint32_t numbits) {
 	if(bs->start + numbits * numbytes > bs->end)
 		return -1;
 	for(uint32_t i = 0; i < numbytes; i++) {
@@ -81,7 +81,7 @@ int bitstream_read_lsbfirst(bitstream_t *bs, uint8_t *bytes,
 }
 
 int bitstream_read_word_msbfirst(bitstream_t *bs, uint32_t *ret,
-		const uint32_t numbits) {
+		uint32_t numbits) {
 	if(bs->start + numbits > bs->end)
 		return -1;
 	*ret = 0;

@@ -71,7 +71,7 @@ static void sincosf_lut(uint32_t phi, float *sine, float *cosine) {
 	*cosine = v1 + (v2 - v1) * fract;
 }
 
-static float chebyshev_lpf_2pole(float const * const in, float const * const out) {
+static float chebyshev_lpf_2pole(float const *in, float const *out) {
 	float r = A[0] * in[0];
 	r += A[1] * in[1] + A[2] * in[2];
 	r += B[1] * out[1] + B[2] * out[2];
@@ -104,7 +104,7 @@ static float calc_para_vertex(float x, int d, float y1, float y2, float y3) {
 
 static int got_sync(vdl2_channel_t *v) {
 	// Cumulative phase after each symbol of VDL2 preamble, wrapped to (-pi; pi> range
-	static const float pr_phase[PREAMBLE_SYMS] = {
+	static float const pr_phase[PREAMBLE_SYMS] = {
 		0 * M_PI / 4,
 		3 * M_PI / 4,
 		-3 * M_PI / 4,
@@ -219,7 +219,7 @@ static void demod_reset(vdl2_channel_t *v) {
 }
 
 static void demod(vdl2_channel_t *v, float re, float im) {
-	static const uint8_t graycode[ARITY] = { 0, 1, 3, 2, 6, 7, 5, 4 };
+	static uint8_t const graycode[ARITY] = { 0, 1, 3, 2, 6, 7, 5, 4 };
 
 	if(v->decoder_state == DEC_IDLE) {
 		demod_reset(v);
@@ -355,7 +355,7 @@ void process_buf_uchar_init() {
 void process_buf_short(unsigned char *buf, uint32_t len, void *ctx) {
 	UNUSED(ctx);
 	if(len == 0) return;
-	CAST_PTR(bbuf, int16_t *, buf);
+	int16_t *bbuf = (int16_t *)buf;
 	pthread_barrier_wait(&demods_ready);
 	sbuf_len = len / 2;
 	for(uint32_t i = 0; i < sbuf_len; i++)

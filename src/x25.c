@@ -49,7 +49,7 @@ typedef struct {
 // it is used as a temporary key allocator as well.
 void *x25_key_get(void const *msg) {
 	ASSERT(msg != NULL);
-	CAST_PTR(avlc_info, x25_avlc_info *, msg);
+	CAST_PTR(avlc_info, x25_avlc_info const *, msg);
 	NEW(x25_avlc_info, key);
 	key->src_addr = avlc_info->src_addr;
 	key->dst_addr = avlc_info->dst_addr;
@@ -62,13 +62,13 @@ void x25_key_destroy(void *ptr) {
 }
 
 uint32_t x25_key_hash(void const *key) {
-	CAST_PTR(k, x25_avlc_info *, key);
+	CAST_PTR(k, x25_avlc_info const *, key);
 	return k->src_addr * 11 + k->dst_addr * 23;
 }
 
 bool x25_key_compare(void const *key1, void const *key2) {
-	CAST_PTR(k1, x25_avlc_info *, key1);
-	CAST_PTR(k2, x25_avlc_info *, key2);
+	CAST_PTR(k1, x25_avlc_info const *, key1);
+	CAST_PTR(k2, x25_avlc_info const *, key2);
 	return k1->src_addr == k2->src_addr && k1->dst_addr == k2->dst_addr;
 }
 
@@ -85,7 +85,7 @@ static struct timeval x25_reasm_timeout = {
 	.tv_usec = 0
 };
 
-void update_statsd_x25_metrics(la_reasm_status const reasm_status, uint32_t const msg_type) {
+void update_statsd_x25_metrics(la_reasm_status reasm_status, uint32_t msg_type) {
 	static dict const reasm_status_counter_names[] = {
 		{ .id = LA_REASM_UNKNOWN, .val = "x25.reasm.unknown" },
 		{ .id = LA_REASM_COMPLETE, .val = "x25.reasm.complete" },
@@ -137,7 +137,7 @@ TLV_FORMATTER(x25_pkt_size_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(pkt_size, x25_pkt_size_t *, data);
+	CAST_PTR(pkt_size, x25_pkt_size_t const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	ctx->indent++;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "From calling DTE: %u bytes\n", pkt_size->from_calling_dte);
@@ -149,7 +149,7 @@ TLV_FORMATTER(x25_pkt_size_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(pkt_size, x25_pkt_size_t *, data);
+	CAST_PTR(pkt_size, x25_pkt_size_t const *, data);
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "from_calling_dte", pkt_size->from_calling_dte);
 	la_json_append_long(ctx->vstr, "from_called_dte", pkt_size->from_called_dte);
@@ -184,7 +184,7 @@ TLV_FORMATTER(x25_win_size_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(win_size, x25_win_size_t *, data);
+	CAST_PTR(win_size, x25_win_size_t const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	ctx->indent++;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "From calling DTE: %u packets\n", win_size->from_calling_dte);
@@ -196,7 +196,7 @@ TLV_FORMATTER(x25_win_size_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(win_size, x25_win_size_t *, data);
+	CAST_PTR(win_size, x25_win_size_t const *, data);
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "from_calling_dte", win_size->from_calling_dte);
 	la_json_append_long(ctx->vstr, "from_called_dte", win_size->from_called_dte);
@@ -228,7 +228,7 @@ TLV_FORMATTER(x25_fast_select_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(fs, x25_fast_select_t *, data);
+	CAST_PTR(fs, x25_fast_select_t const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %srequested\n", label,
 			fs->requested ? "" : "not ");
 }
@@ -237,11 +237,11 @@ TLV_FORMATTER(x25_fast_select_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(fs, x25_fast_select_t *, data);
+	CAST_PTR(fs, x25_fast_select_t const *, data);
 	la_json_append_bool(ctx->vstr, label, fs->requested);
 }
 
-static const dict x25_facilities[] = {
+static dict const x25_facilities[] = {
 	{
 		.id = 0x00,
 		.val = &(tlv_type_descriptor_t){
@@ -314,7 +314,7 @@ static const dict x25_facilities[] = {
 	}
 };
 
-static const dict x25_comp_algos[] = {
+static dict const x25_comp_algos[] = {
 	{ 0x40, "ACA" },
 	{ 0x20, "DEFLATE" },
 	{ 0x02, "LREF" },
@@ -370,7 +370,7 @@ fail:
 	return node;
 }
 
-static char const * const sndcf_error_descriptions[] = {
+static char const *sndcf_error_descriptions[] = {
 	[0] = "Compressed NPDU with unrecognized Local Reference",
 	[1] = "Creation of directory entry outside of sender's permitted range",
 	[2] = "Directory entry exists",
@@ -383,12 +383,12 @@ static char const * const sndcf_error_descriptions[] = {
 };
 #define SNDCF_ERR_MAX 8
 
-void sndcf_error_report_format_text(la_vstring * const vstr, void const * const data, int indent) {
+void sndcf_error_report_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(rpt, sndcf_err_rpt_t *, data);
+	CAST_PTR(rpt, sndcf_err_rpt_t const *, data);
 	if(rpt->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable SNDCF Error Report\n");
 		return;
@@ -402,11 +402,11 @@ void sndcf_error_report_format_text(la_vstring * const vstr, void const * const 
 	}
 }
 
-void sndcf_error_report_format_json(la_vstring * const vstr, void const * const data) {
+void sndcf_error_report_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(rpt, sndcf_err_rpt_t *, data);
+	CAST_PTR(rpt, sndcf_err_rpt_t const *, data);
 	la_json_append_bool(vstr, "err", rpt->err);
 	if(rpt->err == true) {
 		return;
@@ -433,9 +433,9 @@ la_type_descriptor const proto_DEF_X25_SNDCF_error_report = {
 // Forward declaration
 la_type_descriptor const proto_DEF_X25_pkt;
 
-static char *fmt_x25_addr(uint8_t *data, uint8_t len) {
+static char *fmt_x25_addr(uint8_t const *data, uint8_t len) {
 	// len is in nibbles here
-	static const char hex[] = "0123456789abcdef";
+	static char const hex[] = "0123456789abcdef";
 	char *buf = NULL;
 	if(len == 0 || data == NULL) {
 		return NULL;
@@ -582,7 +582,7 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
 		goto fail;
 	}
 
-	CAST_PTR(hdr, x25_hdr_t *, ptr);
+	x25_hdr_t *hdr = (x25_hdr_t *) ptr;
 	debug_print(D_PROTO_DETAIL, "gfi=0x%02x group=0x%02x chan=0x%02x type=0x%02x\n", hdr->gfi,
 			hdr->chan_group, hdr->chan_num, hdr->type.val);
 	if(hdr->gfi != GFI_X25_MOD8) {
@@ -887,7 +887,7 @@ static dict const x25_diag_codes[] = {
 	{ .id = 0x00, .val = NULL }
 };
 
-static const dict x25_pkttype_names[] = {
+static dict const x25_pkttype_names[] = {
 	{ X25_CALL_REQUEST,     "Call Request" },
 	{ X25_CALL_ACCEPTED,    "Call Accepted" },
 	{ X25_CLEAR_REQUEST,    "Clear Request" },
@@ -903,12 +903,12 @@ static const dict x25_pkttype_names[] = {
 	{ 0,                    NULL }
 };
 
-static void x25_format_text(la_vstring * const vstr, void const * const data, int indent) {
+static void x25_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(pkt, x25_pkt_t *, data);
+	CAST_PTR(pkt, x25_pkt_t const *, data);
 	if(pkt->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable X.25 packet\n");
 		return;
@@ -971,11 +971,11 @@ static void x25_format_text(la_vstring * const vstr, void const * const data, in
 	}
 }
 
-static void x25_format_json(la_vstring * const vstr, void const * const data) {
+static void x25_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(pkt, x25_pkt_t *, data);
+	CAST_PTR(pkt, x25_pkt_t const *, data);
 	la_json_append_bool(vstr, "err", pkt->err);
 	if(pkt->err == true) {
 		return;

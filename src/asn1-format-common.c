@@ -29,7 +29,7 @@
 #include "asn1-util.h"              // ASN1_FORMATTER_FUN_T
 #include "dumpvdl2.h"               // CAST_PTR, dict_search()
 
-char const *value2enum(asn_TYPE_descriptor_t *td, long const value) {
+char const *value2enum(asn_TYPE_descriptor_t *td, long value) {
 	if(td == NULL) return NULL;
 	asn_INTEGER_enum_map_t const *enum_map = INTEGER_map_value2enum(td->specifics, value);
 	if(enum_map == NULL) return NULL;
@@ -37,22 +37,22 @@ char const *value2enum(asn_TYPE_descriptor_t *td, long const value) {
 }
 
 void format_INTEGER_with_unit_as_text(asn1_formatter_param_t p,
-		char const * const unit, double multiplier, int decimal_places) {
-	CAST_PTR(val, long *, p.sptr);
+		char const *unit, double multiplier, int decimal_places) {
+	CAST_PTR(val, long const *, p.sptr);
 	LA_ISPRINTF(p.vstr, p.indent, "%s: %.*f%s\n", p.label, decimal_places, (double)(*val) * multiplier, unit);
 }
 
 void format_INTEGER_with_unit_as_json(asn1_formatter_param_t p,
-		char const * const unit, double multiplier) {
-	CAST_PTR(val, long *, p.sptr);
+		char const *unit, double multiplier) {
+	CAST_PTR(val, long const *, p.sptr);
 	la_json_object_start(p.vstr, p.label);
 	la_json_append_double(p.vstr, "val", (double)(*val) * multiplier);
 	la_json_append_string(p.vstr, "unit", unit);
 	la_json_object_end(p.vstr);
 }
 
-void format_INTEGER_as_ENUM_as_text(asn1_formatter_param_t p, dict const * const value_labels) {
-	CAST_PTR(val, long *, p.sptr);
+void format_INTEGER_as_ENUM_as_text(asn1_formatter_param_t p, dict const *value_labels) {
+	CAST_PTR(val, long const *, p.sptr);
 	char *val_label = dict_search(value_labels, (int)(*val));
 	if(val_label != NULL) {
 		LA_ISPRINTF(p.vstr, p.indent, "%s: %s\n", p.label, val_label);
@@ -61,8 +61,8 @@ void format_INTEGER_as_ENUM_as_text(asn1_formatter_param_t p, dict const * const
 	}
 }
 
-void format_INTEGER_as_ENUM_as_json(asn1_formatter_param_t p, dict const * const value_labels) {
-	CAST_PTR(val, long *, p.sptr);
+void format_INTEGER_as_ENUM_as_json(asn1_formatter_param_t p, dict const *value_labels) {
+	CAST_PTR(val, long const *, p.sptr);
 	la_json_object_start(p.vstr, p.label);
 	la_json_append_long(p.vstr, "value", (int)(*val));
 	char *val_label = dict_search(value_labels, (int)(*val));
@@ -70,7 +70,7 @@ void format_INTEGER_as_ENUM_as_json(asn1_formatter_param_t p, dict const * const
 	la_json_object_end(p.vstr);
 }
 
-void format_CHOICE_as_text(asn1_formatter_param_t p, dict const * const choice_labels,
+void format_CHOICE_as_text(asn1_formatter_param_t p, dict const *choice_labels,
 		asn1_formatter_fun_t cb) {
 	CAST_PTR(specs, asn_CHOICE_specifics_t *, p.td->specifics);
 	int present = _fetch_present_idx(p.sptr, specs->pres_offset, specs->pres_size);
@@ -109,7 +109,7 @@ void format_CHOICE_as_text(asn1_formatter_param_t p, dict const * const choice_l
 	}
 }
 
-void format_CHOICE_as_json(asn1_formatter_param_t p, dict const * const choice_labels,
+void format_CHOICE_as_json(asn1_formatter_param_t p, dict const *choice_labels,
 		asn1_formatter_fun_t cb) {
 	asn_CHOICE_specifics_t *specs = (asn_CHOICE_specifics_t *)p.td->specifics;
 	int present = _fetch_present_idx(p.sptr, specs->pres_offset, specs->pres_size);
@@ -149,7 +149,7 @@ void format_SEQUENCE_as_text(asn1_formatter_param_t p, asn1_formatter_fun_t cb) 
 	asn1_formatter_param_t cb_p = p;
 	for(int edx = 0; edx < p.td->elements_count; edx++) {
 		asn_TYPE_member_t *elm = &p.td->elements[edx];
-		const void *memb_ptr;
+		void const *memb_ptr;
 
 		if(elm->flags & ATF_POINTER) {
 			memb_ptr = *(const void * const *)((const char *)p.sptr + elm->memb_offset);
@@ -173,7 +173,7 @@ void format_SEQUENCE_as_json(asn1_formatter_param_t p, asn1_formatter_fun_t cb) 
 	la_json_object_start(p.vstr, p.label);
 	for(int edx = 0; edx < p.td->elements_count; edx++) {
 		asn_TYPE_member_t *elm = &p.td->elements[edx];
-		const void *memb_ptr;
+		void const *memb_ptr;
 
 		if(elm->flags & ATF_POINTER) {
 			memb_ptr = *(const void * const *)((const char *)p.sptr + elm->memb_offset);
@@ -196,9 +196,9 @@ void format_SEQUENCE_OF_as_text(asn1_formatter_param_t p, asn1_formatter_fun_t c
 		p.indent++;
 	}
 	asn_TYPE_member_t *elm = p.td->elements;
-	const asn_anonymous_set_ *list = _A_CSET_FROM_VOID(p.sptr);
+	asn_anonymous_set_ const *list = _A_CSET_FROM_VOID(p.sptr);
 	for(int i = 0; i < list->count; i++) {
-		const void *memb_ptr = list->array[i];
+		void const *memb_ptr = list->array[i];
 		if(memb_ptr == NULL) {
 			continue;
 		}
@@ -211,9 +211,9 @@ void format_SEQUENCE_OF_as_text(asn1_formatter_param_t p, asn1_formatter_fun_t c
 void format_SEQUENCE_OF_as_json(asn1_formatter_param_t p, asn1_formatter_fun_t cb) {
 	la_json_array_start(p.vstr, p.label);
 	asn_TYPE_member_t *elm = p.td->elements;
-	const asn_anonymous_set_ *list = _A_CSET_FROM_VOID(p.sptr);
+	asn_anonymous_set_ const *list = _A_CSET_FROM_VOID(p.sptr);
 	for(int i = 0; i < list->count; i++) {
-		const void *memb_ptr = list->array[i];
+		void const *memb_ptr = list->array[i];
 		if(memb_ptr == NULL) {
 			continue;
 		}
@@ -229,8 +229,8 @@ void format_SEQUENCE_OF_as_json(asn1_formatter_param_t p, asn1_formatter_fun_t c
 // Handles bit string up to 32 bits long.
 // dict indices are bit numbers from 0 to bit_stream_len-1
 // Bit 0 is the MSB of the first octet in the buffer.
-void format_BIT_STRING_as_text(asn1_formatter_param_t p, dict const * const bit_labels) {
-	CAST_PTR(bs, BIT_STRING_t *, p.sptr);
+void format_BIT_STRING_as_text(asn1_formatter_param_t p, dict const *bit_labels) {
+	CAST_PTR(bs, BIT_STRING_t const *, p.sptr);
 	debug_print(D_PROTO_DETAIL, "buf len: %d bits_unused: %d\n", bs->size, bs->bits_unused);
 	uint32_t val = 0;
 	int truncated = 0;
@@ -274,8 +274,8 @@ end:
 	}
 }
 
-void format_BIT_STRING_as_json(asn1_formatter_param_t p, dict const * const bit_labels) {
-	CAST_PTR(bs, BIT_STRING_t *, p.sptr);
+void format_BIT_STRING_as_json(asn1_formatter_param_t p, dict const *bit_labels) {
+	CAST_PTR(bs, BIT_STRING_t const *, p.sptr);
 	debug_print(D_PROTO_DETAIL, "buf len: %d bits_unused: %d\n", bs->size, bs->bits_unused);
 	uint32_t val = 0;
 	int len = bs->size;
@@ -358,16 +358,16 @@ ASN1_FORMATTER_FUN_T(asn1_format_ENUM_as_json) {
 }
 
 ASN1_FORMATTER_FUN_T(asn1_format_long_as_json) {
-	CAST_PTR(valptr, long *, p.sptr);
+	CAST_PTR(valptr, long const *, p.sptr);
 	la_json_append_long(p.vstr, p.label, *valptr);
 }
 
 ASN1_FORMATTER_FUN_T(asn1_format_bool_as_json) {
-	CAST_PTR(valptr, BOOLEAN_t *, p.sptr);
+	CAST_PTR(valptr, BOOLEAN_t const *, p.sptr);
 	la_json_append_bool(p.vstr, p.label, (*valptr) ? true : false);
 }
 
 ASN1_FORMATTER_FUN_T(asn1_format_OCTET_STRING_as_json) {
-	CAST_PTR(valptr, OCTET_STRING_t *, p.sptr);
+	CAST_PTR(valptr, OCTET_STRING_t const *, p.sptr);
 	la_json_append_octet_string(p.vstr, p.label, valptr->buf, valptr->size);
 }

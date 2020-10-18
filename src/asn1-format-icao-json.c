@@ -109,7 +109,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_ATCUplinkMsgElementId_as_json) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_Code_as_json) {
-	CAST_PTR(code, Code_t *, p.sptr);
+	CAST_PTR(code, Code_t const *, p.sptr);
 	long **cptr = code->list.array;
 	la_json_append_long(p.vstr, p.label,
 			*cptr[0] * 1000 +
@@ -120,9 +120,9 @@ static ASN1_FORMATTER_FUN_T(asn1_format_Code_as_json) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_DateTime_as_json) {
-	CAST_PTR(dtg, DateTime_t *, p.sptr);
-	Date_t *d = &dtg->date;
-	Time_t *t = &dtg->time;
+	CAST_PTR(dtg, DateTime_t const *, p.sptr);
+	Date_t const *d = &dtg->date;
+	Time_t const *t = &dtg->time;
 	la_json_object_start(p.vstr, p.label);
 	la_json_append_long(p.vstr, "year", d->year);
 	la_json_append_long(p.vstr, "month", d->month);
@@ -133,7 +133,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_DateTime_as_json) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_Timehhmmss_as_json) {
-	CAST_PTR(t, Timehhmmss_t *, p.sptr);
+	CAST_PTR(t, Timehhmmss_t const *, p.sptr);
 	la_json_object_start(p.vstr, p.label);
 	la_json_append_long(p.vstr, "hour", t->hoursminutes.hours);
 	la_json_append_long(p.vstr, "min", t->hoursminutes.minutes);
@@ -142,7 +142,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_Timehhmmss_as_json) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_Time_as_json) {
-	CAST_PTR(t, Time_t *, p.sptr);
+	CAST_PTR(t, Time_t const *, p.sptr);
 	la_json_object_start(p.vstr, p.label);
 	la_json_append_long(p.vstr, "hour", t->hours);
 	la_json_append_long(p.vstr, "min", t->minutes);
@@ -150,7 +150,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_Time_as_json) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_Latitude_as_json) {
-	CAST_PTR(lat, Latitude_t *, p.sptr);
+	CAST_PTR(lat, Latitude_t const *, p.sptr);
 	long const ldir = lat->latitudeDirection;
 	char const *ldir_name = value2enum(&asn_DEF_LatitudeDirection, ldir);
 	la_json_object_start(p.vstr, p.label);
@@ -175,7 +175,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_Latitude_as_json) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_Longitude_as_json) {
-	CAST_PTR(lon, Longitude_t *, p.sptr);
+	CAST_PTR(lon, Longitude_t const *, p.sptr);
 	long const ldir = lon->longitudeDirection;
 	char const *ldir_name = value2enum(&asn_DEF_LongitudeDirection, ldir);
 	la_json_object_start(p.vstr, p.label);
@@ -264,7 +264,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_Meters_as_json) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_OBJECT_IDENTIFIER_as_json) {
-	CAST_PTR(oid, OBJECT_IDENTIFIER_t *, p.sptr);
+	CAST_PTR(oid, OBJECT_IDENTIFIER_t const *, p.sptr);
 	uint64_t fixed_arcs[10];	// Try with fixed space first
 	uint64_t *arcs = fixed_arcs;
 	int arc_type_size = sizeof(fixed_arcs[0]);
@@ -295,7 +295,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_OBJECT_IDENTIFIER_as_json) {
 // unnecessary overengineering.  Handling all values in a single routine is
 // simpler, albeit less elegant at first glance.
 static ASN1_FORMATTER_FUN_T(asn1_format_RejectDetails_as_json) {
-	CAST_PTR(det, RejectDetails_t *, p.sptr);
+	CAST_PTR(det, RejectDetails_t const *, p.sptr);
 	switch(det->present) {
 		case RejectDetails_PR_aDS_service_unavailable:
 			la_json_append_string(p.vstr, p.label, "ADS_service_unavailable");
@@ -328,7 +328,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_RejectDetails_as_json) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_ReportingRate_as_json) {
-	CAST_PTR(rate, ReportingRate_t *, p.sptr);
+	CAST_PTR(rate, ReportingRate_t const *, p.sptr);
 	switch(rate->present) {
 		case ReportingRate_PR_reporting_time_seconds_scale:
 			p.sptr = &rate->choice.reporting_time_seconds_scale;
@@ -388,7 +388,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_EstimatedPositionUncertainty_as_json) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_ADSv2Latitude_as_json) {
-	CAST_PTR(lat, ADSv2Latitude_t *, p.sptr);
+	CAST_PTR(lat, ADSv2Latitude_t const *, p.sptr);
 	long const ldir = lat->direction;
 	char const *ldir_name = value2enum(&asn_DEF_LatitudeDirection, ldir);
 	la_json_object_start(p.vstr, p.label);
@@ -400,7 +400,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_ADSv2Latitude_as_json) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_ADSv2Longitude_as_json) {
-	CAST_PTR(lon, ADSv2Longitude_t *, p.sptr);
+	CAST_PTR(lon, ADSv2Longitude_t const *, p.sptr);
 	long const ldir = lon->direction;
 	char const *ldir_name = value2enum(&asn_DEF_LongitudeDirection, ldir);
 	la_json_object_start(p.vstr, p.label);

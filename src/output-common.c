@@ -76,7 +76,7 @@ static output_descriptor_t * output_descriptors[] = {
 	NULL
 };
 
-fmtr_input_type_t fmtr_input_type_from_string(char const * const str) {
+fmtr_input_type_t fmtr_input_type_from_string(char const *str) {
 	for (dict const *d = fmtr_intype_names; d->val != NULL; d++) {
 		if (!strcmp(str, ((option_descr_t *)d->val)->name)) {
 			return d->id;
@@ -85,7 +85,7 @@ fmtr_input_type_t fmtr_input_type_from_string(char const * const str) {
 	return FMTR_INTYPE_UNKNOWN;
 }
 
-fmtr_descriptor_t *fmtr_descriptor_get(output_format_t const fmt) {
+fmtr_descriptor_t *fmtr_descriptor_get(output_format_t fmt) {
 	return dict_search(fmtr_descriptors, fmt);
 }
 
@@ -98,7 +98,7 @@ fmtr_instance_t *fmtr_instance_new(fmtr_descriptor_t *fmttd, fmtr_input_type_t i
 	return fmtr;
 }
 
-output_format_t output_format_from_string(char const * const str) {
+output_format_t output_format_from_string(char const *str) {
 	for (dict const *d = fmtr_descriptors; d->val != NULL; d++) {
 		if (!strcmp(str, ((fmtr_descriptor_t *)d->val)->name)) {
 			return d->id;
@@ -107,7 +107,7 @@ output_format_t output_format_from_string(char const * const str) {
 	return OFMT_UNKNOWN;
 }
 
-output_descriptor_t *output_descriptor_get(char const * const output_name) {
+output_descriptor_t *output_descriptor_get(char const *output_name) {
 	if(output_name == NULL) {
 		return NULL;
 	}
@@ -133,7 +133,7 @@ output_instance_t *output_instance_new(output_descriptor_t *outtd, output_format
 	return output;
 }
 
-output_qentry_t *output_qentry_copy(output_qentry_t const * const q) {
+output_qentry_t *output_qentry_copy(output_qentry_t const *q) {
 	ASSERT(q != NULL);
 
 	NEW(output_qentry_t, copy);
@@ -167,7 +167,7 @@ void output_queue_drain(GAsyncQueue *q) {
 	g_async_queue_unlock(q);
 }
 
-vdl2_msg_metadata *vdl2_msg_metadata_copy(vdl2_msg_metadata const * const m) {
+vdl2_msg_metadata *vdl2_msg_metadata_copy(vdl2_msg_metadata const *m) {
 	ASSERT(m != NULL);
 	NEW(vdl2_msg_metadata, copy);
 	memcpy(copy, m, sizeof(vdl2_msg_metadata));

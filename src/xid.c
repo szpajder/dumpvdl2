@@ -54,7 +54,7 @@ struct xid_descr {
 // GSIF, XID_CMD_LPM and XID_RSP_LPM messages do not contain
 // connection mgmt parameter - h and r are forced to 1 in this case
 // Reference: ICAO 9776, Table 5.12
-static const struct xid_descr xid_names[16] = {
+static struct xid_descr const xid_names[16] = {
 	{ "",               "" },
 	{ "XID_CMD_LCR",    "Link Connection Refused" },
 	{ "XID_CMD_HO",     "Handoff Request / Broadcast Handoff" },
@@ -115,7 +115,7 @@ TLV_FORMATTER(conn_mgmt_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(c, conn_mgmt_t *, data);
+	CAST_PTR(c, conn_mgmt_t const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %02x\n", label, c->val);
 }
 
@@ -128,7 +128,7 @@ TLV_FORMATTER(xid_seq_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(xidseq, uint8_t *, data);
+	CAST_PTR(xidseq, uint8_t const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: seq: %u retry: %u\n",
 			label, *xidseq & 0x7, *xidseq >> 4);
 }
@@ -137,7 +137,7 @@ TLV_FORMATTER(xid_seq_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(xidseq, uint8_t *, data);
+	CAST_PTR(xidseq, uint8_t const *, data);
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "seq", *xidseq & 0x7);
 	la_json_append_long(ctx->vstr, "retry", *xidseq >> 4);
@@ -158,7 +158,7 @@ TLV_FORMATTER(modulation_support_format_text) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
-	CAST_PTR(val, uint32_t *, data);
+	CAST_PTR(val, uint32_t const *, data);
 	uint8_t mods_val = (uint8_t)(*val & 0xff);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
 	bitfield_format_text(ctx->vstr, &mods_val, 1, modulations);
@@ -169,7 +169,7 @@ TLV_FORMATTER(modulation_support_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(val, uint32_t *, data);
+	CAST_PTR(val, uint32_t const *, data);
 	uint8_t mods_val = (uint8_t)(*val & 0xff);
 	bitfield_format_json(ctx->vstr, label, &mods_val, 1, modulations);
 }
@@ -179,7 +179,7 @@ typedef struct {
 	float frequency;
 } vdl2_frequency_t;
 
-vdl2_frequency_t parse_freq(uint8_t const * const buf) {
+vdl2_frequency_t parse_freq(uint8_t const *buf) {
 	uint8_t modulations = buf[0] >> 4;
 	uint16_t freq = extract_uint16_msbfirst(buf) & 0x0fff;
 	uint32_t freq_khz = (freq + 10000) * 10;
@@ -203,7 +203,7 @@ TLV_PARSER(vdl2_frequency_parse) {
 	return f;
 }
 
-static void append_frequency_as_text(vdl2_frequency_t *f, la_vstring *vstr) {
+static void append_frequency_as_text(vdl2_frequency_t const *f, la_vstring *vstr) {
 	ASSERT(vstr != NULL);
 	ASSERT(f != NULL);
 	la_vstring_append_sprintf(vstr, "%.3f MHz (", f->frequency);
@@ -216,7 +216,7 @@ TLV_FORMATTER(vdl2_frequency_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(f, vdl2_frequency_t *, data);
+	CAST_PTR(f, vdl2_frequency_t const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
 	append_frequency_as_text(f, ctx->vstr);
 	EOL(ctx->vstr);
@@ -226,7 +226,7 @@ TLV_FORMATTER(vdl2_frequency_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(f, vdl2_frequency_t *, data);
+	CAST_PTR(f, vdl2_frequency_t const *, data);
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_double(ctx->vstr, "freq_mhz", f->frequency);
 	bitfield_format_json(ctx->vstr, "modulation_support", &f->modulations, 1, modulations);
@@ -254,11 +254,11 @@ TLV_PARSER(dlc_addr_list_parse) {
 
 // Appends anonymous DLC address to the current line.
 // Executed via la_list_foreach().
-static void append_dlc_addr_as_text(void const * const data, void *ctx) {
+static void append_dlc_addr_as_text(void const *data, void *ctx) {
 	ASSERT(data != NULL);
 	ASSERT(ctx != NULL);
 	CAST_PTR(vstr, la_vstring *, ctx);
-	CAST_PTR(a, avlc_addr_t *, data);
+	CAST_PTR(a, avlc_addr_t const *, data);
 	la_vstring_append_sprintf(vstr, " %06X", a->a_addr.addr);
 }
 
@@ -267,16 +267,16 @@ TLV_FORMATTER(dlc_addr_list_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(addr_list, la_list *, data);
+	CAST_PTR(addr_list, la_list const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:", label);
-	la_list_foreach(addr_list, append_dlc_addr_as_text, ctx->vstr);
+	la_list_foreach((la_list *)addr_list, append_dlc_addr_as_text, ctx->vstr);
 	EOL(ctx->vstr);
 }
 
 TLV_FORMATTER(dlc_addr_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
-	CAST_PTR(a, avlc_addr_t *, data);
+	CAST_PTR(a, avlc_addr_t const *, data);
 	char addr_str[7];
 	sprintf(addr_str, "%06X", a->a_addr.addr);
 	la_json_append_string(ctx->vstr, label, addr_str);
@@ -284,7 +284,7 @@ TLV_FORMATTER(dlc_addr_format_json) {
 
 // Appends anonymous DLC address to the JSON list.
 // Executed via la_list_foreach().
-static void append_dlc_addr_as_json(void const * const data, void *ctx) {
+static void append_dlc_addr_as_json(void const *data, void *ctx) {
 	ASSERT(data != NULL);
 	ASSERT(ctx != NULL);
 	CAST_PTR(vstr, la_vstring *, ctx);
@@ -295,9 +295,9 @@ TLV_FORMATTER(dlc_addr_list_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(addr_list, la_list *, data);
+	CAST_PTR(addr_list, la_list const *, data);
 	la_json_array_start(ctx->vstr, label);
-	la_list_foreach(addr_list, append_dlc_addr_as_json, ctx->vstr);
+	la_list_foreach((la_list *)addr_list, append_dlc_addr_as_json, ctx->vstr);
 	la_json_array_end(ctx->vstr);
 }
 
@@ -334,11 +334,11 @@ TLV_PARSER(freq_support_list_parse) {
 
 // Appends frequency support list entry.
 // Executed via la_list_foreach().
-static void fs_entry_format_text(void const * const data, void *ctx_ptr) {
+static void fs_entry_format_text(void const *data, void *ctx_ptr) {
 	ASSERT(data != NULL);
 	ASSERT(ctx_ptr != NULL);
 	CAST_PTR(ctx, tlv_formatter_ctx_t *, ctx_ptr);
-	CAST_PTR(fs, freq_support_t *, data);
+	CAST_PTR(fs, freq_support_t const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:", "Ground station");
 	append_dlc_addr_as_text(&fs->gs_addr, ctx->vstr);
 	EOL(ctx->vstr);
@@ -352,18 +352,18 @@ TLV_FORMATTER(freq_support_list_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(fslist, la_list *, data);
+	CAST_PTR(fslist, la_list const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	ctx->indent++;
-	la_list_foreach(fslist, fs_entry_format_text, ctx);
+	la_list_foreach((la_list *)fslist, fs_entry_format_text, ctx);
 	ctx->indent--;
 }
 
-static void fs_entry_format_json(void const * const data, void *ctx_ptr) {
+static void fs_entry_format_json(void const *data, void *ctx_ptr) {
 	ASSERT(data != NULL);
 	ASSERT(ctx_ptr != NULL);
 	CAST_PTR(ctx, tlv_formatter_ctx_t *, ctx_ptr);
-	CAST_PTR(fs, freq_support_t *, data);
+	CAST_PTR(fs, freq_support_t const *, data);
 	la_json_object_start(ctx->vstr, NULL);
 	dlc_addr_format_json(ctx, "gs_addr", &fs->gs_addr);
 	vdl2_frequency_format_json(ctx, "gs_freq", &fs->freq);
@@ -374,9 +374,9 @@ TLV_FORMATTER(freq_support_list_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(fslist, la_list *, data);
+	CAST_PTR(fslist, la_list const *, data);
 	la_json_array_start(ctx->vstr, label);
-	la_list_foreach(fslist, fs_entry_format_json, ctx);
+	la_list_foreach((la_list *)fslist, fs_entry_format_json, ctx);
 	la_json_array_end(ctx->vstr);
 }
 
@@ -431,7 +431,7 @@ TLV_FORMATTER(lcr_cause_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(c, lcr_cause_t *, data);
+	CAST_PTR(c, lcr_cause_t const *, data);
 	CAST_PTR(cause_descr, char *, dict_search(lcr_causes, c->cause));
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: 0x%02x (%s)\n",
 			label, c->cause, cause_descr ? cause_descr : "unknown");
@@ -447,7 +447,7 @@ TLV_FORMATTER(lcr_cause_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(c, lcr_cause_t *, data);
+	CAST_PTR(c, lcr_cause_t const *, data);
 	CAST_PTR(cause_descr, char *, dict_search(lcr_causes, c->cause));
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "cause_code", c->cause);
@@ -509,7 +509,7 @@ TLV_FORMATTER(location_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(loc, location_t *, data);
+	CAST_PTR(loc, location_t const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
 	append_location_as_text(ctx->vstr, *loc);
 	EOL(ctx->vstr);
@@ -518,7 +518,7 @@ TLV_FORMATTER(location_format_text) {
 TLV_FORMATTER(location_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
-	CAST_PTR(loc, location_t *, data);
+	CAST_PTR(loc, location_t const *, data);
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_double(ctx->vstr, "lat", loc->lat);
 	la_json_append_double(ctx->vstr, "lon", loc->lon);
@@ -550,7 +550,7 @@ TLV_FORMATTER(loc_alt_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(la, loc_alt_t *, data);
+	CAST_PTR(la, loc_alt_t const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
 	append_location_as_text(ctx->vstr, la->loc);
 	la_vstring_append_sprintf(ctx->vstr, " %d ft\n", la->alt);
@@ -559,7 +559,7 @@ TLV_FORMATTER(loc_alt_format_text) {
 TLV_FORMATTER(loc_alt_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
-	CAST_PTR(la, loc_alt_t *, data);
+	CAST_PTR(la, loc_alt_t const *, data);
 	la_json_object_start(ctx->vstr, label);
 	location_format_json(ctx, "loc", &la->loc);
 	la_json_append_long(ctx->vstr, "alt", la->alt);
@@ -570,7 +570,7 @@ TLV_FORMATTER(loc_alt_format_json) {
  * Public XID parameters
  **************************************************************************/
 
-static const dict xid_pub_params[] = {
+static dict const xid_pub_params[] = {
 	{
 		.id = 0x1,
 		.val = &(tlv_type_descriptor_t){
@@ -691,7 +691,7 @@ static const dict xid_pub_params[] = {
  * VDL2-specific XID parameters
  **************************************************************************/
 
-static const dict xid_vdl_params[] = {
+static dict const xid_vdl_params[] = {
 	{
 		.id = 0x00,
 		.val = &(tlv_type_descriptor_t){
@@ -1104,12 +1104,12 @@ end:
  * XID formatters
  **************************************************************************/
 
-void xid_format_text(la_vstring * const vstr, void const * const data, int indent) {
+void xid_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(msg, xid_msg_t *, data);
+	CAST_PTR(msg, xid_msg_t const *, data);
 	if(msg->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable XID\n");
 		return;
@@ -1125,11 +1125,11 @@ void xid_format_text(la_vstring * const vstr, void const * const data, int inden
 	tlv_list_format_text(vstr, msg->vdl_params, indent+1);
 }
 
-void xid_format_json(la_vstring * const vstr, void const * const data) {
+void xid_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(msg, xid_msg_t *, data);
+	CAST_PTR(msg, xid_msg_t const *, data);
 	la_json_append_bool(vstr, "err", msg->err);
 	if(msg->err == true) {
 		return;

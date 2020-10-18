@@ -169,7 +169,7 @@ TLV_FORMATTER(idrp_route_separator_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(s, idrp_route_separator_t *, data);
+	CAST_PTR(s, idrp_route_separator_t const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "ID: %u\n", s->id);
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Local preference: %u\n", s->localpref);
@@ -179,7 +179,7 @@ TLV_FORMATTER(idrp_route_separator_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(s, idrp_route_separator_t *, data);
+	CAST_PTR(s, idrp_route_separator_t const *, data);
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "id", s->id);
 	la_json_append_long(ctx->vstr, "localpref", s->localpref);
@@ -219,7 +219,7 @@ TLV_FORMATTER(rd_path_segment_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(rdi_list, la_list *, data);
+	CAST_PTR(rdi_list, la_list const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	ctx->indent++;
 	while(rdi_list != NULL) {
@@ -234,7 +234,7 @@ TLV_FORMATTER(rd_path_segment_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(rdi_list, la_list *, data);
+	CAST_PTR(rdi_list, la_list const *, data);
 	la_json_array_start(ctx->vstr, label);
 	while(rdi_list != NULL) {
 		octet_string_t *ostring = rdi_list->data;
@@ -309,17 +309,17 @@ TLV_FORMATTER(rd_path_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(rd_path, la_list *, data);
+	CAST_PTR(rd_path, la_list const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
-	tlv_list_format_text(ctx->vstr, rd_path, ctx->indent+1);
+	tlv_list_format_text(ctx->vstr, (la_list *)rd_path, ctx->indent+1);
 }
 
 TLV_FORMATTER(rd_path_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(rd_path, la_list *, data);
-	tlv_list_format_json(ctx->vstr, label, rd_path);
+	CAST_PTR(rd_path, la_list const *, data);
+	tlv_list_format_json(ctx->vstr, label, (la_list *)rd_path);
 }
 
 TLV_DESTRUCTOR(rd_path_destroy) {
@@ -595,7 +595,7 @@ TLV_FORMATTER(idrp_ribatt_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(r, idrp_ribatt_t *, data);
+	CAST_PTR(r, idrp_ribatt_t const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "RibAtt #%u:\n", r->num);
 	tlv_list_format_text(ctx->vstr, r->attr_list, ctx->indent+1);
 }
@@ -604,7 +604,7 @@ TLV_FORMATTER(idrp_ribatt_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(r, idrp_ribatt_t *, data);
+	CAST_PTR(r, idrp_ribatt_t const *, data);
 	tlv_list_format_json(ctx->vstr, label, r->attr_list);
 }
 
@@ -871,7 +871,7 @@ la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	}
 	uint8_t *ptr = buf;
 	uint32_t remaining = len;
-	CAST_PTR(hdr, idrp_hdr_t *, ptr);
+	idrp_hdr_t *hdr = (idrp_hdr_t *)ptr;
 	uint16_t pdu_len = extract_uint16_msbfirst(hdr->len);
 	debug_print(D_PROTO, "pid: %02x len: %u type: %u seq: %u ack: %u coff: %u cavail: %u\n",
 			hdr->pid, pdu_len, hdr->type, ntohl(hdr->seq), ntohl(hdr->ack), hdr->coff, hdr->cavail);
@@ -924,7 +924,7 @@ end:
 	return node;
 }
 
-static void idrp_error_format_text(la_vstring *vstr, idrp_pdu_t *pdu, int indent) {
+static void idrp_error_format_text(la_vstring *vstr, idrp_pdu_t const *pdu, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(pdu != NULL);
 	ASSERT(indent >= 0);
@@ -954,7 +954,7 @@ print_err_payload:
 	}
 }
 
-static void idrp_error_format_json(la_vstring *vstr, idrp_pdu_t *pdu) {
+static void idrp_error_format_json(la_vstring *vstr, idrp_pdu_t const *pdu) {
 	ASSERT(vstr != NULL);
 	ASSERT(pdu != NULL);
 
@@ -983,12 +983,12 @@ print_err_payload:
 	}
 }
 
-void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
+void idrp_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(pdu, idrp_pdu_t *, data);
+	CAST_PTR(pdu, idrp_pdu_t const *, data);
 	if(pdu->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable IDRP PDU\n");
 		return;
@@ -1077,11 +1077,11 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 	}
 }
 
-void idrp_pdu_format_json(la_vstring * const vstr, void const * const data) {
+void idrp_pdu_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(pdu, idrp_pdu_t *, data);
+	CAST_PTR(pdu, idrp_pdu_t const *, data);
 	la_json_append_bool(vstr, "err", pdu->err);
 	if(pdu->err == true) {
 		return;

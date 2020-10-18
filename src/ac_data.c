@@ -78,7 +78,7 @@ static void ac_data_cache_entry_destroy(void *data) {
 	XFREE(ce);
 }
 
-static void ac_data_cache_entry_create(uint32_t const addr, ac_data_entry *ac_entry) {
+static void ac_data_cache_entry_create(uint32_t addr, ac_data_entry *ac_entry) {
 	NEW(ac_data_cache_entry, ce);
 	ce->ctime = time(NULL);
 	ce->ac_data = ac_entry;
@@ -90,7 +90,7 @@ static void ac_data_cache_entry_create(uint32_t const addr, ac_data_entry *ac_en
 
 #define BS_DB_COLUMNS "Registration,ICAOTypeCode,OperatorFlagCode,Manufacturer,Type,RegisteredOwners"
 
-static int ac_data_entry_from_db(uint32_t const addr, ac_data_entry **result) {
+static int ac_data_entry_from_db(uint32_t addr, ac_data_entry **result) {
 	if(db == NULL || stmt == NULL) {
 		return -1;
 	}
@@ -153,7 +153,7 @@ static int ac_data_entry_from_db(uint32_t const addr, ac_data_entry **result) {
 
 bool is_cache_entry_expired(void const *key, void const *value, void const *ctx) {
 	UNUSED(key);
-	CAST_PTR(cache_entry, ac_data_cache_entry *, value);
+	CAST_PTR(cache_entry, ac_data_cache_entry const *, value);
 	time_t now = *(time_t *)ctx;
 	return (cache_entry->ctime + AC_CACHE_TTL <= now);
 }

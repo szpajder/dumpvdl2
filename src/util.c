@@ -28,7 +28,7 @@
 #include "dumpvdl2.h"
 #include "libacars/json.h"
 
-void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func) {
+void *xcalloc(size_t nmemb, size_t size, char const *file, int line, char const *func) {
 	void *ptr = calloc(nmemb, size);
 	if(ptr == NULL) {
 		fprintf(stderr, "%s:%d: %s(): calloc(%zu, %zu) failed: %s\n",
@@ -38,7 +38,7 @@ void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const
 	return ptr;
 }
 
-void *xrealloc(void *ptr, size_t size, const char *file, const int line, const char *func) {
+void *xrealloc(void *ptr, size_t size, char const *file, int line, char const *func) {
 	ptr = realloc(ptr, size);
 	if(ptr == NULL) {
 		fprintf(stderr, "%s:%d: %s(): realloc(%zu) failed: %s\n",
@@ -48,7 +48,7 @@ void *xrealloc(void *ptr, size_t size, const char *file, const int line, const c
 	return ptr;
 }
 
-void *dict_search(const dict *list, int id) {
+void *dict_search(dict const *list, int id) {
 	if(list == NULL) return NULL;
 	dict *ptr;
 	for(ptr = (dict *)list; ; ptr++) {
@@ -57,7 +57,7 @@ void *dict_search(const dict *list, int id) {
 	}
 }
 
-static char *fmt_hexstring(octet_string_t const * const ostring) {
+static char *fmt_hexstring(octet_string_t const *ostring) {
 	static const char hex[] = "0123456789abcdef";
 	ASSERT(ostring != NULL);
 	char *buf = NULL;
@@ -78,7 +78,7 @@ static char *fmt_hexstring(octet_string_t const * const ostring) {
 	return buf;
 }
 
-static char *replace_nonprintable_chars(octet_string_t const * const ostring) {
+static char *replace_nonprintable_chars(octet_string_t const *ostring) {
 	ASSERT(ostring != NULL);
 	if(ostring->len == 0) {
 		return strdup("");
@@ -97,7 +97,7 @@ static char *replace_nonprintable_chars(octet_string_t const * const ostring) {
 	return buf;
 }
 
-void bitfield_format_text(la_vstring *vstr, uint8_t *buf, size_t len, dict const *d) {
+void bitfield_format_text(la_vstring *vstr, uint8_t const *buf, size_t len, dict const *d) {
 	ASSERT(vstr != NULL);
 	ASSERT(d != NULL);
 	ASSERT(len <= sizeof(uint32_t));
@@ -119,7 +119,7 @@ void bitfield_format_text(la_vstring *vstr, uint8_t *buf, size_t len, dict const
 	}
 }
 
-void bitfield_format_json(la_vstring *vstr, char const * const key, uint8_t *buf, size_t len, dict const *d) {
+void bitfield_format_json(la_vstring *vstr, char const *key, uint8_t const *buf, size_t len, dict const *d) {
 	ASSERT(vstr != NULL);
 	ASSERT(d != NULL);
 	ASSERT(len <= sizeof(uint32_t));
@@ -139,13 +139,13 @@ void bitfield_format_json(la_vstring *vstr, char const * const key, uint8_t *buf
 	return;
 }
 
-uint32_t extract_uint32_msbfirst(uint8_t const * const data) {
+uint32_t extract_uint32_msbfirst(uint8_t const *data) {
 	ASSERT(data != NULL);
 	return ((uint32_t)data[0] << 24) | ((uint32_t)data[1] << 16) |
 		((uint32_t)data[2] << 8) | (uint32_t)data[3];
 }
 
-uint16_t extract_uint16_msbfirst(uint8_t const * const data) {
+uint16_t extract_uint16_msbfirst(uint8_t const *data) {
 	ASSERT(data != NULL);
 	return ((uint16_t)data[0] << 8) | (uint16_t)data[1];
 }
@@ -173,7 +173,7 @@ int octet_string_parse(uint8_t *buf, size_t len, octet_string_t *result) {
 	return 1 + buflen;  // total number of consumed octets
 }
 
-void octet_string_format_text(la_vstring * const vstr, octet_string_t const * const ostring, int indent) {
+void octet_string_format_text(la_vstring *vstr, octet_string_t const *ostring, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(ostring != NULL);
 	ASSERT(indent >= 0);
@@ -183,7 +183,7 @@ void octet_string_format_text(la_vstring * const vstr, octet_string_t const * co
 	XFREE(h);
 }
 
-void octet_string_with_ascii_format_text(la_vstring * const vstr, octet_string_t const * const ostring, int indent) {
+void octet_string_with_ascii_format_text(la_vstring *vstr, octet_string_t const *ostring, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(ostring != NULL);
 	ASSERT(indent >= 0);
@@ -195,7 +195,7 @@ void octet_string_with_ascii_format_text(la_vstring * const vstr, octet_string_t
 	XFREE(ascii);
 }
 
-void octet_string_as_ascii_format_text(la_vstring * const vstr, octet_string_t const * const ostring, int indent) {
+void octet_string_as_ascii_format_text(la_vstring *vstr, octet_string_t const *ostring, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(ostring != NULL);
 	ASSERT(indent >= 0);
@@ -209,8 +209,8 @@ void octet_string_as_ascii_format_text(la_vstring * const vstr, octet_string_t c
 	XFREE(replaced);
 }
 
-void octet_string_as_ascii_format_json(la_vstring * const vstr, char const * const key,
-		octet_string_t const * const ostring) {
+void octet_string_as_ascii_format_json(la_vstring *vstr, char const *key,
+		octet_string_t const *ostring) {
 	ASSERT(vstr != NULL);
 	ASSERT(ostring != NULL);
 
@@ -219,7 +219,7 @@ void octet_string_as_ascii_format_json(la_vstring * const vstr, char const * con
 	XFREE(replaced);
 }
 
-octet_string_t *octet_string_copy(octet_string_t const * const ostring) {
+octet_string_t *octet_string_copy(octet_string_t const *ostring) {
 	ASSERT(ostring != NULL);
 	NEW(octet_string_t, copy);
 	copy->len = ostring->len;
@@ -331,12 +331,12 @@ void append_hexdump_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int
 // la_proto_node routines for unknown protocols
 // which are to be serialized as octet string (hex dump or hex string)
 
-static void unknown_proto_format_text(la_vstring * const vstr, void const * const data, int indent) {
+static void unknown_proto_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data != NULL);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(ostring, octet_string_t *, data);
+	CAST_PTR(ostring, octet_string_t const *, data);
 	// fmt_hexstring also checks this conditon, but when it hits, it prints "empty" or "none",
 	// which we want to avoid here
 	if(ostring->buf == NULL || ostring->len == 0) {
@@ -347,7 +347,7 @@ static void unknown_proto_format_text(la_vstring * const vstr, void const * cons
 	EOL(vstr);
 }
 
-static void unknown_proto_format_json(la_vstring * const vstr, void const * const data) {
+static void unknown_proto_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data != NULL);
 

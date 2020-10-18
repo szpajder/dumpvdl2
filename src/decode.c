@@ -98,7 +98,7 @@ static uint32_t const synd_weight[1<<HDRFECLEN] = {
 	0, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1
 };
 
-uint32_t parity(uint32_t v) {
+static int32_t parity(uint32_t v) {
 	uint32_t parity = 0;
 	while (v) {
 		parity = !parity;
@@ -107,7 +107,7 @@ uint32_t parity(uint32_t v) {
 	return parity;
 }
 
-uint32_t decode_header(uint32_t * const r) {
+static uint32_t decode_header(uint32_t *r) {
 	uint32_t syndrome = 0u, row = 0u;
 	int i;
 	for(i = 0; i < HDRFECLEN; i++) {
@@ -120,7 +120,7 @@ uint32_t decode_header(uint32_t * const r) {
 	return syndrome;
 }
 
-int get_fec_octetcount(uint32_t len) {
+static int get_fec_octetcount(uint32_t len) {
 	if(len < 3)
 		return 0;
 	else if(len < 31)
@@ -169,9 +169,9 @@ void avlc_decoder_queue_push(vdl2_msg_metadata *metadata, octet_string_t *frame,
 	g_async_queue_push(avlc_decoder_queue, qentry);
 }
 
-static void decode_frame(vdl2_channel_t const *const v,
-		int const frame_num, uint8_t *buf,
-		size_t const len) {
+static void decode_frame(vdl2_channel_t const *v,
+		int frame_num, uint8_t *buf,
+		size_t len) {
 	NEW(vdl2_msg_metadata, metadata);
 	metadata->version = 1;
 	metadata->station_id = Config.station_id;

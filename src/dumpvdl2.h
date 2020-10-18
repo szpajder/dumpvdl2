@@ -355,10 +355,10 @@ typedef struct {
 
 // bitstream.c
 bitstream_t *bitstream_init(uint32_t len);
-int bitstream_append_msbfirst(bitstream_t *bs, const uint8_t *v, const uint32_t numbytes, const uint32_t numbits);
-int bitstream_append_lsbfirst(bitstream_t *bs, const uint8_t *bytes, const uint32_t numbytes, const uint32_t numbits);
-int bitstream_read_lsbfirst(bitstream_t *bs, uint8_t *bytes, const uint32_t numbytes, const uint32_t numbits);
-int bitstream_read_word_msbfirst(bitstream_t *bs, uint32_t *ret, const uint32_t numbits);
+int bitstream_append_msbfirst(bitstream_t *bs, uint8_t const *bytes, uint32_t numbytes, uint32_t numbits);
+int bitstream_append_lsbfirst(bitstream_t *bs, uint8_t const *bytes, uint32_t numbytes, uint32_t numbits);
+int bitstream_read_lsbfirst(bitstream_t *bs, uint8_t *bytes, uint32_t numbytes, uint32_t numbits);
+int bitstream_read_word_msbfirst(bitstream_t *bs, uint32_t *ret, uint32_t numbits);
 int bitstream_copy_next_frame(bitstream_t *src, bitstream_t *dst);
 void bitstream_descramble(bitstream_t *bs, uint16_t *lfsr);
 void bitstream_reset(bitstream_t *bs);
@@ -392,12 +392,12 @@ int input_raw_frames_file_process(char const *file);
 // statsd.c
 #ifdef WITH_STATSD
 int statsd_initialize(char *statsd_addr);
-void statsd_initialize_counters_per_channel(uint32_t const freq);
+void statsd_initialize_counters_per_channel(uint32_t freq);
 void statsd_initialize_counters_per_msgdir();
 void statsd_initialize_counter_set(char **counter_set);
-void statsd_counter_per_channel_increment(uint32_t const freq, char *counter);
-void statsd_timing_delta_per_channel_send(uint32_t const freq, char *timer, struct timeval const ts);
-void statsd_counter_per_msgdir_increment(la_msg_dir const msg_dir, char *counter);
+void statsd_counter_per_channel_increment(uint32_t freq, char *counter);
+void statsd_timing_delta_per_channel_send(uint32_t freq, char *timer, struct timeval ts);
+void statsd_counter_per_msgdir_increment(la_msg_dir msg_dir, char *counter);
 void statsd_counter_increment(char *counter);
 void statsd_gauge_set(char *gauge, size_t value);
 #define statsd_increment_per_channel(freq, counter) statsd_counter_per_channel_increment(freq, counter)
@@ -424,22 +424,22 @@ typedef struct {
 } dict;
 
 extern la_type_descriptor const proto_DEF_unknown;
-void *xcalloc(size_t nmemb, size_t size, const char *file, const int line, const char *func);
-void *xrealloc(void *ptr, size_t size, const char *file, const int line, const char *func);
-void *dict_search(const dict *list, int id);
-uint16_t extract_uint16_msbfirst(uint8_t const * const data);
-uint32_t extract_uint32_msbfirst(uint8_t const * const data);
-void bitfield_format_text(la_vstring *vstr, uint8_t *buf, size_t len, dict const *d);
-void bitfield_format_json(la_vstring *vstr, char const * const key, uint8_t *buf, size_t len, dict const *d);
+void *xcalloc(size_t nmemb, size_t size, char const *file, int line, char const *func);
+void *xrealloc(void *ptr, size_t size, char const *file, int line, char const *func);
+void *dict_search(dict const *list, int id);
+uint16_t extract_uint16_msbfirst(uint8_t const *data);
+uint32_t extract_uint32_msbfirst(uint8_t const *data);
+void bitfield_format_text(la_vstring *vstr, uint8_t const *buf, size_t len, dict const *d);
+void bitfield_format_json(la_vstring *vstr, char const *key, uint8_t const *buf, size_t len, dict const *d);
 
 octet_string_t *octet_string_new(void *buf, size_t len);
-octet_string_t *octet_string_copy(octet_string_t const * const ostring);
+octet_string_t *octet_string_copy(octet_string_t const *ostring);
 int octet_string_parse(uint8_t *buf, size_t len, octet_string_t *result);
-void octet_string_format_text(la_vstring * const vstr, octet_string_t const * const ostring, int indent);
-void octet_string_as_ascii_format_text(la_vstring * const vstr, octet_string_t const * const ostring, int indent);
-void octet_string_as_ascii_format_json(la_vstring * const vstr, char const * const key,
-		octet_string_t const * const ostring);
-void octet_string_with_ascii_format_text(la_vstring * const vstr, octet_string_t const * const ostring, int indent);
+void octet_string_format_text(la_vstring *vstr, octet_string_t const *ostring, int indent);
+void octet_string_as_ascii_format_text(la_vstring *vstr, octet_string_t const *ostring, int indent);
+void octet_string_as_ascii_format_json(la_vstring *vstr, char const *key,
+		octet_string_t const *ostring);
+void octet_string_with_ascii_format_text(la_vstring *vstr, octet_string_t const *ostring, int indent);
 void octet_string_destroy(octet_string_t *ostring);
 
 size_t slurp_hexstring(char* string, uint8_t **buf);

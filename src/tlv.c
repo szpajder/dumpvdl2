@@ -54,7 +54,7 @@ la_list *tlv_list_append(la_list *head, uint8_t typecode, tlv_type_descriptor_t 
 	return la_list_append(head, tag);
 }
 
-tlv_tag_t *tlv_list_search(la_list *ptr, uint8_t const typecode) {
+tlv_tag_t *tlv_list_search(la_list *ptr, uint8_t typecode) {
 	while(ptr != NULL) {
 		if(ptr->data != NULL) {
 			CAST_PTR(tag, tlv_tag_t *, ptr->data);
@@ -88,7 +88,7 @@ reparse:
 	return tlv_list_append(list, typecode, td, parsed);
 }
 
-la_list *tlv_parse(uint8_t *buf, size_t len, dict const *tag_table, size_t const len_octets) {
+la_list *tlv_parse(uint8_t *buf, size_t len, dict const *tag_table, size_t len_octets) {
 	ASSERT(buf != NULL);
 	ASSERT(tag_table != NULL);
 	la_list *head = NULL;
@@ -155,7 +155,7 @@ static void tlv_tag_output_json(tlv_tag_t const *t, void *ctx) {
 	}
 }
 
-void tlv_list_format_text(la_vstring * const vstr, la_list *tlv_list, int indent) {
+void tlv_list_format_text(la_vstring *vstr, la_list *tlv_list, int indent) {
 	ASSERT(vstr);
 	ASSERT(indent >= 0);
 	if(tlv_list == NULL) {
@@ -168,7 +168,7 @@ void tlv_list_format_text(la_vstring * const vstr, la_list *tlv_list, int indent
 	la_list_foreach(tlv_list, tlv_tag_output_text, &ctx);
 }
 
-void tlv_list_format_json(la_vstring * const vstr, char const * const key, la_list *tlv_list) {
+void tlv_list_format_json(la_vstring *vstr, char const *key, la_list *tlv_list) {
 	ASSERT(vstr);
 	if(tlv_list == NULL) {
 		return;
@@ -217,7 +217,7 @@ TLV_FORMATTER(tlv_octet_string_as_ascii_format_json) {
 }
 
 TLV_FORMATTER(tlv_single_octet_format_text) {
-	CAST_PTR(octet, octet_string_t *, data);
+	CAST_PTR(octet, octet_string_t const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
 	// We expect this octet string to have a length of 1 - if this is the case,
 	// print it in hex with 0x prefix. Otherwise print is as octet string
@@ -292,7 +292,7 @@ TLV_PARSER(tlv_unknown_tag_parse) {
 
 TLV_FORMATTER(tlv_unknown_tag_format_text) {
 	UNUSED(label);
-	CAST_PTR(t, tlv_unparsed_tag_t *, data);
+	CAST_PTR(t, tlv_unparsed_tag_t const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "-- Unknown TLV (code: 0x%02x): ", t->typecode);
 	octet_string_format_text(ctx->vstr, t->data, 0);
 	EOL(ctx->vstr);
@@ -318,7 +318,7 @@ tlv_type_descriptor_t tlv_DEF_unknown_tag = {
 
 TLV_FORMATTER(tlv_unparseable_tag_format_text) {
 	UNUSED(label);
-	CAST_PTR(t, tlv_unparsed_tag_t *, data);
+	CAST_PTR(t, tlv_unparsed_tag_t const *, data);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "-- Unparseable TLV (code: 0x%02x): ", t->typecode);
 	octet_string_format_text(ctx->vstr, t->data, 0);
 	EOL(ctx->vstr);
@@ -326,7 +326,7 @@ TLV_FORMATTER(tlv_unparseable_tag_format_text) {
 
 TLV_FORMATTER(tlv_unparseable_tag_format_json) {
 	UNUSED(label);
-	CAST_PTR(t, tlv_unparsed_tag_t *, data);
+	CAST_PTR(t, tlv_unparsed_tag_t const *, data);
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "typecode",  t->typecode);
 	la_json_append_octet_string(ctx->vstr, "data", t->data->buf, t->data->len);

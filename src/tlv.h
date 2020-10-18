@@ -30,16 +30,16 @@ typedef struct {
 } tlv_formatter_ctx_t;
 
 typedef void *(tlv_parser_f)(uint8_t typecode, uint8_t *buf, size_t len);
-typedef void(tlv_formatter_f)(tlv_formatter_ctx_t * const ctx, char const * const label, void const * const data);
+typedef void(tlv_formatter_f)(tlv_formatter_ctx_t *ctx, char const *label, void const *data);
 typedef void(tlv_destructor_f)(void *data);
 
 #define TLV_PARSER(x) void *(x)(uint8_t typecode, uint8_t *buf, size_t len)
-#define TLV_FORMATTER(x) void (x)(tlv_formatter_ctx_t * const ctx, char const * const label, void const * const data)
+#define TLV_FORMATTER(x) void (x)(tlv_formatter_ctx_t *ctx, char const *label, void const *data)
 #define TLV_DESTRUCTOR(x) void (x)(void *data)
 
 typedef struct {
-	char const * const label;
-	char const * const json_key;
+	char const *label;
+	char const *json_key;
 	tlv_parser_f *parse;
 	tlv_formatter_f *format_text;
 	tlv_formatter_f *format_json;
@@ -58,12 +58,12 @@ typedef struct {
 
 // tlv.c
 // Generic TLV API
-la_list *tlv_parse(uint8_t *buf, size_t len, dict const *tag_table, size_t const len_octets);
+la_list *tlv_parse(uint8_t *buf, size_t len, dict const *tag_table, size_t len_octets);
 la_list *tlv_single_tag_parse(uint8_t typecode, uint8_t *buf, size_t tag_len, dict const *tag_table, la_list *list);
-tlv_tag_t *tlv_list_search(la_list *ptr, uint8_t const typecode);
+tlv_tag_t *tlv_list_search(la_list *ptr, uint8_t typecode);
 la_list *tlv_list_append(la_list *head, uint8_t typecode, tlv_type_descriptor_t *td, void *data);
-void tlv_list_format_text(la_vstring * const vstr, la_list *tlv_list, int indent);
-void tlv_list_format_json(la_vstring * const vstr, char const * const key, la_list *tlv_list);
+void tlv_list_format_text(la_vstring *vstr, la_list *tlv_list, int indent);
+void tlv_list_format_json(la_vstring *vstr, char const *key, la_list *tlv_list);
 void tlv_list_destroy(la_list *p);
 
 // Parsers and formatters for common data types

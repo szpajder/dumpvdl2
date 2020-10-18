@@ -179,7 +179,6 @@ static dict const clnp_options[] = {
 	}
 };
 
-
 la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	NEW(clnp_pdu_t, pdu);
 	la_proto_node *node = la_proto_node_new();
@@ -195,7 +194,7 @@ la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		goto fail;
 	}
 
-	CAST_PTR(hdr, clnp_hdr_t *, ptr);
+	clnp_hdr_t *hdr = (clnp_hdr_t *)ptr;
 	pdu->hdr = hdr;
 	if(hdr->len == 255) {
 		debug_print(D_PROTO, "invalid length indicator - value 255 is reserved\n");
@@ -314,7 +313,7 @@ static dict const clnp_error_codes[] = {
 };
 
 TLV_FORMATTER(clnp_error_code_format_text) {
-	CAST_PTR(e, clnp_error_t *, data);
+	CAST_PTR(e, clnp_error_t const *, data);
 	char *str = dict_search(clnp_error_codes, e->code);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %u (%s)", label, e->code, str ? str : "unknown");
 	if(e->erroneous_octet != 0) {
@@ -324,7 +323,7 @@ TLV_FORMATTER(clnp_error_code_format_text) {
 }
 
 TLV_FORMATTER(clnp_error_code_format_json) {
-	CAST_PTR(e, clnp_error_t *, data);
+	CAST_PTR(e, clnp_error_t const *, data);
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "error_code", e->code);
 	char *str = dict_search(clnp_error_codes, e->code);
@@ -356,12 +355,12 @@ static dict const clnp_pdu_types[] = {
 	{ .id = 0, .val = NULL }
 };
 
-void clnp_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
+void clnp_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(pdu, clnp_pdu_t *, data);
+	CAST_PTR(pdu, clnp_pdu_t const *, data);
 	if(pdu->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable X.233 CLNP PDU\n");
 		return;
@@ -407,11 +406,11 @@ void clnp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 	}
 }
 
-void clnp_pdu_format_json(la_vstring * const vstr, void const * const data) {
+void clnp_pdu_format_json(la_vstring * vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(pdu, clnp_pdu_t *, data);
+	CAST_PTR(pdu, clnp_pdu_t const *, data);
 	la_json_append_bool(vstr, "err", pdu->err);
 	if(pdu->err == true) {
 		return;
@@ -481,7 +480,7 @@ la_proto_node *clnp_compressed_init_data_pdu_parse(uint8_t *buf, uint32_t len, u
 	}
 
 	uint32_t hdrlen = CLNP_COMPRESSED_INIT_MIN_LEN;
-	CAST_PTR(hdr, clnp_compressed_init_data_pdu_hdr_t *, buf);
+	clnp_compressed_init_data_pdu_hdr_t *hdr = (clnp_compressed_init_data_pdu_hdr_t *)buf;
 	pdu->hdr = hdr;
 	if(hdr->exp != 0) hdrlen += 1;  // EXP flag = 1 means localRef/B octet is present
 	if(hdr->type & 1) hdrlen += 2;  // odd PDU type means PDU identifier is present
@@ -516,12 +515,12 @@ fail:
 	return node;
 }
 
-void clnp_compressed_init_data_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
+void clnp_compressed_init_data_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(pdu, clnp_compressed_init_data_pdu_t *, data);
+	CAST_PTR(pdu, clnp_compressed_init_data_pdu_t const *, data);
 	if(pdu->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable X.233 CLNP compressed header PDU\n");
 		return;
@@ -535,11 +534,11 @@ void clnp_compressed_init_data_pdu_format_text(la_vstring * const vstr, void con
 	}
 }
 
-void clnp_compressed_init_data_pdu_format_json(la_vstring * const vstr, void const * const data) {
+void clnp_compressed_init_data_pdu_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(pdu, clnp_compressed_init_data_pdu_t *, data);
+	CAST_PTR(pdu, clnp_compressed_init_data_pdu_t const *, data);
 	la_json_append_bool(vstr, "err", pdu->err);
 	if(pdu->err == true) {
 		return;

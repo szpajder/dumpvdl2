@@ -125,19 +125,19 @@ typedef struct {
 // output queue entry flags
 #define OUT_FLAG_ORDERED_SHUTDOWN (1 << 0)
 
-fmtr_input_type_t fmtr_input_type_from_string(char const * const str);
-fmtr_descriptor_t *fmtr_descriptor_get(output_format_t const fmt);
+fmtr_input_type_t fmtr_input_type_from_string(char const *str);
+fmtr_descriptor_t *fmtr_descriptor_get(output_format_t fmt);
 fmtr_instance_t *fmtr_instance_new(fmtr_descriptor_t *fmttd, fmtr_input_type_t intype);
 
-output_format_t output_format_from_string(char const * const str);
-output_descriptor_t *output_descriptor_get(char const * const output_name);
+output_format_t output_format_from_string(char const *str);
+output_descriptor_t *output_descriptor_get(char const *output_name);
 output_instance_t *output_instance_new(output_descriptor_t *outtd, output_format_t format, void *priv);
-output_qentry_t *output_qentry_copy(output_qentry_t const * const q);
+output_qentry_t *output_qentry_copy(output_qentry_t const *q);
 void output_qentry_destroy(output_qentry_t *q);
 void output_queue_drain(GAsyncQueue *q);
 void *output_thread(void *arg);
 
-vdl2_msg_metadata *vdl2_msg_metadata_copy(vdl2_msg_metadata const * const m);
+vdl2_msg_metadata *vdl2_msg_metadata_copy(vdl2_msg_metadata const *m);
 void vdl2_msg_metadata_destroy(vdl2_msg_metadata *m);
 
 void output_usage();
