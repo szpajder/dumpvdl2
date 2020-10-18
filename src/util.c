@@ -238,35 +238,6 @@ void octet_string_destroy(octet_string_t *ostring) {
 	XFREE(ostring);
 }
 
-size_t slurp_hexstring(char* string, uint8_t **buf) {
-	if(string == NULL)
-		return 0;
-	size_t slen = strlen(string);
-	if(slen & 1)
-		slen--;
-	size_t dlen = slen / 2;
-	if(dlen == 0)
-		return 0;
-	*buf = XCALLOC(dlen, sizeof(uint8_t));
-
-	for(size_t i = 0; i < slen; i++) {
-		char c = string[i];
-		int value = 0;
-		if(c >= '0' && c <= '9') {
-			value = (c - '0');
-		} else if (c >= 'A' && c <= 'F') {
-			value = (10 + (c - 'A'));
-		} else if (c >= 'a' && c <= 'f') {
-			value = (10 + (c - 'a'));
-		} else {
-			debug_print(D_PROTO, "stopped at invalid char %u at pos %zu\n", c, i);
-			return i/2;
-		}
-		(*buf)[(i/2)] |= value << (((i + 1) % 2) * 4);
-	}
-	return dlen;
-}
-
 char *hexdump(uint8_t *data, size_t len) {
 	static const char hex[] = "0123456789abcdef";
 	if(data == NULL) return strdup("<undef>");

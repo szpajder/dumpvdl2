@@ -443,7 +443,6 @@ void octet_string_as_ascii_format_json(la_vstring *vstr, char const *key,
 void octet_string_with_ascii_format_text(la_vstring *vstr, octet_string_t const *ostring, int indent);
 void octet_string_destroy(octet_string_t *ostring);
 
-size_t slurp_hexstring(char* string, uint8_t **buf);
 char *hexdump(uint8_t *data, size_t len);
 void append_hexdump_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int indent);
 la_proto_node *unknown_proto_pdu_new(void *buf, size_t len);
