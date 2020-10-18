@@ -40,7 +40,7 @@ char const *kvargs_get_errstr(int err) {
 		{ .id = KV_ERR_NO_VALUE,  .val = "no value given" },
 		{ .id = 0,                .val = NULL }
 	};
-	char *ret = dict_search(kvargs_error_strings, err);
+	char const *ret = dict_search(kvargs_error_strings, err);
 	return (ret != NULL ? ret : "unknown error");
 }
 

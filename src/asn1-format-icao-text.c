@@ -573,7 +573,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_ATCUplinkMsgElementId_as_text) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_Code_as_text) {
-	CAST_PTR(code, Code_t const *, p.sptr);
+	Code_t const *code = p.sptr;
 	long **cptr = code->list.array;
 	LA_ISPRINTF(p.vstr, p.indent, "%s: %ld%ld%ld%ld\n",
 			p.label,
@@ -585,7 +585,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_Code_as_text) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_DateTime_as_text) {
-	CAST_PTR(dtg, DateTime_t const *, p.sptr);
+	DateTime_t const *dtg = p.sptr;
 	Date_t const *d = &dtg->date;
 	Time_t const *t = &dtg->time;
 	LA_ISPRINTF(p.vstr, p.indent, "%s: %04ld-%02ld-%02ld %02ld:%02ld\n", p.label,
@@ -594,7 +594,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_DateTime_as_text) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_DateTimeGroup_as_text) {
-	CAST_PTR(dtg, DateTimeGroup_t const *, p.sptr);
+	DateTimeGroup_t const *dtg = p.sptr;
 	Date_t const *d = &dtg->date;
 	Timehhmmss_t const *t = &dtg->timehhmmss;
 	LA_ISPRINTF(p.vstr, p.indent, "%s: %04ld-%02ld-%02ld %02ld:%02ld:%02ld\n", p.label,
@@ -603,12 +603,12 @@ static ASN1_FORMATTER_FUN_T(asn1_format_DateTimeGroup_as_text) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_Time_as_text) {
-	CAST_PTR(t, Time_t const *, p.sptr);
+	Time_t const *t = p.sptr;
 	LA_ISPRINTF(p.vstr, p.indent, "%s: %02ld:%02ld\n", p.label, t->hours, t->minutes);
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_Latitude_as_text) {
-	CAST_PTR(lat, Latitude_t const *, p.sptr);
+	Latitude_t const *lat = p.sptr;
 	long const ldir = lat->latitudeDirection;
 	char const *ldir_name = value2enum(&asn_DEF_LatitudeDirection, ldir);
 	switch(lat->latitudeType.present) {
@@ -644,7 +644,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_Latitude_as_text) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_Longitude_as_text) {
-	CAST_PTR(lon, Longitude_t const *, p.sptr);
+	Longitude_t const *lon = p.sptr;
 	long const ldir = lon->longitudeDirection;
 	char const *ldir_name = value2enum(&asn_DEF_LongitudeDirection, ldir);
 	switch(lon->longitudeType.present) {
@@ -748,7 +748,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_Meters_as_text) {
 // unnecessary overengineering.  Handling all values in a single routine is
 // simpler, albeit less elegant at first glance.
 static ASN1_FORMATTER_FUN_T(asn1_format_RejectDetails_as_text) {
-	CAST_PTR(det, RejectDetails_t const *, p.sptr);
+	RejectDetails_t const *det = p.sptr;
 	if(p.label != NULL) {
 		LA_ISPRINTF(p.vstr, p.indent, "%s: ", p.label);
 	}
@@ -784,7 +784,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_RejectDetails_as_text) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_ReportingRate_as_text) {
-	CAST_PTR(rate, ReportingRate_t const *, p.sptr);
+	ReportingRate_t const *rate = p.sptr;
 	switch(rate->present) {
 		case ReportingRate_PR_reporting_time_seconds_scale:
 			p.sptr = &rate->choice.reporting_time_seconds_scale;
@@ -840,7 +840,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_VerticalRateMetric_as_text) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_LongTsap_as_text) {
-	CAST_PTR(tsap, LongTsap_t const *, p.sptr);
+	LongTsap_t const *tsap = p.sptr;
 	GByteArray *tmparray = g_byte_array_new();
 	tmparray = g_byte_array_append(tmparray, tsap->rDP.buf, tsap->rDP.size);
 	tmparray = _stringify_ShortTsap(tmparray, &tsap->shortTsap);
@@ -854,7 +854,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_LongTsap_as_text) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_ShortTsap_as_text) {
-	CAST_PTR(tsap, ShortTsap_t const *, p.sptr);
+	ShortTsap_t const *tsap = p.sptr;
 	GByteArray *tmparray = g_byte_array_new();
 	tmparray = _stringify_ShortTsap(tmparray, tsap);
 	LA_ISPRINTF(p.vstr, p.indent, "%s: ", p.label);
@@ -866,7 +866,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_ShortTsap_as_text) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_UnitName_as_text) {
-	CAST_PTR(un, UnitName_t const *, p.sptr);
+	UnitName_t const *un = p.sptr;
 	char *fdes = XCALLOC(un->facilityDesignation.size + 1, sizeof(char));
 	snprintf(fdes, un->facilityDesignation.size + 1, "%s", un->facilityDesignation.buf);
 	char *fname = NULL;
@@ -883,7 +883,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_UnitName_as_text) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_ADSv2DateTimeGroup_as_text) {
-	CAST_PTR(dtg, ADSv2DateTimeGroup_t const *, p.sptr);
+	ADSv2DateTimeGroup_t const *dtg = p.sptr;
 	Date_t const *d = &dtg->date;
 	Timesec_t const *t = &dtg->time;
 	LA_ISPRINTF(p.vstr, p.indent, "%s: %04ld-%02ld-%02ld %02ld:%02ld:%02ld\n", p.label,
@@ -892,7 +892,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_ADSv2DateTimeGroup_as_text) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_EstimatedPositionUncertainty_as_text) {
-	CAST_PTR(epu, EstimatedPositionUncertainty_t const *, p.sptr);
+	EstimatedPositionUncertainty_t const *epu = p.sptr;
 	if(*epu == 9900) {
 		LA_ISPRINTF(p.vstr, p.indent, "%s: complete-loss\n", p.label);
 	} else {
@@ -901,7 +901,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_EstimatedPositionUncertainty_as_text) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_ADSv2Latitude_as_text) {
-	CAST_PTR(lat, ADSv2Latitude_t const *, p.sptr);
+	ADSv2Latitude_t const *lat = p.sptr;
 	long const ldir = lat->direction;
 	char const *ldir_name = value2enum(&asn_DEF_LatitudeDirection, ldir);
 	LA_ISPRINTF(p.vstr, p.indent, "%s:  %02ld %02ld' %04.1f\" %s\n",
@@ -914,7 +914,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_ADSv2Latitude_as_text) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_ADSv2Longitude_as_text) {
-	CAST_PTR(lon, ADSv2Longitude_t const *, p.sptr);
+	ADSv2Longitude_t const *lon = p.sptr;
 	long const ldir = lon->direction;
 	char const *ldir_name = value2enum(&asn_DEF_LongitudeDirection, ldir);
 	LA_ISPRINTF(p.vstr, p.indent, "%s: %03ld %02ld' %04.1f\" %s\n",
@@ -927,7 +927,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_ADSv2Longitude_as_text) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_ADSAircraftPDUs_as_text) {
-	CAST_PTR(apdus, ADSAircraftPDUs_t const *, p.sptr);
+	ADSAircraftPDUs_t const *apdus = p.sptr;
 	// Omit the timestamp for brevity, print the PDU only
 	p.td = &asn_DEF_ADSAircraftPDU;
 	p.sptr = &apdus->adsAircraftPdu;
@@ -963,7 +963,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_GrossMass_as_text) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_ADSGroundPDUs_as_text) {
-	CAST_PTR(apdus, ADSGroundPDUs_t const *, p.sptr);
+	ADSGroundPDUs_t const *apdus = p.sptr;
 	// Omit the timestamp for brevity, print the PDU only
 	p.td = &asn_DEF_ADSGroundPDU;
 	p.sptr = &apdus->adsGroundPdu;
@@ -1003,7 +1003,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_MachNumberTolerance_as_text) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_Modulus_as_text) {
-	CAST_PTR(val, long const *, p.sptr);
+	long const *val = p.sptr;
 	LA_ISPRINTF(p.vstr, p.indent, "%s: every %ld reports\n", p.label, *val);
 }
 
@@ -1032,7 +1032,7 @@ static ASN1_FORMATTER_FUN_T(asn1_format_TurnRadius_as_text) {
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_Timesec_as_text) {
-	CAST_PTR(t, Timesec_t const *, p.sptr);
+	Timesec_t const *t = p.sptr;
 	LA_ISPRINTF(p.vstr, p.indent, "%s: %02ld:%02ld:%02ld\n", p.label, t->hours, t->minutes, t->seconds);
 }
 

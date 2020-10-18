@@ -336,7 +336,7 @@ static void unknown_proto_format_text(la_vstring *vstr, void const *data, int in
 	ASSERT(data != NULL);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(ostring, octet_string_t const *, data);
+	octet_string_t const *ostring = data;
 	// fmt_hexstring also checks this conditon, but when it hits, it prints "empty" or "none",
 	// which we want to avoid here
 	if(ostring->buf == NULL || ostring->len == 0) {

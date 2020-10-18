@@ -49,7 +49,7 @@ typedef struct {
 // it is used as a temporary key allocator as well.
 void *x25_key_get(void const *msg) {
 	ASSERT(msg != NULL);
-	CAST_PTR(avlc_info, x25_avlc_info const *, msg);
+	x25_avlc_info const *avlc_info = msg;
 	NEW(x25_avlc_info, key);
 	key->src_addr = avlc_info->src_addr;
 	key->dst_addr = avlc_info->dst_addr;
@@ -62,13 +62,13 @@ void x25_key_destroy(void *ptr) {
 }
 
 uint32_t x25_key_hash(void const *key) {
-	CAST_PTR(k, x25_avlc_info const *, key);
+	x25_avlc_info const *k = key;
 	return k->src_addr * 11 + k->dst_addr * 23;
 }
 
 bool x25_key_compare(void const *key1, void const *key2) {
-	CAST_PTR(k1, x25_avlc_info const *, key1);
-	CAST_PTR(k2, x25_avlc_info const *, key2);
+	x25_avlc_info const *k1 = key1;
+	x25_avlc_info const *k2 = key2;
 	return k1->src_addr == k2->src_addr && k1->dst_addr == k2->dst_addr;
 }
 
@@ -96,11 +96,11 @@ void update_statsd_x25_metrics(la_reasm_status reasm_status, uint32_t msg_type) 
 		{ .id = LA_REASM_ARGS_INVALID, .val = "x25.reasm.invalid_args" },
 		{ .id = 0, .val = NULL }
 	};
-	CAST_PTR(metric, char *, dict_search(reasm_status_counter_names, reasm_status));
+	char const *metric = dict_search(reasm_status_counter_names, reasm_status);
 	if(metric == NULL) {
 		return;
 	}
-	statsd_increment_per_msgdir(msg_type & MSGFLT_SRC_AIR ? LA_MSG_DIR_AIR2GND : LA_MSG_DIR_GND2AIR, metric);
+	statsd_increment_per_msgdir(msg_type & MSGFLT_SRC_AIR ? LA_MSG_DIR_AIR2GND : LA_MSG_DIR_GND2AIR, (char *)metric);
 	// In case USE_STATSD is disabled
 	UNUSED(msg_type);
 }
@@ -137,7 +137,7 @@ TLV_FORMATTER(x25_pkt_size_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(pkt_size, x25_pkt_size_t const *, data);
+	x25_pkt_size_t const *pkt_size = data;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	ctx->indent++;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "From calling DTE: %u bytes\n", pkt_size->from_calling_dte);
@@ -149,7 +149,7 @@ TLV_FORMATTER(x25_pkt_size_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(pkt_size, x25_pkt_size_t const *, data);
+	x25_pkt_size_t const *pkt_size = data;
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "from_calling_dte", pkt_size->from_calling_dte);
 	la_json_append_long(ctx->vstr, "from_called_dte", pkt_size->from_called_dte);
@@ -184,7 +184,7 @@ TLV_FORMATTER(x25_win_size_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(win_size, x25_win_size_t const *, data);
+	x25_win_size_t const *win_size = data;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	ctx->indent++;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "From calling DTE: %u packets\n", win_size->from_calling_dte);
@@ -196,7 +196,7 @@ TLV_FORMATTER(x25_win_size_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(win_size, x25_win_size_t const *, data);
+	x25_win_size_t const *win_size = data;
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "from_calling_dte", win_size->from_calling_dte);
 	la_json_append_long(ctx->vstr, "from_called_dte", win_size->from_called_dte);
@@ -228,7 +228,7 @@ TLV_FORMATTER(x25_fast_select_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(fs, x25_fast_select_t const *, data);
+	x25_fast_select_t const *fs = data;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %srequested\n", label,
 			fs->requested ? "" : "not ");
 }
@@ -237,7 +237,7 @@ TLV_FORMATTER(x25_fast_select_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(fs, x25_fast_select_t const *, data);
+	x25_fast_select_t const *fs = data;
 	la_json_append_bool(ctx->vstr, label, fs->requested);
 }
 
@@ -388,7 +388,7 @@ void sndcf_error_report_format_text(la_vstring *vstr, void const *data, int inde
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(rpt, sndcf_err_rpt_t const *, data);
+	sndcf_err_rpt_t const *rpt = data;
 	if(rpt->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable SNDCF Error Report\n");
 		return;
@@ -406,7 +406,7 @@ void sndcf_error_report_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(rpt, sndcf_err_rpt_t const *, data);
+	sndcf_err_rpt_t const *rpt = data;
 	la_json_append_bool(vstr, "err", rpt->err);
 	if(rpt->err == true) {
 		return;
@@ -908,12 +908,12 @@ static void x25_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(pkt, x25_pkt_t const *, data);
+	x25_pkt_t const *pkt = data;
 	if(pkt->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable X.25 packet\n");
 		return;
 	}
-	CAST_PTR(name, char *, dict_search(x25_pkttype_names, pkt->type));
+	char const *name = dict_search(x25_pkttype_names, pkt->type);
 	LA_ISPRINTF(vstr, indent, "X.25 %s: grp: %u chan: %u", name, pkt->hdr->chan_group, pkt->hdr->chan_num);
 	if(pkt->addr_block_present) {
 		char *calling = fmt_x25_addr(pkt->calling.addr, pkt->calling.len);
@@ -955,12 +955,12 @@ static void x25_format_text(la_vstring *vstr, void const *data, int indent) {
 			break;
 	}
 	if(cause_dict != NULL) {
-		CAST_PTR(clr_cause, char *, dict_search(cause_dict, pkt->clr_cause));
+		char const *clr_cause = dict_search(cause_dict, pkt->clr_cause);
 		LA_ISPRINTF(vstr, indent, "Cause: 0x%02x (%s)\n", pkt->clr_cause,
 				clr_cause ? clr_cause : "unknown");
 	}
 	if(pkt->diag_code_present) {
-		CAST_PTR(diag_code, char *, dict_search(x25_diag_codes, pkt->diag_code));
+		char const *diag_code = dict_search(x25_diag_codes, pkt->diag_code);
 		LA_ISPRINTF(vstr, indent, "Diagnostic code: 0x%02x (%s)\n", pkt->diag_code,
 				diag_code ? diag_code : "unknown");
 	}
@@ -975,13 +975,13 @@ static void x25_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(pkt, x25_pkt_t const *, data);
+	x25_pkt_t const *pkt = data;
 	la_json_append_bool(vstr, "err", pkt->err);
 	if(pkt->err == true) {
 		return;
 	}
 	la_json_append_long(vstr, "pkt_type", pkt->type);
-	char *name = dict_search(x25_pkttype_names, pkt->type);
+	char const *name = dict_search(x25_pkttype_names, pkt->type);
 	JSON_APPEND_STRING(vstr, "pkt_type_name", name);
 	la_json_append_long(vstr, "chan_group", pkt->hdr->chan_group);
 	la_json_append_long(vstr, "chan_num", pkt->hdr->chan_num);
@@ -1024,12 +1024,12 @@ static void x25_format_json(la_vstring *vstr, void const *data) {
 	}
 	if(cause_dict != NULL) {
 		la_json_append_long(vstr, "clear_cause", pkt->clr_cause);
-		char *clr_cause = dict_search(cause_dict, pkt->clr_cause);
+		char const *clr_cause = dict_search(cause_dict, pkt->clr_cause);
 		JSON_APPEND_STRING(vstr, "clear_cause_descr", clr_cause);
 	}
 	if(pkt->diag_code_present) {
 		la_json_append_long(vstr, "diag_code", pkt->diag_code);
-		char *diag_code = dict_search(x25_diag_codes, pkt->diag_code);
+		char const *diag_code = dict_search(x25_diag_codes, pkt->diag_code);
 		JSON_APPEND_STRING(vstr, "diag_code_descr", diag_code);
 	}
 	if(pkt->type == X25_DIAG && pkt->diag_data.buf != NULL) {
@@ -1042,7 +1042,7 @@ static void x25_destroy(void *data) {
 	if(data == NULL) {
 		return;
 	}
-	CAST_PTR(pkt, x25_pkt_t *, data);
+	x25_pkt_t *pkt = data;
 	if(pkt->facilities != NULL) {
 		tlv_list_destroy(pkt->facilities);
 		pkt->facilities = NULL;

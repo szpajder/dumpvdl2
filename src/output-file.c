@@ -115,7 +115,7 @@ static int out_file_open(out_file_ctx_t *self) {
 
 static int out_file_init(void *selfptr) {
 	ASSERT(selfptr != NULL);
-	CAST_PTR(self, out_file_ctx_t *, selfptr);
+	out_file_ctx_t *self = selfptr;
 	if(!strcmp(self->filename_prefix, "-")) {
 		self->fh = stdout;
 		self->rotate = ROT_NONE;
@@ -194,7 +194,7 @@ static void out_file_produce_binary(out_file_ctx_t *self, vdl2_msg_metadata *met
 
 static int out_file_produce(void *selfptr, output_format_t format, vdl2_msg_metadata *metadata, octet_string_t *msg) {
 	ASSERT(selfptr != NULL);
-	CAST_PTR(self, out_file_ctx_t *, selfptr);
+	out_file_ctx_t *self = selfptr;
 	if(self->rotate != ROT_NONE && out_file_rotate(self) < 0) {
 		return -1;
 	}
@@ -208,7 +208,7 @@ static int out_file_produce(void *selfptr, output_format_t format, vdl2_msg_meta
 
 static void out_file_handle_shutdown(void *selfptr) {
 	ASSERT(selfptr != NULL);
-	CAST_PTR(self, out_file_ctx_t *, selfptr);
+	out_file_ctx_t *self = selfptr;
 	fprintf(stderr, "output_file(%s): shutting down\n", self->filename_prefix);
 	if(self->fh != NULL) {
 		fclose(self->fh);
@@ -218,7 +218,7 @@ static void out_file_handle_shutdown(void *selfptr) {
 
 static void out_file_handle_failure(void *selfptr) {
 	ASSERT(selfptr != NULL);
-	CAST_PTR(self, out_file_ctx_t *, selfptr);
+	out_file_ctx_t *self = selfptr;
 	fprintf(stderr, "output_file: could not write to '%s', deactivating output\n",
 			self->filename_prefix);
 	if(self->fh != NULL) {

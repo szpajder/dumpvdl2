@@ -36,7 +36,7 @@ typedef struct {
 	int data_index;
 } sdrplay3_ctx_t;
 
-static char *get_hw_descr(int hw_id) {
+static char const *get_hw_descr(int hw_id) {
 	static dict const hw_descr[] = {
 		{ .id = SDRPLAY_RSP1_ID, .val = "RSP1" },
 		{ .id = SDRPLAY_RSP2_ID, .val = "RSP2" },
@@ -45,7 +45,7 @@ static char *get_hw_descr(int hw_id) {
 		{ .id = SDRPLAY_RSPdx_ID, .val = "RSPdx" },
 		{ .id = 0, .val = NULL }
 	};
-	char *ret = dict_search(hw_descr, hw_id);
+	char const *ret = dict_search(hw_descr, hw_id);
 	return ret ? ret : "<unknown>";
 };
 
@@ -55,7 +55,7 @@ static void sdrplay3_streamCallback(short *xi, short *xq, sdrplay_api_StreamCbPa
 	UNUSED(reset);
 	int i, j, count1, count2, new_buf_flag;
 	int end, input_index;
-	CAST_PTR(SDRPlay, sdrplay3_ctx_t *, cbContext);
+	sdrplay3_ctx_t *SDRPlay = cbContext;
 	if(numSamples == 0) {
 		return;
 	}
@@ -125,7 +125,7 @@ static void sdrplay3_eventCallback(sdrplay_api_EventT eventId, sdrplay_api_Tuner
 					 sdrplay_api_Overload_Detected)? "sdrplay_api_Overload_Detected":
 					"sdrplay_api_Overload_Corrected");
 			// Send update message to acknowledge power overload message received
-			CAST_PTR(ctx, sdrplay3_ctx_t *, cbContext);
+			sdrplay3_ctx_t *ctx = cbContext;
 			sdrplay_api_Update(ctx->dev, tuner, sdrplay_api_Update_Ctrl_OverloadMsgAck,
 					sdrplay_api_Update_Ext1_None);
 			break;

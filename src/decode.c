@@ -379,8 +379,8 @@ cleanup:
 static void output_queue_push(void *data, void *ctx) {
 	ASSERT(data != NULL);
 	ASSERT(ctx != NULL);
-	CAST_PTR(output, output_instance_t *, data);
-	CAST_PTR(qentry, output_qentry_t *, ctx);
+	output_instance_t *output = data;
+	output_qentry_t *qentry = ctx;
 
 	bool overflow = (Config.output_queue_hwm != OUTPUT_QUEUE_HWM_NONE &&
 			g_async_queue_length(output->ctx->q) >= Config.output_queue_hwm);
@@ -414,7 +414,7 @@ static void shutdown_outputs(la_list *fmtr_list) {
 
 void *avlc_decoder_thread(void *arg) {
 	ASSERT(arg != NULL);
-	CAST_PTR(fmtr_list, la_list *, arg);
+	la_list *fmtr_list = arg;
 	avlc_frame_qentry_t *q = NULL;
 	la_proto_node *root = NULL;
 	uint32_t msg_type = 0;
@@ -427,7 +427,7 @@ void *avlc_decoder_thread(void *arg) {
 		DEC_FAILURE
 	} decoding_status;
 	while(1) {
-		q = (avlc_frame_qentry_t *)g_async_queue_pop(avlc_decoder_queue);
+		q = g_async_queue_pop(avlc_decoder_queue);
 
 		if(q->flags & OUT_FLAG_ORDERED_SHUTDOWN) {
 			fprintf(stderr, "Shutting down decoder thread\n");
@@ -442,7 +442,7 @@ void *avlc_decoder_thread(void *arg) {
 		fmtr_instance_t *fmtr = NULL;
 		decoding_status = DEC_NOT_DONE;
 		for(la_list *p = fmtr_list; p != NULL; p = la_list_next(p)) {
-			fmtr = (fmtr_instance_t *)(p->data);
+			fmtr = p->data;
 			if(fmtr->intype == FMTR_INTYPE_DECODED_FRAME) {
 				// Decode the frame unless we've done it before
 				if(decoding_status == DEC_NOT_DONE) {

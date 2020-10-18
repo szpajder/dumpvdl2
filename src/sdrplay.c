@@ -80,7 +80,7 @@ static void sdrplay_streamCallback(short *xi, short *xq, unsigned int firstSampl
 	UNUSED(hwRemoved);
 	int i, j, count1, count2, new_buf_flag;
 	int end, input_index;
-	CAST_PTR(SDRPlay, sdrplay_ctx_t *, cbContext);
+	sdrplay_ctx_t *SDRPlay = cbContext;
 	if(numSamples == 0) {
 		return;
 	}

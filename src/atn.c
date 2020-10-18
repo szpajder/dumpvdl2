@@ -120,9 +120,9 @@ TLV_FORMATTER(atn_traffic_type_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(t, tag_atn_traffic_type_t const *, data);
-	CAST_PTR(type, char *, dict_search(atn_sec_tag_traffic_types, t->type));
-	CAST_PTR(category, char *, dict_search(atn_sec_tag_traffic_categories, t->category));
+	tag_atn_traffic_type_t const *t = data;
+	char const *type = dict_search(atn_sec_tag_traffic_types, t->type);
+	char const *category = dict_search(atn_sec_tag_traffic_categories, t->category);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	ctx->indent++;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "Type: %s\n", type ? type : "unknown");
@@ -136,9 +136,9 @@ TLV_FORMATTER(atn_traffic_type_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(t, tag_atn_traffic_type_t const *, data);
-	CAST_PTR(type, char *, dict_search(atn_sec_tag_traffic_types, t->type));
-	CAST_PTR(category, char *, dict_search(atn_sec_tag_traffic_categories, t->category));
+	tag_atn_traffic_type_t const *t = data;
+	char const *type = dict_search(atn_sec_tag_traffic_types, t->type);
+	char const *category = dict_search(atn_sec_tag_traffic_categories, t->category);
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "type_id", t->type);
 	JSON_APPEND_STRING(ctx->vstr, "type_name", type);
@@ -179,8 +179,8 @@ TLV_FORMATTER(atn_subnet_type_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(t, tag_subnet_type_t const *, data);
-	CAST_PTR(subnet, char *, dict_search(atn_subnet_types, t->subnet));
+	tag_subnet_type_t const *t = data;
+	char const *subnet = dict_search(atn_subnet_types, t->subnet);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	ctx->indent++;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "Subnet: %s\n", subnet ? subnet : "unknown");
@@ -198,8 +198,8 @@ TLV_FORMATTER(atn_subnet_type_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(t, tag_subnet_type_t const *, data);
-	CAST_PTR(subnet, char *, dict_search(atn_subnet_types, t->subnet));
+	tag_subnet_type_t const *t = data;
+	char const *subnet = dict_search(atn_subnet_types, t->subnet);
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "subnet_id", t->subnet);
 	la_json_append_string(ctx->vstr, "subnet_name", subnet);
@@ -213,7 +213,7 @@ TLV_FORMATTER(atn_supported_traffic_classes_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(t, uint8_t const *, data);
+	uint8_t const *t = data;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: ", label);
 	if((*t & ATSC_TRAFFIC_CLASSES_ALL) == ATSC_TRAFFIC_CLASSES_ALL) {
 		la_vstring_append_sprintf(ctx->vstr, "%s", "all");
@@ -226,7 +226,7 @@ TLV_FORMATTER(atn_supported_traffic_classes_format_text) {
 TLV_FORMATTER(atn_supported_traffic_classes_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
-	CAST_PTR(t, uint8_t const *, data);
+	uint8_t const *t = data;
 	bitfield_format_json(ctx->vstr, label, t, 1, atsc_traffic_classes);
 }
 
@@ -244,8 +244,8 @@ TLV_FORMATTER(atn_sec_class_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(t, uint8_t const *, data);
-	CAST_PTR(class, char *, dict_search(atn_security_classes, *t));
+	uint8_t const *t = data;
+	char const *class = dict_search(atn_security_classes, *t);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %s\n",
 			label, class ? class : "unassigned");
 }
@@ -254,8 +254,8 @@ TLV_FORMATTER(atn_sec_class_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(t, uint8_t const *, data);
-	CAST_PTR(class, char *, dict_search(atn_security_classes, *t));
+	uint8_t const *t = data;
+	char const *class = dict_search(atn_security_classes, *t);
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "class_id", *t);
 	la_json_append_string(ctx->vstr, "class_name", class);
@@ -408,7 +408,7 @@ TLV_FORMATTER(atn_sec_label_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(l, atn_sec_label_t const *, data);
+	atn_sec_label_t const *l = data;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "%s: ", "Reg ID");
 	octet_string_format_text(ctx->vstr, &l->sec_rid, 0);
@@ -424,7 +424,7 @@ TLV_FORMATTER(atn_sec_label_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(l, atn_sec_label_t const *, data);
+	atn_sec_label_t const *l = data;
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_octet_string(ctx->vstr, "reg_id", l->sec_rid.buf, l->sec_rid.len);
 	if(l->sec_info != NULL) {
@@ -437,7 +437,7 @@ TLV_DESTRUCTOR(atn_sec_label_destroy) {
 	if(data == NULL) {
 		return;
 	}
-	CAST_PTR(l, atn_sec_label_t *, data);
+	atn_sec_label_t *l = data;
 	tlv_list_destroy(l->sec_info);
 	XFREE(data);
 }

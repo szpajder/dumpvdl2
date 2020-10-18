@@ -191,12 +191,12 @@ void output_usage() {
 	fprintf(stderr, "where:\n");
 	fprintf(stderr, "\n%*s<what_to_output> specifies what data should be sent to the output:\n\n", IND(1), "");
 	for(dict const *p = fmtr_intype_names; p->val != NULL; p++) {
-		CAST_PTR(n, option_descr_t *, p->val);
+		option_descr_t *n = p->val;
 		describe_option(n->name, n->description, 2);
 	}
 	fprintf(stderr, "\n%*s<output_format> specifies how the output should be formatted:\n\n", IND(1), "");
 	for(dict const *p = fmtr_descriptors; p->val != NULL; p++) {
-		CAST_PTR(n, fmtr_descriptor_t *, p->val);
+		fmtr_descriptor_t *n = p->val;
 		describe_option(n->name, n->description, 2);
 	}
 	fprintf(stderr, "\n%*s<output_type> specifies the type of the output:\n\n", IND(1), "");
@@ -220,9 +220,9 @@ void output_usage() {
 
 void *output_thread(void *arg) {
 	ASSERT(arg != NULL);
-	CAST_PTR(oi, output_instance_t *, arg);
+	output_instance_t *oi = arg;
 	ASSERT(oi->ctx != NULL);
-	CAST_PTR(ctx, output_ctx_t *, oi->ctx);
+	output_ctx_t *ctx = oi->ctx;
 
 	if(oi->td->init != NULL) {
 		if(oi->td->init(ctx->priv) < 0) {

@@ -313,7 +313,7 @@ static void avlc_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(f, avlc_frame_t const *, data);
+	avlc_frame_t const *f = data;
 
 	if(Config.output_raw_frames == true && f->q->frame->len > 0) {
 		append_hexdump_with_indent(vstr, f->q->frame->buf, f->q->frame->len, indent+1);
@@ -416,7 +416,7 @@ static void avlc_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(f, avlc_frame_t const *, data);
+	avlc_frame_t const *f = data;
 	// Air/Ground bit applies to the src addr, but it resides in the dst address field
 	avlc_addr_format_as_json(vstr, "src", f->src, f->dst.a_addr.status);
 	avlc_addr_format_as_json(vstr, "dst", f->dst, -1);

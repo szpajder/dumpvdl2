@@ -313,8 +313,8 @@ static dict const clnp_error_codes[] = {
 };
 
 TLV_FORMATTER(clnp_error_code_format_text) {
-	CAST_PTR(e, clnp_error_t const *, data);
-	char *str = dict_search(clnp_error_codes, e->code);
+	clnp_error_t const *e = data;
+	char const *str = dict_search(clnp_error_codes, e->code);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %u (%s)", label, e->code, str ? str : "unknown");
 	if(e->erroneous_octet != 0) {
 		la_vstring_append_sprintf(ctx->vstr, ", erroneous octet value: 0x%02x", e->erroneous_octet);
@@ -323,10 +323,10 @@ TLV_FORMATTER(clnp_error_code_format_text) {
 }
 
 TLV_FORMATTER(clnp_error_code_format_json) {
-	CAST_PTR(e, clnp_error_t const *, data);
+	clnp_error_t const *e = data;
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "error_code", e->code);
-	char *str = dict_search(clnp_error_codes, e->code);
+	char const *str = dict_search(clnp_error_codes, e->code);
 	JSON_APPEND_STRING(ctx->vstr, "error_descr", str);
 	if(e->erroneous_octet != 0) {
 		la_json_append_long(ctx->vstr, "erroneous_octet", e->erroneous_octet);
@@ -360,12 +360,12 @@ void clnp_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(pdu, clnp_pdu_t const *, data);
+	clnp_pdu_t const *pdu = data;
 	if(pdu->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable X.233 CLNP PDU\n");
 		return;
 	}
-	char *pdu_type = dict_search(clnp_pdu_types, pdu->hdr->type);
+	char const *pdu_type = dict_search(clnp_pdu_types, pdu->hdr->type);
 	if(pdu_type != NULL) {
 		LA_ISPRINTF(vstr, indent, "X.233 CLNP %s:\n", pdu_type);
 	} else {
@@ -410,14 +410,14 @@ void clnp_pdu_format_json(la_vstring * vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(pdu, clnp_pdu_t const *, data);
+	clnp_pdu_t const *pdu = data;
 	la_json_append_bool(vstr, "err", pdu->err);
 	if(pdu->err == true) {
 		return;
 	}
 	la_json_append_bool(vstr, "compressed", false);
 	la_json_append_long(vstr, "pdu_type", pdu->hdr->type);
-	char *pdu_type = dict_search(clnp_pdu_types, pdu->hdr->type);
+	char const *pdu_type = dict_search(clnp_pdu_types, pdu->hdr->type);
 	JSON_APPEND_STRING(vstr, "pdu_type_name", pdu_type);
 	la_json_append_octet_string(vstr, "src_nsap", pdu->src_nsap.buf, pdu->src_nsap.len);
 	la_json_append_octet_string(vstr, "dst_nsap", pdu->dst_nsap.buf, pdu->dst_nsap.len);
@@ -446,7 +446,7 @@ void clnp_pdu_destroy(void *data) {
 	if(data == NULL) {
 		return;
 	}
-	CAST_PTR(pdu, clnp_pdu_t *, data);
+	clnp_pdu_t *pdu = data;
 	tlv_list_destroy(pdu->options);
 	pdu->options = NULL;
 	XFREE(data);
@@ -520,7 +520,7 @@ void clnp_compressed_init_data_pdu_format_text(la_vstring *vstr, void const *dat
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(pdu, clnp_compressed_init_data_pdu_t const *, data);
+	clnp_compressed_init_data_pdu_t const *pdu = data;
 	if(pdu->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable X.233 CLNP compressed header PDU\n");
 		return;
@@ -538,7 +538,7 @@ void clnp_compressed_init_data_pdu_format_json(la_vstring *vstr, void const *dat
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(pdu, clnp_compressed_init_data_pdu_t const *, data);
+	clnp_compressed_init_data_pdu_t const *pdu = data;
 	la_json_append_bool(vstr, "err", pdu->err);
 	if(pdu->err == true) {
 		return;

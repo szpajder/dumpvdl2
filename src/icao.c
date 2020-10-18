@@ -579,8 +579,8 @@ void x225_spdu_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(spdu, x225_spdu_t const *, data);
-	char *str = dict_search(x225_spdu_names, spdu->spdu_id);
+	x225_spdu_t const *spdu = data;
+	char const *str = dict_search(x225_spdu_names, spdu->spdu_id);
 	if(str != NULL) {
 		LA_ISPRINTF(vstr, indent, "X.225 Session SPDU: %s\n", str);
 	} else {
@@ -599,9 +599,9 @@ void x225_spdu_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(spdu, x225_spdu_t const *, data);
+	x225_spdu_t const *spdu = data;
 	la_json_append_long(vstr, "spdu_id", spdu->spdu_id);
-	char *str = dict_search(x225_spdu_names, spdu->spdu_id);
+	char const *str = dict_search(x225_spdu_names, spdu->spdu_id);
 	JSON_APPEND_STRING(vstr, "spdu_type", str);
 	if(spdu->spdu_id == X225_SPDU_SRF) {
 		la_json_append_string(vstr, "refusal",

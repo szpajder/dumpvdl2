@@ -59,7 +59,7 @@ static void ac_data_entry_destroy(void *data) {
 	if(data == NULL) {
 		return;
 	}
-	CAST_PTR(e, ac_data_entry *, data);
+	ac_data_entry *e = data;
 	XFREE(e->registration);
 	XFREE(e->icaotypecode);
 	XFREE(e->operatorflagcode);
@@ -73,7 +73,7 @@ static void ac_data_cache_entry_destroy(void *data) {
 	if(data == NULL) {
 		return;
 	}
-	CAST_PTR(ce, ac_data_cache_entry *, data);
+	ac_data_cache_entry *ce = data;
 	ac_data_entry_destroy(ce->ac_data);
 	XFREE(ce);
 }
@@ -153,7 +153,7 @@ static int ac_data_entry_from_db(uint32_t addr, ac_data_entry **result) {
 
 bool is_cache_entry_expired(void const *key, void const *value, void const *ctx) {
 	UNUSED(key);
-	CAST_PTR(cache_entry, ac_data_cache_entry const *, value);
+	ac_data_cache_entry const *cache_entry = value;
 	time_t now = *(time_t *)ctx;
 	return (cache_entry->ctime + AC_CACHE_TTL <= now);
 }

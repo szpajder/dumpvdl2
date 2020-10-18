@@ -270,7 +270,6 @@ typedef struct {
 #endif
 
 #define ONES(x) ~(~0u << (x))
-#define CAST_PTR(x, t, y) t x = (t)(y)
 #define XCALLOC(nmemb, size) xcalloc((nmemb), (size), __FILE__, __LINE__, __func__)
 #define XREALLOC(ptr, size) xrealloc((ptr), (size), __FILE__, __LINE__, __func__)
 #define XFREE(ptr) do { free(ptr); ptr = NULL; } while(0)
@@ -395,6 +394,8 @@ int statsd_initialize(char *statsd_addr);
 void statsd_initialize_counters_per_channel(uint32_t freq);
 void statsd_initialize_counters_per_msgdir();
 void statsd_initialize_counter_set(char **counter_set);
+// Can't have char const * pointers here, because statsd-c-client
+// may potentially modify their contents :/
 void statsd_counter_per_channel_increment(uint32_t freq, char *counter);
 void statsd_timing_delta_per_channel_send(uint32_t freq, char *timer, struct timeval ts);
 void statsd_counter_per_msgdir_increment(la_msg_dir msg_dir, char *counter);

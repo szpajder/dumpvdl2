@@ -39,7 +39,7 @@ static void update_msg_type(uint32_t *msg_type, la_proto_node *root) {
 		debug_print(D_PROTO, "proto tree contains no ACARS message\n");
 		return;
 	}
-	CAST_PTR(amsg, la_acars_msg *, node->data);
+	la_acars_msg *amsg = node->data;
 	if(amsg->err == true) {
 		debug_print(D_PROTO, "amsg->err is true, skipping\n");
 		return;
@@ -81,15 +81,18 @@ static void update_statsd_acars_metrics(la_msg_dir msg_dir, la_proto_node *root)
 	if(node == NULL) {
 		return;
 	}
-	CAST_PTR(amsg, la_acars_msg *, node->data);
+	la_acars_msg *amsg = node->data;
 	if(amsg->err == true) {
 		return;
 	}
-	CAST_PTR(metric, char *, dict_search(reasm_status_counter_names, amsg->reasm_status));
+	char const *metric = dict_search(reasm_status_counter_names, amsg->reasm_status);
 	if(metric == NULL) {
 		return;
 	}
-	statsd_increment_per_msgdir(msg_dir, metric);
+	// Dropping const on metric is allowed here, because dumpvdl2 metric names
+	// do not contain any characters that statsd-c-client library would need to
+	// sanitize (replace with underscores)
+	statsd_increment_per_msgdir(msg_dir, (char *)metric);
 }
 #endif
 

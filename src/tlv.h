@@ -60,7 +60,7 @@ typedef struct {
 // Generic TLV API
 la_list *tlv_parse(uint8_t *buf, size_t len, dict const *tag_table, size_t len_octets);
 la_list *tlv_single_tag_parse(uint8_t typecode, uint8_t *buf, size_t tag_len, dict const *tag_table, la_list *list);
-tlv_tag_t *tlv_list_search(la_list *ptr, uint8_t typecode);
+tlv_tag_t *tlv_list_search(la_list const *ptr, uint8_t typecode);
 la_list *tlv_list_append(la_list *head, uint8_t typecode, tlv_type_descriptor_t *td, void *data);
 void tlv_list_format_text(la_vstring *vstr, la_list *tlv_list, int indent);
 void tlv_list_format_json(la_vstring *vstr, char const *key, la_list *tlv_list);

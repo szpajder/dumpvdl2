@@ -289,7 +289,7 @@ void *process_samples(void *arg) {
 	float cwf, swf;
 	float re[INP_LPF_NPOLES+1], im[INP_LPF_NPOLES+1];
 	float lp_re[INP_LPF_NPOLES+1], lp_im[INP_LPF_NPOLES+1];
-	CAST_PTR(v, vdl2_channel_t *, arg);
+	vdl2_channel_t *v = arg;
 	v->samplenum = -1;
 	memset(lp_re, 0, sizeof(lp_re));
 	memset(lp_im, 0, sizeof(lp_im));

@@ -169,7 +169,7 @@ TLV_FORMATTER(idrp_route_separator_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(s, idrp_route_separator_t const *, data);
+	idrp_route_separator_t const *s = data;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "ID: %u\n", s->id);
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Local preference: %u\n", s->localpref);
@@ -179,7 +179,7 @@ TLV_FORMATTER(idrp_route_separator_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(s, idrp_route_separator_t const *, data);
+	idrp_route_separator_t const *s = data;
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "id", s->id);
 	la_json_append_long(ctx->vstr, "localpref", s->localpref);
@@ -219,7 +219,7 @@ TLV_FORMATTER(rd_path_segment_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(rdi_list, la_list const *, data);
+	la_list const *rdi_list = data;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	ctx->indent++;
 	while(rdi_list != NULL) {
@@ -234,7 +234,7 @@ TLV_FORMATTER(rd_path_segment_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(rdi_list, la_list const *, data);
+	la_list const *rdi_list = data;
 	la_json_array_start(ctx->vstr, label);
 	while(rdi_list != NULL) {
 		octet_string_t *ostring = rdi_list->data;
@@ -309,7 +309,7 @@ TLV_FORMATTER(rd_path_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(rd_path, la_list const *, data);
+	la_list const *rd_path = data;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	tlv_list_format_text(ctx->vstr, (la_list *)rd_path, ctx->indent+1);
 }
@@ -318,7 +318,7 @@ TLV_FORMATTER(rd_path_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(rd_path, la_list const *, data);
+	la_list const *rd_path = data;
 	tlv_list_format_json(ctx->vstr, label, (la_list *)rd_path);
 }
 
@@ -545,7 +545,7 @@ static attr_parse_result_t parse_idrp_ribatt(uint8_t *buf, uint32_t len) {
 		} else {
 			// Other attributes are presence-only (ie. only the type is encoded without value,
 			// so there is nothing to parse)
-			CAST_PTR(td, tlv_type_descriptor_t *, dict_search(path_attributes, typecode));
+			tlv_type_descriptor_t *td = dict_search(path_attributes, typecode);
 			if(td != NULL) {
 				attr_list = tlv_list_append(attr_list, typecode, td, TLV_NO_VALUE_PTR);
 			}
@@ -595,7 +595,7 @@ TLV_FORMATTER(idrp_ribatt_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(r, idrp_ribatt_t const *, data);
+	idrp_ribatt_t const *r = data;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "RibAtt #%u:\n", r->num);
 	tlv_list_format_text(ctx->vstr, r->attr_list, ctx->indent+1);
 }
@@ -604,7 +604,7 @@ TLV_FORMATTER(idrp_ribatt_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(r, idrp_ribatt_t const *, data);
+	idrp_ribatt_t const *r = data;
 	tlv_list_format_json(ctx->vstr, label, r->attr_list);
 }
 
@@ -612,7 +612,7 @@ TLV_DESTRUCTOR(idrp_ribatt_destroy) {
 	if(data == NULL) {
 		return;
 	}
-	CAST_PTR(ribatt, idrp_ribatt_t *, data);
+	idrp_ribatt_t *ribatt = data;
 	tlv_list_destroy(ribatt->attr_list);
 	XFREE(data);
 }
@@ -929,21 +929,21 @@ static void idrp_error_format_text(la_vstring *vstr, idrp_pdu_t const *pdu, int 
 	ASSERT(pdu != NULL);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(err, bispdu_err_t *, dict_search(bispdu_errors, pdu->err_code));
+	bispdu_err_t const *err = dict_search(bispdu_errors, pdu->err_code);
 	LA_ISPRINTF(vstr, indent, "Code: %u (%s)\n", pdu->err_code, err ? err->descr : "unknown");
 	if(!err) {
 		LA_ISPRINTF(vstr, indent, "Subcode: %u (unknown)\n", pdu->err_subcode);
 		goto print_err_payload;
 	}
 	if(pdu->err_code == BISPDU_ERR_FSM) {   // special case
-		CAST_PTR(bispdu_name, char *, dict_search(bispdu_types, pdu->err_fsm_bispdu_type));
-		CAST_PTR(fsm_state_name, char *, dict_search(FSM_states, pdu->err_fsm_state));
+		char const *bispdu_name = dict_search(bispdu_types, pdu->err_fsm_bispdu_type);
+		char const *fsm_state_name = dict_search(FSM_states, pdu->err_fsm_state);
 		LA_ISPRINTF(vstr, indent, "Erroneous BISPDU type: %s\n",
 				bispdu_name ? bispdu_name : "unknown");
 		LA_ISPRINTF(vstr, indent, "FSM state: %s\n",
 				fsm_state_name ? fsm_state_name : "unknown");
 	} else {
-		CAST_PTR(subcode, char *, dict_search(err->subcodes, pdu->err_subcode));
+		char const *subcode = dict_search(err->subcodes, pdu->err_subcode);
 		LA_ISPRINTF(vstr, indent, "Subcode: %u (%s)\n", pdu->err_subcode, subcode ? subcode : "unknown");
 	}
 print_err_payload:
@@ -959,7 +959,7 @@ static void idrp_error_format_json(la_vstring *vstr, idrp_pdu_t const *pdu) {
 	ASSERT(pdu != NULL);
 
 	la_json_append_long(vstr, "err_code", pdu->err_code);
-	CAST_PTR(err, bispdu_err_t *, dict_search(bispdu_errors, pdu->err_code));
+	bispdu_err_t const *err = dict_search(bispdu_errors, pdu->err_code);
 	if(err != NULL) {
 		la_json_append_string(vstr, "err_descr", err->descr);
 	} else {
@@ -968,13 +968,13 @@ static void idrp_error_format_json(la_vstring *vstr, idrp_pdu_t const *pdu) {
 	if(pdu->err_code == BISPDU_ERR_FSM) {   // special case
 		la_json_append_long(vstr, "err_fsm_bispdu_type", pdu->err_fsm_bispdu_type);
 		la_json_append_long(vstr, "err_fsm_state", pdu->err_fsm_state);
-		CAST_PTR(bispdu_name, char *, dict_search(bispdu_types, pdu->err_fsm_bispdu_type));
-		CAST_PTR(fsm_state_name, char *, dict_search(FSM_states, pdu->err_fsm_state));
+		char const *bispdu_name = dict_search(bispdu_types, pdu->err_fsm_bispdu_type);
+		char const *fsm_state_name = dict_search(FSM_states, pdu->err_fsm_state);
 		JSON_APPEND_STRING(vstr, "err_fsm_bispdu_name", bispdu_name);
 		JSON_APPEND_STRING(vstr, "err_fsm_state_descr", fsm_state_name);
 	} else {
 		la_json_append_long(vstr, "err_subcode", pdu->err_subcode);
-		CAST_PTR(subcode, char *, dict_search(err->subcodes, pdu->err_subcode));
+		char const *subcode = dict_search(err->subcodes, pdu->err_subcode);
 		JSON_APPEND_STRING(vstr, "err_subcode_descr", subcode);
 	}
 print_err_payload:
@@ -988,13 +988,13 @@ void idrp_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(pdu, idrp_pdu_t const *, data);
+	idrp_pdu_t const *pdu = data;
 	if(pdu->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable IDRP PDU\n");
 		return;
 	}
 	idrp_hdr_t *hdr = pdu->hdr;
-	CAST_PTR(bispdu_name, char *, dict_search(bispdu_types, hdr->type));
+	char const *bispdu_name = dict_search(bispdu_types, hdr->type);
 	LA_ISPRINTF(vstr, indent, "IDRP %s: seq: %u ack: %u credit_offered: %u credit_avail: %u\n",
 			bispdu_name, ntohl(hdr->seq), ntohl(hdr->ack), hdr->coff, hdr->cavail);
 	indent++;
@@ -1019,7 +1019,7 @@ void idrp_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 					}
 					indent--;
 				}
-				CAST_PTR(auth_mech_name, char *, dict_search(auth_mechs, pdu->auth_mech));
+				char const *auth_mech_name = dict_search(auth_mechs, pdu->auth_mech);
 				LA_ISPRINTF(vstr, indent, "Auth mechanism: %s\n",
 						auth_mech_name ? auth_mech_name : "unknown");
 				if(pdu->auth_data.buf != NULL && pdu->auth_data.len > 0) {
@@ -1046,7 +1046,7 @@ void idrp_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 				for(la_list *n = pdu->nlri_list; n != NULL; n = la_list_next(n)) {
 					LA_ISPRINTF(vstr, indent, "%s:\n", "Reachability info");
 					indent++;
-					CAST_PTR(dest, idrp_nlri_t *, n->data);
+					idrp_nlri_t *dest = n->data;
 					if(dest->is_clnp) {
 						LA_ISPRINTF(vstr, indent, "%s\n", "Protocol: CLNP");
 						LA_ISPRINTF(vstr, indent, "Prefix length: %u\n", dest->prefix_len);
@@ -1081,14 +1081,14 @@ void idrp_pdu_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(pdu, idrp_pdu_t const *, data);
+	idrp_pdu_t const *pdu = data;
 	la_json_append_bool(vstr, "err", pdu->err);
 	if(pdu->err == true) {
 		return;
 	}
 	idrp_hdr_t *hdr = pdu->hdr;
 	la_json_append_long(vstr, "pdu_type", hdr->type);
-	char *bispdu_name = dict_search(bispdu_types, hdr->type);
+	char const *bispdu_name = dict_search(bispdu_types, hdr->type);
 	JSON_APPEND_STRING(vstr, "pdu_type_name", bispdu_name);
 	la_json_append_long(vstr, "seq", ntohl(hdr->seq));
 	la_json_append_long(vstr, "ack", ntohl(hdr->ack));
@@ -1113,7 +1113,7 @@ void idrp_pdu_format_json(la_vstring *vstr, void const *data) {
 				}
 			}
 			la_json_append_long(vstr, "auth_mech", pdu->auth_mech);
-			char *auth_mech_name = dict_search(auth_mechs, pdu->auth_mech);
+			char const *auth_mech_name = dict_search(auth_mechs, pdu->auth_mech);
 			JSON_APPEND_STRING(vstr, "auth_mech_name", auth_mech_name);
 			if(pdu->auth_data.buf != NULL && pdu->auth_data.len > 0) {
 				la_json_append_octet_string(vstr, "auth_data", pdu->auth_data.buf, pdu->auth_data.len);
@@ -1133,7 +1133,7 @@ void idrp_pdu_format_json(la_vstring *vstr, void const *data) {
 			if(pdu->nlri_list != NULL) {
 				la_json_array_start(vstr, "nlri_list");
 				for(la_list *n = pdu->nlri_list; n != NULL; n = la_list_next(n)) {
-					CAST_PTR(dest, idrp_nlri_t *, n->data);
+					idrp_nlri_t *dest = n->data;
 					la_json_object_start(vstr, NULL);
 					if(dest->is_clnp) {
 						la_json_append_string(vstr, "proto", "CLNP");
@@ -1164,7 +1164,7 @@ void idrp_pdu_destroy(void *data) {
 	if(data == NULL) {
 		return;
 	}
-	CAST_PTR(pdu, idrp_pdu_t *, data);
+	idrp_pdu_t *pdu = data;
 	la_list_free(pdu->withdrawn_routes);
 	tlv_list_destroy(pdu->path_attributes);
 	tlv_list_destroy(pdu->ribatts_set);

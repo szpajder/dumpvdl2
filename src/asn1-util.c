@@ -26,7 +26,7 @@
 #include "asn1-util.h"              // asn_formatter_table
 
 static int compare_fmtr(void const *k, void const *m) {
-	CAST_PTR(memb, asn_formatter_t const *, m);
+	asn_formatter_t const *memb = m;
 	return(k == memb->type ? 0 : 1);
 }
 
@@ -87,7 +87,7 @@ void asn1_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(pdu, asn1_pdu_t const *, data);
+	asn1_pdu_t const *pdu = data;
 	if(pdu->type == NULL) {   // No user data in APDU, so no decoding was attempted
 		return;
 	}
@@ -116,7 +116,7 @@ void asn1_pdu_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(pdu, asn1_pdu_t const *, data);
+	asn1_pdu_t const *pdu = data;
 	if(pdu->type == NULL) {     // No user data in APDU - no decoding was attempted
 		return;
 	}
@@ -137,7 +137,7 @@ void asn1_pdu_destroy(void *data) {
 	if(data == NULL) {
 		return;
 	}
-	CAST_PTR(pdu, asn1_pdu_t *, data);
+	asn1_pdu_t *pdu = data;
 	if(pdu->type != NULL) {
 		pdu->type->free_struct(pdu->type, pdu->data, 0);
 	}

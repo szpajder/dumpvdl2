@@ -56,7 +56,7 @@ TLV_FORMATTER(esis_subnet_caps_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(c, esis_subnet_caps_t const *, data);
+	esis_subnet_caps_t const *c = data;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "%s: ", "Permitted traffic");
 	if((c->atn_traffic_types & ATN_TRAFFIC_TYPES_ALL) == ATN_TRAFFIC_TYPES_ALL) {
@@ -80,7 +80,7 @@ TLV_FORMATTER(esis_subnet_caps_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 
-	CAST_PTR(c, esis_subnet_caps_t const *, data);
+	esis_subnet_caps_t const *c = data;
 	la_json_object_start(ctx->vstr, label);
 	bitfield_format_json(ctx->vstr, "permitted_traffic", &c->atn_traffic_types, 1, atn_traffic_types);
 	if(c->atsc_traffic_classes_present) {
@@ -210,13 +210,13 @@ static void esis_pdu_format_text(la_vstring *vstr, void const *data, int indent)
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(pdu, esis_pdu_t const *, data);
+	esis_pdu_t const *pdu = data;
 	if(pdu->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable ES-IS PDU\n");
 		return;
 	}
 	esis_hdr_t *hdr = pdu->hdr;
-	CAST_PTR(pdu_name, char *, dict_search(esis_pdu_types, hdr->type));
+	char const *pdu_name = dict_search(esis_pdu_types, hdr->type);
 	LA_ISPRINTF(vstr, indent, "ES-IS %s: Hold Time: %u sec\n", pdu_name, pdu->holdtime);
 	indent++;
 
@@ -237,13 +237,13 @@ static void esis_pdu_format_json(la_vstring * vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(pdu, esis_pdu_t const *, data);
+	esis_pdu_t const *pdu = data;
 	la_json_append_bool(vstr, "err", pdu->err);
 	if(pdu->err == true) {
 		return;
 	}
 	esis_hdr_t *hdr = pdu->hdr;
-	CAST_PTR(pdu_name, char *, dict_search(esis_pdu_types, hdr->type));
+	char const *pdu_name = dict_search(esis_pdu_types, hdr->type);
 	la_json_append_long(vstr, "pdu_type", hdr->type);
 	la_json_append_string(vstr, "pdu_type_name", pdu_name);
 	la_json_append_long(vstr, "hold_time", pdu->holdtime);
@@ -261,7 +261,7 @@ void esis_pdu_destroy(void *data) {
 	if(data == NULL) {
 		return;
 	}
-	CAST_PTR(pdu, esis_pdu_t *, data);
+	esis_pdu_t *pdu = data;
 	tlv_list_destroy(pdu->options);
 	pdu->options = NULL;
 	XFREE(data);

@@ -27,7 +27,7 @@
 #include <libacars/vstring.h>       // la_vstring, LA_ISPRINTF()
 #include <libacars/json.h>
 #include "asn1-util.h"              // ASN1_FORMATTER_FUN_T
-#include "dumpvdl2.h"               // CAST_PTR, dict_search()
+#include "dumpvdl2.h"               // dict_search()
 
 char const *value2enum(asn_TYPE_descriptor_t *td, long value) {
 	if(td == NULL) return NULL;
@@ -38,13 +38,13 @@ char const *value2enum(asn_TYPE_descriptor_t *td, long value) {
 
 void format_INTEGER_with_unit_as_text(asn1_formatter_param_t p,
 		char const *unit, double multiplier, int decimal_places) {
-	CAST_PTR(val, long const *, p.sptr);
+	long const *val = p.sptr;
 	LA_ISPRINTF(p.vstr, p.indent, "%s: %.*f%s\n", p.label, decimal_places, (double)(*val) * multiplier, unit);
 }
 
 void format_INTEGER_with_unit_as_json(asn1_formatter_param_t p,
 		char const *unit, double multiplier) {
-	CAST_PTR(val, long const *, p.sptr);
+	long const *val = p.sptr;
 	la_json_object_start(p.vstr, p.label);
 	la_json_append_double(p.vstr, "val", (double)(*val) * multiplier);
 	la_json_append_string(p.vstr, "unit", unit);
@@ -52,8 +52,8 @@ void format_INTEGER_with_unit_as_json(asn1_formatter_param_t p,
 }
 
 void format_INTEGER_as_ENUM_as_text(asn1_formatter_param_t p, dict const *value_labels) {
-	CAST_PTR(val, long const *, p.sptr);
-	char *val_label = dict_search(value_labels, (int)(*val));
+	long const *val = p.sptr;
+	char const *val_label = dict_search(value_labels, (int)(*val));
 	if(val_label != NULL) {
 		LA_ISPRINTF(p.vstr, p.indent, "%s: %s\n", p.label, val_label);
 	} else {
@@ -62,24 +62,24 @@ void format_INTEGER_as_ENUM_as_text(asn1_formatter_param_t p, dict const *value_
 }
 
 void format_INTEGER_as_ENUM_as_json(asn1_formatter_param_t p, dict const *value_labels) {
-	CAST_PTR(val, long const *, p.sptr);
+	long const *val = p.sptr;
 	la_json_object_start(p.vstr, p.label);
 	la_json_append_long(p.vstr, "value", (int)(*val));
-	char *val_label = dict_search(value_labels, (int)(*val));
+	char const *val_label = dict_search(value_labels, (int)(*val));
 	JSON_APPEND_STRING(p.vstr, "value_descr", val_label);
 	la_json_object_end(p.vstr);
 }
 
 void format_CHOICE_as_text(asn1_formatter_param_t p, dict const *choice_labels,
 		asn1_formatter_fun_t cb) {
-	CAST_PTR(specs, asn_CHOICE_specifics_t *, p.td->specifics);
+	asn_CHOICE_specifics_t *specs = p.td->specifics;
 	int present = _fetch_present_idx(p.sptr, specs->pres_offset, specs->pres_size);
 	if(p.label != NULL) {
 		LA_ISPRINTF(p.vstr, p.indent, "%s:\n", p.label);
 		p.indent++;
 	}
 	if(choice_labels != NULL) {
-		char *descr = dict_search(choice_labels, present);
+		char const *descr = dict_search(choice_labels, present);
 		if(descr != NULL) {
 			LA_ISPRINTF(p.vstr, p.indent, "%s\n", descr);
 		} else {
@@ -92,13 +92,13 @@ void format_CHOICE_as_text(asn1_formatter_param_t p, dict const *choice_labels,
 		void const *memb_ptr;
 
 		if(elm->flags & ATF_POINTER) {
-			memb_ptr = *(const void * const *)((const char *)p.sptr + elm->memb_offset);
+			memb_ptr = *(void const * const *)((char const *)p.sptr + elm->memb_offset);
 			if(!memb_ptr) {
 				LA_ISPRINTF(p.vstr, p.indent, "%s: <not present>\n", elm->name);
 				return;
 			}
 		} else {
-			memb_ptr = (const void *)((const char *)p.sptr + elm->memb_offset);
+			memb_ptr = (void const *)((char const *)p.sptr + elm->memb_offset);
 		}
 
 		p.td = elm->type;
@@ -111,11 +111,11 @@ void format_CHOICE_as_text(asn1_formatter_param_t p, dict const *choice_labels,
 
 void format_CHOICE_as_json(asn1_formatter_param_t p, dict const *choice_labels,
 		asn1_formatter_fun_t cb) {
-	asn_CHOICE_specifics_t *specs = (asn_CHOICE_specifics_t *)p.td->specifics;
+	asn_CHOICE_specifics_t const *specs = p.td->specifics;
 	int present = _fetch_present_idx(p.sptr, specs->pres_offset, specs->pres_size);
 	la_json_object_start(p.vstr, p.label);
 	if(choice_labels != NULL) {
-		char *descr = dict_search(choice_labels, present);
+		char const *descr = dict_search(choice_labels, present);
 		la_json_append_string(p.vstr, "choice_label", descr != NULL ? descr : "");
 	}
 	if(present > 0 && present <= p.td->elements_count) {
@@ -123,12 +123,12 @@ void format_CHOICE_as_json(asn1_formatter_param_t p, dict const *choice_labels,
 		void const *memb_ptr;
 
 		if(elm->flags & ATF_POINTER) {
-			memb_ptr = *(const void * const *)((const char *)p.sptr + elm->memb_offset);
+			memb_ptr = *(void const * const *)((char const *)p.sptr + elm->memb_offset);
 			if(!memb_ptr) {
 				goto end;
 			}
 		} else {
-			memb_ptr = (const void *)((const char *)p.sptr + elm->memb_offset);
+			memb_ptr = (void const *)((char const *)p.sptr + elm->memb_offset);
 		}
 		la_json_append_string(p.vstr, "choice", elm->name);
 		la_json_object_start(p.vstr, "data");
@@ -152,12 +152,12 @@ void format_SEQUENCE_as_text(asn1_formatter_param_t p, asn1_formatter_fun_t cb) 
 		void const *memb_ptr;
 
 		if(elm->flags & ATF_POINTER) {
-			memb_ptr = *(const void * const *)((const char *)p.sptr + elm->memb_offset);
+			memb_ptr = *(void const * const *)((char const *)p.sptr + elm->memb_offset);
 			if(!memb_ptr) {
 				continue;
 			}
 		} else {
-			memb_ptr = (const void *)((const char *)p.sptr + elm->memb_offset);
+			memb_ptr = (void const *)((char const *)p.sptr + elm->memb_offset);
 		}
 		cb_p.td = elm->type;
 		cb_p.sptr = memb_ptr;
@@ -176,12 +176,12 @@ void format_SEQUENCE_as_json(asn1_formatter_param_t p, asn1_formatter_fun_t cb) 
 		void const *memb_ptr;
 
 		if(elm->flags & ATF_POINTER) {
-			memb_ptr = *(const void * const *)((const char *)p.sptr + elm->memb_offset);
+			memb_ptr = *(void const * const *)((char const *)p.sptr + elm->memb_offset);
 			if(!memb_ptr) {
 				continue;
 			}
 		} else {
-			memb_ptr = (const void *)((const char *)p.sptr + elm->memb_offset);
+			memb_ptr = (void const *)((char const *)p.sptr + elm->memb_offset);
 		}
 		cb_p.td = elm->type;
 		cb_p.sptr = memb_ptr;
@@ -230,7 +230,7 @@ void format_SEQUENCE_OF_as_json(asn1_formatter_param_t p, asn1_formatter_fun_t c
 // dict indices are bit numbers from 0 to bit_stream_len-1
 // Bit 0 is the MSB of the first octet in the buffer.
 void format_BIT_STRING_as_text(asn1_formatter_param_t p, dict const *bit_labels) {
-	CAST_PTR(bs, BIT_STRING_t const *, p.sptr);
+	BIT_STRING_t const *bs = p.sptr;
 	debug_print(D_PROTO_DETAIL, "buf len: %d bits_unused: %d\n", bs->size, bs->bits_unused);
 	uint32_t val = 0;
 	int truncated = 0;
@@ -275,7 +275,7 @@ end:
 }
 
 void format_BIT_STRING_as_json(asn1_formatter_param_t p, dict const *bit_labels) {
-	CAST_PTR(bs, BIT_STRING_t const *, p.sptr);
+	BIT_STRING_t const *bs = p.sptr;
 	debug_print(D_PROTO_DETAIL, "buf len: %d bits_unused: %d\n", bs->size, bs->bits_unused);
 	uint32_t val = 0;
 	int len = bs->size;
@@ -358,16 +358,16 @@ ASN1_FORMATTER_FUN_T(asn1_format_ENUM_as_json) {
 }
 
 ASN1_FORMATTER_FUN_T(asn1_format_long_as_json) {
-	CAST_PTR(valptr, long const *, p.sptr);
+	long const *valptr = p.sptr;
 	la_json_append_long(p.vstr, p.label, *valptr);
 }
 
 ASN1_FORMATTER_FUN_T(asn1_format_bool_as_json) {
-	CAST_PTR(valptr, BOOLEAN_t const *, p.sptr);
+	BOOLEAN_t const *valptr = p.sptr;
 	la_json_append_bool(p.vstr, p.label, (*valptr) ? true : false);
 }
 
 ASN1_FORMATTER_FUN_T(asn1_format_OCTET_STRING_as_json) {
-	CAST_PTR(valptr, OCTET_STRING_t const *, p.sptr);
+	OCTET_STRING_t const *valptr = p.sptr;
 	la_json_append_octet_string(p.vstr, p.label, valptr->buf, valptr->size);
 }

@@ -345,7 +345,7 @@ TLV_FORMATTER(flow_control_confirmation_format_text) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
-	CAST_PTR(f, cotp_flow_control_confirm_t const *, data);
+	cotp_flow_control_confirm_t const *f = data;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Acked TPDU nr: %u\n", f->acked_tpdu_nr);
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Acked subsequence: %hu\n", f->acked_subseq);
@@ -355,7 +355,7 @@ TLV_FORMATTER(flow_control_confirmation_format_text) {
 TLV_FORMATTER(flow_control_confirmation_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
-	CAST_PTR(f, cotp_flow_control_confirm_t const *, data);
+	cotp_flow_control_confirm_t const *f = data;
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "acked_tpdu_nr", f->acked_tpdu_nr);
 	la_json_append_long(ctx->vstr, "acked_subseq", f->acked_subseq);
@@ -623,21 +623,20 @@ static dict const cotp_er_reject_causes[] = {
 };
 
 // Executed with la_list_foreach()
-static void output_cotp_pdu_as_text(void *data, void *ctx_ptr) {
+static void output_cotp_pdu_as_text(void const *data, void const *ctx_ptr) {
 	ASSERT(data != NULL);
 	ASSERT(ctx_ptr != NULL);
-	CAST_PTR(pdu, cotp_pdu_t *, data);
-	CAST_PTR(ctx, tlv_formatter_ctx_t *, ctx_ptr);
+	cotp_pdu_t const *pdu = data;
+	tlv_formatter_ctx_t const *ctx = ctx_ptr;
 
 	la_vstring *vstr = ctx->vstr;
 	int indent = ctx->indent;
-	char *str;
 
 	if(pdu->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable X.224 COTP TPDU\n");
 		return;
 	}
-	CAST_PTR(tpdu_name, char *, dict_search(cotp_tpdu_codes, pdu->code));
+	char const *tpdu_name = dict_search(cotp_tpdu_codes, pdu->code);
 	ASSERT(tpdu_name != NULL);
 
 	LA_ISPRINTF(vstr, indent, "X.224 COTP %s%s:\n", tpdu_name,
@@ -655,6 +654,7 @@ static void output_cotp_pdu_as_text(void *data, void *ctx_ptr) {
 			LA_ISPRINTF(vstr, indent, "dst_ref: 0x%04x\n", pdu->dst_ref);
 	}
 
+	char const *str = NULL;
 	switch(pdu->code) {
 		case COTP_TPDU_CR:
 		case COTP_TPDU_CC:
@@ -700,11 +700,11 @@ static void output_cotp_pdu_as_text(void *data, void *ctx_ptr) {
 }
 
 // Executed with la_list_foreach()
-static void output_cotp_pdu_as_json(void *data, void *ctx_ptr) {
+static void output_cotp_pdu_as_json(void const *data, void const *ctx_ptr) {
 	ASSERT(data != NULL);
 	ASSERT(ctx_ptr != NULL);
-	CAST_PTR(pdu, cotp_pdu_t *, data);
-	CAST_PTR(ctx, tlv_formatter_ctx_t *, ctx_ptr);
+	cotp_pdu_t const *pdu = data;
+	tlv_formatter_ctx_t const *ctx = ctx_ptr;
 
 	la_vstring *vstr = ctx->vstr;
 	char *str;
@@ -716,7 +716,7 @@ static void output_cotp_pdu_as_json(void *data, void *ctx_ptr) {
 	}
 
 	la_json_append_long(vstr, "tpdu_code", pdu->code);
-	CAST_PTR(tpdu_name, char *, dict_search(cotp_tpdu_codes, pdu->code));
+	char const *tpdu_name = dict_search(cotp_tpdu_codes, pdu->code);
 	ASSERT(tpdu_name != NULL);
 	la_json_append_string(vstr, "tpdu_code_descr", tpdu_name);
 	la_json_append_bool(vstr, "extended", pdu->extended);
@@ -783,7 +783,7 @@ void cotp_concatenated_pdu_format_text(la_vstring *vstr, void const *data, int i
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(pdu_list, la_list const *, data);
+	la_list const *pdu_list = data;
 	la_list_foreach((la_list *)pdu_list, output_cotp_pdu_as_text,
 			&(tlv_formatter_ctx_t){ .vstr = vstr, .indent = indent});
 }
@@ -792,7 +792,7 @@ void cotp_concatenated_pdu_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	CAST_PTR(pdu_list, la_list const *, data);
+	la_list const *pdu_list = data;
 	la_json_array_start(vstr, "pdu_list");
 	la_list_foreach((la_list *)pdu_list, output_cotp_pdu_as_json,
 			&(tlv_formatter_ctx_t){ .vstr = vstr, .indent = 0});
@@ -801,7 +801,7 @@ void cotp_concatenated_pdu_format_json(la_vstring *vstr, void const *data) {
 
 
 static void cotp_pdu_destroy(void *ptr) {
-	CAST_PTR(pdu, cotp_pdu_t *, ptr);
+	cotp_pdu_t *pdu = ptr;
 	tlv_list_destroy(pdu->variable_part_params);
 	XFREE(pdu);
 }
@@ -810,7 +810,7 @@ void cotp_concatenated_pdu_destroy(void *data) {
 	if(data == NULL) {
 		return;
 	}
-	CAST_PTR(pdu_list, la_list *, data);
+	la_list *pdu_list = data;
 	la_list_free_full(pdu_list, cotp_pdu_destroy);
 	// No XFREE(data) here - la_list_free_full frees the top pointer.
 }

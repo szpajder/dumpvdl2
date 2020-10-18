@@ -133,7 +133,7 @@ static void start_demod_threads(vdl2_state_t *ctx) {
 void start_output_thread(void *p, void *ctx) {
 	UNUSED(ctx);
 	ASSERT(p != NULL);
-	CAST_PTR(output, output_instance_t *, p);
+	output_instance_t *output = p;
 	debug_print(D_OUTPUT, "starting thread for output %s\n", output->td->name);
 	start_thread(output->output_thread, output_thread, output);
 }
@@ -141,7 +141,7 @@ void start_output_thread(void *p, void *ctx) {
 void start_all_output_threads_for_fmtr(void *p, void *ctx) {
 	UNUSED(ctx);
 	ASSERT(p != NULL);
-	CAST_PTR(fmtr, fmtr_instance_t *, p);
+	fmtr_instance_t *fmtr = p;
 	la_list_foreach(fmtr->outputs, start_output_thread, NULL);
 }
 
