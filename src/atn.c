@@ -203,8 +203,8 @@ TLV_FORMATTER(atn_subnet_type_format_json) {
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "subnet_id", t->subnet);
 	la_json_append_string(ctx->vstr, "subnet_name", subnet);
-	bitfield_format_json(ctx->vstr, "permitted_traffic_types", &t->permitted_traffic_types,
-			1, atn_traffic_types);
+	bitfield_format_json(ctx->vstr, &t->permitted_traffic_types,
+			1, atn_traffic_types, "permitted_traffic_types");
 	la_json_object_end(ctx->vstr);
 }
 
@@ -227,7 +227,7 @@ TLV_FORMATTER(atn_supported_traffic_classes_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	uint8_t const *t = data;
-	bitfield_format_json(ctx->vstr, label, t, 1, atsc_traffic_classes);
+	bitfield_format_json(ctx->vstr, t, 1, atsc_traffic_classes, label);
 }
 
 static dict const atn_security_classes[] = {

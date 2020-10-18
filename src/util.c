@@ -119,7 +119,7 @@ void bitfield_format_text(la_vstring *vstr, uint8_t const *buf, size_t len, dict
 	}
 }
 
-void bitfield_format_json(la_vstring *vstr, char const *key, uint8_t const *buf, size_t len, dict const *d) {
+void bitfield_format_json(la_vstring *vstr, uint8_t const *buf, size_t len, dict const *d, char const *key) {
 	ASSERT(vstr != NULL);
 	ASSERT(d != NULL);
 	ASSERT(len <= sizeof(uint32_t));

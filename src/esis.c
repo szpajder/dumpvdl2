@@ -82,9 +82,9 @@ TLV_FORMATTER(esis_subnet_caps_format_json) {
 
 	esis_subnet_caps_t const *c = data;
 	la_json_object_start(ctx->vstr, label);
-	bitfield_format_json(ctx->vstr, "permitted_traffic", &c->atn_traffic_types, 1, atn_traffic_types);
+	bitfield_format_json(ctx->vstr, &c->atn_traffic_types, 1, atn_traffic_types, "permitted_traffic");
 	if(c->atsc_traffic_classes_present) {
-		bitfield_format_json(ctx->vstr, "supported_atsc_classes", &c->atsc_traffic_classes, 1, atsc_traffic_classes);
+		bitfield_format_json(ctx->vstr, &c->atsc_traffic_classes, 1, atsc_traffic_classes, "supported_atsc_classes");
 	}
 	la_json_object_end(ctx->vstr);
 }

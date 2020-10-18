@@ -171,7 +171,7 @@ TLV_FORMATTER(modulation_support_format_json) {
 
 	uint32_t const *val = data;
 	uint8_t mods_val = (uint8_t)(*val & 0xff);
-	bitfield_format_json(ctx->vstr, label, &mods_val, 1, modulations);
+	bitfield_format_json(ctx->vstr, &mods_val, 1, modulations, label);
 }
 
 typedef struct {
@@ -229,7 +229,7 @@ TLV_FORMATTER(vdl2_frequency_format_json) {
 	vdl2_frequency_t const *f = data;
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_double(ctx->vstr, "freq_mhz", f->frequency);
-	bitfield_format_json(ctx->vstr, "modulation_support", &f->modulations, 1, modulations);
+	bitfield_format_json(ctx->vstr, &f->modulations, 1, modulations, "modulation_support");
 	la_json_object_end(ctx->vstr);
 }
 

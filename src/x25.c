@@ -1007,7 +1007,7 @@ static void x25_format_json(la_vstring *vstr, void const *data) {
 		case X25_CALL_ACCEPTED:
 			tlv_list_format_json(vstr, "facilities", pkt->facilities);
 			la_json_append_long(vstr, "compression_options", pkt->compression);
-			bitfield_format_json(vstr, "compression_algos", &pkt->compression, 1, x25_comp_algos);
+			bitfield_format_json(vstr, &pkt->compression, 1, x25_comp_algos, "compression_algos");
 			break;
 		case X25_DATA:
 			la_json_append_string(vstr, "reasm_status", la_reasm_status_name_get(pkt->reasm_status));

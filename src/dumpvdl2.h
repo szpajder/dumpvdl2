@@ -431,7 +431,7 @@ void *dict_search(dict const *list, int id);
 uint16_t extract_uint16_msbfirst(uint8_t const *data);
 uint32_t extract_uint32_msbfirst(uint8_t const *data);
 void bitfield_format_text(la_vstring *vstr, uint8_t const *buf, size_t len, dict const *d);
-void bitfield_format_json(la_vstring *vstr, char const *key, uint8_t const *buf, size_t len, dict const *d);
+void bitfield_format_json(la_vstring *vstr, uint8_t const *buf, size_t len, dict const *d, char const *key);
 
 octet_string_t *octet_string_new(void *buf, size_t len);
 octet_string_t *octet_string_copy(octet_string_t const *ostring);
