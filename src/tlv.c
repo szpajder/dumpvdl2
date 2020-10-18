@@ -55,14 +55,13 @@ la_list *tlv_list_append(la_list *head, uint8_t typecode, tlv_type_descriptor_t 
 }
 
 tlv_tag_t *tlv_list_search(la_list const *ptr, uint8_t typecode) {
-	while(ptr != NULL) {
+	for(; ptr != NULL; ptr = ptr->next) {
 		if(ptr->data != NULL) {
 			tlv_tag_t *tag = ptr->data;
 			if(tag->typecode == typecode) {
 				return tag;
 			}
 		}
-		ptr = ptr->next;
 	}
 	return NULL;
 }
