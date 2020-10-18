@@ -226,7 +226,7 @@ fmtr_instance_t *find_fmtr_instance(la_list *fmtr_list, fmtr_descriptor_t *fmttd
 		return NULL;
 	}
 	for(la_list *p = fmtr_list; p != NULL; p = la_list_next(p)) {
-		fmtr_instance_t *fmtr = (fmtr_instance_t *)p;
+		fmtr_instance_t *fmtr = p->data;
 		if(fmtr->td == fmttd && fmtr->intype == intype) {
 			return fmtr;
 		}
