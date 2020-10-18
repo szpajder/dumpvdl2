@@ -327,7 +327,7 @@ TLV_FORMATTER(clnp_error_code_format_json) {
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "error_code", e->code);
 	char const *str = dict_search(clnp_error_codes, e->code);
-	JSON_APPEND_STRING(ctx->vstr, "error_descr", str);
+	SAFE_JSON_APPEND_STRING(ctx->vstr, "error_descr", str);
 	if(e->erroneous_octet != 0) {
 		la_json_append_long(ctx->vstr, "erroneous_octet", e->erroneous_octet);
 	}
@@ -418,7 +418,7 @@ void clnp_pdu_format_json(la_vstring * vstr, void const *data) {
 	la_json_append_bool(vstr, "compressed", false);
 	la_json_append_long(vstr, "pdu_type", pdu->hdr->type);
 	char const *pdu_type = dict_search(clnp_pdu_types, pdu->hdr->type);
-	JSON_APPEND_STRING(vstr, "pdu_type_name", pdu_type);
+	SAFE_JSON_APPEND_STRING(vstr, "pdu_type_name", pdu_type);
 	la_json_append_octet_string(vstr, "src_nsap", pdu->src_nsap.buf, pdu->src_nsap.len);
 	la_json_append_octet_string(vstr, "dst_nsap", pdu->dst_nsap.buf, pdu->dst_nsap.len);
 	la_json_append_double(vstr, "lifetime", pdu->lifetime_sec);

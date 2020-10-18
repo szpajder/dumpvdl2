@@ -367,15 +367,15 @@ static void addrinfo_format_as_json(la_vstring *vstr, avlc_addr_t addr) {
 			if(ac == NULL) {
 				return;
 			}
-			JSON_APPEND_STRING(vstr, "regnr", ac->registration);
+			SAFE_JSON_APPEND_STRING(vstr, "regnr", ac->registration);
 			if(Config.addrinfo_verbosity >= ADDRINFO_NORMAL) {
-				JSON_APPEND_STRING(vstr, "typecode", ac->icaotypecode);
-				JSON_APPEND_STRING(vstr, "opercode", ac->operatorflagcode);
+				SAFE_JSON_APPEND_STRING(vstr, "typecode", ac->icaotypecode);
+				SAFE_JSON_APPEND_STRING(vstr, "opercode", ac->operatorflagcode);
 			}
 			if(Config.addrinfo_verbosity >= ADDRINFO_VERBOSE) {
-				JSON_APPEND_STRING(vstr, "manuf", ac->manufacturer);
-				JSON_APPEND_STRING(vstr, "model", ac->type);
-				JSON_APPEND_STRING(vstr, "owner", ac->registeredowners);
+				SAFE_JSON_APPEND_STRING(vstr, "manuf", ac->manufacturer);
+				SAFE_JSON_APPEND_STRING(vstr, "model", ac->type);
+				SAFE_JSON_APPEND_STRING(vstr, "owner", ac->registeredowners);
 			}
 		}
 	} else if(IS_GS(addr)) {
@@ -384,12 +384,12 @@ static void addrinfo_format_as_json(la_vstring *vstr, avlc_addr_t addr) {
 			if(gs == NULL) {
 				return;
 			}
-			JSON_APPEND_STRING(vstr, "airport_code", gs->airport_code);
+			SAFE_JSON_APPEND_STRING(vstr, "airport_code", gs->airport_code);
 			if(Config.addrinfo_verbosity >= ADDRINFO_NORMAL) {
-				JSON_APPEND_STRING(vstr, "location", gs->location);
+				SAFE_JSON_APPEND_STRING(vstr, "location", gs->location);
 			}
 			if(Config.addrinfo_verbosity >= ADDRINFO_VERBOSE) {
-				JSON_APPEND_STRING(vstr, "details", gs->details);
+				SAFE_JSON_APPEND_STRING(vstr, "details", gs->details);
 			}
 		}
 	}

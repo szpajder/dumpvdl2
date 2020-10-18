@@ -66,7 +66,7 @@ void format_INTEGER_as_ENUM_as_json(asn1_formatter_param_t p, dict const *value_
 	la_json_object_start(p.vstr, p.label);
 	la_json_append_long(p.vstr, "value", (int)(*val));
 	char const *val_label = dict_search(value_labels, (int)(*val));
-	JSON_APPEND_STRING(p.vstr, "value_descr", val_label);
+	SAFE_JSON_APPEND_STRING(p.vstr, "value_descr", val_label);
 	la_json_object_end(p.vstr);
 }
 

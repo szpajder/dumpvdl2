@@ -602,7 +602,7 @@ void x225_spdu_format_json(la_vstring *vstr, void const *data) {
 	x225_spdu_t const *spdu = data;
 	la_json_append_long(vstr, "spdu_id", spdu->spdu_id);
 	char const *str = dict_search(x225_spdu_names, spdu->spdu_id);
-	JSON_APPEND_STRING(vstr, "spdu_type", str);
+	SAFE_JSON_APPEND_STRING(vstr, "spdu_type", str);
 	if(spdu->spdu_id == X225_SPDU_SRF) {
 		la_json_append_string(vstr, "refusal",
 				(spdu->spdu_special_data & 1 ? "persistent" : "transient"));

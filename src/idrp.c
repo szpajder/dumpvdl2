@@ -970,12 +970,12 @@ static void idrp_error_format_json(la_vstring *vstr, idrp_pdu_t const *pdu) {
 		la_json_append_long(vstr, "err_fsm_state", pdu->err_fsm_state);
 		char const *bispdu_name = dict_search(bispdu_types, pdu->err_fsm_bispdu_type);
 		char const *fsm_state_name = dict_search(FSM_states, pdu->err_fsm_state);
-		JSON_APPEND_STRING(vstr, "err_fsm_bispdu_name", bispdu_name);
-		JSON_APPEND_STRING(vstr, "err_fsm_state_descr", fsm_state_name);
+		SAFE_JSON_APPEND_STRING(vstr, "err_fsm_bispdu_name", bispdu_name);
+		SAFE_JSON_APPEND_STRING(vstr, "err_fsm_state_descr", fsm_state_name);
 	} else {
 		la_json_append_long(vstr, "err_subcode", pdu->err_subcode);
 		char const *subcode = dict_search(err->subcodes, pdu->err_subcode);
-		JSON_APPEND_STRING(vstr, "err_subcode_descr", subcode);
+		SAFE_JSON_APPEND_STRING(vstr, "err_subcode_descr", subcode);
 	}
 print_err_payload:
 	if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
@@ -1089,7 +1089,7 @@ void idrp_pdu_format_json(la_vstring *vstr, void const *data) {
 	idrp_hdr_t *hdr = pdu->hdr;
 	la_json_append_long(vstr, "pdu_type", hdr->type);
 	char const *bispdu_name = dict_search(bispdu_types, hdr->type);
-	JSON_APPEND_STRING(vstr, "pdu_type_name", bispdu_name);
+	SAFE_JSON_APPEND_STRING(vstr, "pdu_type_name", bispdu_name);
 	la_json_append_long(vstr, "seq", ntohl(hdr->seq));
 	la_json_append_long(vstr, "ack", ntohl(hdr->ack));
 	la_json_append_long(vstr, "credit_offered", hdr->coff);
@@ -1114,7 +1114,7 @@ void idrp_pdu_format_json(la_vstring *vstr, void const *data) {
 			}
 			la_json_append_long(vstr, "auth_mech", pdu->auth_mech);
 			char const *auth_mech_name = dict_search(auth_mechs, pdu->auth_mech);
-			JSON_APPEND_STRING(vstr, "auth_mech_name", auth_mech_name);
+			SAFE_JSON_APPEND_STRING(vstr, "auth_mech_name", auth_mech_name);
 			if(pdu->auth_data.buf != NULL && pdu->auth_data.len > 0) {
 				la_json_append_octet_string(vstr, "auth_data", pdu->auth_data.buf, pdu->auth_data.len);
 			}

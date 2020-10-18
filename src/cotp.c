@@ -751,7 +751,7 @@ static void output_cotp_pdu_as_json(void const *data, void const *ctx_ptr) {
 		case COTP_TPDU_ER:
 			la_json_append_long(vstr, "reject_code", pdu->class_or_disc_reason);
 			str = dict_search(cotp_er_reject_causes, pdu->class_or_disc_reason);
-			JSON_APPEND_STRING(vstr, "reject_cause", str);
+			SAFE_JSON_APPEND_STRING(vstr, "reject_cause", str);
 			break;
 		case COTP_TPDU_DT:
 		case COTP_TPDU_ED:
@@ -762,7 +762,7 @@ static void output_cotp_pdu_as_json(void const *data, void const *ctx_ptr) {
 		case COTP_TPDU_DR:
 			la_json_append_long(vstr, "disc_reason_code", pdu->class_or_disc_reason);
 			str = dict_search(cotp_dr_reasons, pdu->class_or_disc_reason);
-			JSON_APPEND_STRING(vstr, "disc_reason", str);
+			SAFE_JSON_APPEND_STRING(vstr, "disc_reason", str);
 			break;
 		case COTP_TPDU_DC:
 			break;

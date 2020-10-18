@@ -141,9 +141,9 @@ TLV_FORMATTER(atn_traffic_type_format_json) {
 	char const *category = dict_search(atn_sec_tag_traffic_categories, t->category);
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "type_id", t->type);
-	JSON_APPEND_STRING(ctx->vstr, "type_name", type);
+	SAFE_JSON_APPEND_STRING(ctx->vstr, "type_name", type);
 	la_json_append_long(ctx->vstr, "category_id", t->category);
-	JSON_APPEND_STRING(ctx->vstr, "category_name", category);
+	SAFE_JSON_APPEND_STRING(ctx->vstr, "category_name", category);
 	// TODO: stringify all policies according to 9705, Table 5.6-1
 	la_json_append_long(ctx->vstr, "route_policy", t->policy);
 	la_json_object_end(ctx->vstr);

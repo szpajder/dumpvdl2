@@ -982,15 +982,15 @@ static void x25_format_json(la_vstring *vstr, void const *data) {
 	}
 	la_json_append_long(vstr, "pkt_type", pkt->type);
 	char const *name = dict_search(x25_pkttype_names, pkt->type);
-	JSON_APPEND_STRING(vstr, "pkt_type_name", name);
+	SAFE_JSON_APPEND_STRING(vstr, "pkt_type_name", name);
 	la_json_append_long(vstr, "chan_group", pkt->hdr->chan_group);
 	la_json_append_long(vstr, "chan_num", pkt->hdr->chan_num);
 
 	if(pkt->addr_block_present) {
 		char *calling = fmt_x25_addr(pkt->calling.addr, pkt->calling.len);
-		JSON_APPEND_STRING(vstr, "calling_addr", calling);
+		SAFE_JSON_APPEND_STRING(vstr, "calling_addr", calling);
 		char *called = fmt_x25_addr(pkt->called.addr, pkt->called.len);
-		JSON_APPEND_STRING(vstr, "called_addr", called);
+		SAFE_JSON_APPEND_STRING(vstr, "called_addr", called);
 		XFREE(calling);
 		XFREE(called);
 	} else if(pkt->type == X25_DATA) {
@@ -1025,12 +1025,12 @@ static void x25_format_json(la_vstring *vstr, void const *data) {
 	if(cause_dict != NULL) {
 		la_json_append_long(vstr, "clear_cause", pkt->clr_cause);
 		char const *clr_cause = dict_search(cause_dict, pkt->clr_cause);
-		JSON_APPEND_STRING(vstr, "clear_cause_descr", clr_cause);
+		SAFE_JSON_APPEND_STRING(vstr, "clear_cause_descr", clr_cause);
 	}
 	if(pkt->diag_code_present) {
 		la_json_append_long(vstr, "diag_code", pkt->diag_code);
 		char const *diag_code = dict_search(x25_diag_codes, pkt->diag_code);
-		JSON_APPEND_STRING(vstr, "diag_code_descr", diag_code);
+		SAFE_JSON_APPEND_STRING(vstr, "diag_code_descr", diag_code);
 	}
 	if(pkt->type == X25_DIAG && pkt->diag_data.buf != NULL) {
 		la_json_append_octet_string(vstr, "erroneous_pkt_hdr", pkt->diag_data.buf, pkt->diag_data.len);
