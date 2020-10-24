@@ -112,8 +112,7 @@ static void out_udp_produce_text(out_udp_ctx_t *self, vdl2_msg_metadata *metadat
 	if(msg->len < 2) {
 		return;
 	}
-	// Don't send the NULL terminator
-	if(write(self->sockfd, msg->buf, msg->len - 1) < 0) {
+	if(write(self->sockfd, msg->buf, msg->len) < 0) {
 		debug_print(D_OUTPUT, "output_udp: error while writing to the network socket: %s", strerror(errno));
 	}
 }

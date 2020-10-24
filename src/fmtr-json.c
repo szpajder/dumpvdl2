@@ -69,7 +69,7 @@ static octet_string_t *fmtr_json_format_decoded_msg(vdl2_msg_metadata *metadata,
 	vdl2_msg->next = root;
 
 	la_vstring *vstr = la_proto_tree_format_json(NULL, vdl2_msg);
-	octet_string_t *ret = octet_string_new(vstr->str, vstr->len + 1);     // +1 for NULL terminator
+	octet_string_t *ret = octet_string_new(vstr->str, vstr->len);
 	la_vstring_destroy(vstr, false);
 	XFREE(vdl2_msg);
 	return ret;

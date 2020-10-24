@@ -117,8 +117,7 @@ static void out_zmq_produce_text(out_zmq_ctx_t *self, vdl2_msg_metadata *metadat
 	if(msg->len < 2) {
 		return;
 	}
-	// Don't send the NULL terminator
-	if(zmq_send(self->zmq_sock, msg->buf, msg->len - 1, 0) < 0) {
+	if(zmq_send(self->zmq_sock, msg->buf, msg->len, 0) < 0) {
 		debug_print(D_OUTPUT, "output_zmq: zmq_send error: %s", zmq_strerror(errno));
 	}
 }
