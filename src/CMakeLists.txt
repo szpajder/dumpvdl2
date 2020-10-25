@@ -76,7 +76,7 @@ list(APPEND dumpvdl2_extra_libs ${GLIB2_LIBRARIES})
 list(APPEND dumpvdl2_include_dirs ${GLIB2_INCLUDE_DIRS})
 list(APPEND link_dirs ${GLIB2_LIBRARY_DIRS})
 
-pkg_check_modules(ACARS REQUIRED libacars-2>=2.0.0)
+pkg_check_modules(ACARS REQUIRED libacars-2>=2.1.0)
 list(APPEND dumpvdl2_extra_libs ${ACARS_LIBRARIES})
 list(APPEND dumpvdl2_include_dirs ${ACARS_INCLUDE_DIRS})
 list(APPEND asn1_include_dirs ${ACARS_INCLUDE_DIRS})

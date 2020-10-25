@@ -320,7 +320,7 @@ ASN1_FORMATTER_FUN_T(asn1_format_any_as_string_as_json) {
 	UNUSED(p.indent);
 	la_vstring *tmp = la_vstring_new();
 	asn_sprintf(tmp, p.td, p.sptr, 0);
-	la_json_append_string(p.vstr, p.label, tmp->str);
+	la_json_append_octet_string_as_string(p.vstr, p.label, (uint8_t const *)tmp->str, tmp->len);
 	la_vstring_destroy(tmp, true);
 }
 
