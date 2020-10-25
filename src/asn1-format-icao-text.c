@@ -42,7 +42,7 @@
 #include "asn1/Release-request-reason.h"        // Release_request_reason_*
 #include "asn1/Release-response-reason.h"       // Release_response_reason_*
 #include "dumpvdl2.h"                           // XCALLOC, dict_search()
-#include "asn1-util.h"                          // asn_formatter_t, asn1_output_as_text()
+#include "asn1-util.h"                          // asn_formatter_t, asn1_output()
 #include "asn1-format-common.h"                 // common formatters and helper functions
 
 // forward declarations
@@ -521,11 +521,11 @@ static GByteArray *_stringify_ShortTsap(GByteArray *array, ShortTsap_t const *ts
  ************************/
 
 ASN1_FORMATTER_FUN_T(asn1_output_acse_as_text) {
-	asn1_output_as_text(p, asn1_acse_formatter_table_text, asn1_acse_formatter_table_text_len);
+	asn1_output(p, asn1_acse_formatter_table_text, asn1_acse_formatter_table_text_len, true);
 }
 
 ASN1_FORMATTER_FUN_T(asn1_output_icao_as_text) {
-	asn1_output_as_text(p, asn1_icao_formatter_table_text, asn1_icao_formatter_table_text_len);
+	asn1_output(p, asn1_icao_formatter_table_text, asn1_icao_formatter_table_text_len, true);
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_SEQUENCE_acse_as_text) {

@@ -42,7 +42,7 @@
 #include "asn1/Release-request-reason.h"        // Release_request_reason_*
 #include "asn1/Release-response-reason.h"       // Release_response_reason_*
 #include "dumpvdl2.h"                           // XCALLOC, dict_search()
-#include "asn1-util.h"                          // asn_formatter_t, asn1_output_as_json()
+#include "asn1-util.h"                          // asn_formatter_t, asn1_output()
 #include "asn1-format-common.h"                 // common formatters and helper functions
 #include "asn1-format-icao.h"                   // *_labels dictionaries
 
@@ -57,11 +57,11 @@ size_t asn1_icao_formatter_table_json_len;
  ************************/
 
 ASN1_FORMATTER_FUN_T(asn1_format_icao_as_json) {
-	asn1_output_as_json(p, asn1_icao_formatter_table_json, asn1_icao_formatter_table_json_len);
+	asn1_output(p, asn1_icao_formatter_table_json, asn1_icao_formatter_table_json_len, false);
 }
 
 ASN1_FORMATTER_FUN_T(asn1_format_acse_as_json) {
-	asn1_output_as_json(p, asn1_acse_formatter_table_json, asn1_acse_formatter_table_json_len);
+	asn1_output(p, asn1_acse_formatter_table_json, asn1_acse_formatter_table_json_len, false);
 }
 
 static ASN1_FORMATTER_FUN_T(asn1_format_SEQUENCE_acse_as_json) {
