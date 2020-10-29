@@ -152,7 +152,7 @@ static int ac_data_entry_from_db(uint32_t addr, ac_data_entry **result) {
 	return rc;
 }
 
-bool is_cache_entry_expired(void const *key, void const *value, void const *ctx) {
+bool is_cache_entry_expired(void const *key, void const *value, void *ctx) {
 	UNUSED(key);
 	ac_data_cache_entry const *cache_entry = value;
 	time_t now = *(time_t *)ctx;
