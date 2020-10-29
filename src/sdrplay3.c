@@ -21,6 +21,7 @@
 #include <string.h>             // strcmp
 #include <unistd.h>             // _exit, usleep
 #include <sdrplay_api.h>
+#include <libacars/dict.h>      // la_dict
 #include "dumpvdl2.h"           // sbuf, Config
 #include "sdrplay3.h"           // SDRPLAY3_OVERSAMPLE
 
@@ -37,7 +38,7 @@ typedef struct {
 } sdrplay3_ctx_t;
 
 static char const *get_hw_descr(int hw_id) {
-	static dict const hw_descr[] = {
+	static la_dict const hw_descr[] = {
 		{ .id = SDRPLAY_RSP1_ID, .val = "RSP1" },
 		{ .id = SDRPLAY_RSP2_ID, .val = "RSP2" },
 		{ .id = SDRPLAY_RSP1A_ID, .val = "RSP1A" },
@@ -45,7 +46,7 @@ static char const *get_hw_descr(int hw_id) {
 		{ .id = SDRPLAY_RSPdx_ID, .val = "RSPdx" },
 		{ .id = 0, .val = NULL }
 	};
-	char const *ret = dict_search(hw_descr, hw_id);
+	char const *ret = la_dict_search(hw_descr, hw_id);
 	return ret ? ret : "<unknown>";
 };
 

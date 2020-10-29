@@ -19,6 +19,7 @@
 
 #include <string.h>             // memset, strcmp, strdup
 #include <glib.h>               // g_async_queue_new
+#include <libacars/dict.h>      // la_dict
 #include "config.h"             // WITH_*
 #include "dumpvdl2.h"           // NEW, ASSERT
 #include "output-common.h"
@@ -36,7 +37,7 @@
 #include "output-zmq.h"         // out_DEF_zmq
 #endif
 
-static dict const fmtr_intype_names[] = {
+static la_dict const fmtr_intype_names[] = {
 	{
 		.id = FMTR_INTYPE_DECODED_FRAME,
 		.val = &(option_descr_t) {
@@ -57,7 +58,7 @@ static dict const fmtr_intype_names[] = {
 	}
 };
 
-static dict const fmtr_descriptors[] = {
+static la_dict const fmtr_descriptors[] = {
 	{ .id = OFMT_TEXT,                  .val = &fmtr_DEF_text },
 	{ .id = OFMT_PP_ACARS,              .val = &fmtr_DEF_pp_acars },
 #ifdef WITH_PROTOBUF_C
@@ -77,7 +78,7 @@ static output_descriptor_t * output_descriptors[] = {
 };
 
 fmtr_input_type_t fmtr_input_type_from_string(char const *str) {
-	for (dict const *d = fmtr_intype_names; d->val != NULL; d++) {
+	for (la_dict const *d = fmtr_intype_names; d->val != NULL; d++) {
 		if (!strcmp(str, ((option_descr_t *)d->val)->name)) {
 			return d->id;
 		}
@@ -86,7 +87,7 @@ fmtr_input_type_t fmtr_input_type_from_string(char const *str) {
 }
 
 fmtr_descriptor_t *fmtr_descriptor_get(output_format_t fmt) {
-	return dict_search(fmtr_descriptors, fmt);
+	return la_dict_search(fmtr_descriptors, fmt);
 }
 
 fmtr_instance_t *fmtr_instance_new(fmtr_descriptor_t *fmttd, fmtr_input_type_t intype) {
@@ -99,7 +100,7 @@ fmtr_instance_t *fmtr_instance_new(fmtr_descriptor_t *fmttd, fmtr_input_type_t i
 }
 
 output_format_t output_format_from_string(char const *str) {
-	for (dict const *d = fmtr_descriptors; d->val != NULL; d++) {
+	for (la_dict const *d = fmtr_descriptors; d->val != NULL; d++) {
 		if (!strcmp(str, ((fmtr_descriptor_t *)d->val)->name)) {
 			return d->id;
 		}
@@ -190,12 +191,12 @@ void output_usage() {
 	fprintf(stderr, "%*s<what_to_output>:<output_format>:<output_type>:<output_parameters>\n\n", IND(1), "");
 	fprintf(stderr, "where:\n");
 	fprintf(stderr, "\n%*s<what_to_output> specifies what data should be sent to the output:\n\n", IND(1), "");
-	for(dict const *p = fmtr_intype_names; p->val != NULL; p++) {
+	for(la_dict const *p = fmtr_intype_names; p->val != NULL; p++) {
 		option_descr_t *n = p->val;
 		describe_option(n->name, n->description, 2);
 	}
 	fprintf(stderr, "\n%*s<output_format> specifies how the output should be formatted:\n\n", IND(1), "");
-	for(dict const *p = fmtr_descriptors; p->val != NULL; p++) {
+	for(la_dict const *p = fmtr_descriptors; p->val != NULL; p++) {
 		fmtr_descriptor_t *n = p->val;
 		describe_option(n->name, n->description, 2);
 	}

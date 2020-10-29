@@ -20,13 +20,14 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "config.h"         // WITH_SQLITE
-#include "dumpvdl2.h"
+#include "dumpvdl2.h"       // NEW(), XFREE(), statsd_increment()
 #include "ac_data.h"        // ac_data_entry
 
 #ifdef WITH_SQLITE
 #include <stdbool.h>
 #include <string.h>         // strdup
 #include <time.h>           // time_t, time()
+#include <libacars/dict.h>  // la_dict
 #include <libacars/hash.h>  // la_hash_*
 #include <sqlite3.h>
 #include "gs_data.h"        // uint_hash, uint_compare

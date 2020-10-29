@@ -21,6 +21,7 @@
 #include <string.h>                 // strdup()
 #include <libacars/libacars.h>      // la_proto_node
 #include <libacars/vstring.h>       // la_vstring
+#include <libacars/dict.h>          // la_dict
 #include <libacars/json.h>
 #include "dumpvdl2.h"
 #include "tlv.h"
@@ -60,7 +61,7 @@ TLV_PARSER(clnp_security_parse);
 TLV_FORMATTER(clnp_error_code_format_text);
 TLV_FORMATTER(clnp_error_code_format_json);
 
-static dict const clnp_options[] = {
+static la_dict const clnp_options[] = {
 	// Doc 9705, 5.7.6.3.2.4.10
 	{
 		.id = 0x05,
@@ -284,7 +285,7 @@ TLV_PARSER(clnp_error_code_parse) {
 	return e;
 }
 
-static dict const clnp_error_codes[] = {
+static la_dict const clnp_error_codes[] = {
 	{ .id = 0x00, .val = "Reason not specified" },
 	{ .id = 0x01, .val = "Protocol procedure error" },
 	{ .id = 0x02, .val = "Incorrect checksum" },
@@ -314,7 +315,7 @@ static dict const clnp_error_codes[] = {
 
 TLV_FORMATTER(clnp_error_code_format_text) {
 	clnp_error_t const *e = data;
-	char const *str = dict_search(clnp_error_codes, e->code);
+	char const *str = la_dict_search(clnp_error_codes, e->code);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %u (%s)", label, e->code, str ? str : "unknown");
 	if(e->erroneous_octet != 0) {
 		la_vstring_append_sprintf(ctx->vstr, ", erroneous octet value: 0x%02x", e->erroneous_octet);
@@ -326,7 +327,7 @@ TLV_FORMATTER(clnp_error_code_format_json) {
 	clnp_error_t const *e = data;
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "error_code", e->code);
-	char const *str = dict_search(clnp_error_codes, e->code);
+	char const *str = la_dict_search(clnp_error_codes, e->code);
 	SAFE_JSON_APPEND_STRING(ctx->vstr, "error_descr", str);
 	if(e->erroneous_octet != 0) {
 		la_json_append_long(ctx->vstr, "erroneous_octet", e->erroneous_octet);
@@ -346,7 +347,7 @@ TLV_PARSER(clnp_security_parse) {
 	return atn_sec_label_parse(typecode, buf + 1, len - 1);
 }
 
-static dict const clnp_pdu_types[] = {
+static la_dict const clnp_pdu_types[] = {
 	{ .id = CLNP_NPDU_DT, .val = "Data" },
 	{ .id = CLNP_NDPU_MD, .val = "Multicast Data" },
 	{ .id = CLNP_NDPU_ER, .val = "Error Report" },
@@ -365,7 +366,7 @@ void clnp_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable X.233 CLNP PDU\n");
 		return;
 	}
-	char const *pdu_type = dict_search(clnp_pdu_types, pdu->hdr->type);
+	char const *pdu_type = la_dict_search(clnp_pdu_types, pdu->hdr->type);
 	if(pdu_type != NULL) {
 		LA_ISPRINTF(vstr, indent, "X.233 CLNP %s:\n", pdu_type);
 	} else {
@@ -417,7 +418,7 @@ void clnp_pdu_format_json(la_vstring * vstr, void const *data) {
 	}
 	la_json_append_bool(vstr, "compressed", false);
 	la_json_append_long(vstr, "pdu_type", pdu->hdr->type);
-	char const *pdu_type = dict_search(clnp_pdu_types, pdu->hdr->type);
+	char const *pdu_type = la_dict_search(clnp_pdu_types, pdu->hdr->type);
 	SAFE_JSON_APPEND_STRING(vstr, "pdu_type_name", pdu_type);
 	la_json_append_octet_string(vstr, "src_nsap", pdu->src_nsap.buf, pdu->src_nsap.len);
 	la_json_append_octet_string(vstr, "dst_nsap", pdu->dst_nsap.buf, pdu->dst_nsap.len);

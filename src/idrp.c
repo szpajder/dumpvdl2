@@ -23,6 +23,7 @@
 #include <arpa/inet.h>
 #include <libacars/libacars.h>  // la_proto_node
 #include <libacars/vstring.h>   // la_vstring
+#include <libacars/dict.h>      // la_dict
 #include <libacars/json.h>
 #include <libacars/list.h>      // la_list
 #include "idrp.h"
@@ -35,7 +36,7 @@
 la_type_descriptor const proto_DEF_idrp_pdu;
 static tlv_type_descriptor_t tlv_DEF_idrp_ribatt;
 
-static dict const bispdu_types[] = {
+static la_dict const bispdu_types[] = {
 	{ .id = BISPDU_TYPE_OPEN,       .val = "Open" },
 	{ .id = BISPDU_TYPE_UPDATE,     .val = "Update" },
 	{ .id = BISPDU_TYPE_ERROR,      .val = "Error" },
@@ -45,7 +46,7 @@ static dict const bispdu_types[] = {
 	{ .id = 0,                      .val = NULL }
 };
 
-static dict const open_pdu_errors[] = {
+static la_dict const open_pdu_errors[] = {
 	{ .id = 1, .val = "Unsupported version number" },
 	{ .id = 2, .val = "Bad max PDU size" },
 	{ .id = 3, .val = "Bad peer RD" },
@@ -56,7 +57,7 @@ static dict const open_pdu_errors[] = {
 	{ .id = 0, .val = NULL }
 };
 
-static dict const update_pdu_errors[] = {
+static la_dict const update_pdu_errors[] = {
 	{ .id =  1, .val = "Malformed attribute list" },
 	{ .id =  2, .val = "Unrecognized well-known attribute" },
 	{ .id =  3, .val = "Missing well-known attribute" },
@@ -73,12 +74,12 @@ static dict const update_pdu_errors[] = {
 	{ .id =  0, .val = NULL }
 };
 
-static dict const timer_expired_errors[] = {
+static la_dict const timer_expired_errors[] = {
 	{ .id = 0, .val = "NULL" },
 	{ .id = 0, .val = NULL }
 };
 
-static dict const FSM_states[] = {
+static la_dict const FSM_states[] = {
 	{ .id = 1, .val = "CLOSED" },
 	{ .id = 2, .val = "OPEN-RCVD" },
 	{ .id = 3, .val = "OPEN-SENT" },
@@ -87,13 +88,13 @@ static dict const FSM_states[] = {
 	{ .id = 0, .val = NULL }
 };
 
-static dict const RIB_refresh_errors[] = {
+static la_dict const RIB_refresh_errors[] = {
 	{ .id = 1, .val = "Invalid opcode" },
 	{ .id = 2, .val = "Unsupported RIB-Atts" },
 	{ .id = 0, .val = NULL }
 };
 
-static dict const auth_mechs[] = {
+static la_dict const auth_mechs[] = {
 	{ .id = 1, .val = "simple checksum" },
 	{ .id = 2, .val = "auth + data integrity check" },
 	{ .id = 3, .val = "password" },
@@ -102,43 +103,43 @@ static dict const auth_mechs[] = {
 
 typedef struct {
 	char *descr;
-	dict *subcodes;
+	la_dict *subcodes;
 } bispdu_err_t;
 
-static dict const bispdu_errors[] = {
+static la_dict const bispdu_errors[] = {
 	{
 		.id = BISPDU_ERR_OPEN_PDU,
 		.val = &(bispdu_err_t){
 			"Open PDU error",
-			(dict *)&open_pdu_errors
+			(la_dict *)&open_pdu_errors
 		}
 	},
 	{
 		.id = BISPDU_ERR_UPDATE_PDU,
 		.val = &(bispdu_err_t){
 			"Update PDU error",
-			(dict *)&update_pdu_errors
+			(la_dict *)&update_pdu_errors
 		}
 	},
 	{
 		.id = BISPDU_ERR_TIMER_EXPIRED,
 		.val = &(bispdu_err_t){
 			"Hold timer expired",
-			(dict *)&timer_expired_errors
+			(la_dict *)&timer_expired_errors
 		}
 	},
 	{
 		.id = BISPDU_ERR_FSM,
 		.val = &(bispdu_err_t){
 			"FSM error",
-			(dict *)&FSM_states
+			(la_dict *)&FSM_states
 		}
 	},
 	{
 		.id = BISPDU_ERR_RIB_REFRESH_PDU,
 		.val = &(bispdu_err_t){
 			"RIB Refresh PDU error",
-			(dict *)&RIB_refresh_errors
+			(la_dict *)&RIB_refresh_errors
 		}
 	},
 	{
@@ -248,7 +249,7 @@ TLV_DESTRUCTOR(rd_path_segment_destroy) {
 	la_list_free(data);
 }
 
-static dict const rd_path_seg_types[] = {
+static la_dict const rd_path_seg_types[] = {
 	{
 		.id = 1,
 		.val = &(tlv_type_descriptor_t){
@@ -326,7 +327,7 @@ TLV_DESTRUCTOR(rd_path_destroy) {
 	tlv_list_destroy(data);
 }
 
-static dict const path_attributes[] = {
+static la_dict const path_attributes[] = {
 	{
 		.id = 1,
 		.val = &(tlv_type_descriptor_t){
@@ -545,7 +546,7 @@ static attr_parse_result_t parse_idrp_ribatt(uint8_t *buf, uint32_t len) {
 		} else {
 			// Other attributes are presence-only (ie. only the type is encoded without value,
 			// so there is nothing to parse)
-			tlv_type_descriptor_t *td = dict_search(path_attributes, typecode);
+			tlv_type_descriptor_t *td = la_dict_search(path_attributes, typecode);
 			if(td != NULL) {
 				attr_list = tlv_list_append(attr_list, typecode, td, TLV_NO_VALUE_PTR);
 			}
@@ -929,21 +930,21 @@ static void idrp_error_format_text(la_vstring *vstr, idrp_pdu_t const *pdu, int 
 	ASSERT(pdu != NULL);
 	ASSERT(indent >= 0);
 
-	bispdu_err_t const *err = dict_search(bispdu_errors, pdu->err_code);
+	bispdu_err_t const *err = la_dict_search(bispdu_errors, pdu->err_code);
 	LA_ISPRINTF(vstr, indent, "Code: %u (%s)\n", pdu->err_code, err ? err->descr : "unknown");
 	if(!err) {
 		LA_ISPRINTF(vstr, indent, "Subcode: %u (unknown)\n", pdu->err_subcode);
 		goto print_err_payload;
 	}
 	if(pdu->err_code == BISPDU_ERR_FSM) {   // special case
-		char const *bispdu_name = dict_search(bispdu_types, pdu->err_fsm_bispdu_type);
-		char const *fsm_state_name = dict_search(FSM_states, pdu->err_fsm_state);
+		char const *bispdu_name = la_dict_search(bispdu_types, pdu->err_fsm_bispdu_type);
+		char const *fsm_state_name = la_dict_search(FSM_states, pdu->err_fsm_state);
 		LA_ISPRINTF(vstr, indent, "Erroneous BISPDU type: %s\n",
 				bispdu_name ? bispdu_name : "unknown");
 		LA_ISPRINTF(vstr, indent, "FSM state: %s\n",
 				fsm_state_name ? fsm_state_name : "unknown");
 	} else {
-		char const *subcode = dict_search(err->subcodes, pdu->err_subcode);
+		char const *subcode = la_dict_search(err->subcodes, pdu->err_subcode);
 		LA_ISPRINTF(vstr, indent, "Subcode: %u (%s)\n", pdu->err_subcode, subcode ? subcode : "unknown");
 	}
 print_err_payload:
@@ -959,7 +960,7 @@ static void idrp_error_format_json(la_vstring *vstr, idrp_pdu_t const *pdu) {
 	ASSERT(pdu != NULL);
 
 	la_json_append_long(vstr, "err_code", pdu->err_code);
-	bispdu_err_t const *err = dict_search(bispdu_errors, pdu->err_code);
+	bispdu_err_t const *err = la_dict_search(bispdu_errors, pdu->err_code);
 	if(err != NULL) {
 		la_json_append_string(vstr, "err_descr", err->descr);
 	} else {
@@ -968,13 +969,13 @@ static void idrp_error_format_json(la_vstring *vstr, idrp_pdu_t const *pdu) {
 	if(pdu->err_code == BISPDU_ERR_FSM) {   // special case
 		la_json_append_long(vstr, "err_fsm_bispdu_type", pdu->err_fsm_bispdu_type);
 		la_json_append_long(vstr, "err_fsm_state", pdu->err_fsm_state);
-		char const *bispdu_name = dict_search(bispdu_types, pdu->err_fsm_bispdu_type);
-		char const *fsm_state_name = dict_search(FSM_states, pdu->err_fsm_state);
+		char const *bispdu_name = la_dict_search(bispdu_types, pdu->err_fsm_bispdu_type);
+		char const *fsm_state_name = la_dict_search(FSM_states, pdu->err_fsm_state);
 		SAFE_JSON_APPEND_STRING(vstr, "err_fsm_bispdu_name", bispdu_name);
 		SAFE_JSON_APPEND_STRING(vstr, "err_fsm_state_descr", fsm_state_name);
 	} else {
 		la_json_append_long(vstr, "err_subcode", pdu->err_subcode);
-		char const *subcode = dict_search(err->subcodes, pdu->err_subcode);
+		char const *subcode = la_dict_search(err->subcodes, pdu->err_subcode);
 		SAFE_JSON_APPEND_STRING(vstr, "err_subcode_descr", subcode);
 	}
 print_err_payload:
@@ -994,7 +995,7 @@ void idrp_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 		return;
 	}
 	idrp_hdr_t *hdr = pdu->hdr;
-	char const *bispdu_name = dict_search(bispdu_types, hdr->type);
+	char const *bispdu_name = la_dict_search(bispdu_types, hdr->type);
 	LA_ISPRINTF(vstr, indent, "IDRP %s: seq: %u ack: %u credit_offered: %u credit_avail: %u\n",
 			bispdu_name, ntohl(hdr->seq), ntohl(hdr->ack), hdr->coff, hdr->cavail);
 	indent++;
@@ -1019,7 +1020,7 @@ void idrp_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 					}
 					indent--;
 				}
-				char const *auth_mech_name = dict_search(auth_mechs, pdu->auth_mech);
+				char const *auth_mech_name = la_dict_search(auth_mechs, pdu->auth_mech);
 				LA_ISPRINTF(vstr, indent, "Auth mechanism: %s\n",
 						auth_mech_name ? auth_mech_name : "unknown");
 				if(pdu->auth_data.buf != NULL && pdu->auth_data.len > 0) {
@@ -1088,7 +1089,7 @@ void idrp_pdu_format_json(la_vstring *vstr, void const *data) {
 	}
 	idrp_hdr_t *hdr = pdu->hdr;
 	la_json_append_long(vstr, "pdu_type", hdr->type);
-	char const *bispdu_name = dict_search(bispdu_types, hdr->type);
+	char const *bispdu_name = la_dict_search(bispdu_types, hdr->type);
 	SAFE_JSON_APPEND_STRING(vstr, "pdu_type_name", bispdu_name);
 	la_json_append_long(vstr, "seq", ntohl(hdr->seq));
 	la_json_append_long(vstr, "ack", ntohl(hdr->ack));
@@ -1113,7 +1114,7 @@ void idrp_pdu_format_json(la_vstring *vstr, void const *data) {
 				}
 			}
 			la_json_append_long(vstr, "auth_mech", pdu->auth_mech);
-			char const *auth_mech_name = dict_search(auth_mechs, pdu->auth_mech);
+			char const *auth_mech_name = la_dict_search(auth_mechs, pdu->auth_mech);
 			SAFE_JSON_APPEND_STRING(vstr, "auth_mech_name", auth_mech_name);
 			if(pdu->auth_data.buf != NULL && pdu->auth_data.len > 0) {
 				la_json_append_octet_string(vstr, "auth_data", pdu->auth_data.buf, pdu->auth_data.len);

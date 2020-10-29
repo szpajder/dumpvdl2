@@ -22,9 +22,10 @@
 #include <stdlib.h>
 #include <libacars/libacars.h>      // la_proto_node, la_proto_node_new()
 #include <libacars/vstring.h>       // la_vstring
+#include <libacars/dict.h>          // la_dict
 #include <libacars/json.h>
 #include "config.h"                 // IS_BIG_ENDIAN
-#include "dumpvdl2.h"               // dict_search()
+#include "dumpvdl2.h"               // la_dict_search()
 #include "tlv.h"
 #include "avlc.h"                   // avlc_addr_t
 #include "xid.h"
@@ -148,7 +149,7 @@ TLV_FORMATTER(xid_seq_format_json) {
  * Frequency, modulation
  **************************************************************************/
 
-static dict const modulations[] = {
+static la_dict const modulations[] = {
 	{ .id = 2, .val = "VDL-M2, D8PSK, 31500 bps" },
 	{ .id = 4, .val = "VDL-M3, D8PSK, 31500 bps" },
 	{ .id = 0, .val = NULL }
@@ -410,7 +411,7 @@ TLV_PARSER(lcr_cause_parse) {
 	return c;
 }
 
-static dict const lcr_causes[] = {
+static la_dict const lcr_causes[] = {
 	{ .id = 0x00, .val = "Bad local parameter" },
 	{ .id = 0x01, .val = "Out of link layer resources" },
 	{ .id = 0x02, .val = "Out of packet layer resources" },
@@ -432,7 +433,7 @@ TLV_FORMATTER(lcr_cause_format_text) {
 	ASSERT(ctx->indent >= 0);
 
 	lcr_cause_t const *c = data;
-	char const *cause_descr = dict_search(lcr_causes, c->cause);
+	char const *cause_descr = la_dict_search(lcr_causes, c->cause);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: 0x%02x (%s)\n",
 			label, c->cause, cause_descr ? cause_descr : "unknown");
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Delay: %u\n", c->delay);
@@ -448,7 +449,7 @@ TLV_FORMATTER(lcr_cause_format_json) {
 	ASSERT(ctx->vstr != NULL);
 
 	lcr_cause_t const *c = data;
-	char const *cause_descr = dict_search(lcr_causes, c->cause);
+	char const *cause_descr = la_dict_search(lcr_causes, c->cause);
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "cause_code", c->cause);
 	if(cause_descr != NULL) {
@@ -570,7 +571,7 @@ TLV_FORMATTER(loc_alt_format_json) {
  * Public XID parameters
  **************************************************************************/
 
-static dict const xid_pub_params[] = {
+static la_dict const xid_pub_params[] = {
 	{
 		.id = 0x1,
 		.val = &(tlv_type_descriptor_t){
@@ -691,7 +692,7 @@ static dict const xid_pub_params[] = {
  * VDL2-specific XID parameters
  **************************************************************************/
 
-static dict const xid_vdl_params[] = {
+static la_dict const xid_vdl_params[] = {
 	{
 		.id = 0x00,
 		.val = &(tlv_type_descriptor_t){

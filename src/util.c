@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <libacars/libacars.h>      // la_proto_node, la_type_descriptor
 #include <libacars/vstring.h>       // la_vstring, la_isprintf_multiline_text()
+#include <libacars/dict.h>          // la_dict
 #include "dumpvdl2.h"
 #include "libacars/json.h"
 
@@ -46,15 +47,6 @@ void *xrealloc(void *ptr, size_t size, char const *file, int line, char const *f
 		_exit(1);
 	}
 	return ptr;
-}
-
-void *dict_search(dict const *list, int id) {
-	if(list == NULL) return NULL;
-	dict *ptr;
-	for(ptr = (dict *)list; ; ptr++) {
-		if(ptr->val == NULL) return NULL;
-		if(ptr->id == id) return ptr->val;
-	}
 }
 
 static char *fmt_hexstring(octet_string_t const *ostring) {
@@ -97,7 +89,7 @@ static char *replace_nonprintable_chars(octet_string_t const *ostring) {
 	return buf;
 }
 
-void bitfield_format_text(la_vstring *vstr, uint8_t const *buf, size_t len, dict const *d) {
+void bitfield_format_text(la_vstring *vstr, uint8_t const *buf, size_t len, la_dict const *d) {
 	ASSERT(vstr != NULL);
 	ASSERT(d != NULL);
 	ASSERT(len <= sizeof(uint32_t));
@@ -110,7 +102,7 @@ void bitfield_format_text(la_vstring *vstr, uint8_t const *buf, size_t len, dict
 		return;
 	}
 	bool first = true;
-	for(dict const *ptr = d; ptr->val != NULL; ptr++) {
+	for(la_dict const *ptr = d; ptr->val != NULL; ptr++) {
 		if((val & (uint32_t)ptr->id) == (uint32_t)ptr->id) {
 			la_vstring_append_sprintf(vstr, "%s%s",
 					(first ? "" : ", "), (char *)ptr->val);
@@ -119,7 +111,7 @@ void bitfield_format_text(la_vstring *vstr, uint8_t const *buf, size_t len, dict
 	}
 }
 
-void bitfield_format_json(la_vstring *vstr, uint8_t const *buf, size_t len, dict const *d, char const *key) {
+void bitfield_format_json(la_vstring *vstr, uint8_t const *buf, size_t len, la_dict const *d, char const *key) {
 	ASSERT(vstr != NULL);
 	ASSERT(d != NULL);
 	ASSERT(len <= sizeof(uint32_t));
@@ -129,7 +121,7 @@ void bitfield_format_json(la_vstring *vstr, uint8_t const *buf, size_t len, dict
 		;
 	la_json_array_start(vstr, key);
 	if(val != 0) {
-		for(dict const *ptr = d; ptr->val != NULL; ptr++) {
+		for(la_dict const *ptr = d; ptr->val != NULL; ptr++) {
 			if((val & (uint32_t)ptr->id) == (uint32_t)ptr->id) {
 				la_json_append_string(vstr, NULL, ptr->val);
 			}

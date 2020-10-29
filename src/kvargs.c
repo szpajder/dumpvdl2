@@ -20,6 +20,7 @@
 #include <stddef.h>         // ptrdiff_t
 #include <string.h>         // strsep
 #include <libacars/hash.h>  // la_hash
+#include <libacars/dict.h>  // la_dict
 #include "dumpvdl2.h"       // NEW, XFREE, debug_print
 #include "kvargs.h"
 
@@ -33,14 +34,14 @@ struct kvargs_s {
 #define KV_ERR_NO_VALUE     3
 
 char const *kvargs_get_errstr(int err) {
-	static dict const kvargs_error_strings[] = {
+	static la_dict const kvargs_error_strings[] = {
 		{ .id = KV_ERR_NO_ERROR,  .val = "success" },
 		{ .id = KV_ERR_NO_INPUT,  .val = "no key-value string given" },
 		{ .id = KV_ERR_NO_KEY,    .val = "no key name given" },
 		{ .id = KV_ERR_NO_VALUE,  .val = "no value given" },
 		{ .id = 0,                .val = NULL }
 	};
-	char const *ret = dict_search(kvargs_error_strings, err);
+	char const *ret = la_dict_search(kvargs_error_strings, err);
 	return (ret != NULL ? ret : "unknown error");
 }
 

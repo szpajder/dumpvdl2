@@ -28,6 +28,7 @@
 #include <pthread.h>            // pthread_t, pthread_barrier_t
 #include <libacars/libacars.h>  // la_proto_node
 #include <libacars/vstring.h>   // la_vstring
+#include <libacars/dict.h>      // la_dict
 #include "config.h"
 #ifndef HAVE_PTHREAD_BARRIERS
 #include "pthread_barrier.h"
@@ -419,19 +420,14 @@ typedef struct {
 	uint8_t *buf;
 	size_t len;
 } octet_string_t;
-typedef struct {
-	int id;
-	void *val;
-} dict;
 
 extern la_type_descriptor const proto_DEF_unknown;
 void *xcalloc(size_t nmemb, size_t size, char const *file, int line, char const *func);
 void *xrealloc(void *ptr, size_t size, char const *file, int line, char const *func);
-void *dict_search(dict const *list, int id);
 uint16_t extract_uint16_msbfirst(uint8_t const *data);
 uint32_t extract_uint32_msbfirst(uint8_t const *data);
-void bitfield_format_text(la_vstring *vstr, uint8_t const *buf, size_t len, dict const *d);
-void bitfield_format_json(la_vstring *vstr, uint8_t const *buf, size_t len, dict const *d, char const *key);
+void bitfield_format_text(la_vstring *vstr, uint8_t const *buf, size_t len, la_dict const *d);
+void bitfield_format_json(la_vstring *vstr, uint8_t const *buf, size_t len, la_dict const *d, char const *key);
 
 octet_string_t *octet_string_new(void *buf, size_t len);
 octet_string_t *octet_string_copy(octet_string_t const *ostring);

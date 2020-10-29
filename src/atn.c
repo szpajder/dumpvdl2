@@ -16,9 +16,10 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "libacars/list.h"  // la_list
-#include "libacars/json.h"
-#include "dumpvdl2.h"       // dict
+#include <libacars/list.h>  // la_list
+#include <libacars/json.h>
+#include <libacars/dict.h>  // la_dict
+#include "dumpvdl2.h"
 #include "tlv.h"
 #include "config.h"         // IS_BIG_ENDIAN
 #include "atn.h"            // ATN_TRAFFIC_TYPES_ALL, ATSC_TRAFFIC_CLASSES_ALL
@@ -28,7 +29,7 @@ typedef struct {
 	la_list *sec_info;
 } atn_sec_label_t;
 
-dict const atn_traffic_types[] = {
+la_dict const atn_traffic_types[] = {
 	{ .id =  1, .val = "ATS" },
 	{ .id =  2, .val = "AOC" },
 	{ .id =  4, .val = "ATN Administrative" },
@@ -37,7 +38,7 @@ dict const atn_traffic_types[] = {
 	{ .id =  0, .val = NULL }
 };
 
-dict const atsc_traffic_classes[] = {
+la_dict const atsc_traffic_classes[] = {
 	{ .id =  1, .val = "A" },
 	{ .id =  2, .val = "B" },
 	{ .id =  4, .val = "C" },
@@ -101,14 +102,14 @@ TLV_PARSER(atn_traffic_type_parse) {
 	return t;
 }
 
-static dict const atn_sec_tag_traffic_categories[] = {
+static la_dict const atn_sec_tag_traffic_categories[] = {
 	{ .id = CAT_ATSC, .val = "ATSC" },
 	{ .id = CAT_AOC, .val = "AOC" },
 	{ .id = CAT_NONE, .val = "none" },
 	{ .id = 0, .val = NULL }
 };
 
-static dict const atn_sec_tag_traffic_types[] = {
+static la_dict const atn_sec_tag_traffic_types[] = {
 	{ .id = TT_ATN_OPER, .val = "ATN operational" },
 	{ .id = TT_ATN_ADMIN, .val = "ATN administrative" },
 	{ .id = TT_ATN_SYS_MGMT, .val = "ATN system management" },
@@ -121,8 +122,8 @@ TLV_FORMATTER(atn_traffic_type_format_text) {
 	ASSERT(ctx->indent >= 0);
 
 	tag_atn_traffic_type_t const *t = data;
-	char const *type = dict_search(atn_sec_tag_traffic_types, t->type);
-	char const *category = dict_search(atn_sec_tag_traffic_categories, t->category);
+	char const *type = la_dict_search(atn_sec_tag_traffic_types, t->type);
+	char const *category = la_dict_search(atn_sec_tag_traffic_categories, t->category);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	ctx->indent++;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "Type: %s\n", type ? type : "unknown");
@@ -137,8 +138,8 @@ TLV_FORMATTER(atn_traffic_type_format_json) {
 	ASSERT(ctx->vstr != NULL);
 
 	tag_atn_traffic_type_t const *t = data;
-	char const *type = dict_search(atn_sec_tag_traffic_types, t->type);
-	char const *category = dict_search(atn_sec_tag_traffic_categories, t->category);
+	char const *type = la_dict_search(atn_sec_tag_traffic_types, t->type);
+	char const *category = la_dict_search(atn_sec_tag_traffic_categories, t->category);
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "type_id", t->type);
 	SAFE_JSON_APPEND_STRING(ctx->vstr, "type_name", type);
@@ -165,7 +166,7 @@ TLV_PARSER(atn_subnet_type_parse) {
 	return t;
 }
 
-static dict const atn_subnet_types[] = {
+static la_dict const atn_subnet_types[] = {
 	{ .id = 1, .val = "Mode S" },
 	{ .id = 2, .val = "VDL" },
 	{ .id = 3, .val = "AMSS" },
@@ -180,7 +181,7 @@ TLV_FORMATTER(atn_subnet_type_format_text) {
 	ASSERT(ctx->indent >= 0);
 
 	tag_subnet_type_t const *t = data;
-	char const *subnet = dict_search(atn_subnet_types, t->subnet);
+	char const *subnet = la_dict_search(atn_subnet_types, t->subnet);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	ctx->indent++;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "Subnet: %s\n", subnet ? subnet : "unknown");
@@ -199,7 +200,7 @@ TLV_FORMATTER(atn_subnet_type_format_json) {
 	ASSERT(ctx->vstr != NULL);
 
 	tag_subnet_type_t const *t = data;
-	char const *subnet = dict_search(atn_subnet_types, t->subnet);
+	char const *subnet = la_dict_search(atn_subnet_types, t->subnet);
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "subnet_id", t->subnet);
 	la_json_append_string(ctx->vstr, "subnet_name", subnet);
@@ -230,7 +231,7 @@ TLV_FORMATTER(atn_supported_traffic_classes_format_json) {
 	bitfield_format_json(ctx->vstr, t, 1, atsc_traffic_classes, label);
 }
 
-static dict const atn_security_classes[] = {
+static la_dict const atn_security_classes[] = {
 	{ .id = 1, .val = "unclassified" },
 	{ .id = 2, .val = "restricted" },
 	{ .id = 3, .val = "confidential" },
@@ -245,7 +246,7 @@ TLV_FORMATTER(atn_sec_class_format_text) {
 	ASSERT(ctx->indent >= 0);
 
 	uint8_t const *t = data;
-	char const *class = dict_search(atn_security_classes, *t);
+	char const *class = la_dict_search(atn_security_classes, *t);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %s\n",
 			label, class ? class : "unassigned");
 }
@@ -255,14 +256,14 @@ TLV_FORMATTER(atn_sec_class_format_json) {
 	ASSERT(ctx->vstr != NULL);
 
 	uint8_t const *t = data;
-	char const *class = dict_search(atn_security_classes, *t);
+	char const *class = la_dict_search(atn_security_classes, *t);
 	la_json_object_start(ctx->vstr, label);
 	la_json_append_long(ctx->vstr, "class_id", *t);
 	la_json_append_string(ctx->vstr, "class_name", class);
 	la_json_object_end(ctx->vstr);
 }
 
-dict const atn_security_tags[] = {
+la_dict const atn_security_tags[] = {
 	{
 		.id = 0x3,
 		.val = &(tlv_type_descriptor_t){
@@ -330,7 +331,7 @@ static la_list *atn_sec_info_parse(uint8_t *buf, size_t len) {
 	ASSERT(buf != NULL);
 	la_list *l = NULL;
 	// In ATN all security tag names have a length of 1, hence we may
-	// treat the single-byte name as a dict index and parse the whole
+	// treat the single-byte name as a la_dict index and parse the whole
 	// tag set as TLV. If we encounter a tag name length other than 1,
 	// this method won't work, so we return NULL to indicate parsing error.
 	while(len >= 3) {   // tag set name len + tag set name + tag set len + 0-length sec tag

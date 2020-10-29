@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <sys/time.h>               // struct timeval
 #include <libacars/libacars.h>      // la_proto_node, la_proto_tree_destroy, la_proto_tree_format_text
+#include <libacars/dict.h>          // la_dict
 #include <libacars/acars.h>         // la_acars_parse, la_proto_tree_find_acars
 #include <libacars/adsc.h>          // la_proto_tree_find_adsc
 #include <libacars/cpdlc.h>         // la_proto_tree_find_cpdlc
@@ -67,7 +68,7 @@ static void update_msg_type(uint32_t *msg_type, la_proto_node *root) {
 
 #ifdef WITH_STATSD
 static void update_statsd_acars_metrics(la_msg_dir msg_dir, la_proto_node *root) {
-	static dict const reasm_status_counter_names[] = {
+	static la_dict const reasm_status_counter_names[] = {
 		{ .id = LA_REASM_UNKNOWN, .val = "acars.reasm.unknown" },
 		{ .id = LA_REASM_COMPLETE, .val = "acars.reasm.complete" },
 		// { .id = LA_REASM_IN_PROGRESS, .val = "acars.reasm.in_progress" },    // report final states only
@@ -85,7 +86,7 @@ static void update_statsd_acars_metrics(la_msg_dir msg_dir, la_proto_node *root)
 	if(amsg->err == true) {
 		return;
 	}
-	char const *metric = dict_search(reasm_status_counter_names, amsg->reasm_status);
+	char const *metric = la_dict_search(reasm_status_counter_names, amsg->reasm_status);
 	if(metric == NULL) {
 		return;
 	}

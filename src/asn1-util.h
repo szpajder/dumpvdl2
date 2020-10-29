@@ -21,43 +21,21 @@
 #define _ASN1_UTIL_H
 #include <stdint.h>                 // uint8_t
 #include <libacars/libacars.h>      // la_type_descriptor
+#include <libacars/asn1-util.h>     // la_asn1_formatter_params
 #include "asn1/constr_TYPE.h"       // asn_TYPE_descriptor_t
-
-// Parameters to the formatter function
-typedef struct {
-	la_vstring *vstr;
-	char const *label;
-	asn_TYPE_descriptor_t *td;
-	void const *sptr;
-	int indent;
-} asn1_formatter_param_t;
-
-// Formatter function prototype
-typedef void (*asn1_formatter_fun_t)(asn1_formatter_param_t);
-
-typedef struct {
-	asn_TYPE_descriptor_t *type;
-	asn1_formatter_fun_t format;
-	char const *label;
-} asn_formatter_t;
 
 // A structure for storing decoded ASN.1 payloads in a la_proto_node
 typedef struct {
 	asn_TYPE_descriptor_t *type;
 	void *data;
-	asn_formatter_t const *formatter_table_text;
-	asn_formatter_t const *formatter_table_json;
+	la_asn1_formatter const *formatter_table_text;
+	la_asn1_formatter const *formatter_table_json;
 	size_t formatter_table_text_len;
 	size_t formatter_table_json_len;
 } asn1_pdu_t;
 
-#define ASN1_FORMATTER_FUN_T(x) \
-	void x(asn1_formatter_param_t p)
-
 // asn1-util.c
 int asn1_decode_as(asn_TYPE_descriptor_t *td, void **struct_ptr, uint8_t *buf, int size);
-void asn1_output(asn1_formatter_param_t p, asn_formatter_t const *asn1_formatter_table,
-		size_t asn1_formatter_table_len, bool dump_unknown_types);
 void asn1_pdu_format_text(la_vstring *vstr, void const *data, int indent);
 void asn1_pdu_format_json(la_vstring *vstr, void const *data);
 void asn1_pdu_destroy(void *data);

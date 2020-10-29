@@ -22,6 +22,7 @@
 #include <string.h>
 #include <libacars/libacars.h>      // la_type_descriptor, la_proto_node
 #include <libacars/vstring.h>       // la_vstring, LA_ISPRINTF()
+#include <libacars/dict.h>          // la_dict
 #include <libacars/json.h>
 #include "atn.h"                    // atn_traffic_types, atsc_traffic_classes
 #include "esis.h"
@@ -89,13 +90,13 @@ TLV_FORMATTER(esis_subnet_caps_format_json) {
 	la_json_object_end(ctx->vstr);
 }
 
-static dict const esis_pdu_types[] = {
+static la_dict const esis_pdu_types[] = {
 	{ ESIS_PDU_TYPE_ESH,    "ES Hello" },
 	{ ESIS_PDU_TYPE_ISH,    "IS Hello" },
 	{ 0,                    NULL }
 };
 
-static dict const esis_options[] = {
+static la_dict const esis_options[] = {
 	{
 		.id = 0xc5,
 		.val = &(tlv_type_descriptor_t){
@@ -216,7 +217,7 @@ static void esis_pdu_format_text(la_vstring *vstr, void const *data, int indent)
 		return;
 	}
 	esis_hdr_t *hdr = pdu->hdr;
-	char const *pdu_name = dict_search(esis_pdu_types, hdr->type);
+	char const *pdu_name = la_dict_search(esis_pdu_types, hdr->type);
 	LA_ISPRINTF(vstr, indent, "ES-IS %s: Hold Time: %u sec\n", pdu_name, pdu->holdtime);
 	indent++;
 
@@ -243,7 +244,7 @@ static void esis_pdu_format_json(la_vstring * vstr, void const *data) {
 		return;
 	}
 	esis_hdr_t *hdr = pdu->hdr;
-	char const *pdu_name = dict_search(esis_pdu_types, hdr->type);
+	char const *pdu_name = la_dict_search(esis_pdu_types, hdr->type);
 	la_json_append_long(vstr, "pdu_type", hdr->type);
 	la_json_append_string(vstr, "pdu_type_name", pdu_name);
 	la_json_append_long(vstr, "hold_time", pdu->holdtime);

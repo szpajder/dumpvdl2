@@ -20,30 +20,30 @@
 #ifndef _ASN1_FORMAT_ICAO_H
 #define _ASN1_FORMAT_ICAO_H
 
-#include "asn1-util.h"                          // asn_formatter_t
-#include "dumpvdl2.h"                           // dict
+#include <libacars/asn1-util.h>                 // la_asn1_formatter_fun
+#include <libacars/dict.h>                      // la_dict
 
 // asn1-format-icao-text.c
-extern dict const Associate_result_labels[];
-extern dict const Release_request_reason_labels[];
-extern dict const Release_response_reason_labels[];
-extern dict const ABRT_source_labels[];
-extern dict const ATCUplinkMsgElementId_labels[];
-extern dict const VerticalType_bit_labels[];
-extern dict const ReportTypeNotSupported_bit_labels[];
-extern dict const EPPLimitations_bit_labels[];
-extern dict const EventTypeNotSupported_bit_labels[];
-extern dict const EmergencyUrgencyStatus_bit_labels[];
-extern dict const ATCDownlinkMsgElementId_labels[];
-extern asn_formatter_t const asn1_icao_formatter_table_text[];
+extern la_dict const Associate_result_labels[];
+extern la_dict const Release_request_reason_labels[];
+extern la_dict const Release_response_reason_labels[];
+extern la_dict const ABRT_source_labels[];
+extern la_dict const ATCUplinkMsgElementId_labels[];
+extern la_dict const VerticalType_bit_labels[];
+extern la_dict const ReportTypeNotSupported_bit_labels[];
+extern la_dict const EPPLimitations_bit_labels[];
+extern la_dict const EventTypeNotSupported_bit_labels[];
+extern la_dict const EmergencyUrgencyStatus_bit_labels[];
+extern la_dict const ATCDownlinkMsgElementId_labels[];
+extern la_asn1_formatter const asn1_icao_formatter_table_text[];
 extern size_t asn1_icao_formatter_table_text_len;
-extern asn_formatter_t const asn1_acse_formatter_table_text[];
+extern la_asn1_formatter const asn1_acse_formatter_table_text[];
 extern size_t asn1_acse_formatter_table_text_len;
 
 // asn1-format-icao-json.c
-extern asn_formatter_t const asn1_icao_formatter_table_json[];
+extern la_asn1_formatter const asn1_icao_formatter_table_json[];
 extern size_t asn1_icao_formatter_table_json_len;
-extern asn_formatter_t const asn1_acse_formatter_table_json[];
+extern la_asn1_formatter const asn1_acse_formatter_table_json[];
 extern size_t asn1_acse_formatter_table_json_len;
 
 #endif // !_ASN1_FORMAT_ICAO_H

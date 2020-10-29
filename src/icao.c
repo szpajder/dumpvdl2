@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <libacars/libacars.h>          // la_proto_node, la_type_descriptor
 #include <libacars/vstring.h>           // la_vstring
+#include <libacars/dict.h>              // la_dict
 #include <libacars/json.h>
 #include "asn1/BIT_STRING.h"
 #include "asn1/ACSE-apdu.h"
@@ -509,7 +510,7 @@ end:
 #define X225_SPDU_SRF  0xe0
 #define X225_SPDU_SRFC 0xa0
 
-static dict const x225_spdu_names[] = {
+static la_dict const x225_spdu_names[] = {
 	{ X225_SPDU_SCN,  "Short Connect" },
 	{ X225_SPDU_SAC,  "Short Accept" },
 	{ X225_SPDU_SACC, "Short Accept Continue" },
@@ -526,7 +527,7 @@ static la_proto_node *x225_spdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_
 	uint32_t remaining = len;
 
 	uint8_t spdu_id = ptr[0] & 0xf8;
-	if(dict_search(x225_spdu_names, spdu_id) == NULL) {
+	if(la_dict_search(x225_spdu_names, spdu_id) == NULL) {
 		debug_print(D_PROTO, "Unknown SPDU type 0x%02x\n", spdu_id);
 		goto fail;
 	}
@@ -580,7 +581,7 @@ void x225_spdu_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(indent >= 0);
 
 	x225_spdu_t const *spdu = data;
-	char const *str = dict_search(x225_spdu_names, spdu->spdu_id);
+	char const *str = la_dict_search(x225_spdu_names, spdu->spdu_id);
 	if(str != NULL) {
 		LA_ISPRINTF(vstr, indent, "X.225 Session SPDU: %s\n", str);
 	} else {
@@ -601,7 +602,7 @@ void x225_spdu_format_json(la_vstring *vstr, void const *data) {
 
 	x225_spdu_t const *spdu = data;
 	la_json_append_long(vstr, "spdu_id", spdu->spdu_id);
-	char const *str = dict_search(x225_spdu_names, spdu->spdu_id);
+	char const *str = la_dict_search(x225_spdu_names, spdu->spdu_id);
 	SAFE_JSON_APPEND_STRING(vstr, "spdu_type", str);
 	if(spdu->spdu_id == X225_SPDU_SRF) {
 		la_json_append_string(vstr, "refusal",

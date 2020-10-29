@@ -23,6 +23,7 @@
 #include <string.h>
 #include <libacars/libacars.h>      // la_proto_node
 #include <libacars/vstring.h>       // la_vstring
+#include <libacars/dict.h>          // la_dict
 #include <libacars/list.h>          // la_list
 #include <libacars/json.h>
 #include "dumpvdl2.h"
@@ -47,7 +48,7 @@ la_type_descriptor const proto_DEF_cotp_concatenated_pdu;
 // in the ATN are printed as hex strings. There's no point in providing
 // specific formatting routines for them, since they will probably never
 // be used in practice.
-static dict const cotp_variable_part_params[] = {
+static la_dict const cotp_variable_part_params[] = {
 	{
 		.id = 0x08,
 		.val = &(tlv_type_descriptor_t){
@@ -287,7 +288,7 @@ static dict const cotp_variable_part_params[] = {
 
 // Can't use cotp_variable_part_params for ER, because parameter 0xc1
 // has a different meaning.
-static dict const cotp_er_variable_part_params[] = {
+static la_dict const cotp_er_variable_part_params[] = {
 	{
 		.id = 0xc1,
 		.val = &(tlv_type_descriptor_t){
@@ -421,7 +422,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 	pdu->dst_ref = extract_uint16_msbfirst(ptr + 1);
 
 	uint8_t variable_part_offset = 0;
-	dict const *cotp_params = cotp_variable_part_params;
+	la_dict const *cotp_params = cotp_variable_part_params;
 	switch(pdu->code) {
 		case COTP_TPDU_CR:
 		case COTP_TPDU_CC:
@@ -583,7 +584,7 @@ static char const *x225_transport_disc_reason_codes[] = {
 	[SPM_DISC_NORMAL_REUSE_NOT_POSSIBLE] = "OK, transport connection reuse not possible"
 };
 
-static const dict cotp_tpdu_codes[] = {
+static const la_dict cotp_tpdu_codes[] = {
 	{ COTP_TPDU_CR, "Connect Request" },
 	{ COTP_TPDU_CC, "Connect Confirm" },
 	{ COTP_TPDU_DR, "Disconnect Request" },
@@ -597,7 +598,7 @@ static const dict cotp_tpdu_codes[] = {
 	{ 0, NULL }
 };
 
-static dict const cotp_dr_reasons[] = {
+static la_dict const cotp_dr_reasons[] = {
 	{   0, "Reason not specified" },
 	{   1, "TSAP congestion" },
 	{   2, "Session entity not attached to TSAP" },
@@ -614,7 +615,7 @@ static dict const cotp_dr_reasons[] = {
 	{   0, NULL }
 };
 
-static dict const cotp_er_reject_causes[] = {
+static la_dict const cotp_er_reject_causes[] = {
 	{ 0, "Reason not specified" },
 	{ 1, "Invalid parameter code" },
 	{ 2, "Invalid TPDU type" },
@@ -636,7 +637,7 @@ static void output_cotp_pdu_as_text(void const *data, void const *ctx_ptr) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable X.224 COTP TPDU\n");
 		return;
 	}
-	char const *tpdu_name = dict_search(cotp_tpdu_codes, pdu->code);
+	char const *tpdu_name = la_dict_search(cotp_tpdu_codes, pdu->code);
 	ASSERT(tpdu_name != NULL);
 
 	LA_ISPRINTF(vstr, indent, "X.224 COTP %s%s:\n", tpdu_name,
@@ -671,7 +672,7 @@ static void output_cotp_pdu_as_text(void const *data, void const *ctx_ptr) {
 			LA_ISPRINTF(vstr, indent, "rseq: %u\n", pdu->tpdu_seq);
 			break;
 		case COTP_TPDU_ER:
-			str = dict_search(cotp_er_reject_causes, pdu->class_or_disc_reason);
+			str = la_dict_search(cotp_er_reject_causes, pdu->class_or_disc_reason);
 			LA_ISPRINTF(vstr, indent, "Reject cause: %u (%s)\n", pdu->class_or_disc_reason,
 					(str ? str : "<unknown>"));
 			break;
@@ -681,7 +682,7 @@ static void output_cotp_pdu_as_text(void const *data, void const *ctx_ptr) {
 					pdu->tpdu_seq, pdu->roa, pdu->eot);
 			break;
 		case COTP_TPDU_DR:
-			str = dict_search(cotp_dr_reasons, pdu->class_or_disc_reason);
+			str = la_dict_search(cotp_dr_reasons, pdu->class_or_disc_reason);
 			LA_ISPRINTF(vstr, indent, "Reason: %u (%s)\n", pdu->class_or_disc_reason,
 					(str ? str : "<unknown>"));
 			break;
@@ -716,7 +717,7 @@ static void output_cotp_pdu_as_json(void const *data, void const *ctx_ptr) {
 	}
 
 	la_json_append_long(vstr, "tpdu_code", pdu->code);
-	char const *tpdu_name = dict_search(cotp_tpdu_codes, pdu->code);
+	char const *tpdu_name = la_dict_search(cotp_tpdu_codes, pdu->code);
 	ASSERT(tpdu_name != NULL);
 	la_json_append_string(vstr, "tpdu_code_descr", tpdu_name);
 	la_json_append_bool(vstr, "extended", pdu->extended);
@@ -750,7 +751,7 @@ static void output_cotp_pdu_as_json(void const *data, void const *ctx_ptr) {
 			break;
 		case COTP_TPDU_ER:
 			la_json_append_long(vstr, "reject_code", pdu->class_or_disc_reason);
-			str = dict_search(cotp_er_reject_causes, pdu->class_or_disc_reason);
+			str = la_dict_search(cotp_er_reject_causes, pdu->class_or_disc_reason);
 			SAFE_JSON_APPEND_STRING(vstr, "reject_cause", str);
 			break;
 		case COTP_TPDU_DT:
@@ -761,7 +762,7 @@ static void output_cotp_pdu_as_json(void const *data, void const *ctx_ptr) {
 			break;
 		case COTP_TPDU_DR:
 			la_json_append_long(vstr, "disc_reason_code", pdu->class_or_disc_reason);
-			str = dict_search(cotp_dr_reasons, pdu->class_or_disc_reason);
+			str = la_dict_search(cotp_dr_reasons, pdu->class_or_disc_reason);
 			SAFE_JSON_APPEND_STRING(vstr, "disc_reason", str);
 			break;
 		case COTP_TPDU_DC:

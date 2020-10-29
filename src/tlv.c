@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <libacars/list.h>          // la_list
 #include <libacars/vstring.h>       // la_vstring
+#include <libacars/dict.h>          // la_dict
 #include <libacars/json.h>
 #include "dumpvdl2.h"               // XCALLOC, XFREE
 #include "tlv.h"
@@ -66,11 +67,11 @@ tlv_tag_t *tlv_list_search(la_list const *ptr, uint8_t typecode) {
 	return NULL;
 }
 
-la_list *tlv_single_tag_parse(uint8_t typecode, uint8_t *buf, size_t tag_len, dict const *tag_table, la_list *list) {
+la_list *tlv_single_tag_parse(uint8_t typecode, uint8_t *buf, size_t tag_len, la_dict const *tag_table, la_list *list) {
 	ASSERT(buf != NULL);
 	ASSERT(tag_table != NULL);
 
-	tlv_type_descriptor_t *td = dict_search(tag_table, (int)typecode);
+	tlv_type_descriptor_t *td = la_dict_search(tag_table, (int)typecode);
 	if(td == NULL) {
 		debug_print(D_PROTO, "Unknown type code %u\n", typecode);
 		td = &tlv_DEF_unknown_tag;
@@ -87,7 +88,7 @@ reparse:
 	return tlv_list_append(list, typecode, td, parsed);
 }
 
-la_list *tlv_parse(uint8_t *buf, size_t len, dict const *tag_table, size_t len_octets) {
+la_list *tlv_parse(uint8_t *buf, size_t len, la_dict const *tag_table, size_t len_octets) {
 	ASSERT(buf != NULL);
 	ASSERT(tag_table != NULL);
 	la_list *head = NULL;
