@@ -112,7 +112,7 @@ static LA_ASN1_FORMATTER_FUN(asn1_format_ATCUplinkMsgElementId_as_json) {
 static LA_ASN1_FORMATTER_FUN(asn1_format_Code_as_json) {
 	Code_t const *code = p.sptr;
 	long **cptr = code->list.array;
-	la_json_append_long(p.vstr, p.label,
+	la_json_append_int64(p.vstr, p.label,
 			*cptr[0] * 1000 +
 			*cptr[1] * 100 +
 			*cptr[2] * 10 +
@@ -125,28 +125,28 @@ static LA_ASN1_FORMATTER_FUN(asn1_format_DateTime_as_json) {
 	Date_t const *d = &dtg->date;
 	Time_t const *t = &dtg->time;
 	la_json_object_start(p.vstr, p.label);
-	la_json_append_long(p.vstr, "year", d->year);
-	la_json_append_long(p.vstr, "month", d->month);
-	la_json_append_long(p.vstr, "day", d->day);
-	la_json_append_long(p.vstr, "hour", t->hours);
-	la_json_append_long(p.vstr, "min", t->minutes);
+	la_json_append_int64(p.vstr, "year", d->year);
+	la_json_append_int64(p.vstr, "month", d->month);
+	la_json_append_int64(p.vstr, "day", d->day);
+	la_json_append_int64(p.vstr, "hour", t->hours);
+	la_json_append_int64(p.vstr, "min", t->minutes);
 	la_json_object_end(p.vstr);
 }
 
 static LA_ASN1_FORMATTER_FUN(asn1_format_Timehhmmss_as_json) {
 	Timehhmmss_t const *t = p.sptr;
 	la_json_object_start(p.vstr, p.label);
-	la_json_append_long(p.vstr, "hour", t->hoursminutes.hours);
-	la_json_append_long(p.vstr, "min", t->hoursminutes.minutes);
-	la_json_append_long(p.vstr, "sec", t->seconds);
+	la_json_append_int64(p.vstr, "hour", t->hoursminutes.hours);
+	la_json_append_int64(p.vstr, "min", t->hoursminutes.minutes);
+	la_json_append_int64(p.vstr, "sec", t->seconds);
 	la_json_object_end(p.vstr);
 }
 
 static LA_ASN1_FORMATTER_FUN(asn1_format_Time_as_json) {
 	Time_t const *t = p.sptr;
 	la_json_object_start(p.vstr, p.label);
-	la_json_append_long(p.vstr, "hour", t->hours);
-	la_json_append_long(p.vstr, "min", t->minutes);
+	la_json_append_int64(p.vstr, "hour", t->hours);
+	la_json_append_int64(p.vstr, "min", t->minutes);
 	la_json_object_end(p.vstr);
 }
 
@@ -157,16 +157,16 @@ static LA_ASN1_FORMATTER_FUN(asn1_format_Latitude_as_json) {
 	la_json_object_start(p.vstr, p.label);
 	switch(lat->latitudeType.present) {
 		case LatitudeType_PR_latitudeDegrees:
-			la_json_append_long(p.vstr, "deg", lat->latitudeType.choice.latitudeDegrees);
+			la_json_append_int64(p.vstr, "deg", lat->latitudeType.choice.latitudeDegrees);
 			break;
 		case LatitudeType_PR_latitudeDegreesMinutes:
-			la_json_append_long(p.vstr, "deg", lat->latitudeType.choice.latitudeDegreesMinutes.latitudeWholeDegrees);
+			la_json_append_int64(p.vstr, "deg", lat->latitudeType.choice.latitudeDegreesMinutes.latitudeWholeDegrees);
 			la_json_append_double(p.vstr, "min", lat->latitudeType.choice.latitudeDegreesMinutes.minutesLatLon / 100.0);
 			break;
 		case LatitudeType_PR_latitudeDMS:
-			la_json_append_long(p.vstr, "deg", lat->latitudeType.choice.latitudeDMS.latitudeWholeDegrees);
-			la_json_append_long(p.vstr, "min", lat->latitudeType.choice.latitudeDMS.latlonWholeMinutes);
-			la_json_append_long(p.vstr, "sec", lat->latitudeType.choice.latitudeDMS.secondsLatLon);
+			la_json_append_int64(p.vstr, "deg", lat->latitudeType.choice.latitudeDMS.latitudeWholeDegrees);
+			la_json_append_int64(p.vstr, "min", lat->latitudeType.choice.latitudeDMS.latlonWholeMinutes);
+			la_json_append_int64(p.vstr, "sec", lat->latitudeType.choice.latitudeDMS.secondsLatLon);
 			break;
 		case LatitudeType_PR_NOTHING:
 			break;
@@ -182,16 +182,16 @@ static LA_ASN1_FORMATTER_FUN(asn1_format_Longitude_as_json) {
 	la_json_object_start(p.vstr, p.label);
 	switch(lon->longitudeType.present) {
 		case LongitudeType_PR_longitudeDegrees:
-			la_json_append_long(p.vstr, "deg", lon->longitudeType.choice.longitudeDegrees);
+			la_json_append_int64(p.vstr, "deg", lon->longitudeType.choice.longitudeDegrees);
 			break;
 		case LongitudeType_PR_longitudeDegreesMinutes:
-			la_json_append_long(p.vstr, "deg", lon->longitudeType.choice.longitudeDegreesMinutes.longitudeWholeDegrees);
+			la_json_append_int64(p.vstr, "deg", lon->longitudeType.choice.longitudeDegreesMinutes.longitudeWholeDegrees);
 			la_json_append_double(p.vstr, "min", lon->longitudeType.choice.longitudeDegreesMinutes.minutesLatLon / 100.0);
 			break;
 		case LongitudeType_PR_longitudeDMS:
-			la_json_append_long(p.vstr, "deg", lon->longitudeType.choice.longitudeDMS.longitudeWholeDegrees);
-			la_json_append_long(p.vstr, "min", lon->longitudeType.choice.longitudeDMS.latLonWholeMinutes);
-			la_json_append_long(p.vstr, "sec", lon->longitudeType.choice.longitudeDMS.secondsLatLon);
+			la_json_append_int64(p.vstr, "deg", lon->longitudeType.choice.longitudeDMS.longitudeWholeDegrees);
+			la_json_append_int64(p.vstr, "min", lon->longitudeType.choice.longitudeDMS.latLonWholeMinutes);
+			la_json_append_int64(p.vstr, "sec", lon->longitudeType.choice.longitudeDMS.secondsLatLon);
 			break;
 		case LongitudeType_PR_NOTHING:
 			break;
@@ -282,7 +282,7 @@ static LA_ASN1_FORMATTER_FUN(asn1_format_OBJECT_IDENTIFIER_as_json) {
 
 	la_json_array_start(p.vstr, p.label);
 	for(int i = 0; i < count; i++) {
-		la_json_append_long(p.vstr, NULL, arcs[i]);
+		la_json_append_int64(p.vstr, NULL, arcs[i]);
 	}
 	la_json_array_end(p.vstr);
 	
@@ -393,8 +393,8 @@ static LA_ASN1_FORMATTER_FUN(asn1_format_ADSv2Latitude_as_json) {
 	long const ldir = lat->direction;
 	char const *ldir_name = la_asn1_value2enum(&asn_DEF_LatitudeDirection, ldir);
 	la_json_object_start(p.vstr, p.label);
-	la_json_append_long(p.vstr, "deg", lat->degrees);
-	la_json_append_long(p.vstr, "min", lat->minutes);
+	la_json_append_int64(p.vstr, "deg", lat->degrees);
+	la_json_append_int64(p.vstr, "min", lat->minutes);
 	la_json_append_double(p.vstr, "sec", lat->seconds / 10.0);
 	la_json_append_string(p.vstr, "dir", ldir_name);
 	la_json_object_end(p.vstr);
@@ -405,8 +405,8 @@ static LA_ASN1_FORMATTER_FUN(asn1_format_ADSv2Longitude_as_json) {
 	long const ldir = lon->direction;
 	char const *ldir_name = la_asn1_value2enum(&asn_DEF_LongitudeDirection, ldir);
 	la_json_object_start(p.vstr, p.label);
-	la_json_append_long(p.vstr, "deg", lon->degrees);
-	la_json_append_long(p.vstr, "min", lon->minutes);
+	la_json_append_int64(p.vstr, "deg", lon->degrees);
+	la_json_append_int64(p.vstr, "min", lon->minutes);
 	la_json_append_double(p.vstr, "sec", lon->seconds / 10.0);
 	la_json_append_string(p.vstr, "dir", ldir_name);
 	la_json_object_end(p.vstr);

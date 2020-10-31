@@ -152,8 +152,8 @@ TLV_FORMATTER(x25_pkt_size_format_json) {
 
 	x25_pkt_size_t const *pkt_size = data;
 	la_json_object_start(ctx->vstr, label);
-	la_json_append_long(ctx->vstr, "from_calling_dte", pkt_size->from_calling_dte);
-	la_json_append_long(ctx->vstr, "from_called_dte", pkt_size->from_called_dte);
+	la_json_append_int64(ctx->vstr, "from_calling_dte", pkt_size->from_calling_dte);
+	la_json_append_int64(ctx->vstr, "from_called_dte", pkt_size->from_called_dte);
 	la_json_object_end(ctx->vstr);
 }
 
@@ -199,8 +199,8 @@ TLV_FORMATTER(x25_win_size_format_json) {
 
 	x25_win_size_t const *win_size = data;
 	la_json_object_start(ctx->vstr, label);
-	la_json_append_long(ctx->vstr, "from_calling_dte", win_size->from_calling_dte);
-	la_json_append_long(ctx->vstr, "from_called_dte", win_size->from_called_dte);
+	la_json_append_int64(ctx->vstr, "from_calling_dte", win_size->from_calling_dte);
+	la_json_append_int64(ctx->vstr, "from_called_dte", win_size->from_called_dte);
 	la_json_object_end(ctx->vstr);
 }
 
@@ -412,11 +412,11 @@ void sndcf_error_report_format_json(la_vstring *vstr, void const *data) {
 	if(rpt->err == true) {
 		return;
 	}
-	la_json_append_long(vstr, "cause_code", rpt->error_code);
+	la_json_append_int64(vstr, "cause_code", rpt->error_code);
 	if(rpt->error_code <= SNDCF_ERR_MAX) {
 		la_json_append_string(vstr, "cause_descr", sndcf_error_descriptions[rpt->error_code]);
 	}
-	la_json_append_long(vstr, "local_ref", rpt->local_ref);
+	la_json_append_int64(vstr, "local_ref", rpt->local_ref);
 	la_json_append_bool(vstr, "erroneous_pdu_present", rpt->errored_pdu_present);
 }
 
@@ -981,11 +981,11 @@ static void x25_format_json(la_vstring *vstr, void const *data) {
 	if(pkt->err == true) {
 		return;
 	}
-	la_json_append_long(vstr, "pkt_type", pkt->type);
+	la_json_append_int64(vstr, "pkt_type", pkt->type);
 	char const *name = la_dict_search(x25_pkttype_names, pkt->type);
 	SAFE_JSON_APPEND_STRING(vstr, "pkt_type_name", name);
-	la_json_append_long(vstr, "chan_group", pkt->hdr->chan_group);
-	la_json_append_long(vstr, "chan_num", pkt->hdr->chan_num);
+	la_json_append_int64(vstr, "chan_group", pkt->hdr->chan_group);
+	la_json_append_int64(vstr, "chan_num", pkt->hdr->chan_num);
 
 	if(pkt->addr_block_present) {
 		char *calling = fmt_x25_addr(pkt->calling.addr, pkt->calling.len);
@@ -995,11 +995,11 @@ static void x25_format_json(la_vstring *vstr, void const *data) {
 		XFREE(calling);
 		XFREE(called);
 	} else if(pkt->type == X25_DATA) {
-		la_json_append_long(vstr, "sseq", pkt->hdr->type.data.sseq);
-		la_json_append_long(vstr, "rseq", pkt->hdr->type.data.rseq);
+		la_json_append_int64(vstr, "sseq", pkt->hdr->type.data.sseq);
+		la_json_append_int64(vstr, "rseq", pkt->hdr->type.data.rseq);
 		la_json_append_bool(vstr, "more", pkt->hdr->type.data.more);
 	} else if(pkt->type == X25_RR || pkt->type == X25_REJ) {
-		la_json_append_long(vstr, "rseq", pkt->hdr->type.data.rseq);
+		la_json_append_int64(vstr, "rseq", pkt->hdr->type.data.rseq);
 	}
 
 	la_dict const *cause_dict = NULL;
@@ -1007,7 +1007,7 @@ static void x25_format_json(la_vstring *vstr, void const *data) {
 		case X25_CALL_REQUEST:
 		case X25_CALL_ACCEPTED:
 			tlv_list_format_json(vstr, "facilities", pkt->facilities);
-			la_json_append_long(vstr, "compression_options", pkt->compression);
+			la_json_append_int64(vstr, "compression_options", pkt->compression);
 			bitfield_format_json(vstr, &pkt->compression, 1, x25_comp_algos, "compression_algos");
 			break;
 		case X25_DATA:
@@ -1024,12 +1024,12 @@ static void x25_format_json(la_vstring *vstr, void const *data) {
 			break;
 	}
 	if(cause_dict != NULL) {
-		la_json_append_long(vstr, "clear_cause", pkt->clr_cause);
+		la_json_append_int64(vstr, "clear_cause", pkt->clr_cause);
 		char const *clr_cause = la_dict_search(cause_dict, pkt->clr_cause);
 		SAFE_JSON_APPEND_STRING(vstr, "clear_cause_descr", clr_cause);
 	}
 	if(pkt->diag_code_present) {
-		la_json_append_long(vstr, "diag_code", pkt->diag_code);
+		la_json_append_int64(vstr, "diag_code", pkt->diag_code);
 		char const *diag_code = la_dict_search(x25_diag_codes, pkt->diag_code);
 		SAFE_JSON_APPEND_STRING(vstr, "diag_code_descr", diag_code);
 	}

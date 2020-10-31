@@ -358,9 +358,9 @@ TLV_FORMATTER(flow_control_confirmation_format_json) {
 	ASSERT(ctx->vstr != NULL);
 	cotp_flow_control_confirm_t const *f = data;
 	la_json_object_start(ctx->vstr, label);
-	la_json_append_long(ctx->vstr, "acked_tpdu_nr", f->acked_tpdu_nr);
-	la_json_append_long(ctx->vstr, "acked_subseq", f->acked_subseq);
-	la_json_append_long(ctx->vstr, "acked_credit", f->acked_credit);
+	la_json_append_int64(ctx->vstr, "acked_tpdu_nr", f->acked_tpdu_nr);
+	la_json_append_int64(ctx->vstr, "acked_subseq", f->acked_subseq);
+	la_json_append_int64(ctx->vstr, "acked_credit", f->acked_credit);
 	la_json_object_end(ctx->vstr);
 }
 
@@ -716,7 +716,7 @@ static void output_cotp_pdu_as_json(void const *data, void const *ctx_ptr) {
 		goto end;
 	}
 
-	la_json_append_long(vstr, "tpdu_code", pdu->code);
+	la_json_append_int64(vstr, "tpdu_code", pdu->code);
 	char const *tpdu_name = la_dict_search(cotp_tpdu_codes, pdu->code);
 	ASSERT(tpdu_name != NULL);
 	la_json_append_string(vstr, "tpdu_code_descr", tpdu_name);
@@ -727,41 +727,41 @@ static void output_cotp_pdu_as_json(void const *data, void const *ctx_ptr) {
 		case COTP_TPDU_CC:
 		case COTP_TPDU_DR:
 		case COTP_TPDU_DC:
-			la_json_append_long(vstr, "src_ref", pdu->src_ref);
+			la_json_append_int64(vstr, "src_ref", pdu->src_ref);
 			/* FALLTHROUGH */
 		default:
-			la_json_append_long(vstr, "dst_ref", pdu->dst_ref);
+			la_json_append_int64(vstr, "dst_ref", pdu->dst_ref);
 	}
 
 	switch(pdu->code) {
 		case COTP_TPDU_CR:
 		case COTP_TPDU_CC:
-			la_json_append_long(vstr, "credit", pdu->credit);
-			la_json_append_long(vstr, "proto_class", pdu->class_or_disc_reason);
-			la_json_append_long(vstr, "options", pdu->options);
+			la_json_append_int64(vstr, "credit", pdu->credit);
+			la_json_append_int64(vstr, "proto_class", pdu->class_or_disc_reason);
+			la_json_append_int64(vstr, "options", pdu->options);
 			la_json_append_bool(vstr, "use_extended_pdu_formats", pdu->options & 2);
 			break;
 		case COTP_TPDU_AK:
 		case COTP_TPDU_RJ:
-			la_json_append_long(vstr, "credit", pdu->credit);
-			la_json_append_long(vstr, "rseq", pdu->tpdu_seq);
+			la_json_append_int64(vstr, "credit", pdu->credit);
+			la_json_append_int64(vstr, "rseq", pdu->tpdu_seq);
 			break;
 		case COTP_TPDU_EA:
-			la_json_append_long(vstr, "rseq", pdu->tpdu_seq);
+			la_json_append_int64(vstr, "rseq", pdu->tpdu_seq);
 			break;
 		case COTP_TPDU_ER:
-			la_json_append_long(vstr, "reject_code", pdu->class_or_disc_reason);
+			la_json_append_int64(vstr, "reject_code", pdu->class_or_disc_reason);
 			str = la_dict_search(cotp_er_reject_causes, pdu->class_or_disc_reason);
 			SAFE_JSON_APPEND_STRING(vstr, "reject_cause", str);
 			break;
 		case COTP_TPDU_DT:
 		case COTP_TPDU_ED:
-			la_json_append_long(vstr, "sseq", pdu->tpdu_seq);
-			la_json_append_long(vstr, "req_of_ack", pdu->roa);
-			la_json_append_long(vstr, "eot", pdu->eot);
+			la_json_append_int64(vstr, "sseq", pdu->tpdu_seq);
+			la_json_append_int64(vstr, "req_of_ack", pdu->roa);
+			la_json_append_int64(vstr, "eot", pdu->eot);
 			break;
 		case COTP_TPDU_DR:
-			la_json_append_long(vstr, "disc_reason_code", pdu->class_or_disc_reason);
+			la_json_append_int64(vstr, "disc_reason_code", pdu->class_or_disc_reason);
 			str = la_dict_search(cotp_dr_reasons, pdu->class_or_disc_reason);
 			SAFE_JSON_APPEND_STRING(vstr, "disc_reason", str);
 			break;
@@ -771,7 +771,7 @@ static void output_cotp_pdu_as_json(void const *data, void const *ctx_ptr) {
 	tlv_list_format_json(vstr, "variable_part_params", pdu->variable_part_params);
 
 	if(pdu->code == COTP_TPDU_DR && pdu->x225_transport_disc_reason >= 0) {
-		la_json_append_long(vstr, "x225_spm_transport_disconnect_reason_code", pdu->x225_transport_disc_reason);
+		la_json_append_int64(vstr, "x225_spm_transport_disconnect_reason_code", pdu->x225_transport_disc_reason);
 		la_json_append_string(vstr, "x225_spm_transport_disconnect_reason",
 				x225_transport_disc_reason_codes[pdu->x225_transport_disc_reason]);
 	}

@@ -245,9 +245,9 @@ static void esis_pdu_format_json(la_vstring * vstr, void const *data) {
 	}
 	esis_hdr_t *hdr = pdu->hdr;
 	char const *pdu_name = la_dict_search(esis_pdu_types, hdr->type);
-	la_json_append_long(vstr, "pdu_type", hdr->type);
+	la_json_append_int64(vstr, "pdu_type", hdr->type);
 	la_json_append_string(vstr, "pdu_type_name", pdu_name);
-	la_json_append_long(vstr, "hold_time", pdu->holdtime);
+	la_json_append_int64(vstr, "hold_time", pdu->holdtime);
 	if(hdr->type == ESIS_PDU_TYPE_ESH) {
 		la_json_append_octet_string(vstr, "sa", pdu->net_addr.buf, pdu->net_addr.len);
 	} else if(hdr->type == ESIS_PDU_TYPE_ISH) {

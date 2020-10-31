@@ -40,15 +40,15 @@ void la_vdl2_format_json(la_vstring *vstr, void const *data) {
 	}
 
 	la_json_object_start(vstr, "t");
-	la_json_append_long(vstr, "sec", m->burst_timestamp.tv_sec);
-	la_json_append_long(vstr, "usec", m->burst_timestamp.tv_usec);
+	la_json_append_int64(vstr, "sec", m->burst_timestamp.tv_sec);
+	la_json_append_int64(vstr, "usec", m->burst_timestamp.tv_usec);
 	la_json_object_end(vstr);
 
-	la_json_append_long(vstr, "freq", m->freq);
-	la_json_append_long(vstr, "burst_len_octets", m->datalen_octets);
-	la_json_append_long(vstr, "hdr_bits_fixed", m->synd_weight);
-	la_json_append_long(vstr, "octets_corrected_by_fec", m->num_fec_corrections);
-	la_json_append_long(vstr, "idx", m->idx);
+	la_json_append_int64(vstr, "freq", m->freq);
+	la_json_append_int64(vstr, "burst_len_octets", m->datalen_octets);
+	la_json_append_int64(vstr, "hdr_bits_fixed", m->synd_weight);
+	la_json_append_int64(vstr, "octets_corrected_by_fec", m->num_fec_corrections);
+	la_json_append_int64(vstr, "idx", m->idx);
 	la_json_append_double(vstr, "sig_level", m->frame_pwr_dbfs);
 	la_json_append_double(vstr, "noise_level", m->nf_pwr_dbfs);
 	la_json_append_double(vstr, "freq_skew", m->ppm_error);

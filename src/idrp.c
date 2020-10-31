@@ -182,8 +182,8 @@ TLV_FORMATTER(idrp_route_separator_format_json) {
 
 	idrp_route_separator_t const *s = data;
 	la_json_object_start(ctx->vstr, label);
-	la_json_append_long(ctx->vstr, "id", s->id);
-	la_json_append_long(ctx->vstr, "localpref", s->localpref);
+	la_json_append_int64(ctx->vstr, "id", s->id);
+	la_json_append_int64(ctx->vstr, "localpref", s->localpref);
 	la_json_object_end(ctx->vstr);
 }
 
@@ -959,7 +959,7 @@ static void idrp_error_format_json(la_vstring *vstr, idrp_pdu_t const *pdu) {
 	ASSERT(vstr != NULL);
 	ASSERT(pdu != NULL);
 
-	la_json_append_long(vstr, "err_code", pdu->err_code);
+	la_json_append_int64(vstr, "err_code", pdu->err_code);
 	bispdu_err_t const *err = la_dict_search(bispdu_errors, pdu->err_code);
 	if(err != NULL) {
 		la_json_append_string(vstr, "err_descr", err->descr);
@@ -967,14 +967,14 @@ static void idrp_error_format_json(la_vstring *vstr, idrp_pdu_t const *pdu) {
 		goto print_err_payload;
 	}
 	if(pdu->err_code == BISPDU_ERR_FSM) {   // special case
-		la_json_append_long(vstr, "err_fsm_bispdu_type", pdu->err_fsm_bispdu_type);
-		la_json_append_long(vstr, "err_fsm_state", pdu->err_fsm_state);
+		la_json_append_int64(vstr, "err_fsm_bispdu_type", pdu->err_fsm_bispdu_type);
+		la_json_append_int64(vstr, "err_fsm_state", pdu->err_fsm_state);
 		char const *bispdu_name = la_dict_search(bispdu_types, pdu->err_fsm_bispdu_type);
 		char const *fsm_state_name = la_dict_search(FSM_states, pdu->err_fsm_state);
 		SAFE_JSON_APPEND_STRING(vstr, "err_fsm_bispdu_name", bispdu_name);
 		SAFE_JSON_APPEND_STRING(vstr, "err_fsm_state_descr", fsm_state_name);
 	} else {
-		la_json_append_long(vstr, "err_subcode", pdu->err_subcode);
+		la_json_append_int64(vstr, "err_subcode", pdu->err_subcode);
 		char const *subcode = la_dict_search(err->subcodes, pdu->err_subcode);
 		SAFE_JSON_APPEND_STRING(vstr, "err_subcode_descr", subcode);
 	}
@@ -1088,17 +1088,17 @@ void idrp_pdu_format_json(la_vstring *vstr, void const *data) {
 		return;
 	}
 	idrp_hdr_t *hdr = pdu->hdr;
-	la_json_append_long(vstr, "pdu_type", hdr->type);
+	la_json_append_int64(vstr, "pdu_type", hdr->type);
 	char const *bispdu_name = la_dict_search(bispdu_types, hdr->type);
 	SAFE_JSON_APPEND_STRING(vstr, "pdu_type_name", bispdu_name);
-	la_json_append_long(vstr, "seq", ntohl(hdr->seq));
-	la_json_append_long(vstr, "ack", ntohl(hdr->ack));
-	la_json_append_long(vstr, "credit_offered", hdr->coff);
-	la_json_append_long(vstr, "credit_avail", hdr->cavail);
+	la_json_append_int64(vstr, "seq", ntohl(hdr->seq));
+	la_json_append_int64(vstr, "ack", ntohl(hdr->ack));
+	la_json_append_int64(vstr, "credit_offered", hdr->coff);
+	la_json_append_int64(vstr, "credit_avail", hdr->cavail);
 	switch(pdu->hdr->type) {
 		case BISPDU_TYPE_OPEN:
-			la_json_append_long(vstr, "hold_time", pdu->open_holdtime);
-			la_json_append_long(vstr, "max_pdu_size", pdu->open_max_pdu_size);
+			la_json_append_int64(vstr, "hold_time", pdu->open_holdtime);
+			la_json_append_int64(vstr, "max_pdu_size", pdu->open_max_pdu_size);
 			la_json_append_octet_string(vstr, "src_rdi", pdu->open_src_rdi.buf, pdu->open_src_rdi.len);
 			if(pdu->ribatts_set != NULL) {
 				tlv_list_format_json(vstr, "ribatts_set", pdu->ribatts_set);
@@ -1113,7 +1113,7 @@ void idrp_pdu_format_json(la_vstring *vstr, void const *data) {
 					la_json_array_end(vstr);
 				}
 			}
-			la_json_append_long(vstr, "auth_mech", pdu->auth_mech);
+			la_json_append_int64(vstr, "auth_mech", pdu->auth_mech);
 			char const *auth_mech_name = la_dict_search(auth_mechs, pdu->auth_mech);
 			SAFE_JSON_APPEND_STRING(vstr, "auth_mech_name", auth_mech_name);
 			if(pdu->auth_data.buf != NULL && pdu->auth_data.len > 0) {
@@ -1124,7 +1124,7 @@ void idrp_pdu_format_json(la_vstring *vstr, void const *data) {
 			if(pdu->withdrawn_routes != NULL) {
 				la_json_array_start(vstr, "withdrawn_routes");
 				for(la_list *p = pdu->withdrawn_routes; p != NULL; p = p->next) {
-					la_json_append_long(vstr, NULL, *(uint32_t *)(p->data));
+					la_json_append_int64(vstr, NULL, *(uint32_t *)(p->data));
 				}
 				la_json_array_end(vstr);
 			}
@@ -1138,7 +1138,7 @@ void idrp_pdu_format_json(la_vstring *vstr, void const *data) {
 					la_json_object_start(vstr, NULL);
 					if(dest->is_clnp) {
 						la_json_append_string(vstr, "proto", "CLNP");
-						la_json_append_long(vstr, "prefix_len", dest->prefix_len);
+						la_json_append_int64(vstr, "prefix_len", dest->prefix_len);
 					} else {
 						la_json_append_octet_string(vstr, "proto_id", dest->proto.buf, dest->proto.len);
 					}

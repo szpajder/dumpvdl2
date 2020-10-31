@@ -140,8 +140,8 @@ TLV_FORMATTER(xid_seq_format_json) {
 
 	uint8_t const *xidseq = data;
 	la_json_object_start(ctx->vstr, label);
-	la_json_append_long(ctx->vstr, "seq", *xidseq & 0x7);
-	la_json_append_long(ctx->vstr, "retry", *xidseq >> 4);
+	la_json_append_int64(ctx->vstr, "seq", *xidseq & 0x7);
+	la_json_append_int64(ctx->vstr, "retry", *xidseq >> 4);
 	la_json_object_end(ctx->vstr);
 }
 
@@ -451,11 +451,11 @@ TLV_FORMATTER(lcr_cause_format_json) {
 	lcr_cause_t const *c = data;
 	char const *cause_descr = la_dict_search(lcr_causes, c->cause);
 	la_json_object_start(ctx->vstr, label);
-	la_json_append_long(ctx->vstr, "cause_code", c->cause);
+	la_json_append_int64(ctx->vstr, "cause_code", c->cause);
 	if(cause_descr != NULL) {
 		la_json_append_string(ctx->vstr, "cause_descr", cause_descr);
 	}
-	la_json_append_long(ctx->vstr, "delay", c->delay);
+	la_json_append_int64(ctx->vstr, "delay", c->delay);
 	if(c->additional_data.buf != NULL) {
 		la_json_append_octet_string(ctx->vstr, "additional_data", c->additional_data.buf, c->additional_data.len);
 	}
@@ -563,7 +563,7 @@ TLV_FORMATTER(loc_alt_format_json) {
 	loc_alt_t const *la = data;
 	la_json_object_start(ctx->vstr, label);
 	location_format_json(ctx, "loc", &la->loc);
-	la_json_append_long(ctx->vstr, "alt", la->alt);
+	la_json_append_int64(ctx->vstr, "alt", la->alt);
 	la_json_object_end(ctx->vstr);
 }
 

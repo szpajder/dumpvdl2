@@ -265,7 +265,7 @@ TLV_FORMATTER(tlv_uint_format_text) {
 }
 
 TLV_FORMATTER(tlv_uint_format_json) {
-	la_json_append_long(ctx->vstr, label, *(uint32_t *)data);
+	la_json_append_int64(ctx->vstr, label, *(uint32_t *)data);
 }
 
 // No-op parser
@@ -328,7 +328,7 @@ TLV_FORMATTER(tlv_unparseable_tag_format_json) {
 	UNUSED(label);
 	tlv_unparsed_tag_t const *t = data;
 	la_json_object_start(ctx->vstr, label);
-	la_json_append_long(ctx->vstr, "typecode",  t->typecode);
+	la_json_append_int64(ctx->vstr, "typecode",  t->typecode);
 	la_json_append_octet_string(ctx->vstr, "data", t->data->buf, t->data->len);
 	la_json_object_end(ctx->vstr);
 }

@@ -426,15 +426,15 @@ static void avlc_format_json(la_vstring *vstr, void const *data) {
 		la_json_append_char(vstr, "frame_type", 'S');
 		la_json_append_string(vstr, "cmd", S_cmd[f->lcf.S.sfunc]);
 		la_json_append_bool(vstr, "pf", (bool)(f->lcf.S.pf));
-		la_json_append_long(vstr, "rseq", f->lcf.S.recv_seq);
+		la_json_append_int64(vstr, "rseq", f->lcf.S.recv_seq);
 	} else if(IS_U(f->lcf)) {
 		la_json_append_char(vstr, "frame_type", 'U');
 		la_json_append_string(vstr, "cmd", U_cmd[U_MFUNC(f->lcf)]);
 		la_json_append_bool(vstr, "pf", (bool)(U_PF(f->lcf)));
 	} else {    // IS_I == true
 		la_json_append_char(vstr, "frame_type", 'I');
-		la_json_append_long(vstr, "rseq", f->lcf.I.send_seq);
-		la_json_append_long(vstr, "sseq", f->lcf.I.recv_seq);
+		la_json_append_int64(vstr, "rseq", f->lcf.I.send_seq);
+		la_json_append_int64(vstr, "sseq", f->lcf.I.recv_seq);
 		la_json_append_bool(vstr, "poll", (bool)(f->lcf.I.poll));
 	}
 }

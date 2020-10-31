@@ -326,11 +326,11 @@ TLV_FORMATTER(clnp_error_code_format_text) {
 TLV_FORMATTER(clnp_error_code_format_json) {
 	clnp_error_t const *e = data;
 	la_json_object_start(ctx->vstr, label);
-	la_json_append_long(ctx->vstr, "error_code", e->code);
+	la_json_append_int64(ctx->vstr, "error_code", e->code);
 	char const *str = la_dict_search(clnp_error_codes, e->code);
 	SAFE_JSON_APPEND_STRING(ctx->vstr, "error_descr", str);
 	if(e->erroneous_octet != 0) {
-		la_json_append_long(ctx->vstr, "erroneous_octet", e->erroneous_octet);
+		la_json_append_int64(ctx->vstr, "erroneous_octet", e->erroneous_octet);
 	}
 	la_json_object_end(ctx->vstr);
 }
@@ -417,7 +417,7 @@ void clnp_pdu_format_json(la_vstring * vstr, void const *data) {
 		return;
 	}
 	la_json_append_bool(vstr, "compressed", false);
-	la_json_append_long(vstr, "pdu_type", pdu->hdr->type);
+	la_json_append_int64(vstr, "pdu_type", pdu->hdr->type);
 	char const *pdu_type = la_dict_search(clnp_pdu_types, pdu->hdr->type);
 	SAFE_JSON_APPEND_STRING(vstr, "pdu_type_name", pdu_type);
 	la_json_append_octet_string(vstr, "src_nsap", pdu->src_nsap.buf, pdu->src_nsap.len);
@@ -432,9 +432,9 @@ void clnp_pdu_format_json(la_vstring * vstr, void const *data) {
 
 	if(pdu->hdr->sp != 0) {
 	    la_json_object_start(vstr, "segmentation");
-	    la_json_append_long(vstr, "pdu_id", pdu->pdu_id);
-	    la_json_append_long(vstr, "segment_offset", pdu->seg_off);
-	    la_json_append_long(vstr, "pdu_total_len", pdu->total_init_pdu_len);
+	    la_json_append_int64(vstr, "pdu_id", pdu->pdu_id);
+	    la_json_append_int64(vstr, "segment_offset", pdu->seg_off);
+	    la_json_append_int64(vstr, "pdu_total_len", pdu->total_init_pdu_len);
 	    la_json_object_end(vstr);
 	}
 
@@ -545,12 +545,12 @@ void clnp_compressed_init_data_pdu_format_json(la_vstring *vstr, void const *dat
 		return;
 	}
 	la_json_append_bool(vstr, "compressed", true);
-	la_json_append_long(vstr, "local_ref_a", pdu->lref);
-	la_json_append_long(vstr, "priority", pdu->hdr->priority);
-	la_json_append_long(vstr, "lifetime", pdu->hdr->lifetime);
-	la_json_append_long(vstr, "flags", pdu->hdr->flags.val);
+	la_json_append_int64(vstr, "local_ref_a", pdu->lref);
+	la_json_append_int64(vstr, "priority", pdu->hdr->priority);
+	la_json_append_int64(vstr, "lifetime", pdu->hdr->lifetime);
+	la_json_append_int64(vstr, "flags", pdu->hdr->flags.val);
 	if(pdu->pdu_id_present) {
-		la_json_append_long(vstr, "pdu_id", pdu->pdu_id);
+		la_json_append_int64(vstr, "pdu_id", pdu->pdu_id);
 	}
 }
 

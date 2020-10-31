@@ -141,12 +141,12 @@ TLV_FORMATTER(atn_traffic_type_format_json) {
 	char const *type = la_dict_search(atn_sec_tag_traffic_types, t->type);
 	char const *category = la_dict_search(atn_sec_tag_traffic_categories, t->category);
 	la_json_object_start(ctx->vstr, label);
-	la_json_append_long(ctx->vstr, "type_id", t->type);
+	la_json_append_int64(ctx->vstr, "type_id", t->type);
 	SAFE_JSON_APPEND_STRING(ctx->vstr, "type_name", type);
-	la_json_append_long(ctx->vstr, "category_id", t->category);
+	la_json_append_int64(ctx->vstr, "category_id", t->category);
 	SAFE_JSON_APPEND_STRING(ctx->vstr, "category_name", category);
 	// TODO: stringify all policies according to 9705, Table 5.6-1
-	la_json_append_long(ctx->vstr, "route_policy", t->policy);
+	la_json_append_int64(ctx->vstr, "route_policy", t->policy);
 	la_json_object_end(ctx->vstr);
 }
 
@@ -202,7 +202,7 @@ TLV_FORMATTER(atn_subnet_type_format_json) {
 	tag_subnet_type_t const *t = data;
 	char const *subnet = la_dict_search(atn_subnet_types, t->subnet);
 	la_json_object_start(ctx->vstr, label);
-	la_json_append_long(ctx->vstr, "subnet_id", t->subnet);
+	la_json_append_int64(ctx->vstr, "subnet_id", t->subnet);
 	la_json_append_string(ctx->vstr, "subnet_name", subnet);
 	bitfield_format_json(ctx->vstr, &t->permitted_traffic_types,
 			1, atn_traffic_types, "permitted_traffic_types");
@@ -258,7 +258,7 @@ TLV_FORMATTER(atn_sec_class_format_json) {
 	uint8_t const *t = data;
 	char const *class = la_dict_search(atn_security_classes, *t);
 	la_json_object_start(ctx->vstr, label);
-	la_json_append_long(ctx->vstr, "class_id", *t);
+	la_json_append_int64(ctx->vstr, "class_id", *t);
 	la_json_append_string(ctx->vstr, "class_name", class);
 	la_json_object_end(ctx->vstr);
 }
