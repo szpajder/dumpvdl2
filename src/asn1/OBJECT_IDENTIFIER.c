@@ -184,7 +184,7 @@ ssize_t
 OBJECT_IDENTIFIER__dump_arc(const uint8_t *arcbuf, int arclen, int add,
 		asn_app_consume_bytes_f *cb, void *app_key) {
 	char scratch[64];	/* Conservative estimate */
-	unsigned long accum;	/* Bits accumulator */
+	uint64_t accum;		/* Bits accumulator */
 	char *p;		/* Position in the scratch buffer */
 
 	if(OBJECT_IDENTIFIER_get_single_arc(arcbuf, arclen, add,
