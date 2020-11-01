@@ -33,8 +33,10 @@ void la_vdl2_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(data);
 
 	vdl2_msg_metadata const *m = data;
-	la_json_append_string(vstr, "app", "dumpvdl2");
+	la_json_object_start(vstr, "app");
+	la_json_append_string(vstr, "name", "dumpvdl2");
 	la_json_append_string(vstr, "ver", DUMPVDL2_VERSION);
+	la_json_object_end(vstr);
 	if(m->station_id != NULL) {
 		la_json_append_string(vstr, "station", m->station_id);
 	}
