@@ -20,7 +20,7 @@
 #ifndef _ASN1_FORMAT_ICAO_H
 #define _ASN1_FORMAT_ICAO_H
 
-#include <libacars/asn1-util.h>                 // la_asn1_formatter_fun
+#include <libacars/asn1-util.h>                 // la_asn1_formatter_func
 #include <libacars/dict.h>                      // la_dict
 
 // asn1-format-icao-text.c
