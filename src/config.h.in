@@ -28,6 +28,7 @@
 #cmakedefine WITH_SQLITE
 #cmakedefine WITH_ZMQ
 #cmakedefine WITH_PROTOBUF_C
+#cmakedefine WITH_PROFILING
 #cmakedefine IS_BIG_ENDIAN
 #cmakedefine HAVE_PTHREAD_BARRIERS
 

@@ -36,6 +36,9 @@
 #ifndef HAVE_PTHREAD_BARRIERS
 #include "pthread_barrier.h"
 #endif
+#ifdef WITH_PROFILING
+#include <gperftools/profiler.h>
+#endif
 #ifdef WITH_RTLSDR
 #include "rtl.h"
 #endif
@@ -1053,6 +1056,9 @@ int main(int argc, char **argv) {
 		start_demod_threads(&ctx);
 	}
 
+#ifdef WITH_PROFILING
+    ProfilerStart("dumpvdl2.prof");
+#endif
 	int exit_code = 0;
 	switch(input) {
 #ifdef WITH_PROTOBUF_C
@@ -1122,5 +1128,8 @@ int main(int argc, char **argv) {
 		}
 	} while(active_threads_cnt != 0 && do_exit < 2);
 	fprintf(stderr, "Exiting\n");
+#ifdef WITH_PROFILING
+    ProfilerStop();
+#endif
 	return(exit_code);
 }

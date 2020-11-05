@@ -111,6 +111,9 @@ option(RAW_BINARY_FORMAT "Support for binary format for raw AVLC
 frames storage (requires protobuf-c library)" ON)
 set(WITH_PROTOBUF_C FALSE)
 
+option(PROFILING "Enable profiling with gperftools")
+set(WITH_PROFILING FALSE)
+
 if(RTLSDR)
 	find_package(RTLSDR)
 	if(RTLSDR_FOUND)
@@ -216,6 +219,16 @@ if(RAW_BINARY_FORMAT)
 	endif()
 endif()
 
+if(PROFILING)
+	pkg_check_modules(PROFILING libprofiler)
+	if(PROFILING_FOUND)
+		list(APPEND dumpvdl2_extra_libs ${PROFILING_LIBRARIES})
+		list(APPEND dumpvdl2_include_dirs ${PROFILING_INCLUDE_DIRS})
+		list(APPEND link_dirs ${PROFILING_LIBRARY_DIRS})
+		set(WITH_PROFILING TRUE)
+	endif()
+endif()
+
 message(STATUS "dumpvdl2 configuration summary:")
 message(STATUS "- SDR drivers:")
 message(STATUS "  - librtsdr:\t\trequested: ${RTLSDR}, enabled: ${WITH_RTLSDR}")
@@ -228,6 +241,7 @@ message(STATUS "  - Etsy StatsD:\t\trequested: ${ETSY_STATSD}, enabled: ${WITH_S
 message(STATUS "  - SQLite:\t\t\trequested: ${SQLITE}, enabled: ${WITH_SQLITE}")
 message(STATUS "  - ZeroMQ:\t\t\trequested: ${ZMQ}, enabled: ${WITH_ZMQ}")
 message(STATUS "  - Raw binary format:\trequested: ${RAW_BINARY_FORMAT}, enabled: ${WITH_PROTOBUF_C}")
+message(STATUS "  - Profiling:\t\trequested: ${PROFILING}, enabled: ${WITH_PROFILING}")
 
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
