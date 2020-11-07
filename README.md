@@ -2,7 +2,7 @@
 
 dumpvdl2 is a VDL Mode 2 message decoder and protocol analyzer.
 
-Current stable version: 2.0.1 (released August 25, 2020)
+Current stable version: 2.1.0 (released November 7, 2020)
 
 ## Features
 
@@ -73,7 +73,7 @@ Mandatory dependencies:
 - git (unless you intend to use only packaged releases of dumpvdl2 and all
   dependencies)
 - glib2
-- libacars 2.0.0 or later
+- libacars 2.1.0 or later
 
 Optional dependencies:
 
