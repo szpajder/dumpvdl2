@@ -23,7 +23,9 @@
 #include <sys/time.h>               // struct timeval
 #include <libacars/libacars.h>      // la_type_descriptor, la_proto_node
 #include <libacars/vstring.h>       // la_vstring, LA_ISPRINTF()
+#include <libacars/dict.h>          // la_dict
 #include <libacars/reassembly.h>
+#include <libacars/json.h>
 #include "config.h"                 // IS_BIG_ENDIAN
 #include "dumpvdl2.h"
 #include "x25.h"
@@ -48,7 +50,7 @@ typedef struct {
 // it is used as a temporary key allocator as well.
 void *x25_key_get(void const *msg) {
 	ASSERT(msg != NULL);
-	CAST_PTR(avlc_info, x25_avlc_info *, msg);
+	x25_avlc_info const *avlc_info = msg;
 	NEW(x25_avlc_info, key);
 	key->src_addr = avlc_info->src_addr;
 	key->dst_addr = avlc_info->dst_addr;
@@ -61,13 +63,13 @@ void x25_key_destroy(void *ptr) {
 }
 
 uint32_t x25_key_hash(void const *key) {
-	CAST_PTR(k, x25_avlc_info *, key);
+	x25_avlc_info const *k = key;
 	return k->src_addr * 11 + k->dst_addr * 23;
 }
 
 bool x25_key_compare(void const *key1, void const *key2) {
-	CAST_PTR(k1, x25_avlc_info *, key1);
-	CAST_PTR(k2, x25_avlc_info *, key2);
+	x25_avlc_info const *k1 = key1;
+	x25_avlc_info const *k2 = key2;
 	return k1->src_addr == k2->src_addr && k1->dst_addr == k2->dst_addr;
 }
 
@@ -84,8 +86,8 @@ static struct timeval x25_reasm_timeout = {
 	.tv_usec = 0
 };
 
-void update_statsd_x25_metrics(la_reasm_status const reasm_status, uint32_t const msg_type) {
-	static dict const reasm_status_counter_names[] = {
+void update_statsd_x25_metrics(la_reasm_status reasm_status, uint32_t msg_type) {
+	static la_dict const reasm_status_counter_names[] = {
 		{ .id = LA_REASM_UNKNOWN, .val = "x25.reasm.unknown" },
 		{ .id = LA_REASM_COMPLETE, .val = "x25.reasm.complete" },
 		// { .id = LA_REASM_IN_PROGRESS, .val = "x25.reasm.in_progress" },  // report final states only
@@ -95,11 +97,11 @@ void update_statsd_x25_metrics(la_reasm_status const reasm_status, uint32_t cons
 		{ .id = LA_REASM_ARGS_INVALID, .val = "x25.reasm.invalid_args" },
 		{ .id = 0, .val = NULL }
 	};
-	CAST_PTR(metric, char *, dict_search(reasm_status_counter_names, reasm_status));
+	char const *metric = la_dict_search(reasm_status_counter_names, reasm_status);
 	if(metric == NULL) {
 		return;
 	}
-	statsd_increment_per_msgdir(msg_type & MSGFLT_SRC_AIR ? LA_MSG_DIR_AIR2GND : LA_MSG_DIR_GND2AIR, metric);
+	statsd_increment_per_msgdir(msg_type & MSGFLT_SRC_AIR ? LA_MSG_DIR_AIR2GND : LA_MSG_DIR_GND2AIR, (char *)metric);
 	// In case USE_STATSD is disabled
 	UNUSED(msg_type);
 }
@@ -136,12 +138,23 @@ TLV_FORMATTER(x25_pkt_size_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(pkt_size, x25_pkt_size_t *, data);
+	x25_pkt_size_t const *pkt_size = data;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	ctx->indent++;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "From calling DTE: %u bytes\n", pkt_size->from_calling_dte);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "From called  DTE: %u bytes\n", pkt_size->from_called_dte);
 	ctx->indent--;
+}
+
+TLV_FORMATTER(x25_pkt_size_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	x25_pkt_size_t const *pkt_size = data;
+	la_json_object_start(ctx->vstr, label);
+	la_json_append_int64(ctx->vstr, "from_calling_dte", pkt_size->from_calling_dte);
+	la_json_append_int64(ctx->vstr, "from_called_dte", pkt_size->from_called_dte);
+	la_json_object_end(ctx->vstr);
 }
 
 /***************************************************************************
@@ -172,12 +185,23 @@ TLV_FORMATTER(x25_win_size_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(win_size, x25_win_size_t *, data);
+	x25_win_size_t const *win_size = data;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	ctx->indent++;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "From calling DTE: %u packets\n", win_size->from_calling_dte);
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "From called  DTE: %u packets\n", win_size->from_called_dte);
 	ctx->indent--;
+}
+
+TLV_FORMATTER(x25_win_size_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	x25_win_size_t const *win_size = data;
+	la_json_object_start(ctx->vstr, label);
+	la_json_append_int64(ctx->vstr, "from_calling_dte", win_size->from_calling_dte);
+	la_json_append_int64(ctx->vstr, "from_called_dte", win_size->from_called_dte);
+	la_json_object_end(ctx->vstr);
 }
 
 /***************************************************************************
@@ -205,19 +229,28 @@ TLV_FORMATTER(x25_fast_select_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(fs, x25_fast_select_t *, data);
+	x25_fast_select_t const *fs = data;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s: %srequested\n", label,
 			fs->requested ? "" : "not ");
 }
 
-static const dict x25_facilities[] = {
+TLV_FORMATTER(x25_fast_select_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	x25_fast_select_t const *fs = data;
+	la_json_append_bool(ctx->vstr, label, fs->requested);
+}
+
+static la_dict const x25_facilities[] = {
 	{
 		.id = 0x00,
 		.val = &(tlv_type_descriptor_t){
 			// This is just a separator - don't parse nor print it
 			// .label = "Marker (X.25 facilities follow)",
 			.parse = tlv_parser_noop,
-			.format_text = tlv_format_text_noop,
+			.format_text = NULL,
+			.format_json = NULL,
 			.destroy = NULL
 		}
 	},
@@ -225,8 +258,10 @@ static const dict x25_facilities[] = {
 		.id = 0x01,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Fast Select",
+			.json_key = "fast_select",
 			.parse = x25_fast_select_parse,
 			.format_text = x25_fast_select_format_text,
+			.format_json = x25_fast_select_format_json,
 			.destroy = NULL
 		}
 	},
@@ -234,8 +269,10 @@ static const dict x25_facilities[] = {
 		.id = 0x08,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Called line address modified",
+			.json_key = "called_line_addr_modified",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -243,8 +280,10 @@ static const dict x25_facilities[] = {
 		.id = 0x42,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Max. packet size",
+			.json_key = "max_pkt_size",
 			.parse = x25_pkt_size_parse,
 			.format_text = x25_pkt_size_format_text,
+			.format_json = x25_pkt_size_format_json,
 			.destroy = NULL
 		}
 	},
@@ -252,8 +291,10 @@ static const dict x25_facilities[] = {
 		.id = 0x43,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Window size",
+			.json_key = "window_size",
 			.parse = x25_win_size_parse,
 			.format_text = x25_win_size_format_text,
+			.format_json = x25_win_size_format_json,
 			.destroy = NULL
 		}
 	},
@@ -261,8 +302,10 @@ static const dict x25_facilities[] = {
 		.id = 0xc9,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Called address extension",
+			.json_key = "called_addr_extension",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_with_ascii_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -272,7 +315,7 @@ static const dict x25_facilities[] = {
 	}
 };
 
-static const dict x25_comp_algos[] = {
+static la_dict const x25_comp_algos[] = {
 	{ 0x40, "ACA" },
 	{ 0x20, "DEFLATE" },
 	{ 0x02, "LREF" },
@@ -328,7 +371,7 @@ fail:
 	return node;
 }
 
-static char const * const sndcf_error_descriptions[] = {
+static char const *sndcf_error_descriptions[] = {
 	[0] = "Compressed NPDU with unrecognized Local Reference",
 	[1] = "Creation of directory entry outside of sender's permitted range",
 	[2] = "Directory entry exists",
@@ -341,12 +384,12 @@ static char const * const sndcf_error_descriptions[] = {
 };
 #define SNDCF_ERR_MAX 8
 
-void sndcf_error_report_format_text(la_vstring * const vstr, void const * const data, int indent) {
+void sndcf_error_report_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(rpt, sndcf_err_rpt_t *, data);
+	sndcf_err_rpt_t const *rpt = data;
 	if(rpt->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable SNDCF Error Report\n");
 		return;
@@ -360,8 +403,27 @@ void sndcf_error_report_format_text(la_vstring * const vstr, void const * const 
 	}
 }
 
+void sndcf_error_report_format_json(la_vstring *vstr, void const *data) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+
+	sndcf_err_rpt_t const *rpt = data;
+	la_json_append_bool(vstr, "err", rpt->err);
+	if(rpt->err == true) {
+		return;
+	}
+	la_json_append_int64(vstr, "cause_code", rpt->error_code);
+	if(rpt->error_code <= SNDCF_ERR_MAX) {
+		la_json_append_string(vstr, "cause_descr", sndcf_error_descriptions[rpt->error_code]);
+	}
+	la_json_append_int64(vstr, "local_ref", rpt->local_ref);
+	la_json_append_bool(vstr, "erroneous_pdu_present", rpt->errored_pdu_present);
+}
+
 la_type_descriptor const proto_DEF_X25_SNDCF_error_report = {
 	.format_text = sndcf_error_report_format_text,
+	.format_json = sndcf_error_report_format_json,
+	.json_key = "sndcf_error_report",
 	.destroy = NULL
 };
 
@@ -372,12 +434,13 @@ la_type_descriptor const proto_DEF_X25_SNDCF_error_report = {
 // Forward declaration
 la_type_descriptor const proto_DEF_X25_pkt;
 
-static char *fmt_x25_addr(uint8_t *data, uint8_t len) {
+static char *fmt_x25_addr(uint8_t const *data, uint8_t len) {
 	// len is in nibbles here
-	static const char hex[] = "0123456789abcdef";
+	static char const hex[] = "0123456789abcdef";
 	char *buf = NULL;
-	if(len == 0) return strdup("none");
-	if(data == NULL) return strdup("<undef>");
+	if(len == 0 || data == NULL) {
+		return NULL;
+	}
 	uint8_t bytelen = (len >> 1) + (len & 1);
 	buf = XCALLOC(2 * bytelen + 1, sizeof(char));
 
@@ -520,7 +583,7 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
 		goto fail;
 	}
 
-	CAST_PTR(hdr, x25_hdr_t *, ptr);
+	x25_hdr_t *hdr = (x25_hdr_t *) ptr;
 	debug_print(D_PROTO_DETAIL, "gfi=0x%02x group=0x%02x chan=0x%02x type=0x%02x\n", hdr->gfi,
 			hdr->chan_group, hdr->chan_num, hdr->type.val);
 	if(hdr->gfi != GFI_X25_MOD8) {
@@ -671,7 +734,7 @@ fail:
 	return node;
 }
 
-static dict const x25_clr_causes[] = {
+static la_dict const x25_clr_causes[] = {
 	{ .id = 0x00, .val = "DTE originated" },
 	{ .id = 0x01, .val = "Number busy" },
 	{ .id = 0x03, .val = "Invalid facility request" },
@@ -687,7 +750,7 @@ static dict const x25_clr_causes[] = {
 	{ .id = 0x00, .val = NULL }
 };
 
-static dict const x25_reset_causes[] = {
+static la_dict const x25_reset_causes[] = {
 	{ .id = 0x00, .val = "DTE originated" },
 	{ .id = 0x01, .val = "Out of order" },
 	{ .id = 0x03, .val = "Remote procedure error" },
@@ -700,14 +763,14 @@ static dict const x25_reset_causes[] = {
 	{ .id = 0x00, .val = NULL }
 };
 
-static dict const x25_restart_causes[] = {
+static la_dict const x25_restart_causes[] = {
 	{ .id = 0x01, .val = "Local procedure error" },
 	{ .id = 0x03, .val = "Network congestion" },
 	{ .id = 0x07, .val = "Network operational" },
 	{ .id = 0x00, .val = NULL }
 };
 
-static dict const x25_diag_codes[] = {
+static la_dict const x25_diag_codes[] = {
 	// X.25 Annex E
 	{ .id = 0x00, .val = "Cleared by system management" },
 	{ .id = 0x01, .val = "Invalid P(S)" },
@@ -825,7 +888,7 @@ static dict const x25_diag_codes[] = {
 	{ .id = 0x00, .val = NULL }
 };
 
-static const dict x25_pkttype_names[] = {
+static la_dict const x25_pkttype_names[] = {
 	{ X25_CALL_REQUEST,     "Call Request" },
 	{ X25_CALL_ACCEPTED,    "Call Accepted" },
 	{ X25_CLEAR_REQUEST,    "Clear Request" },
@@ -841,22 +904,23 @@ static const dict x25_pkttype_names[] = {
 	{ 0,                    NULL }
 };
 
-void x25_format_text(la_vstring * const vstr, void const * const data, int indent) {
+static void x25_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(pkt, x25_pkt_t *, data);
+	x25_pkt_t const *pkt = data;
 	if(pkt->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable X.25 packet\n");
 		return;
 	}
-	CAST_PTR(name, char *, dict_search(x25_pkttype_names, pkt->type));
+	char const *name = la_dict_search(x25_pkttype_names, pkt->type);
 	LA_ISPRINTF(vstr, indent, "X.25 %s: grp: %u chan: %u", name, pkt->hdr->chan_group, pkt->hdr->chan_num);
 	if(pkt->addr_block_present) {
 		char *calling = fmt_x25_addr(pkt->calling.addr, pkt->calling.len);
 		char *called = fmt_x25_addr(pkt->called.addr, pkt->called.len);
-		la_vstring_append_sprintf(vstr, " src: %s dst: %s", calling, called);
+		la_vstring_append_sprintf(vstr, " src: %s dst: %s",
+				calling ? calling : "none", called ? called : "none");
 		XFREE(calling);
 		XFREE(called);
 	} else if(pkt->type == X25_DATA) {
@@ -868,7 +932,7 @@ void x25_format_text(la_vstring * const vstr, void const * const data, int inden
 	EOL(vstr);
 	indent++;
 
-	dict const *cause_dict = NULL;
+	la_dict const *cause_dict = NULL;
 	switch(pkt->type) {
 		case X25_CALL_REQUEST:
 		case X25_CALL_ACCEPTED:
@@ -892,12 +956,12 @@ void x25_format_text(la_vstring * const vstr, void const * const data, int inden
 			break;
 	}
 	if(cause_dict != NULL) {
-		CAST_PTR(clr_cause, char *, dict_search(cause_dict, pkt->clr_cause));
+		char const *clr_cause = la_dict_search(cause_dict, pkt->clr_cause);
 		LA_ISPRINTF(vstr, indent, "Cause: 0x%02x (%s)\n", pkt->clr_cause,
 				clr_cause ? clr_cause : "unknown");
 	}
 	if(pkt->diag_code_present) {
-		CAST_PTR(diag_code, char *, dict_search(x25_diag_codes, pkt->diag_code));
+		char const *diag_code = la_dict_search(x25_diag_codes, pkt->diag_code);
 		LA_ISPRINTF(vstr, indent, "Diagnostic code: 0x%02x (%s)\n", pkt->diag_code,
 				diag_code ? diag_code : "unknown");
 	}
@@ -908,11 +972,78 @@ void x25_format_text(la_vstring * const vstr, void const * const data, int inden
 	}
 }
 
-void x25_destroy(void *data) {
+static void x25_format_json(la_vstring *vstr, void const *data) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+
+	x25_pkt_t const *pkt = data;
+	la_json_append_bool(vstr, "err", pkt->err);
+	if(pkt->err == true) {
+		return;
+	}
+	la_json_append_int64(vstr, "pkt_type", pkt->type);
+	char const *name = la_dict_search(x25_pkttype_names, pkt->type);
+	SAFE_JSON_APPEND_STRING(vstr, "pkt_type_name", name);
+	la_json_append_int64(vstr, "chan_group", pkt->hdr->chan_group);
+	la_json_append_int64(vstr, "chan_num", pkt->hdr->chan_num);
+
+	if(pkt->addr_block_present) {
+		char *calling = fmt_x25_addr(pkt->calling.addr, pkt->calling.len);
+		SAFE_JSON_APPEND_STRING(vstr, "calling_addr", calling);
+		char *called = fmt_x25_addr(pkt->called.addr, pkt->called.len);
+		SAFE_JSON_APPEND_STRING(vstr, "called_addr", called);
+		XFREE(calling);
+		XFREE(called);
+	} else if(pkt->type == X25_DATA) {
+		la_json_append_int64(vstr, "sseq", pkt->hdr->type.data.sseq);
+		la_json_append_int64(vstr, "rseq", pkt->hdr->type.data.rseq);
+		la_json_append_bool(vstr, "more", pkt->hdr->type.data.more);
+	} else if(pkt->type == X25_RR || pkt->type == X25_REJ) {
+		la_json_append_int64(vstr, "rseq", pkt->hdr->type.data.rseq);
+	}
+
+	la_dict const *cause_dict = NULL;
+	switch(pkt->type) {
+		case X25_CALL_REQUEST:
+		case X25_CALL_ACCEPTED:
+			tlv_list_format_json(vstr, "facilities", pkt->facilities);
+			la_json_append_int64(vstr, "compression_options", pkt->compression);
+			bitfield_format_json(vstr, &pkt->compression, 1, x25_comp_algos, "compression_algos");
+			break;
+		case X25_DATA:
+			la_json_append_string(vstr, "reasm_status", la_reasm_status_name_get(pkt->reasm_status));
+			break;
+		case X25_CLEAR_REQUEST:
+			cause_dict = x25_clr_causes;
+			break;
+		case X25_RESET_REQUEST:
+			cause_dict = x25_reset_causes;
+			break;
+		case X25_RESTART_REQUEST:
+			cause_dict = x25_restart_causes;
+			break;
+	}
+	if(cause_dict != NULL) {
+		la_json_append_int64(vstr, "clear_cause", pkt->clr_cause);
+		char const *clr_cause = la_dict_search(cause_dict, pkt->clr_cause);
+		SAFE_JSON_APPEND_STRING(vstr, "clear_cause_descr", clr_cause);
+	}
+	if(pkt->diag_code_present) {
+		la_json_append_int64(vstr, "diag_code", pkt->diag_code);
+		char const *diag_code = la_dict_search(x25_diag_codes, pkt->diag_code);
+		SAFE_JSON_APPEND_STRING(vstr, "diag_code_descr", diag_code);
+	}
+	if(pkt->type == X25_DIAG && pkt->diag_data.buf != NULL) {
+		la_json_append_octet_string(vstr, "erroneous_pkt_hdr", pkt->diag_data.buf, pkt->diag_data.len);
+	}
+}
+
+
+static void x25_destroy(void *data) {
 	if(data == NULL) {
 		return;
 	}
-	CAST_PTR(pkt, x25_pkt_t *, data);
+	x25_pkt_t *pkt = data;
 	if(pkt->facilities != NULL) {
 		tlv_list_destroy(pkt->facilities);
 		pkt->facilities = NULL;
@@ -923,5 +1054,7 @@ void x25_destroy(void *data) {
 
 la_type_descriptor const proto_DEF_X25_pkt = {
 	.format_text = x25_format_text,
+	.format_json = x25_format_json,
+	.json_key = "x25",
 	.destroy = x25_destroy
 };

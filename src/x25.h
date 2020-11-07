@@ -25,6 +25,7 @@
 #include <libacars/list.h>          // la_list
 #include <libacars/reassembly.h>    // la_reasm_ctx
 #include "config.h"                 // IS_BIG_ENDIAN
+#include "dumpvdl2.h"               // octet_string_t
 
 #define X25_MIN_LEN                  3
 #define GFI_X25_MOD8                 1

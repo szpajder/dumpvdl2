@@ -105,7 +105,7 @@ int statsd_initialize(char *statsd_addr) {
 	return 0;
 }
 
-void statsd_initialize_counters_per_channel(uint32_t const freq) {
+void statsd_initialize_counters_per_channel(uint32_t freq) {
 	if(statsd == NULL) {
 		return;
 	}
@@ -116,7 +116,7 @@ void statsd_initialize_counters_per_channel(uint32_t const freq) {
 	}
 }
 
-static void _statsd_initialize_counters_for_msg_dir(char const *counters[], la_msg_dir const msg_dir) {
+static void _statsd_initialize_counters_for_msg_dir(char const *counters[], la_msg_dir msg_dir) {
 	char metric[256];
 	for(int n = 0; counters[n] != NULL; n++) {
 		snprintf(metric, sizeof(metric), "%s.%s", counters[n], msg_dir_labels[msg_dir]);
@@ -141,7 +141,7 @@ void statsd_initialize_counter_set(char **counter_set) {
 	}
 }
 
-void statsd_counter_per_channel_increment(uint32_t const freq, char *counter) {
+void statsd_counter_per_channel_increment(uint32_t freq, char *counter) {
 	if(statsd == NULL) {
 		return;
 	}
@@ -150,7 +150,7 @@ void statsd_counter_per_channel_increment(uint32_t const freq, char *counter) {
 	statsd_inc(statsd, metric, 1.0);
 }
 
-void statsd_counter_per_msgdir_increment(la_msg_dir const msg_dir, char *counter) {
+void statsd_counter_per_msgdir_increment(la_msg_dir msg_dir, char *counter) {
 	if(statsd == NULL) {
 		return;
 	}
@@ -173,7 +173,7 @@ void statsd_gauge_set(char *gauge, size_t value) {
 	statsd_gauge(statsd, gauge, value);
 }
 
-void statsd_timing_delta_per_channel_send(uint32_t const freq, char *timer, struct timeval const ts) {
+void statsd_timing_delta_per_channel_send(uint32_t freq, char *timer, struct timeval ts) {
 	if(statsd == NULL) {
 		return;
 	}

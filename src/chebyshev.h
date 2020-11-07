@@ -19,5 +19,5 @@
 
 #define MAX_POLES 20
 #define MAX_RIPPLE 29.f
-void chebyshev_lpf_init(float const cutoff_freq, float const ripple, int const npoles,
+void chebyshev_lpf_init(float cutoff_freq, float ripple, int npoles,
 		float **Aptr, float **Bptr);

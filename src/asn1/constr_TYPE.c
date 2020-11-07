@@ -83,8 +83,6 @@ asn_sprintf(la_vstring *vstr, asn_TYPE_descriptor_t *td, const void *struct_ptr,
 	if(td->print_struct(td, struct_ptr, indent, _print2vstring, vstr))
 		return -1;
 
-	/* Terminate the output */
-	_print2vstring("\n", 1, vstr);
 	return 0;
 }
 

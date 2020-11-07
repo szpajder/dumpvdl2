@@ -80,7 +80,7 @@ static void sdrplay_streamCallback(short *xi, short *xq, unsigned int firstSampl
 	UNUSED(hwRemoved);
 	int i, j, count1, count2, new_buf_flag;
 	int end, input_index;
-	CAST_PTR(SDRPlay, sdrplay_ctx_t *, cbContext);
+	sdrplay_ctx_t *SDRPlay = cbContext;
 	if(numSamples == 0) {
 		return;
 	}
@@ -141,7 +141,7 @@ static void sdrplay_gainCallback(unsigned int gRdB, unsigned int lnaGRdB, void *
 	debug_print(D_SDR, "Gain change: gRdb=%u lnaGRdB=%u \n", gRdB, lnaGRdB);
 }
 
-static int sdrplay_verbose_device_search(char * const dev, sdrplay_hw_type *hw_type) {
+static int sdrplay_verbose_device_search(char const *dev, sdrplay_hw_type *hw_type) {
 	*hw_type = HW_UNKNOWN;
 	int devIdx = -1;
 	if(dev == NULL) {
@@ -171,7 +171,7 @@ static int sdrplay_verbose_device_search(char * const dev, sdrplay_hw_type *hw_t
 	fprintf(stderr, "\n");
 
 	// Does the string look like a raw ID number?
-	char *endptr = dev;
+	char *endptr = (char *)dev;
 	long num = strtol(dev, &endptr, 0);
 	if(endptr[0] == '\0' && num >= 0 && (uint32_t)num < numDevs) {
 		devIdx = (int)num;
@@ -219,9 +219,9 @@ dev_found:
 	return devIdx;
 }
 
-void sdrplay_init(vdl2_state_t * const ctx, char * const dev, char * const antenna,
-		uint32_t const freq, int const gr, int const ppm_error, int const enable_biast,
-		int const enable_notch_filter, int enable_agc, int tuner) {
+void sdrplay_init(vdl2_state_t const *ctx, char const *dev, char const *antenna,
+		uint32_t freq, int gr, int ppm_error, int enable_biast,
+		int enable_notch_filter, int enable_agc, int tuner) {
 	UNUSED(ctx);
 
 	mir_sdr_ErrT err;

@@ -22,6 +22,8 @@
 #include <string.h>
 #include <libacars/libacars.h>      // la_type_descriptor, la_proto_node
 #include <libacars/vstring.h>       // la_vstring, LA_ISPRINTF()
+#include <libacars/dict.h>          // la_dict
+#include <libacars/json.h>
 #include "atn.h"                    // atn_traffic_types, atsc_traffic_classes
 #include "esis.h"
 #include "dumpvdl2.h"
@@ -55,7 +57,7 @@ TLV_FORMATTER(esis_subnet_caps_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(c, esis_subnet_caps_t *, data);
+	esis_subnet_caps_t const *c = data;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "%s: ", "Permitted traffic");
 	if((c->atn_traffic_types & ATN_TRAFFIC_TYPES_ALL) == ATN_TRAFFIC_TYPES_ALL) {
@@ -75,19 +77,34 @@ TLV_FORMATTER(esis_subnet_caps_format_text) {
 	EOL(ctx->vstr);
 }
 
-static const dict esis_pdu_types[] = {
+TLV_FORMATTER(esis_subnet_caps_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	esis_subnet_caps_t const *c = data;
+	la_json_object_start(ctx->vstr, label);
+	bitfield_format_json(ctx->vstr, &c->atn_traffic_types, 1, atn_traffic_types, "permitted_traffic");
+	if(c->atsc_traffic_classes_present) {
+		bitfield_format_json(ctx->vstr, &c->atsc_traffic_classes, 1, atsc_traffic_classes, "supported_atsc_classes");
+	}
+	la_json_object_end(ctx->vstr);
+}
+
+static la_dict const esis_pdu_types[] = {
 	{ ESIS_PDU_TYPE_ESH,    "ES Hello" },
 	{ ESIS_PDU_TYPE_ISH,    "IS Hello" },
 	{ 0,                    NULL }
 };
 
-static const dict esis_options[] = {
+static la_dict const esis_options[] = {
 	{
 		.id = 0xc5,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Security",
+			.json_key = "security",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -95,8 +112,10 @@ static const dict esis_options[] = {
 		.id = 0xcf,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Priority",
+			.json_key = "priority",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -105,8 +124,10 @@ static const dict esis_options[] = {
 		.id = 0x81,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Mobile Subnetwork Capabilities",
+			.json_key = "mobile_subnet_caps",
 			.parse = esis_subnet_caps_parse,
 			.format_text = esis_subnet_caps_format_text,
+			.format_json = esis_subnet_caps_format_json,
 			.destroy = NULL
 		}
 	},
@@ -114,8 +135,10 @@ static const dict esis_options[] = {
 		.id = 0x88,
 		.val = &(tlv_type_descriptor_t){
 			.label = "ATN Data Link Capabilities",
+			.json_key = "atn_datalink_caps",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -139,7 +162,7 @@ la_proto_node *esis_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		debug_print(D_PROTO, "Too short (len %u < min len %u)\n", remaining, ESIS_HDR_LEN);
 		goto end;
 	}
-	CAST_PTR(hdr, esis_hdr_t *, ptr);
+	esis_hdr_t *hdr = (esis_hdr_t *)ptr;
 	if(hdr->version != 1) {
 		debug_print(D_PROTO, "Unsupported PDU version %u\n", hdr->version);
 		goto end;
@@ -183,28 +206,25 @@ end:
 	return node;
 }
 
-static void esis_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
+static void esis_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(pdu, esis_pdu_t *, data);
+	esis_pdu_t const *pdu = data;
 	if(pdu->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable ES-IS PDU\n");
 		return;
 	}
 	esis_hdr_t *hdr = pdu->hdr;
-	CAST_PTR(pdu_name, char *, dict_search(esis_pdu_types, hdr->type));
+	char const *pdu_name = la_dict_search(esis_pdu_types, hdr->type);
 	LA_ISPRINTF(vstr, indent, "ES-IS %s: Hold Time: %u sec\n", pdu_name, pdu->holdtime);
 	indent++;
 
-	switch(hdr->type) {
-		case ESIS_PDU_TYPE_ESH:
-			LA_ISPRINTF(vstr, indent, "%s", "SA : ");
-			break;
-		case ESIS_PDU_TYPE_ISH:
-			LA_ISPRINTF(vstr, indent, "%s", "NET: ");
-			break;
+	if(hdr->type == ESIS_PDU_TYPE_ESH) {
+		LA_ISPRINTF(vstr, indent, "%s", "SA : ");
+	} else if(hdr->type == ESIS_PDU_TYPE_ISH) {
+		LA_ISPRINTF(vstr, indent, "%s", "NET: ");
 	}
 	octet_string_with_ascii_format_text(vstr, &pdu->net_addr, 0);
 	EOL(vstr);
@@ -214,11 +234,35 @@ static void esis_pdu_format_text(la_vstring * const vstr, void const * const dat
 	}
 }
 
+static void esis_pdu_format_json(la_vstring * vstr, void const *data) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+
+	esis_pdu_t const *pdu = data;
+	la_json_append_bool(vstr, "err", pdu->err);
+	if(pdu->err == true) {
+		return;
+	}
+	esis_hdr_t *hdr = pdu->hdr;
+	char const *pdu_name = la_dict_search(esis_pdu_types, hdr->type);
+	la_json_append_int64(vstr, "pdu_type", hdr->type);
+	la_json_append_string(vstr, "pdu_type_name", pdu_name);
+	la_json_append_int64(vstr, "hold_time", pdu->holdtime);
+	if(hdr->type == ESIS_PDU_TYPE_ESH) {
+		la_json_append_octet_string(vstr, "sa", pdu->net_addr.buf, pdu->net_addr.len);
+	} else if(hdr->type == ESIS_PDU_TYPE_ISH) {
+		la_json_append_octet_string(vstr, "net", pdu->net_addr.buf, pdu->net_addr.len);
+	}
+	if(pdu->options != NULL) {
+		tlv_list_format_json(vstr, "options", pdu->options);
+	}
+}
+
 void esis_pdu_destroy(void *data) {
 	if(data == NULL) {
 		return;
 	}
-	CAST_PTR(pdu, esis_pdu_t *, data);
+	esis_pdu_t *pdu = data;
 	tlv_list_destroy(pdu->options);
 	pdu->options = NULL;
 	XFREE(data);
@@ -226,5 +270,7 @@ void esis_pdu_destroy(void *data) {
 
 la_type_descriptor const proto_DEF_esis_pdu = {
 	.format_text = esis_pdu_format_text,
+	.format_json = esis_pdu_format_json,
+	.json_key = "esis",
 	.destroy = esis_pdu_destroy
 };

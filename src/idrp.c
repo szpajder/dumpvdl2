@@ -23,6 +23,8 @@
 #include <arpa/inet.h>
 #include <libacars/libacars.h>  // la_proto_node
 #include <libacars/vstring.h>   // la_vstring
+#include <libacars/dict.h>      // la_dict
+#include <libacars/json.h>
 #include <libacars/list.h>      // la_list
 #include "idrp.h"
 #include "dumpvdl2.h"
@@ -32,10 +34,9 @@
 
 // Forward declarations
 la_type_descriptor const proto_DEF_idrp_pdu;
-static tlv_type_descriptor_t tlv_DEF_idrp_attr_no_value;
 static tlv_type_descriptor_t tlv_DEF_idrp_ribatt;
 
-static dict const bispdu_types[] = {
+static la_dict const bispdu_types[] = {
 	{ .id = BISPDU_TYPE_OPEN,       .val = "Open" },
 	{ .id = BISPDU_TYPE_UPDATE,     .val = "Update" },
 	{ .id = BISPDU_TYPE_ERROR,      .val = "Error" },
@@ -45,7 +46,7 @@ static dict const bispdu_types[] = {
 	{ .id = 0,                      .val = NULL }
 };
 
-static dict const open_pdu_errors[] = {
+static la_dict const open_pdu_errors[] = {
 	{ .id = 1, .val = "Unsupported version number" },
 	{ .id = 2, .val = "Bad max PDU size" },
 	{ .id = 3, .val = "Bad peer RD" },
@@ -56,7 +57,7 @@ static dict const open_pdu_errors[] = {
 	{ .id = 0, .val = NULL }
 };
 
-static dict const update_pdu_errors[] = {
+static la_dict const update_pdu_errors[] = {
 	{ .id =  1, .val = "Malformed attribute list" },
 	{ .id =  2, .val = "Unrecognized well-known attribute" },
 	{ .id =  3, .val = "Missing well-known attribute" },
@@ -73,12 +74,12 @@ static dict const update_pdu_errors[] = {
 	{ .id =  0, .val = NULL }
 };
 
-static dict const timer_expired_errors[] = {
+static la_dict const timer_expired_errors[] = {
 	{ .id = 0, .val = "NULL" },
 	{ .id = 0, .val = NULL }
 };
 
-static dict const FSM_states[] = {
+static la_dict const FSM_states[] = {
 	{ .id = 1, .val = "CLOSED" },
 	{ .id = 2, .val = "OPEN-RCVD" },
 	{ .id = 3, .val = "OPEN-SENT" },
@@ -87,13 +88,13 @@ static dict const FSM_states[] = {
 	{ .id = 0, .val = NULL }
 };
 
-static dict const RIB_refresh_errors[] = {
+static la_dict const RIB_refresh_errors[] = {
 	{ .id = 1, .val = "Invalid opcode" },
 	{ .id = 2, .val = "Unsupported RIB-Atts" },
 	{ .id = 0, .val = NULL }
 };
 
-static dict const auth_mechs[] = {
+static la_dict const auth_mechs[] = {
 	{ .id = 1, .val = "simple checksum" },
 	{ .id = 2, .val = "auth + data integrity check" },
 	{ .id = 3, .val = "password" },
@@ -102,43 +103,43 @@ static dict const auth_mechs[] = {
 
 typedef struct {
 	char *descr;
-	dict *subcodes;
+	la_dict *subcodes;
 } bispdu_err_t;
 
-static dict const bispdu_errors[] = {
+static la_dict const bispdu_errors[] = {
 	{
 		.id = BISPDU_ERR_OPEN_PDU,
 		.val = &(bispdu_err_t){
 			"Open PDU error",
-			(dict *)&open_pdu_errors
+			(la_dict *)&open_pdu_errors
 		}
 	},
 	{
 		.id = BISPDU_ERR_UPDATE_PDU,
 		.val = &(bispdu_err_t){
 			"Update PDU error",
-			(dict *)&update_pdu_errors
+			(la_dict *)&update_pdu_errors
 		}
 	},
 	{
 		.id = BISPDU_ERR_TIMER_EXPIRED,
 		.val = &(bispdu_err_t){
 			"Hold timer expired",
-			(dict *)&timer_expired_errors
+			(la_dict *)&timer_expired_errors
 		}
 	},
 	{
 		.id = BISPDU_ERR_FSM,
 		.val = &(bispdu_err_t){
 			"FSM error",
-			(dict *)&FSM_states
+			(la_dict *)&FSM_states
 		}
 	},
 	{
 		.id = BISPDU_ERR_RIB_REFRESH_PDU,
 		.val = &(bispdu_err_t){
 			"RIB Refresh PDU error",
-			(dict *)&RIB_refresh_errors
+			(la_dict *)&RIB_refresh_errors
 		}
 	},
 	{
@@ -169,10 +170,21 @@ TLV_FORMATTER(idrp_route_separator_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(s, idrp_route_separator_t *, data);
+	idrp_route_separator_t const *s = data;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "ID: %u\n", s->id);
 	LA_ISPRINTF(ctx->vstr, ctx->indent+1, "Local preference: %u\n", s->localpref);
+}
+
+TLV_FORMATTER(idrp_route_separator_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	idrp_route_separator_t const *s = data;
+	la_json_object_start(ctx->vstr, label);
+	la_json_append_int64(ctx->vstr, "id", s->id);
+	la_json_append_int64(ctx->vstr, "localpref", s->localpref);
+	la_json_object_end(ctx->vstr);
 }
 
 /*******************
@@ -208,7 +220,7 @@ TLV_FORMATTER(rd_path_segment_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(rdi_list, la_list *, data);
+	la_list const *rdi_list = data;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
 	ctx->indent++;
 	while(rdi_list != NULL) {
@@ -219,17 +231,33 @@ TLV_FORMATTER(rd_path_segment_format_text) {
 	ctx->indent--;
 }
 
+TLV_FORMATTER(rd_path_segment_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	la_list const *rdi_list = data;
+	la_json_array_start(ctx->vstr, label);
+	while(rdi_list != NULL) {
+		octet_string_t *ostring = rdi_list->data;
+		la_json_append_octet_string(ctx->vstr, NULL, ostring->buf, ostring->len);
+		rdi_list = la_list_next(rdi_list);
+	}
+	la_json_array_end(ctx->vstr);
+}
+
 TLV_DESTRUCTOR(rd_path_segment_destroy) {
 	la_list_free(data);
 }
 
-static dict const rd_path_seg_types[] = {
+static la_dict const rd_path_seg_types[] = {
 	{
 		.id = 1,
 		.val = &(tlv_type_descriptor_t){
 			.label = "RD_SET",
+			.json_key = "rd_set",
 			.parse = rd_path_segment_parse,
 			.format_text = rd_path_segment_format_text,
+			.format_json = rd_path_segment_format_json,
 			.destroy = rd_path_segment_destroy
 		}
 	},
@@ -237,8 +265,10 @@ static dict const rd_path_seg_types[] = {
 		.id = 2,
 		.val = &(tlv_type_descriptor_t){
 			.label = "RD_SEQ",
+			.json_key = "rd_seq",
 			.parse = rd_path_segment_parse,
 			.format_text = rd_path_segment_format_text,
+			.format_json = rd_path_segment_format_json,
 			.destroy = rd_path_segment_destroy
 		}
 	},
@@ -246,8 +276,10 @@ static dict const rd_path_seg_types[] = {
 		.id = 3,
 		.val = &(tlv_type_descriptor_t){
 			.label = "ENTRY_SEQ",
+			.json_key = "entry_seq",
 			.parse = rd_path_segment_parse,
 			.format_text = rd_path_segment_format_text,
+			.format_json = rd_path_segment_format_json,
 			.destroy = rd_path_segment_destroy
 		}
 	},
@@ -255,8 +287,10 @@ static dict const rd_path_seg_types[] = {
 		.id = 4,
 		.val = &(tlv_type_descriptor_t){
 			.label = "ENTRY_SET",
+			.json_key = "entry_set",
 			.parse = rd_path_segment_parse,
 			.format_text = rd_path_segment_format_text,
+			.format_json = rd_path_segment_format_json,
 			.destroy = rd_path_segment_destroy
 		}
 	},
@@ -276,22 +310,32 @@ TLV_FORMATTER(rd_path_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(rd_path, la_list *, data);
+	la_list const *rd_path = data;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "%s:\n", label);
-	tlv_list_format_text(ctx->vstr, rd_path, ctx->indent+1);
+	tlv_list_format_text(ctx->vstr, (la_list *)rd_path, ctx->indent+1);
+}
+
+TLV_FORMATTER(rd_path_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	la_list const *rd_path = data;
+	tlv_list_format_json(ctx->vstr, label, (la_list *)rd_path);
 }
 
 TLV_DESTRUCTOR(rd_path_destroy) {
 	tlv_list_destroy(data);
 }
 
-static dict const path_attributes[] = {
+static la_dict const path_attributes[] = {
 	{
 		.id = 1,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Route",
+			.json_key = "route",
 			.parse = idrp_route_separator_parse,
 			.format_text = idrp_route_separator_format_text,
+			.format_json = idrp_route_separator_format_json,
 			.destroy = NULL
 		}
 	},
@@ -299,8 +343,10 @@ static dict const path_attributes[] = {
 		.id = 2,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Ext. info",
+			.json_key = "ext_info",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -308,8 +354,10 @@ static dict const path_attributes[] = {
 		.id = 3,
 		.val = &(tlv_type_descriptor_t){
 			.label = "RD path",
+			.json_key = "rd_path",
 			.parse = rd_path_parse,
 			.format_text = rd_path_format_text,
+			.format_json = rd_path_format_json,
 			.destroy = rd_path_destroy
 		}
 	},
@@ -317,8 +365,10 @@ static dict const path_attributes[] = {
 		.id = 4,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Next hop",
+			.json_key = "next_hop",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -326,8 +376,10 @@ static dict const path_attributes[] = {
 		.id = 5,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Distribute list inclusions",
+			.json_key = "distribute_list_inclusions",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -335,8 +387,10 @@ static dict const path_attributes[] = {
 		.id = 6,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Distribute list exclusions",
+			.json_key = "distribute_list_exclusions",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -344,8 +398,10 @@ static dict const path_attributes[] = {
 		.id = 7,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Multi exit discriminator",
+			.json_key = "multi_exit_discriminator",
 			.parse = tlv_uint8_parse,
 			.format_text = tlv_uint_format_text,
+			.format_json = tlv_uint_format_json,
 			.destroy = NULL
 		}
 	},
@@ -353,8 +409,10 @@ static dict const path_attributes[] = {
 		.id = 8,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Transit delay",
+			.json_key = "transit_delay",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -362,8 +420,10 @@ static dict const path_attributes[] = {
 		.id = 9,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Residual error",
+			.json_key = "residual_error",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -371,8 +431,10 @@ static dict const path_attributes[] = {
 		.id = 10,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Expense",
+			.json_key = "expense",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -380,8 +442,10 @@ static dict const path_attributes[] = {
 		.id = 11,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Locally defined QoS",
+			.json_key = "locally_defined_qos",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -389,8 +453,10 @@ static dict const path_attributes[] = {
 		.id = 12,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Hierarchical recording",
+			.json_key = "hierarchical_recording",
 			.parse = tlv_octet_string_parse,
 			.format_text = tlv_octet_string_format_text,
+			.format_json = tlv_octet_string_format_json,
 			.destroy = NULL
 		}
 	},
@@ -398,8 +464,10 @@ static dict const path_attributes[] = {
 		.id = 13,
 		.val = &(tlv_type_descriptor_t){
 			.label = "RD hop count",
+			.json_key = "rd_hop_count",
 			.parse = tlv_uint8_parse,
 			.format_text = tlv_uint_format_text,
+			.format_json = tlv_uint_format_json,
 			.destroy = NULL
 		}
 	},
@@ -407,8 +475,10 @@ static dict const path_attributes[] = {
 		.id = 14,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Security",
+			.json_key = "security",
 			.parse = atn_sec_label_parse,
 			.format_text = atn_sec_label_format_text,
+			.format_json = atn_sec_label_format_json,
 			.destroy = atn_sec_label_destroy
 		}
 	},
@@ -416,8 +486,10 @@ static dict const path_attributes[] = {
 		.id = 15,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Capacity",
+			.json_key = "capacity",
 			.parse = tlv_uint8_parse,
 			.format_text = tlv_uint_format_text,
+			.format_json = tlv_uint_format_json,
 			.destroy = NULL
 		}
 	},
@@ -425,8 +497,10 @@ static dict const path_attributes[] = {
 		.id = 16,
 		.val = &(tlv_type_descriptor_t){
 			.label = "Priority",
+			.json_key = "priority",
 			.parse = tlv_uint8_parse,
 			.format_text = tlv_uint_format_text,
+			.format_json = tlv_uint_format_json,
 			.destroy = NULL
 		}
 	},
@@ -435,22 +509,6 @@ static dict const path_attributes[] = {
 		.val = NULL
 	}
 };
-
-TLV_FORMATTER(idrp_attr_no_value_format_text) {
-	UNUSED(label);
-	ASSERT(ctx != NULL);
-	ASSERT(ctx->vstr != NULL);
-	ASSERT(ctx->indent >= 0);
-
-	// Find the attribute label and print it to indicate its presence in RIB-Att)
-	CAST_PTR(typecode, uint8_t *, data);
-	CAST_PTR(td, tlv_type_descriptor_t *, dict_search(path_attributes, *typecode));
-	if(td != NULL) {
-		LA_ISPRINTF(ctx->vstr, ctx->indent, "%s\n", td->label);
-	} else {
-		LA_ISPRINTF(ctx->vstr, ctx->indent, "Unknown attribute %u\n", *typecode);
-	}
-}
 
 typedef struct {
 	la_list *list;
@@ -466,8 +524,7 @@ static attr_parse_result_t parse_idrp_ribatt(uint8_t *buf, uint32_t len) {
 	uint8_t attrs_cnt = buf[0];
 	buf++; consumed++; len--;
 
-	uint8_t i = 0;
-	while(i < attrs_cnt && len > 0) {
+	for(uint8_t i = 0; i < attrs_cnt && len > 0; i++) {
 		uint8_t typecode = buf[0];
 		buf++; consumed++; len--;
 		if(typecode == 11 || typecode == 14) {
@@ -487,14 +544,13 @@ static attr_parse_result_t parse_idrp_ribatt(uint8_t *buf, uint32_t len) {
 					path_attributes, attr_list);
 			buf += tag_len; consumed += tag_len; len -= tag_len;
 		} else {
-			// Other attributes are encoded as value only.
-			// Can't store a NULL value in tlv_tag_t, so just store the typecode as value
-			NEW(uint8_t, u);
-			*u = typecode;
-			attr_list = tlv_list_append(attr_list, typecode,
-					&tlv_DEF_idrp_attr_no_value, u);
+			// Other attributes are presence-only (ie. only the type is encoded without value,
+			// so there is nothing to parse)
+			tlv_type_descriptor_t *td = la_dict_search(path_attributes, typecode);
+			if(td != NULL) {
+				attr_list = tlv_list_append(attr_list, typecode, td, TLV_NO_VALUE_PTR);
+			}
 		}
-		i++;
 	}
 	return (attr_parse_result_t){ .list = attr_list, .consumed = consumed };
 fail:
@@ -516,8 +572,7 @@ static attr_parse_result_t parse_idrp_ribatts_set(uint8_t *buf, uint32_t len) {
 	uint8_t ribatts_cnt = buf[0];
 	buf++; consumed++; len--;
 
-	uint8_t i = 0;
-	while(i < ribatts_cnt && len > 0) {
+	for(uint8_t i = 0; i < ribatts_cnt && len > 0; i++) {
 		attr_parse_result_t result = parse_idrp_ribatt(buf, len);
 		debug_print(D_PROTO_DETAIL, "RibAtt #%u: parse_idrp_ribatt consumed %d octets\n", i, result.consumed);
 		if(result.consumed < 0) {
@@ -528,7 +583,6 @@ static attr_parse_result_t parse_idrp_ribatts_set(uint8_t *buf, uint32_t len) {
 		ribatt->num = i;
 		ribatt->attr_list = result.list;
 		ribatt_list = tlv_list_append(ribatt_list, i, &tlv_DEF_idrp_ribatt, ribatt);
-		i++;
 	}
 	return (attr_parse_result_t){ .list = ribatt_list, .consumed = consumed };
 fail:
@@ -542,32 +596,34 @@ TLV_FORMATTER(idrp_ribatt_format_text) {
 	ASSERT(ctx->vstr != NULL);
 	ASSERT(ctx->indent >= 0);
 
-	CAST_PTR(r, idrp_ribatt_t *, data);
+	idrp_ribatt_t const *r = data;
 	LA_ISPRINTF(ctx->vstr, ctx->indent, "RibAtt #%u:\n", r->num);
 	tlv_list_format_text(ctx->vstr, r->attr_list, ctx->indent+1);
+}
+
+TLV_FORMATTER(idrp_ribatt_format_json) {
+	ASSERT(ctx != NULL);
+	ASSERT(ctx->vstr != NULL);
+
+	idrp_ribatt_t const *r = data;
+	tlv_list_format_json(ctx->vstr, label, r->attr_list);
 }
 
 TLV_DESTRUCTOR(idrp_ribatt_destroy) {
 	if(data == NULL) {
 		return;
 	}
-	CAST_PTR(ribatt, idrp_ribatt_t *, data);
+	idrp_ribatt_t *ribatt = data;
 	tlv_list_destroy(ribatt->attr_list);
 	XFREE(data);
 }
 
-// A pseudo-type which only prints its label
-static tlv_type_descriptor_t tlv_DEF_idrp_attr_no_value = {
-	.label = "",
-	.parse = NULL,
-	.format_text = idrp_attr_no_value_format_text,
-	.destroy = NULL
-};
-
 static tlv_type_descriptor_t tlv_DEF_idrp_ribatt = {
 	.label = "",
+	.json_key = "ribatt",
 	.parse = NULL,
 	.format_text = idrp_ribatt_format_text,
+	.format_json = idrp_ribatt_format_json,
 	.destroy = idrp_ribatt_destroy
 };
 
@@ -580,8 +636,8 @@ static attr_parse_result_t parse_idrp_confed_ids(uint8_t *buf, uint32_t len) {
 	uint8_t confed_id_cnt = buf[0];
 	buf++; consumed++; len--;
 
-	uint8_t i = 0;
-	while(i < confed_id_cnt && len > 0) {
+	
+	for(uint8_t i = 0; i < confed_id_cnt && len > 0; i++) {
 		uint8_t confed_id_len = buf[0];
 		buf++; consumed++; len--;
 		if(len < confed_id_len) {
@@ -591,7 +647,6 @@ static attr_parse_result_t parse_idrp_confed_ids(uint8_t *buf, uint32_t len) {
 		}
 		confed_id_list = la_list_append(confed_id_list, octet_string_new(buf, confed_id_len));
 		buf += confed_id_len; consumed += confed_id_len; len -= confed_id_len;
-		i++;
 	}
 	return (attr_parse_result_t){ .list = confed_id_list, .consumed = consumed };
 fail:
@@ -817,7 +872,7 @@ la_proto_node *idrp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	}
 	uint8_t *ptr = buf;
 	uint32_t remaining = len;
-	CAST_PTR(hdr, idrp_hdr_t *, ptr);
+	idrp_hdr_t *hdr = (idrp_hdr_t *)ptr;
 	uint16_t pdu_len = extract_uint16_msbfirst(hdr->len);
 	debug_print(D_PROTO, "pid: %02x len: %u type: %u seq: %u ack: %u coff: %u cavail: %u\n",
 			hdr->pid, pdu_len, hdr->type, ntohl(hdr->seq), ntohl(hdr->ack), hdr->coff, hdr->cavail);
@@ -870,26 +925,26 @@ end:
 	return node;
 }
 
-static void idrp_error_format_text(la_vstring *vstr, idrp_pdu_t *pdu, int indent) {
+static void idrp_error_format_text(la_vstring *vstr, idrp_pdu_t const *pdu, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(pdu != NULL);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(err, bispdu_err_t *, dict_search(bispdu_errors, pdu->err_code));
+	bispdu_err_t const *err = la_dict_search(bispdu_errors, pdu->err_code);
 	LA_ISPRINTF(vstr, indent, "Code: %u (%s)\n", pdu->err_code, err ? err->descr : "unknown");
 	if(!err) {
 		LA_ISPRINTF(vstr, indent, "Subcode: %u (unknown)\n", pdu->err_subcode);
 		goto print_err_payload;
 	}
 	if(pdu->err_code == BISPDU_ERR_FSM) {   // special case
-		CAST_PTR(bispdu_name, char *, dict_search(bispdu_types, pdu->err_fsm_bispdu_type));
-		CAST_PTR(fsm_state_name, char *, dict_search(FSM_states, pdu->err_fsm_state));
+		char const *bispdu_name = la_dict_search(bispdu_types, pdu->err_fsm_bispdu_type);
+		char const *fsm_state_name = la_dict_search(FSM_states, pdu->err_fsm_state);
 		LA_ISPRINTF(vstr, indent, "Erroneous BISPDU type: %s\n",
 				bispdu_name ? bispdu_name : "unknown");
 		LA_ISPRINTF(vstr, indent, "FSM state: %s\n",
 				fsm_state_name ? fsm_state_name : "unknown");
 	} else {
-		CAST_PTR(subcode, char *, dict_search(err->subcodes, pdu->err_subcode));
+		char const *subcode = la_dict_search(err->subcodes, pdu->err_subcode);
 		LA_ISPRINTF(vstr, indent, "Subcode: %u (%s)\n", pdu->err_subcode, subcode ? subcode : "unknown");
 	}
 print_err_payload:
@@ -900,18 +955,47 @@ print_err_payload:
 	}
 }
 
-void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int indent) {
+static void idrp_error_format_json(la_vstring *vstr, idrp_pdu_t const *pdu) {
+	ASSERT(vstr != NULL);
+	ASSERT(pdu != NULL);
+
+	la_json_append_int64(vstr, "err_code", pdu->err_code);
+	bispdu_err_t const *err = la_dict_search(bispdu_errors, pdu->err_code);
+	if(err != NULL) {
+		la_json_append_string(vstr, "err_descr", err->descr);
+	} else {
+		goto print_err_payload;
+	}
+	if(pdu->err_code == BISPDU_ERR_FSM) {   // special case
+		la_json_append_int64(vstr, "err_fsm_bispdu_type", pdu->err_fsm_bispdu_type);
+		la_json_append_int64(vstr, "err_fsm_state", pdu->err_fsm_state);
+		char const *bispdu_name = la_dict_search(bispdu_types, pdu->err_fsm_bispdu_type);
+		char const *fsm_state_name = la_dict_search(FSM_states, pdu->err_fsm_state);
+		SAFE_JSON_APPEND_STRING(vstr, "err_fsm_bispdu_name", bispdu_name);
+		SAFE_JSON_APPEND_STRING(vstr, "err_fsm_state_descr", fsm_state_name);
+	} else {
+		la_json_append_int64(vstr, "err_subcode", pdu->err_subcode);
+		char const *subcode = la_dict_search(err->subcodes, pdu->err_subcode);
+		SAFE_JSON_APPEND_STRING(vstr, "err_subcode_descr", subcode);
+	}
+print_err_payload:
+	if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
+		la_json_append_octet_string(vstr, "err_payload", pdu->data->buf, pdu->data->len);
+	}
+}
+
+void idrp_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(pdu, idrp_pdu_t *, data);
+	idrp_pdu_t const *pdu = data;
 	if(pdu->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable IDRP PDU\n");
 		return;
 	}
 	idrp_hdr_t *hdr = pdu->hdr;
-	CAST_PTR(bispdu_name, char *, dict_search(bispdu_types, hdr->type));
+	char const *bispdu_name = la_dict_search(bispdu_types, hdr->type);
 	LA_ISPRINTF(vstr, indent, "IDRP %s: seq: %u ack: %u credit_offered: %u credit_avail: %u\n",
 			bispdu_name, ntohl(hdr->seq), ntohl(hdr->ack), hdr->coff, hdr->cavail);
 	indent++;
@@ -936,7 +1020,7 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 					}
 					indent--;
 				}
-				CAST_PTR(auth_mech_name, char *, dict_search(auth_mechs, pdu->auth_mech));
+				char const *auth_mech_name = la_dict_search(auth_mechs, pdu->auth_mech);
 				LA_ISPRINTF(vstr, indent, "Auth mechanism: %s\n",
 						auth_mech_name ? auth_mech_name : "unknown");
 				if(pdu->auth_data.buf != NULL && pdu->auth_data.len > 0) {
@@ -960,11 +1044,10 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 			}
 
 			if(pdu->nlri_list != NULL) {
-				la_list *n = pdu->nlri_list;
-				while(n != NULL) {
+				for(la_list *n = pdu->nlri_list; n != NULL; n = la_list_next(n)) {
 					LA_ISPRINTF(vstr, indent, "%s:\n", "Reachability info");
 					indent++;
-					CAST_PTR(dest, idrp_nlri_t *, n->data);
+					idrp_nlri_t *dest = n->data;
 					if(dest->is_clnp) {
 						LA_ISPRINTF(vstr, indent, "%s\n", "Protocol: CLNP");
 						LA_ISPRINTF(vstr, indent, "Prefix length: %u\n", dest->prefix_len);
@@ -977,7 +1060,6 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 					octet_string_with_ascii_format_text(vstr, &dest->prefix, 0);
 					EOL(vstr);
 					indent--;
-					n = la_list_next(n);
 				}
 			} else if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
 				LA_ISPRINTF(vstr, indent, "%s\n", "-- Unparseable NLRI");
@@ -996,11 +1078,94 @@ void idrp_pdu_format_text(la_vstring * const vstr, void const * const data, int 
 	}
 }
 
+void idrp_pdu_format_json(la_vstring *vstr, void const *data) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+
+	idrp_pdu_t const *pdu = data;
+	la_json_append_bool(vstr, "err", pdu->err);
+	if(pdu->err == true) {
+		return;
+	}
+	idrp_hdr_t *hdr = pdu->hdr;
+	la_json_append_int64(vstr, "pdu_type", hdr->type);
+	char const *bispdu_name = la_dict_search(bispdu_types, hdr->type);
+	SAFE_JSON_APPEND_STRING(vstr, "pdu_type_name", bispdu_name);
+	la_json_append_int64(vstr, "seq", ntohl(hdr->seq));
+	la_json_append_int64(vstr, "ack", ntohl(hdr->ack));
+	la_json_append_int64(vstr, "credit_offered", hdr->coff);
+	la_json_append_int64(vstr, "credit_avail", hdr->cavail);
+	switch(pdu->hdr->type) {
+		case BISPDU_TYPE_OPEN:
+			la_json_append_int64(vstr, "hold_time", pdu->open_holdtime);
+			la_json_append_int64(vstr, "max_pdu_size", pdu->open_max_pdu_size);
+			la_json_append_octet_string(vstr, "src_rdi", pdu->open_src_rdi.buf, pdu->open_src_rdi.len);
+			if(pdu->ribatts_set != NULL) {
+				tlv_list_format_json(vstr, "ribatts_set", pdu->ribatts_set);
+			}
+			{
+				if(pdu->confed_ids != NULL) {
+					la_json_array_start(vstr, "confed_ids");
+					for(la_list *p = pdu->confed_ids; p != NULL; p = p->next) {
+						octet_string_t *ostring = p->data;
+						la_json_append_octet_string(vstr, NULL, ostring->buf, ostring->len);
+					}
+					la_json_array_end(vstr);
+				}
+			}
+			la_json_append_int64(vstr, "auth_mech", pdu->auth_mech);
+			char const *auth_mech_name = la_dict_search(auth_mechs, pdu->auth_mech);
+			SAFE_JSON_APPEND_STRING(vstr, "auth_mech_name", auth_mech_name);
+			if(pdu->auth_data.buf != NULL && pdu->auth_data.len > 0) {
+				la_json_append_octet_string(vstr, "auth_data", pdu->auth_data.buf, pdu->auth_data.len);
+			}
+			break;
+		case BISPDU_TYPE_UPDATE:
+			if(pdu->withdrawn_routes != NULL) {
+				la_json_array_start(vstr, "withdrawn_routes");
+				for(la_list *p = pdu->withdrawn_routes; p != NULL; p = p->next) {
+					la_json_append_int64(vstr, NULL, *(uint32_t *)(p->data));
+				}
+				la_json_array_end(vstr);
+			}
+			if(pdu->path_attributes != NULL) {
+				tlv_list_format_json(vstr, "path_attributes", pdu->path_attributes);
+			}
+			if(pdu->nlri_list != NULL) {
+				la_json_array_start(vstr, "nlri_list");
+				for(la_list *n = pdu->nlri_list; n != NULL; n = la_list_next(n)) {
+					idrp_nlri_t *dest = n->data;
+					la_json_object_start(vstr, NULL);
+					if(dest->is_clnp) {
+						la_json_append_string(vstr, "proto", "CLNP");
+						la_json_append_int64(vstr, "prefix_len", dest->prefix_len);
+					} else {
+						la_json_append_octet_string(vstr, "proto_id", dest->proto.buf, dest->proto.len);
+					}
+					la_json_append_octet_string(vstr, "dst_prefix", dest->prefix.buf, dest->prefix.len);
+					la_json_object_end(vstr);
+				}
+				la_json_array_end(vstr);
+			} else if(pdu->data != NULL && pdu->data->buf != NULL && pdu->data->len > 0) {
+				la_json_append_octet_string(vstr, "__unparseable_nlri", pdu->data->buf, pdu->data->len);
+			}
+			break;
+		case BISPDU_TYPE_ERROR:
+			idrp_error_format_json(vstr, pdu);
+			break;
+		case BISPDU_TYPE_KEEPALIVE:
+		case BISPDU_TYPE_CEASE:
+			break;
+		case BISPDU_TYPE_RIBREFRESH:
+			break;
+	}
+}
+
 void idrp_pdu_destroy(void *data) {
 	if(data == NULL) {
 		return;
 	}
-	CAST_PTR(pdu, idrp_pdu_t *, data);
+	idrp_pdu_t *pdu = data;
 	la_list_free(pdu->withdrawn_routes);
 	tlv_list_destroy(pdu->path_attributes);
 	tlv_list_destroy(pdu->ribatts_set);
@@ -1012,5 +1177,7 @@ void idrp_pdu_destroy(void *data) {
 
 la_type_descriptor const proto_DEF_idrp_pdu = {
 	.format_text = idrp_pdu_format_text,
+	.format_json = idrp_pdu_format_json,
+	.json_key = "idrp",
 	.destroy = idrp_pdu_destroy
 };

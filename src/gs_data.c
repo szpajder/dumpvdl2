@@ -37,7 +37,7 @@ static void gs_data_entry_destroy(void *data) {
 	if(data == NULL) {
 		return;
 	}
-	CAST_PTR(k, gs_data_entry *, data);
+	gs_data_entry *k = data;
 	XFREE(k->airport_code);
 	XFREE(k->details);
 	XFREE(k->location);

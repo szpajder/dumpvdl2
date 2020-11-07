@@ -73,15 +73,20 @@ extern asn_TYPE_descriptor_t asn_DEF_PositionReport;
 #endif
 
 /* Referred external types */
-#include "Position.h"
-#include "Time.h"
+#include "FixNext.h"
+#include "TimeETAatFixNext.h"
+#include "FixNextPlusOne.h"
+#include "TimeETAatDest.h"
 #include "RemainingFuel.h"
 #include "Winds.h"
 #include "Speed.h"
 #include "VerticalChange.h"
-#include "Degrees.h"
+#include "PosReportTrackAngle.h"
+#include "PosReportHeading.h"
 #include "Distance.h"
-#include "Level.h"
+#include "ReportedWaypointPosition.h"
+#include "ReportedWaypointTime.h"
+#include "ReportedWaypointLevel.h"
 
 #endif	/* _PositionReport_H_ */
 #include "asn_internal.h"

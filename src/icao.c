@@ -21,6 +21,8 @@
 #include <stdlib.h>
 #include <libacars/libacars.h>          // la_proto_node, la_type_descriptor
 #include <libacars/vstring.h>           // la_vstring
+#include <libacars/dict.h>              // la_dict
+#include <libacars/json.h>
 #include "asn1/BIT_STRING.h"
 #include "asn1/ACSE-apdu.h"
 #include "asn1/CMAircraftMessage.h"
@@ -49,6 +51,10 @@
 
 // Forward declarations
 la_type_descriptor const proto_DEF_x225_spdu;
+la_type_descriptor const proto_DEF_cpdlc;
+la_type_descriptor const proto_DEF_cm;
+la_type_descriptor const proto_DEF_adsc_v2;
+la_type_descriptor const proto_DEF_x227_acse_apdu;
 
 /********************************************************************************
   * ICAO applications
@@ -276,6 +282,7 @@ static la_proto_node *arbitrary_payload_parse(AE_qualifier_form2_t app_type,
 		ACSE_apdu_PR acse_apdu_type, uint8_t *buf, uint32_t size, uint32_t *msg_type) {
 	void *msg = NULL;
 	la_proto_node *node = NULL;
+	la_type_descriptor const *td = NULL;
 	NEW(asn1_pdu_t, pdu);
 	asn_TYPE_descriptor_t *decoded_apdu_type = NULL;
 	if(*msg_type & MSGFLT_SRC_AIR) {
@@ -283,6 +290,7 @@ static la_proto_node *arbitrary_payload_parse(AE_qualifier_form2_t app_type,
 				decode_protected_ATCDownlinkMessage((void **)&msg, &decoded_apdu_type, acse_apdu_type, buf, size) == 0) {
 			pdu->type = decoded_apdu_type;
 			pdu->data = msg;
+			td = &proto_DEF_cpdlc;
 			*msg_type |= MSGFLT_CPDLC;
 			goto end;
 		}
@@ -293,6 +301,7 @@ static la_proto_node *arbitrary_payload_parse(AE_qualifier_form2_t app_type,
 				asn1_decode_as(&asn_DEF_CMAircraftMessage, (void **)&msg, buf, size) == 0) {
 			pdu->type = &asn_DEF_CMAircraftMessage;
 			pdu->data = msg;
+			td = &proto_DEF_cm;
 			*msg_type |= MSGFLT_CM;
 			goto end;
 		}
@@ -303,6 +312,7 @@ static la_proto_node *arbitrary_payload_parse(AE_qualifier_form2_t app_type,
 				decode_ADSAircraftPDUs((void **)&msg, &decoded_apdu_type, buf, size) == 0) {
 			pdu->type = decoded_apdu_type;
 			pdu->data = msg;
+			td = &proto_DEF_adsc_v2;
 			*msg_type |= MSGFLT_ADSC;
 			goto end;
 		}
@@ -313,6 +323,7 @@ static la_proto_node *arbitrary_payload_parse(AE_qualifier_form2_t app_type,
 				decode_protected_ATCUplinkMessage((void **)&msg, &decoded_apdu_type, acse_apdu_type, buf, size) == 0) {
 			pdu->type = decoded_apdu_type;
 			pdu->data = msg;
+			td = &proto_DEF_cpdlc;
 			*msg_type |= MSGFLT_CPDLC;
 			goto end;
 		}
@@ -323,6 +334,7 @@ static la_proto_node *arbitrary_payload_parse(AE_qualifier_form2_t app_type,
 				asn1_decode_as(&asn_DEF_CMGroundMessage, (void **)&msg, buf, size) == 0) {
 			pdu->type = &asn_DEF_CMGroundMessage;
 			pdu->data = msg;
+			td = &proto_DEF_cm;
 			*msg_type |= MSGFLT_CM;
 			goto end;
 		}
@@ -333,6 +345,7 @@ static la_proto_node *arbitrary_payload_parse(AE_qualifier_form2_t app_type,
 				decode_ADSGroundPDUs((void **)&msg, &decoded_apdu_type, buf, size) == 0) {
 			pdu->type = decoded_apdu_type;
 			pdu->data = msg;
+			td = &proto_DEF_adsc_v2;
 			*msg_type |= MSGFLT_ADSC;
 			goto end;
 		}
@@ -343,10 +356,12 @@ static la_proto_node *arbitrary_payload_parse(AE_qualifier_form2_t app_type,
 	XFREE(pdu);
 	return NULL;        // the caller will turn this into unknown_proto_pdu
 end:
-	pdu->formatter_table_text = asn1_icao_formatter_table;
-	pdu->formatter_table_text_len = asn1_icao_formatter_table_len;
+	pdu->formatter_table_text = asn1_icao_formatter_table_text;
+	pdu->formatter_table_text_len = asn1_icao_formatter_table_text_len;
+	pdu->formatter_table_json = asn1_icao_formatter_table_json;
+	pdu->formatter_table_json_len = asn1_icao_formatter_table_json_len;
 	node = la_proto_node_new();
-	node->td = &proto_DEF_asn1_pdu;
+	node->td = td;
 	node->data = pdu;
 	node->next = NULL;
 	return node;
@@ -375,8 +390,10 @@ static la_proto_node *ulcs_acse_parse(uint8_t *buf, uint32_t len, uint32_t *msg_
 	NEW(asn1_pdu_t, apdu);
 	apdu->data = acse_apdu;
 	apdu->type = &asn_DEF_ACSE_apdu;
-	apdu->formatter_table_text = asn1_acse_formatter_table;
-	apdu->formatter_table_text_len = asn1_acse_formatter_table_len;
+	apdu->formatter_table_text = asn1_acse_formatter_table_text;
+	apdu->formatter_table_text_len = asn1_acse_formatter_table_text_len;
+	apdu->formatter_table_json = asn1_acse_formatter_table_json;
+	apdu->formatter_table_json_len = asn1_acse_formatter_table_json_len;
 
 	AE_qualifier_form2_t ae_qualifier = ICAO_APP_TYPE_UNKNOWN;
 	Association_information_t *user_info = NULL;
@@ -426,7 +443,7 @@ static la_proto_node *ulcs_acse_parse(uint8_t *buf, uint32_t len, uint32_t *msg_
 	}
 end:
 	node = la_proto_node_new();
-	node->td = &proto_DEF_asn1_pdu;
+	node->td = &proto_DEF_x227_acse_apdu;
 	node->data = apdu;
 	node->next = next_node;
 	return node;
@@ -493,7 +510,7 @@ end:
 #define X225_SPDU_SRF  0xe0
 #define X225_SPDU_SRFC 0xa0
 
-static dict const x225_spdu_names[] = {
+static la_dict const x225_spdu_names[] = {
 	{ X225_SPDU_SCN,  "Short Connect" },
 	{ X225_SPDU_SAC,  "Short Accept" },
 	{ X225_SPDU_SACC, "Short Accept Continue" },
@@ -510,7 +527,7 @@ static la_proto_node *x225_spdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_
 	uint32_t remaining = len;
 
 	uint8_t spdu_id = ptr[0] & 0xf8;
-	if(dict_search(x225_spdu_names, spdu_id) == NULL) {
+	if(la_dict_search(x225_spdu_names, spdu_id) == NULL) {
 		debug_print(D_PROTO, "Unknown SPDU type 0x%02x\n", spdu_id);
 		goto fail;
 	}
@@ -558,13 +575,13 @@ fail:
 	return NULL;    // the caller will convert this to unknown_proto_pdu
 }
 
-void x225_spdu_format_text(la_vstring *vstr, void const * const data, int indent) {
+void x225_spdu_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	CAST_PTR(spdu, x225_spdu_t *, data);
-	char *str = dict_search(x225_spdu_names, spdu->spdu_id);
+	x225_spdu_t const *spdu = data;
+	char const *str = la_dict_search(x225_spdu_names, spdu->spdu_id);
 	if(str != NULL) {
 		LA_ISPRINTF(vstr, indent, "X.225 Session SPDU: %s\n", str);
 	} else {
@@ -579,8 +596,26 @@ void x225_spdu_format_text(la_vstring *vstr, void const * const data, int indent
 	}
 }
 
+void x225_spdu_format_json(la_vstring *vstr, void const *data) {
+	ASSERT(vstr != NULL);
+	ASSERT(data);
+
+	x225_spdu_t const *spdu = data;
+	la_json_append_int64(vstr, "spdu_id", spdu->spdu_id);
+	char const *str = la_dict_search(x225_spdu_names, spdu->spdu_id);
+	SAFE_JSON_APPEND_STRING(vstr, "spdu_type", str);
+	if(spdu->spdu_id == X225_SPDU_SRF) {
+		la_json_append_string(vstr, "refusal",
+				(spdu->spdu_special_data & 1 ? "persistent" : "transient"));
+		la_json_append_string(vstr, "transport_connection",
+				(spdu->spdu_special_data & 2 ? "release" : "retain"));
+	}
+}
+
 la_type_descriptor const proto_DEF_x225_spdu = {
 	.format_text    = x225_spdu_format_text,
+	.format_json    = x225_spdu_format_json,
+	.json_key       = "x225_spdu",
 	.destroy        = NULL
 };
 
@@ -621,3 +656,31 @@ la_proto_node *icao_apdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 end:
 	return node ? node : unknown_proto_pdu_new(buf, len);
 }
+
+la_type_descriptor const proto_DEF_cpdlc = {
+	.format_text    = asn1_pdu_format_text,
+	.format_json    = asn1_pdu_format_json,
+	.json_key       = "cpdlc",
+	.destroy        = asn1_pdu_destroy
+};
+
+la_type_descriptor const proto_DEF_cm = {
+	.format_text    = asn1_pdu_format_text,
+	.format_json    = asn1_pdu_format_json,
+	.json_key       = "context_mgmt",
+	.destroy        = asn1_pdu_destroy
+};
+
+la_type_descriptor const proto_DEF_adsc_v2 = {
+	.format_text    = asn1_pdu_format_text,
+	.format_json    = asn1_pdu_format_json,
+	.json_key       = "adsc_v2",
+	.destroy        = asn1_pdu_destroy
+};
+
+la_type_descriptor const proto_DEF_x227_acse_apdu = {
+	.format_text    = asn1_pdu_format_text,
+	.format_json    = asn1_pdu_format_json,
+	.json_key       = "x227_apdu",
+	.destroy        = asn1_pdu_destroy
+};

@@ -39,7 +39,7 @@ typedef struct {
 } out_zmq_ctx_t;
 
 static bool out_zmq_supports_format(output_format_t format) {
-	return(format == OFMT_TEXT || format == OFMT_PP_ACARS);
+	return(format == OFMT_TEXT || format == OFMT_JSON || format == OFMT_PP_ACARS);
 }
 
 static void *out_zmq_configure(kvargs *kv) {
@@ -80,7 +80,7 @@ fail:
 
 static int out_zmq_init(void *selfptr) {
 	ASSERT(selfptr != NULL);
-	CAST_PTR(self, out_zmq_ctx_t *, selfptr);
+	out_zmq_ctx_t *self = selfptr;
 
 	self->zmq_ctx = zmq_ctx_new();
 	if(self->zmq_ctx == NULL) {
@@ -117,16 +117,15 @@ static void out_zmq_produce_text(out_zmq_ctx_t *self, vdl2_msg_metadata *metadat
 	if(msg->len < 2) {
 		return;
 	}
-	// Don't send the NULL terminator
-	if(zmq_send(self->zmq_sock, msg->buf, msg->len - 1, 0) < 0) {
+	if(zmq_send(self->zmq_sock, msg->buf, msg->len, 0) < 0) {
 		debug_print(D_OUTPUT, "output_zmq: zmq_send error: %s", zmq_strerror(errno));
 	}
 }
 
 static int out_zmq_produce(void *selfptr, output_format_t format, vdl2_msg_metadata *metadata, octet_string_t *msg) {
 	ASSERT(selfptr != NULL);
-	CAST_PTR(self, out_zmq_ctx_t *, selfptr);
-	if(format == OFMT_TEXT || format == OFMT_PP_ACARS) {
+	out_zmq_ctx_t *self = selfptr;
+	if(format == OFMT_TEXT || format == OFMT_JSON || format == OFMT_PP_ACARS) {
 		out_zmq_produce_text(self, metadata, msg);
 	}
 	return 0;
@@ -134,7 +133,7 @@ static int out_zmq_produce(void *selfptr, output_format_t format, vdl2_msg_metad
 
 static void out_zmq_handle_shutdown(void *selfptr) {
 	ASSERT(selfptr != NULL);
-	CAST_PTR(self, out_zmq_ctx_t *, selfptr);
+	out_zmq_ctx_t *self = selfptr;
 	fprintf(stderr, "output_zmq(%s): shutting down\n", self->endpoint);
 	zmq_close(self->zmq_sock);
 	zmq_ctx_destroy(self->zmq_ctx);
@@ -142,7 +141,7 @@ static void out_zmq_handle_shutdown(void *selfptr) {
 
 static void out_zmq_handle_failure(void *selfptr) {
 	ASSERT(selfptr != NULL);
-	CAST_PTR(self, out_zmq_ctx_t *, selfptr);
+	out_zmq_ctx_t *self = selfptr;
 	fprintf(stderr, "output_zmq: Could not %s to %s, deactivating output\n",
 			self->mode == ZMQ_MODE_SERVER ? "bind" : "connect", self->endpoint);
 }

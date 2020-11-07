@@ -20,13 +20,14 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "config.h"         // WITH_SQLITE
-#include "dumpvdl2.h"
+#include "dumpvdl2.h"       // NEW(), XFREE(), statsd_increment()
 #include "ac_data.h"        // ac_data_entry
 
 #ifdef WITH_SQLITE
 #include <stdbool.h>
 #include <string.h>         // strdup
 #include <time.h>           // time_t, time()
+#include <libacars/dict.h>  // la_dict
 #include <libacars/hash.h>  // la_hash_*
 #include <sqlite3.h>
 #include "gs_data.h"        // uint_hash, uint_compare
@@ -59,7 +60,7 @@ static void ac_data_entry_destroy(void *data) {
 	if(data == NULL) {
 		return;
 	}
-	CAST_PTR(e, ac_data_entry *, data);
+	ac_data_entry *e = data;
 	XFREE(e->registration);
 	XFREE(e->icaotypecode);
 	XFREE(e->operatorflagcode);
@@ -73,12 +74,12 @@ static void ac_data_cache_entry_destroy(void *data) {
 	if(data == NULL) {
 		return;
 	}
-	CAST_PTR(ce, ac_data_cache_entry *, data);
+	ac_data_cache_entry *ce = data;
 	ac_data_entry_destroy(ce->ac_data);
 	XFREE(ce);
 }
 
-static void ac_data_cache_entry_create(uint32_t const addr, ac_data_entry *ac_entry) {
+static void ac_data_cache_entry_create(uint32_t addr, ac_data_entry *ac_entry) {
 	NEW(ac_data_cache_entry, ce);
 	ce->ctime = time(NULL);
 	ce->ac_data = ac_entry;
@@ -90,7 +91,7 @@ static void ac_data_cache_entry_create(uint32_t const addr, ac_data_entry *ac_en
 
 #define BS_DB_COLUMNS "Registration,ICAOTypeCode,OperatorFlagCode,Manufacturer,Type,RegisteredOwners"
 
-static int ac_data_entry_from_db(uint32_t const addr, ac_data_entry **result) {
+static int ac_data_entry_from_db(uint32_t addr, ac_data_entry **result) {
 	if(db == NULL || stmt == NULL) {
 		return -1;
 	}
@@ -151,9 +152,9 @@ static int ac_data_entry_from_db(uint32_t const addr, ac_data_entry **result) {
 	return rc;
 }
 
-bool is_cache_entry_expired(void const *key, void const *value, void const *ctx) {
+bool is_cache_entry_expired(void const *key, void const *value, void *ctx) {
 	UNUSED(key);
-	CAST_PTR(cache_entry, ac_data_cache_entry *, value);
+	ac_data_cache_entry const *cache_entry = value;
 	time_t now = *(time_t *)ctx;
 	return (cache_entry->ctime + AC_CACHE_TTL <= now);
 }

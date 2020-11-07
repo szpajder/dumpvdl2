@@ -21,6 +21,7 @@
 #include <string.h>             // strcmp
 #include <unistd.h>             // _exit, usleep
 #include <sdrplay_api.h>
+#include <libacars/dict.h>      // la_dict
 #include "dumpvdl2.h"           // sbuf, Config
 #include "sdrplay3.h"           // SDRPLAY3_OVERSAMPLE
 
@@ -36,8 +37,8 @@ typedef struct {
 	int data_index;
 } sdrplay3_ctx_t;
 
-static char *get_hw_descr(int const hw_id) {
-	static dict const hw_descr[] = {
+static char const *get_hw_descr(int hw_id) {
+	static la_dict const hw_descr[] = {
 		{ .id = SDRPLAY_RSP1_ID, .val = "RSP1" },
 		{ .id = SDRPLAY_RSP2_ID, .val = "RSP2" },
 		{ .id = SDRPLAY_RSP1A_ID, .val = "RSP1A" },
@@ -45,7 +46,7 @@ static char *get_hw_descr(int const hw_id) {
 		{ .id = SDRPLAY_RSPdx_ID, .val = "RSPdx" },
 		{ .id = 0, .val = NULL }
 	};
-	char *ret = dict_search(hw_descr, hw_id);
+	char const *ret = la_dict_search(hw_descr, hw_id);
 	return ret ? ret : "<unknown>";
 };
 
@@ -55,7 +56,7 @@ static void sdrplay3_streamCallback(short *xi, short *xq, sdrplay_api_StreamCbPa
 	UNUSED(reset);
 	int i, j, count1, count2, new_buf_flag;
 	int end, input_index;
-	CAST_PTR(SDRPlay, sdrplay3_ctx_t *, cbContext);
+	sdrplay3_ctx_t *SDRPlay = cbContext;
 	if(numSamples == 0) {
 		return;
 	}
@@ -125,7 +126,7 @@ static void sdrplay3_eventCallback(sdrplay_api_EventT eventId, sdrplay_api_Tuner
 					 sdrplay_api_Overload_Detected)? "sdrplay_api_Overload_Detected":
 					"sdrplay_api_Overload_Corrected");
 			// Send update message to acknowledge power overload message received
-			CAST_PTR(ctx, sdrplay3_ctx_t *, cbContext);
+			sdrplay3_ctx_t *ctx = cbContext;
 			sdrplay_api_Update(ctx->dev, tuner, sdrplay_api_Update_Ctrl_OverloadMsgAck,
 					sdrplay_api_Update_Ext1_None);
 			break;
@@ -157,8 +158,8 @@ static void sdrplay3_eventCallback(sdrplay_api_EventT eventId, sdrplay_api_Tuner
 	}
 }
 
-static void sdrplay3_set_biast(sdrplay_api_DeviceParamsT * const devParams,
-		sdrplay_api_RxChannelParamsT * const chParams, uint8_t const hwVer) {
+static void sdrplay3_set_biast(sdrplay_api_DeviceParamsT *devParams,
+		sdrplay_api_RxChannelParamsT * chParams, uint8_t hwVer) {
 	switch(hwVer) {
 		case SDRPLAY_RSP1_ID:
 			fprintf(stderr, "%s: Not enabling Bias-T: feature not supported\n",
@@ -183,8 +184,8 @@ static void sdrplay3_set_biast(sdrplay_api_DeviceParamsT * const devParams,
 	fprintf(stderr, "%s: Enabling Bias-T\n", get_hw_descr(hwVer));
 }
 
-static void sdrplay3_set_notch_filter(sdrplay_api_DeviceParamsT * const devParams,
-		sdrplay_api_RxChannelParamsT * const chParams, uint8_t const hwVer) {
+static void sdrplay3_set_notch_filter(sdrplay_api_DeviceParamsT *devParams,
+		sdrplay_api_RxChannelParamsT *chParams, uint8_t hwVer) {
 	switch(hwVer) {
 		case SDRPLAY_RSP1_ID:
 			fprintf(stderr, "%s: Not enabling notch filter: feature not supported\n",
@@ -209,8 +210,8 @@ static void sdrplay3_set_notch_filter(sdrplay_api_DeviceParamsT * const devParam
 	fprintf(stderr, "%s: Enabling notch filter\n", get_hw_descr(hwVer));
 }
 
-static void sdrplay3_set_dab_notch_filter(sdrplay_api_DeviceParamsT * const devParams,
-		sdrplay_api_RxChannelParamsT * const chParams, uint8_t const hwVer) {
+static void sdrplay3_set_dab_notch_filter(sdrplay_api_DeviceParamsT *devParams,
+		sdrplay_api_RxChannelParamsT *chParams, uint8_t hwVer) {
 	switch(hwVer) {
 		case SDRPLAY_RSP1_ID:
 		case SDRPLAY_RSP2_ID:
@@ -233,8 +234,8 @@ static void sdrplay3_set_dab_notch_filter(sdrplay_api_DeviceParamsT * const devP
 	fprintf(stderr, "%s: Enabling DAB notch filter\n", get_hw_descr(hwVer));
 }
 
-static void sdrplay3_select_antenna(sdrplay_api_DeviceParamsT * const devParams,
-		sdrplay_api_RxChannelParamsT * const chParams, uint8_t const hwVer, char const *antenna) {
+static void sdrplay3_select_antenna(sdrplay_api_DeviceParamsT *devParams,
+		sdrplay_api_RxChannelParamsT *chParams, uint8_t hwVer, char const *antenna) {
 	UNUSED(devParams);
 	switch(hwVer) {
 		case SDRPLAY_RSP2_ID:
@@ -272,8 +273,8 @@ static void sdrplay3_select_antenna(sdrplay_api_DeviceParamsT * const devParams,
 	fprintf(stderr, "%s: Selecting antenna port %s\n", get_hw_descr(hwVer), antenna);
 }
 
-static int sdrplay3_verbose_device_search(char *dev, sdrplay_api_DeviceT const *devices,
-		uint32_t const dev_cnt) {
+static int sdrplay3_verbose_device_search(char const *dev, sdrplay_api_DeviceT const *devices,
+		uint32_t dev_cnt) {
 	int devIdx = -1;
 	if(dev == NULL) {
 		return -1;
@@ -294,7 +295,7 @@ static int sdrplay3_verbose_device_search(char *dev, sdrplay_api_DeviceT const *
 	}
 
 	// Does the string look like a raw ID number?
-	char *endptr = dev;
+	char *endptr = (char *)dev;
 	long num = strtol(dev, &endptr, 0);
 	if(endptr[0] == '\0' && num >= 0 && (uint32_t)num < dev_cnt) {
 		devIdx = (int)num;
@@ -310,9 +311,9 @@ dev_found:
 	return devIdx;
 }
 
-void sdrplay3_init(vdl2_state_t * const ctx, char * const dev, char * const antenna,
-		double const freq, int const ifgr, int const lna_state, double const freq_correction_ppm,
-		int const enable_biast, int const enable_notch_filter, int const enable_dab_notch_filter,
+void sdrplay3_init(vdl2_state_t const *ctx, char const *dev, char const *antenna,
+		double freq, int ifgr, int lna_state, double freq_correction_ppm,
+		int enable_biast, int enable_notch_filter, int enable_dab_notch_filter,
 		int agc_set_point, int tuner) {
 	UNUSED(ctx);
 

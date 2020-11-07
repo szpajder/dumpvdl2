@@ -36,6 +36,9 @@
 #ifndef HAVE_PTHREAD_BARRIERS
 #include "pthread_barrier.h"
 #endif
+#ifdef WITH_PROFILING
+#include <gperftools/profiler.h>
+#endif
 #ifdef WITH_RTLSDR
 #include "rtl.h"
 #endif
@@ -133,7 +136,7 @@ static void start_demod_threads(vdl2_state_t *ctx) {
 void start_output_thread(void *p, void *ctx) {
 	UNUSED(ctx);
 	ASSERT(p != NULL);
-	CAST_PTR(output, output_instance_t *, p);
+	output_instance_t *output = p;
 	debug_print(D_OUTPUT, "starting thread for output %s\n", output->td->name);
 	start_thread(output->output_thread, output_thread, output);
 }
@@ -141,7 +144,7 @@ void start_output_thread(void *p, void *ctx) {
 void start_all_output_threads_for_fmtr(void *p, void *ctx) {
 	UNUSED(ctx);
 	ASSERT(p != NULL);
-	CAST_PTR(fmtr, fmtr_instance_t *, p);
+	fmtr_instance_t *fmtr = p;
 	la_list_foreach(fmtr->outputs, start_output_thread, NULL);
 }
 
@@ -226,7 +229,7 @@ fmtr_instance_t *find_fmtr_instance(la_list *fmtr_list, fmtr_descriptor_t *fmttd
 		return NULL;
 	}
 	for(la_list *p = fmtr_list; p != NULL; p = la_list_next(p)) {
-		CAST_PTR(fmtr, fmtr_instance_t *, p);
+		fmtr_instance_t *fmtr = p->data;
 		if(fmtr->td == fmttd && fmtr->intype == intype) {
 			return fmtr;
 		}
@@ -1053,6 +1056,9 @@ int main(int argc, char **argv) {
 		start_demod_threads(&ctx);
 	}
 
+#ifdef WITH_PROFILING
+    ProfilerStart("dumpvdl2.prof");
+#endif
 	int exit_code = 0;
 	switch(input) {
 #ifdef WITH_PROTOBUF_C
@@ -1122,5 +1128,8 @@ int main(int argc, char **argv) {
 		}
 	} while(active_threads_cnt != 0 && do_exit < 2);
 	fprintf(stderr, "Exiting\n");
+#ifdef WITH_PROFILING
+    ProfilerStop();
+#endif
 	return(exit_code);
 }

@@ -98,7 +98,7 @@ static uint32_t const synd_weight[1<<HDRFECLEN] = {
 	0, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1
 };
 
-uint32_t parity(uint32_t v) {
+static int32_t parity(uint32_t v) {
 	uint32_t parity = 0;
 	while (v) {
 		parity = !parity;
@@ -107,7 +107,7 @@ uint32_t parity(uint32_t v) {
 	return parity;
 }
 
-uint32_t decode_header(uint32_t * const r) {
+static uint32_t decode_header(uint32_t *r) {
 	uint32_t syndrome = 0u, row = 0u;
 	int i;
 	for(i = 0; i < HDRFECLEN; i++) {
@@ -120,7 +120,7 @@ uint32_t decode_header(uint32_t * const r) {
 	return syndrome;
 }
 
-int get_fec_octetcount(uint32_t len) {
+static int get_fec_octetcount(uint32_t len) {
 	if(len < 3)
 		return 0;
 	else if(len < 31)
@@ -169,9 +169,9 @@ void avlc_decoder_queue_push(vdl2_msg_metadata *metadata, octet_string_t *frame,
 	g_async_queue_push(avlc_decoder_queue, qentry);
 }
 
-static void decode_frame(vdl2_channel_t const *const v,
-		int const frame_num, uint8_t *buf,
-		size_t const len) {
+static void decode_frame(vdl2_channel_t const *v,
+		int frame_num, uint8_t *buf,
+		size_t len) {
 	NEW(vdl2_msg_metadata, metadata);
 	metadata->version = 1;
 	metadata->station_id = Config.station_id;
@@ -379,8 +379,8 @@ cleanup:
 static void output_queue_push(void *data, void *ctx) {
 	ASSERT(data != NULL);
 	ASSERT(ctx != NULL);
-	CAST_PTR(output, output_instance_t *, data);
-	CAST_PTR(qentry, output_qentry_t *, ctx);
+	output_instance_t *output = data;
+	output_qentry_t *qentry = ctx;
 
 	bool overflow = (Config.output_queue_hwm != OUTPUT_QUEUE_HWM_NONE &&
 			g_async_queue_length(output->ctx->q) >= Config.output_queue_hwm);
@@ -414,7 +414,7 @@ static void shutdown_outputs(la_list *fmtr_list) {
 
 void *avlc_decoder_thread(void *arg) {
 	ASSERT(arg != NULL);
-	CAST_PTR(fmtr_list, la_list *, arg);
+	la_list *fmtr_list = arg;
 	avlc_frame_qentry_t *q = NULL;
 	la_proto_node *root = NULL;
 	uint32_t msg_type = 0;
@@ -427,7 +427,7 @@ void *avlc_decoder_thread(void *arg) {
 		DEC_FAILURE
 	} decoding_status;
 	while(1) {
-		q = (avlc_frame_qentry_t *)g_async_queue_pop(avlc_decoder_queue);
+		q = g_async_queue_pop(avlc_decoder_queue);
 
 		if(q->flags & OUT_FLAG_ORDERED_SHUTDOWN) {
 			fprintf(stderr, "Shutting down decoder thread\n");
@@ -442,7 +442,7 @@ void *avlc_decoder_thread(void *arg) {
 		fmtr_instance_t *fmtr = NULL;
 		decoding_status = DEC_NOT_DONE;
 		for(la_list *p = fmtr_list; p != NULL; p = la_list_next(p)) {
-			fmtr = (fmtr_instance_t *)(p->data);
+			fmtr = p->data;
 			if(fmtr->intype == FMTR_INTYPE_DECODED_FRAME) {
 				// Decode the frame unless we've done it before
 				if(decoding_status == DEC_NOT_DONE) {

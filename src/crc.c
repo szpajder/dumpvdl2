@@ -20,7 +20,7 @@
 
 uint16_t crc16_ccitt(uint8_t *data, uint32_t len, uint16_t crc_init) {
 	/* CRC-16-CCITT, poly: 0x1021 */
-	static const uint16_t crctable[256] =
+	static uint16_t const crctable[256] =
 	{
 	 	0x0000, 0x1189, 0x2312, 0x329B, 0x4624, 0x57AD, 0x6536, 0x74BF,
 	 	0x8C48, 0x9DC1, 0xAF5A, 0xBED3, 0xCA6C, 0xDBE5, 0xE97E, 0xF8F7,

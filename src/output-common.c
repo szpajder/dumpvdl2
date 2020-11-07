@@ -19,6 +19,7 @@
 
 #include <string.h>             // memset, strcmp, strdup
 #include <glib.h>               // g_async_queue_new
+#include <libacars/dict.h>      // la_dict
 #include "config.h"             // WITH_*
 #include "dumpvdl2.h"           // NEW, ASSERT
 #include "output-common.h"
@@ -28,6 +29,7 @@
 #ifdef WITH_PROTOBUF_C
 #include "fmtr-binary.h"        // fmtr_DEF_binary
 #endif
+#include "fmtr-json.h"          // fmtr_DEF_json
 
 #include "output-file.h"        // out_DEF_file
 #include "output-udp.h"         // out_DEF_udp
@@ -35,7 +37,7 @@
 #include "output-zmq.h"         // out_DEF_zmq
 #endif
 
-static dict const fmtr_intype_names[] = {
+static la_dict const fmtr_intype_names[] = {
 	{
 		.id = FMTR_INTYPE_DECODED_FRAME,
 		.val = &(option_descr_t) {
@@ -56,12 +58,13 @@ static dict const fmtr_intype_names[] = {
 	}
 };
 
-static dict const fmtr_descriptors[] = {
+static la_dict const fmtr_descriptors[] = {
 	{ .id = OFMT_TEXT,                  .val = &fmtr_DEF_text },
 	{ .id = OFMT_PP_ACARS,              .val = &fmtr_DEF_pp_acars },
 #ifdef WITH_PROTOBUF_C
 	{ .id = OFMT_BINARY,                .val = &fmtr_DEF_binary },
 #endif
+	{ .id = OFMT_JSON,                  .val = &fmtr_DEF_json },
 	{ .id = OFMT_UNKNOWN,               .val = NULL }
 };
 
@@ -74,8 +77,8 @@ static output_descriptor_t * output_descriptors[] = {
 	NULL
 };
 
-fmtr_input_type_t fmtr_input_type_from_string(char const * const str) {
-	for (dict const *d = fmtr_intype_names; d->val != NULL; d++) {
+fmtr_input_type_t fmtr_input_type_from_string(char const *str) {
+	for (la_dict const *d = fmtr_intype_names; d->val != NULL; d++) {
 		if (!strcmp(str, ((option_descr_t *)d->val)->name)) {
 			return d->id;
 		}
@@ -83,8 +86,8 @@ fmtr_input_type_t fmtr_input_type_from_string(char const * const str) {
 	return FMTR_INTYPE_UNKNOWN;
 }
 
-fmtr_descriptor_t *fmtr_descriptor_get(output_format_t const fmt) {
-	return dict_search(fmtr_descriptors, fmt);
+fmtr_descriptor_t *fmtr_descriptor_get(output_format_t fmt) {
+	return la_dict_search(fmtr_descriptors, fmt);
 }
 
 fmtr_instance_t *fmtr_instance_new(fmtr_descriptor_t *fmttd, fmtr_input_type_t intype) {
@@ -96,8 +99,8 @@ fmtr_instance_t *fmtr_instance_new(fmtr_descriptor_t *fmttd, fmtr_input_type_t i
 	return fmtr;
 }
 
-output_format_t output_format_from_string(char const * const str) {
-	for (dict const *d = fmtr_descriptors; d->val != NULL; d++) {
+output_format_t output_format_from_string(char const *str) {
+	for (la_dict const *d = fmtr_descriptors; d->val != NULL; d++) {
 		if (!strcmp(str, ((fmtr_descriptor_t *)d->val)->name)) {
 			return d->id;
 		}
@@ -105,7 +108,7 @@ output_format_t output_format_from_string(char const * const str) {
 	return OFMT_UNKNOWN;
 }
 
-output_descriptor_t *output_descriptor_get(char const * const output_name) {
+output_descriptor_t *output_descriptor_get(char const *output_name) {
 	if(output_name == NULL) {
 		return NULL;
 	}
@@ -131,7 +134,7 @@ output_instance_t *output_instance_new(output_descriptor_t *outtd, output_format
 	return output;
 }
 
-output_qentry_t *output_qentry_copy(output_qentry_t const * const q) {
+output_qentry_t *output_qentry_copy(output_qentry_t const *q) {
 	ASSERT(q != NULL);
 
 	NEW(output_qentry_t, copy);
@@ -165,7 +168,7 @@ void output_queue_drain(GAsyncQueue *q) {
 	g_async_queue_unlock(q);
 }
 
-vdl2_msg_metadata *vdl2_msg_metadata_copy(vdl2_msg_metadata const * const m) {
+vdl2_msg_metadata *vdl2_msg_metadata_copy(vdl2_msg_metadata const *m) {
 	ASSERT(m != NULL);
 	NEW(vdl2_msg_metadata, copy);
 	memcpy(copy, m, sizeof(vdl2_msg_metadata));
@@ -188,13 +191,13 @@ void output_usage() {
 	fprintf(stderr, "%*s<what_to_output>:<output_format>:<output_type>:<output_parameters>\n\n", IND(1), "");
 	fprintf(stderr, "where:\n");
 	fprintf(stderr, "\n%*s<what_to_output> specifies what data should be sent to the output:\n\n", IND(1), "");
-	for(dict const *p = fmtr_intype_names; p->val != NULL; p++) {
-		CAST_PTR(n, option_descr_t *, p->val);
+	for(la_dict const *p = fmtr_intype_names; p->val != NULL; p++) {
+		option_descr_t *n = p->val;
 		describe_option(n->name, n->description, 2);
 	}
 	fprintf(stderr, "\n%*s<output_format> specifies how the output should be formatted:\n\n", IND(1), "");
-	for(dict const *p = fmtr_descriptors; p->val != NULL; p++) {
-		CAST_PTR(n, fmtr_descriptor_t *, p->val);
+	for(la_dict const *p = fmtr_descriptors; p->val != NULL; p++) {
+		fmtr_descriptor_t *n = p->val;
 		describe_option(n->name, n->description, 2);
 	}
 	fprintf(stderr, "\n%*s<output_type> specifies the type of the output:\n\n", IND(1), "");
@@ -218,9 +221,9 @@ void output_usage() {
 
 void *output_thread(void *arg) {
 	ASSERT(arg != NULL);
-	CAST_PTR(oi, output_instance_t *, arg);
+	output_instance_t *oi = arg;
 	ASSERT(oi->ctx != NULL);
-	CAST_PTR(ctx, output_ctx_t *, oi->ctx);
+	output_ctx_t *ctx = oi->ctx;
 
 	if(oi->td->init != NULL) {
 		if(oi->td->init(ctx->priv) < 0) {

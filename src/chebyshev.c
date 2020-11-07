@@ -29,8 +29,8 @@
 
 // Based on "The Scientist and Engineer's Guide to Digital Signal Processing"
 // Steven W. Smith, Ph.D.
-static void chebyshev_lpf_calc_pole(int const p, float const cutoff_freq, float const ripple,
-		int const npoles, float * const AA, float * const BB) {
+static void chebyshev_lpf_calc_pole(int p, float cutoff_freq, float ripple,
+		int npoles, float *AA, float *BB) {
 	float rp, ip;
 	SINCOSF(M_PI/(2 * npoles) + (p-1) * M_PI / npoles, &ip, &rp);
 	rp = -rp;
@@ -64,7 +64,7 @@ static void chebyshev_lpf_calc_pole(int const p, float const cutoff_freq, float 
 	BB[2] = (-(k * k) - y1 * k + y2) / d;
 }
 
-void chebyshev_lpf_init(float const cutoff_freq, float const ripple, int const npoles,
+void chebyshev_lpf_init(float cutoff_freq, float ripple, int npoles,
 		float **Aptr, float **Bptr) {
 	assert(npoles > 0);
 	assert(npoles <= MAX_POLES);

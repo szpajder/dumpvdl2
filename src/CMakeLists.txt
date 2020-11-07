@@ -33,6 +33,11 @@ if(CC_HAS_FFAST_MATH)
 	add_definitions(-ffast-math)
 endif()
 
+CHECK_C_COMPILER_FLAG(-fno-common CC_HAS_FNO_COMMON)
+if(CC_HAS_FNO_COMMON)
+	add_definitions(-fno-common)
+endif()
+
 TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
 
 set(CMAKE_REQUIRED_FLAGS_ORIG ${CMAKE_REQUIRED_FLAGS})
@@ -71,7 +76,7 @@ list(APPEND dumpvdl2_extra_libs ${GLIB2_LIBRARIES})
 list(APPEND dumpvdl2_include_dirs ${GLIB2_INCLUDE_DIRS})
 list(APPEND link_dirs ${GLIB2_LIBRARY_DIRS})
 
-pkg_check_modules(ACARS REQUIRED libacars-2>=2.0.0)
+pkg_check_modules(ACARS REQUIRED libacars-2>=2.1.0)
 list(APPEND dumpvdl2_extra_libs ${ACARS_LIBRARIES})
 list(APPEND dumpvdl2_include_dirs ${ACARS_INCLUDE_DIRS})
 list(APPEND asn1_include_dirs ${ACARS_INCLUDE_DIRS})
@@ -105,6 +110,9 @@ set(WITH_ZMQ FALSE)
 option(RAW_BINARY_FORMAT "Support for binary format for raw AVLC
 frames storage (requires protobuf-c library)" ON)
 set(WITH_PROTOBUF_C FALSE)
+
+option(PROFILING "Enable profiling with gperftools")
+set(WITH_PROFILING FALSE)
 
 if(RTLSDR)
 	find_package(RTLSDR)
@@ -211,6 +219,16 @@ if(RAW_BINARY_FORMAT)
 	endif()
 endif()
 
+if(PROFILING)
+	pkg_check_modules(PROFILING libprofiler)
+	if(PROFILING_FOUND)
+		list(APPEND dumpvdl2_extra_libs ${PROFILING_LIBRARIES})
+		list(APPEND dumpvdl2_include_dirs ${PROFILING_INCLUDE_DIRS})
+		list(APPEND link_dirs ${PROFILING_LIBRARY_DIRS})
+		set(WITH_PROFILING TRUE)
+	endif()
+endif()
+
 message(STATUS "dumpvdl2 configuration summary:")
 message(STATUS "- SDR drivers:")
 message(STATUS "  - librtsdr:\t\trequested: ${RTLSDR}, enabled: ${WITH_RTLSDR}")
@@ -223,6 +241,7 @@ message(STATUS "  - Etsy StatsD:\t\trequested: ${ETSY_STATSD}, enabled: ${WITH_S
 message(STATUS "  - SQLite:\t\t\trequested: ${SQLITE}, enabled: ${WITH_SQLITE}")
 message(STATUS "  - ZeroMQ:\t\t\trequested: ${ZMQ}, enabled: ${WITH_ZMQ}")
 message(STATUS "  - Raw binary format:\trequested: ${RAW_BINARY_FORMAT}, enabled: ${WITH_PROTOBUF_C}")
+message(STATUS "  - Profiling:\t\trequested: ${PROFILING}, enabled: ${WITH_PROFILING}")
 
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
@@ -242,8 +261,8 @@ add_subdirectory (libfec)
 add_library (dumpvdl2_base OBJECT
 	acars.c
 	ac_data.c
-	asn1-format-common.c
-	asn1-format-icao.c
+	asn1-format-icao-json.c
+	asn1-format-icao-text.c
 	asn1-util.c
 	atn.c
 	avlc.c
@@ -256,6 +275,7 @@ add_library (dumpvdl2_base OBJECT
 	demod.c
 	dumpvdl2.c
 	esis.c
+	fmtr-json.c
 	fmtr-pp_acars.c
 	fmtr-text.c
 	gs_data.c

@@ -35,7 +35,7 @@ typedef struct {
 } out_udp_ctx_t;
 
 static bool out_udp_supports_format(output_format_t format) {
-	return(format == OFMT_TEXT || format == OFMT_PP_ACARS);
+	return(format == OFMT_TEXT || format == OFMT_JSON || format == OFMT_PP_ACARS);
 }
 
 static void *out_udp_configure(kvargs *kv) {
@@ -59,7 +59,7 @@ fail:
 
 static int out_udp_init(void *selfptr) {
 	ASSERT(selfptr != NULL);
-	CAST_PTR(self, out_udp_ctx_t *, selfptr);
+	out_udp_ctx_t *self = selfptr;
 
 	struct addrinfo hints, *result, *rptr;
 	memset(&hints, 0, sizeof(struct addrinfo));
@@ -112,16 +112,15 @@ static void out_udp_produce_text(out_udp_ctx_t *self, vdl2_msg_metadata *metadat
 	if(msg->len < 2) {
 		return;
 	}
-	// Don't send the NULL terminator
-	if(write(self->sockfd, msg->buf, msg->len - 1) < 0) {
+	if(write(self->sockfd, msg->buf, msg->len) < 0) {
 		debug_print(D_OUTPUT, "output_udp: error while writing to the network socket: %s", strerror(errno));
 	}
 }
 
 static int out_udp_produce(void *selfptr, output_format_t format, vdl2_msg_metadata *metadata, octet_string_t *msg) {
 	ASSERT(selfptr != NULL);
-	CAST_PTR(self, out_udp_ctx_t *, selfptr);
-	if(format == OFMT_TEXT) {
+	out_udp_ctx_t *self = selfptr;
+	if(format == OFMT_TEXT || format == OFMT_JSON) {
 		out_udp_produce_text(self, metadata, msg);
 	} else if(format == OFMT_PP_ACARS) {
 		out_udp_produce_pp_acars(self, metadata, msg);
@@ -131,14 +130,14 @@ static int out_udp_produce(void *selfptr, output_format_t format, vdl2_msg_metad
 
 static void out_udp_handle_shutdown(void *selfptr) {
 	ASSERT(selfptr != NULL);
-	CAST_PTR(self, out_udp_ctx_t *, selfptr);
+	out_udp_ctx_t *self = selfptr;
 	fprintf(stderr, "output_udp(%s:%s): shutting down\n", self->address, self->port);
 	close(self->sockfd);
 }
 
 static void out_udp_handle_failure(void *selfptr) {
 	ASSERT(selfptr != NULL);
-	CAST_PTR(self, out_udp_ctx_t *, selfptr);
+	out_udp_ctx_t *self = selfptr;
 	fprintf(stderr, "output_udp: can't connect to %s:%s, deactivating output\n",
 			self->address, self->port);
 	close(self->sockfd);

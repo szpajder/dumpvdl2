@@ -117,6 +117,8 @@ set(ASN_MODULE_SOURCES
 	FurtherInstructions.c
 	Holdatwaypoint.c
 	HoldatwaypointSequence.c
+	HoldatwaypointSpeedLow.c
+	HoldatwaypointSpeedHigh.c
 	HoldClearance.c
 	Humidity.c
 	InterceptCourseFrom.c
@@ -176,6 +178,15 @@ set(ASN_MODULE_SOURCES
 	PositionPosition.c
 	PositionProcedureName.c
 	PositionReport.c
+	FixNext.c
+	FixNextPlusOne.c
+	TimeETAatFixNext.c
+	TimeETAatDest.c
+	PosReportTrackAngle.c
+	PosReportHeading.c
+	ReportedWaypointPosition.c
+	ReportedWaypointTime.c
+	ReportedWaypointLevel.c
 	PositionRouteClearanceIndex.c
 	PositionSpeed.c
 	PositionSpeedSpeed.c
@@ -232,6 +243,8 @@ set(ASN_MODULE_SOURCES
 	Temperature.c
 	TimeLevel.c
 	TimeDeparture.c
+	TimeDepAllocated.c
+	TimeDepClearanceExpected.c
 	TimeDistanceSpecifiedDirection.c
 	TimeDistanceToFromPosition.c
 	Timehhmmss.c

@@ -19,17 +19,18 @@
 
 #ifndef _ATN_H
 #define _ATN_H 1
-#include "dumpvdl2.h"       // dict, octet_string
+#include <libacars/dict.h>  // la_dict
 #include "tlv.h"            // TLV_PARSER, TLV_FORMATTER
 
 #define ATN_TRAFFIC_TYPES_ALL 0x1f
 #define ATSC_TRAFFIC_CLASSES_ALL 0xff
 
 // atn.c
-extern dict const atn_traffic_types[];
-extern dict const atsc_traffic_classes[];
+extern la_dict const atn_traffic_types[];
+extern la_dict const atsc_traffic_classes[];
 TLV_PARSER(atn_sec_label_parse);
 TLV_FORMATTER(atn_sec_label_format_text);
+TLV_FORMATTER(atn_sec_label_format_json);
 TLV_DESTRUCTOR(atn_sec_label_destroy);
 
 #endif // !_ATN_H
