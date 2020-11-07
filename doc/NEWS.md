@@ -1,5 +1,18 @@
 # NEWS
 
+## Version 2.1.0 (2020-11-07)
+
+* Added full JSON formatting for all protocols and message types. This is
+  supported on all output types - file, udp and zmq.  Together with multiple
+  outputs feature that was introduced in version 2.0.0 this enables arbitrarily
+  flexible arrangements, like logging to a file as text, logging to another
+  file as JSON and sending JSON across the network using UDP and/or ZMQ. When
+  collecting data from multiple receivers, --station-id option may be used to
+  assign unique names to  receivers in order to discriminate input from each
+  one.
+
+* Removed a few duplicate routines that have their counterparts in libacars.
+
 ## Version 2.0.1 (2020-08-25)
 
 * Fixed build failure with gcc version 10.
