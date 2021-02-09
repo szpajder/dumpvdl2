@@ -369,8 +369,16 @@ void input_lpf_init(uint32_t sample_rate) {
 }
 
 void sincosf_lut_init() {
-	for(uint32_t i = 0; i < 256; i++)
-		SINCOSF(2.0f * M_PI * (float)i / 256.0f, sin_lut + i, cos_lut + i);
+	for(uint32_t i = 0; i < 256; i++){
+		#ifdef __NetBSD__
+			//NetBSD's libc does not support the sincosf extension
+			//performance will be a bit lower with this fallback
+			sin_lut[i] = sinf(2.0f * M_PI * (float)i / 256.0f);
+			cos_lut[i] = cosf(2.0f * M_PI * (float)i / 256.0f);
+		#else
+			SINCOSF(2.0f * M_PI * (float)i / 256.0f, sin_lut + i, cos_lut + i);
+		#endif	
+	}
 	sin_lut[256] = sin_lut[0];
 	cos_lut[256] = cos_lut[0];
 }

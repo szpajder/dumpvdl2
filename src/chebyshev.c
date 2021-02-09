@@ -33,6 +33,14 @@ static void chebyshev_lpf_calc_pole(int p, float cutoff_freq, float ripple,
 		int npoles, float *AA, float *BB) {
 	float rp, ip;
 	SINCOSF(M_PI/(2 * npoles) + (p-1) * M_PI / npoles, &ip, &rp);
+	 #ifdef __NetBSD__
+	         //NetBSD's libc does not support the sincosf extension
+                 //performance will be a bit lower with this fallback
+                 ip = sinf(M_PI/(2 * npoles) + (p-1) * M_PI / npoles);
+                 rp = cosf(M_PI/(2 * npoles) + (p-1) * M_PI / npoles);
+        #else
+                SINCOSF(M_PI/(2 * npoles) + (p-1) * M_PI / npoles, &ip, &rp);
+        #endif
 	rp = -rp;
 	if(ripple != 0.f) {
 		float es = sqrtf(powf(100.f / (100.f - ripple), 2.f) - 1.f);
