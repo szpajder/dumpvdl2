@@ -141,79 +141,80 @@ void soapysdr_init(vdl2_state_t *ctx, char *dev, char *antenna, int freq, float 
 
 	SoapySDRStream *rxStream;
 #if SOAPY_SDR_API_VERSION < 0x00080000
-	if(SoapySDRDevice_setupStream(sdr, &rxStream, SOAPY_SDR_RX, SOAPY_SDR_CS16, NULL, 0, NULL) != 0) {
+	if(SoapySDRDevice_setupStream(sdr, &rxStream, SOAPY_SDR_RX, SOAPY_SDR_CS16, NULL, 0, NULL) != 0)
 #else
-		if((rxStream = SoapySDRDevice_setupStream(sdr, SOAPY_SDR_RX, SOAPY_SDR_CS16, NULL, 0, NULL)) == NULL) {
+		if((rxStream = SoapySDRDevice_setupStream(sdr, SOAPY_SDR_RX, SOAPY_SDR_CS16, NULL, 0, NULL)) == NULL)
 #endif
+		{
 			fprintf(stderr, "setupStream failed: %s\n", SoapySDRDevice_lastError());
 			_exit(1);
 		}
-		SoapySDRDevice_activateStream(sdr, rxStream, 0, 0, 0);
-		usleep(100000);
+	SoapySDRDevice_activateStream(sdr, rxStream, 0, 0, 0);
+	usleep(100000);
 
-		// Read input samples
-		long ring_index = 0;
-		long buf_elem_size = SOAPYSDR_BUFSIZE * sizeof(short);
-		long last_send_index = 0;
-		while (!do_exit) {
-			void *buffs[] = {buffer};
-			int flags = 0;
-			long long timeNs = 0;
-			long timeoutNs = 1000000;
-			int r;
-			r = SoapySDRDevice_readStream(sdr, rxStream, buffs, SOAPYSDR_SAMPLE_PER_BUFFER, &flags, &timeNs, timeoutNs);
-			int iq_count = r * 2;
-			// copy to ring_buffer
-			// Ring_index is on unsigned char
-			if(ring_index + r * elemsize < SOAPYSDR_BUFSIZE * SOAPYSDR_BUFCNT * sizeof(short)) {
-				for(int i = 0; i< iq_count; i++) {
-					// copy low / high part
-					ring_buffer[ring_index++] = buffer[i] & 0xff;
-					ring_buffer[ring_index++] = (buffer[i] >> 8) & 0xff;
-				}
-			} else {
-				int counth = SOAPYSDR_BUFSIZE * SOAPYSDR_BUFCNT * sizeof(short) - ring_index;
-				int buffer_index = 0;
-				for(int i = 0; i < counth / (int)sizeof(short); i++) {
-					// copy low / high part
-					ring_buffer[ring_index++] = buffer[buffer_index] & 0xff;
-					ring_buffer[ring_index++] = (buffer[buffer_index] >> 8) & 0xff;
-					buffer_index++;
-				}
-				int countl = iq_count * sizeof(short) - counth;
-				ring_index = 0;
-				for(int i = 0; i < countl / (int)sizeof(short); i++) {
-					// copy low / high part
-					ring_buffer[ring_index++] = buffer[buffer_index] & 0xff;
-					ring_buffer[ring_index++] = (buffer[buffer_index] >> 8) & 0xff;
-					buffer_index++;
-				}
+	// Read input samples
+	long ring_index = 0;
+	long buf_elem_size = SOAPYSDR_BUFSIZE * sizeof(short);
+	long last_send_index = 0;
+	while (!do_exit) {
+		void *buffs[] = {buffer};
+		int flags = 0;
+		long long timeNs = 0;
+		long timeoutNs = 1000000;
+		int r;
+		r = SoapySDRDevice_readStream(sdr, rxStream, buffs, SOAPYSDR_SAMPLE_PER_BUFFER, &flags, &timeNs, timeoutNs);
+		int iq_count = r * 2;
+		// copy to ring_buffer
+		// Ring_index is on unsigned char
+		if(ring_index + r * elemsize < SOAPYSDR_BUFSIZE * SOAPYSDR_BUFCNT * sizeof(short)) {
+			for(int i = 0; i< iq_count; i++) {
+				// copy low / high part
+				ring_buffer[ring_index++] = buffer[i] & 0xff;
+				ring_buffer[ring_index++] = (buffer[i] >> 8) & 0xff;
 			}
-
-			// Store * elemsize
-			if(ring_index < last_send_index) {
-				int size = ring_index + SOAPYSDR_BUFSIZE * SOAPYSDR_BUFCNT * sizeof(short) - last_send_index;
-				if(size >= buf_elem_size) {
-					// copy to trunc buffer
-					int send_index = 0;
-					for(int i = 0; i< buf_elem_size; i++) {
-						// copy low / high part
-						send_buffer[send_index++] = ring_buffer[last_send_index++];
-						if(last_send_index >= SOAPYSDR_BUFSIZE * SOAPYSDR_BUFCNT * (long)sizeof(short)) {
-							last_send_index = 0;
-						}
-					}
-					process_buf_short(&send_buffer[0], buf_elem_size, NULL);
-				}
-			} else if((ring_index - last_send_index) >= buf_elem_size) {
-				process_buf_short(&ring_buffer[ring_index - buf_elem_size], buf_elem_size, NULL);
-				last_send_index = ring_index;
+		} else {
+			int counth = SOAPYSDR_BUFSIZE * SOAPYSDR_BUFCNT * sizeof(short) - ring_index;
+			int buffer_index = 0;
+			for(int i = 0; i < counth / (int)sizeof(short); i++) {
+				// copy low / high part
+				ring_buffer[ring_index++] = buffer[buffer_index] & 0xff;
+				ring_buffer[ring_index++] = (buffer[buffer_index] >> 8) & 0xff;
+				buffer_index++;
+			}
+			int countl = iq_count * sizeof(short) - counth;
+			ring_index = 0;
+			for(int i = 0; i < countl / (int)sizeof(short); i++) {
+				// copy low / high part
+				ring_buffer[ring_index++] = buffer[buffer_index] & 0xff;
+				ring_buffer[ring_index++] = (buffer[buffer_index] >> 8) & 0xff;
+				buffer_index++;
 			}
 		}
-		SoapySDRDevice_deactivateStream(sdr, rxStream, 0, 0);
-		SoapySDRDevice_closeStream(sdr, rxStream);
-		SoapySDRDevice_unmake(sdr);
-	}
 
-	void soapysdr_cancel() {
+		// Store * elemsize
+		if(ring_index < last_send_index) {
+			int size = ring_index + SOAPYSDR_BUFSIZE * SOAPYSDR_BUFCNT * sizeof(short) - last_send_index;
+			if(size >= buf_elem_size) {
+				// copy to trunc buffer
+				int send_index = 0;
+				for(int i = 0; i< buf_elem_size; i++) {
+					// copy low / high part
+					send_buffer[send_index++] = ring_buffer[last_send_index++];
+					if(last_send_index >= SOAPYSDR_BUFSIZE * SOAPYSDR_BUFCNT * (long)sizeof(short)) {
+						last_send_index = 0;
+					}
+				}
+				process_buf_short(&send_buffer[0], buf_elem_size, NULL);
+			}
+		} else if((ring_index - last_send_index) >= buf_elem_size) {
+			process_buf_short(&ring_buffer[ring_index - buf_elem_size], buf_elem_size, NULL);
+			last_send_index = ring_index;
+		}
 	}
+	SoapySDRDevice_deactivateStream(sdr, rxStream, 0, 0);
+	SoapySDRDevice_closeStream(sdr, rxStream);
+	SoapySDRDevice_unmake(sdr);
+}
+
+void soapysdr_cancel() {
+}
