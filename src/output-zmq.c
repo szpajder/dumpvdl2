@@ -48,7 +48,7 @@ static void *out_zmq_configure(kvargs *kv) {
 
 	int major, minor, patch;
 	zmq_version(&major, &minor, &patch);
-	if(major < LIBZMQ_VER_MAJOR_MIN || minor < LIBZMQ_VER_MINOR_MIN || patch < LIBZMQ_VER_PATCH_MIN) {
+	if((major * 1000000 + minor * 1000 + patch) < (LIBZMQ_VER_MAJOR_MIN * 1000000 + LIBZMQ_VER_MINOR_MIN * 1000 + LIBZMQ_VER_PATCH_MIN)) {
 		fprintf(stderr, "output_zmq: error: libzmq library version %d.%d.%d is too old; at least %d.%d.%d is required\n",
 				major, minor, patch,
 				LIBZMQ_VER_MAJOR_MIN, LIBZMQ_VER_MINOR_MIN, LIBZMQ_VER_PATCH_MIN);
