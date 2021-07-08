@@ -1,5 +1,10 @@
 # NEWS
 
+## Version 2.1.1 (2021-07-08)
+
+* Fixed wrong ZeroMQ version check, which incorrectly declared ZMQ version
+4.0.x as too old (#18)
+
 ## Version 2.1.0 (2020-11-07)
 
 * Added full JSON formatting for all protocols and message types. This is
