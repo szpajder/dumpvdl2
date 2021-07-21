@@ -25,6 +25,7 @@
 #include <statsd/statsd-client.h>
 #include <libacars/libacars.h>      // la_msg_dir
 #include "dumpvdl2.h"
+#include "config.h"
 
 #define STATSD_NAMESPACE "dumpvdl2"
 static statsd_link *statsd = NULL;
@@ -89,6 +90,8 @@ static char const *msg_dir_labels[] = {
 int statsd_initialize(char *statsd_addr) {
 	char *addr;
 	char *port;
+	const char *statsd_nmspace = STATSD_NAMESPACE;
+	char extended_namespace[256];
 
 	if(statsd_addr == NULL) {
 		return -1;
@@ -99,8 +102,18 @@ int statsd_initialize(char *statsd_addr) {
 	if((port = strtok(NULL, ":")) == NULL) {
 		return -1;
 	}
-	if((statsd = statsd_init_with_namespace(addr, atoi(port), STATSD_NAMESPACE)) == NULL) {
-		return -2;
+	if(Config.station_id != NULL) {
+		fprintf(stderr, "Setting namespace using station id %s . %s\n", statsd_nmspace, Config.station_id);
+		strcpy(extended_namespace, statsd_nmspace);
+		strcat(extended_namespace, ".");
+		strcat(extended_namespace, Config.station_id);
+		if((statsd = statsd_init_with_namespace(addr, atoi(port), extended_namespace)) == NULL) {
+			return -2;
+		}
+	} else {
+		if((statsd = statsd_init_with_namespace(addr, atoi(port), STATSD_NAMESPACE)) == NULL) {
+			return -2;
+		}
 	}
 	return 0;
 }
