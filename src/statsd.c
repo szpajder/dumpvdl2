@@ -24,6 +24,7 @@
 #include <sys/time.h>
 #include <statsd/statsd-client.h>
 #include <libacars/libacars.h>      // la_msg_dir
+#include <libacars/vstring.h>       // la_vstring
 #include "dumpvdl2.h"
 #include "config.h"
 
@@ -90,8 +91,6 @@ static char const *msg_dir_labels[] = {
 int statsd_initialize(char *statsd_addr) {
 	char *addr;
 	char *port;
-	const char *statsd_nmspace = STATSD_NAMESPACE;
-	char extended_namespace[256];
 
 	if(statsd_addr == NULL) {
 		return -1;
@@ -102,18 +101,16 @@ int statsd_initialize(char *statsd_addr) {
 	if((port = strtok(NULL, ":")) == NULL) {
 		return -1;
 	}
+	la_vstring *statsd_namespace = la_vstring_new();
+	la_vstring_append_sprintf(statsd_namespace, "%s", STATSD_NAMESPACE);
 	if(Config.station_id != NULL) {
-		fprintf(stderr, "Setting namespace using station id %s . %s\n", statsd_nmspace, Config.station_id);
-		strcpy(extended_namespace, statsd_nmspace);
-		strcat(extended_namespace, ".");
-		strcat(extended_namespace, Config.station_id);
-		if((statsd = statsd_init_with_namespace(addr, atoi(port), extended_namespace)) == NULL) {
-			return -2;
-		}
-	} else {
-		if((statsd = statsd_init_with_namespace(addr, atoi(port), STATSD_NAMESPACE)) == NULL) {
-			return -2;
-		}
+		fprintf(stderr, "Using extended statsd namespace %s.%s\n", STATSD_NAMESPACE, Config.station_id);
+		la_vstring_append_sprintf(statsd_namespace, ".%s", Config.station_id);
+	}
+	statsd = statsd_init_with_namespace(addr, atoi(port), statsd_namespace->str);
+	la_vstring_destroy(statsd_namespace, true);
+	if(statsd == NULL) {
+		return -2;
 	}
 	return 0;
 }
