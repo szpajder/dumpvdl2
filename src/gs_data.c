@@ -52,7 +52,7 @@ int gs_data_import(char const *file) {
 	FILE *f = fopen(file, "r");
 	if(f == NULL) {
 		fprintf(stderr, "Could not open %s: %s\n", file, strerror(errno));
-		goto fail;
+		return -1;
 	}
 	uint32_t addr = 0;
 	char airport_code[33];
