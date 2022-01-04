@@ -1,4 +1,12 @@
 # This file is used by the dumpvdl2 systemd unit.
 # - Copy it to /etc/default/dumpvdl2
-# - Uncomment the following line and set your preferred command line options.
-#DUMPVDL2_OPTIONS="--rtlsdr 0 --gain 39 --correction 0 --output decoded:text:file:path=/home/pi/vdl2.log,rotate=daily 136975000 136875000 136775000"
+# - Uncomment the following lines and set your preferred command line options.
+DUMPVDL2_OPTIONS="--rtlsdr 0 --gain 44.5 --correction 0 \
+--utc --extended-header --addrinfo verbose --prettify-xml --dump-asn1 \
+--msg-filter all,-avlc_s,-acars_nodata,-x25_control,-idrp_keepalive,-esis \
+--bs-db /usr/src/dumpvdl2/extras/BaseStation.sqb \
+--gs-file /usr/src/dumpvdl2/extras/VDL2_Ground_Stations.txt \
+--ap-details --alt-gs-details \
+--ap-db /usr/src/dumpvdl2/extras/ap4dumpvdl2.sqb \
+--output decoded:text:file:path=/usr/vdl2/vdl2.log,rotate=daily \
+136975000, 136875000, 136825000, 136775000, 136725000"

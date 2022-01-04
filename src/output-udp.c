@@ -78,6 +78,8 @@ static int out_udp_init(void *selfptr) {
 			continue;
 		}
 		if(connect(self->sockfd, rptr->ai_addr, rptr->ai_addrlen) != -1) {
+			fprintf(stderr, "output_udp: started on %s:%s\n",
+				self->address, self->port);
 			break;
 		}
 		close(self->sockfd);

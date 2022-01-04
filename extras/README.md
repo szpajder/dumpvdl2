@@ -6,4 +6,17 @@
 - `multitail-dumpvdl2.conf` - an example coloring scheme for dumpvdl2 log files.
   To be used with `multitail` program.
 
+- `makebsdb.sh` - Shell script to generate the BaseStation.sqb database, 
+  in order for dumpvdl2 to enrich aircraft information.
+  - Requires sqlite3 command line interface, install 'sqlite3' package.
+
+- `ap4dumpvdl2.sh` - Shell script to generate an airports database, 
+  in order for dumpvdl2 to enrich airports information.
+  - Requires sqlite3 command line interface, install 'sqlite3' package.
+
+- `xform-gs-txt.sh` - Shell script to transform 'VDL2_Ground_Stations.txt' file, 
+  in order for dumpvdl2 to enrich with more informative GS information.
+  - Requires sqlite3 command line interface, install 'sqlite3' package.
+  - Requires the airports database, built with 'ap4dumpvdl2.sh' script.
+
 // vim: textwidth=80

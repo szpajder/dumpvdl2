@@ -17,12 +17,15 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 #include <libacars/list.h>          // la_list
 #include <libacars/vstring.h>       // la_vstring
 #include <libacars/dict.h>          // la_dict
 #include <libacars/json.h>
 #include "dumpvdl2.h"               // XCALLOC, XFREE
 #include "tlv.h"
+#include "ap_data.h"                // ap_data_entry
 
 // Forward declarations
 tlv_type_descriptor_t tlv_DEF_unknown_tag;
@@ -121,6 +124,7 @@ la_list *tlv_parse(uint8_t *buf, size_t len, la_dict const *tag_table, size_t le
 	return head;
 }
 
+// Adding Destination Airport details if requested.
 static void tlv_tag_output_text(tlv_tag_t const *t, void *ctx) {
 	ASSERT(t);
 	ASSERT(ctx);
@@ -131,11 +135,29 @@ static void tlv_tag_output_text(tlv_tag_t const *t, void *ctx) {
 		if(t->data == TLV_NO_VALUE_PTR) {
 			LA_ISPRINTF(c->vstr, c->indent, "%s\n", t->td->label);
 		} else {
+		    if(Config.ap_details == true && !strncmp(t->td->label, "Destination airport", 19)) {
+			octet_string_t *odata = octet_string_copy(t->data);
+			ap_data_entry *ap = ap_data_entry_lookup((char *)odata->buf);
+			if(ap) {
+			    char *apinfo = XCALLOC(AP_INFO_BUF_SIZE, sizeof(char));
+			    sprintf(apinfo, " (%s, %s, %s)", ap->ap_name ? ap->ap_name : "-",
+				ap->ap_city ? ap->ap_city : "-", ap->ap_country ? ap->ap_country : "-");
+			    odata->buf = XREALLOC(odata->buf, AP_INFO_BUF_SIZE);
+			    sprintf((char *)odata->buf + odata->len, "%s", apinfo);
+			    odata->len = strlen((char *)odata->buf);
+			    t->td->format_text(ctx, t->td->label, odata);
+			    XFREE(apinfo);
+			} else {
+			    t->td->format_text(ctx, t->td->label, t->data);
+			}
+		    } else {
 			t->td->format_text(ctx, t->td->label, t->data);
+		    }
 		}
 	}
 }
 
+// Adding Destination Airport details if requested.
 static void tlv_tag_output_json(tlv_tag_t const *t, void *ctx) {
 	ASSERT(t);
 	ASSERT(ctx);
@@ -143,15 +165,32 @@ static void tlv_tag_output_json(tlv_tag_t const *t, void *ctx) {
 	tlv_formatter_ctx_t *c = ctx;
 	ASSERT(t->td != NULL);
 	if(t->td->format_json != NULL) {
-		la_json_object_start(c->vstr, NULL);
-		la_json_append_string(c->vstr, "name", t->td->json_key);
-		if(t->data == TLV_NO_VALUE_PTR) {
-			la_json_object_start(c->vstr, "value");
-			la_json_object_end(c->vstr);
-		} else {
-			t->td->format_json(c, "value", t->data);
-		}
+	    la_json_object_start(c->vstr, NULL);
+	    la_json_append_string(c->vstr, "name", t->td->json_key);
+	    if(t->data == TLV_NO_VALUE_PTR) {
+		la_json_object_start(c->vstr, "value");
 		la_json_object_end(c->vstr);
+	    } else {
+		if(Config.ap_details == true && !strncmp(t->td->json_key, "dst_airport", 11)) {
+		    octet_string_t *odata = octet_string_copy(t->data);
+		    ap_data_entry *ap = ap_data_entry_lookup((char *)odata->buf);
+		    if(ap) {
+			char *apinfo = XCALLOC(AP_INFO_BUF_SIZE, sizeof(char));
+			sprintf(apinfo, " (%s, %s, %s)", ap->ap_name ? ap->ap_name : "-",
+			    ap->ap_city ? ap->ap_city : "-", ap->ap_country ? ap->ap_country : "-");
+			odata->buf = XREALLOC(odata->buf, AP_INFO_BUF_SIZE);
+			sprintf((char *)odata->buf + odata->len, "%s", apinfo);
+			odata->len = strlen((char *)odata->buf);
+			t->td->format_json(c, "value", odata);
+			XFREE(apinfo);
+		    } else {
+			t->td->format_json(c, "value", t->data);
+		    }
+		} else {
+		    t->td->format_json(c, "value", t->data);
+		}
+	    }
+	la_json_object_end(c->vstr);
 	}
 }
 

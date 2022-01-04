@@ -1,0 +1,12 @@
+INSERT OR IGNORE INTO AIRPORTS VALUES("EDDT","TXL","Tegel International Airport(Closed)","Berlin","Germany","52.559686","13.287711");
+INSERT OR IGNORE INTO AIRPORTS VALUES("EGXB","GSY","Binbrook airfield(Closed)","Grimsby","United Kingdom","53.4467","-0.21");
+INSERT OR IGNORE INTO AIRPORTS VALUES("KWMS","WMS","Bill Williams Mountain Airport","Williams, AZ","United States","35.2","-112.2");
+INSERT OR IGNORE INTO AIRPORTS VALUES('LIBK','QCZ','Caraffa di Catanzaro','Catanzaro','Italy','38.883','16.483');
+INSERT OR IGNORE INTO AIRPORTS VALUES('LICU','','Ustica Island Airport','Ustica','Italy','38.7','13.17');
+INSERT OR IGNORE INTO AIRPORTS VALUES("LPOT","","Ota Air Base Airport","Ota, Alenquer","Portugal","39.0875","-8.9628");
+INSERT OR IGNORE INTO AIRPORTS VALUES("VIBN","VNS","Varanasi Airport","Varanasi","India","25.452358","82.859342");
+INSERT OR IGNORE INTO AIRPORTS VALUES("_HEC","HEC","Central Railway station","Uusimaa, Helsinki","Finland","50.172","24.94");
+INSERT OR IGNORE INTO AIRPORTS VALUES("_TRH","TRH","Trona Airport","Trona, CA","United States","35.8127","-117.3269");
+INSERT OR IGNORE INTO AIRPORTS VALUES("_VLE","VLE","Valle Airport","Williams, AZ","United States","35.65","-112.142");
+INSERT OR IGNORE INTO AIRPORTS VALUES("OJMS","","Muwaffaq Salti AB","Azraq","Jordan","31.834","36.787");
+INSERT OR IGNORE INTO AIRPORTS VALUES("LFPW","","Toulouse Centre Meteo","Toulouse","France","48.833","2.333");

@@ -13,19 +13,19 @@ Current stable version: 2.1.1 (released July 8, 2021)
   - Mirics SDR (via [libmirisdr-4](https://github.com/f4exb/libmirisdr-4))
   - SDRPlay RSP (native support through official driver version 2 and 3)
   - SoapySDR (via [soapy-sdr project](https://github.com/pothosware/SoapySDR/wiki))
-  - prerecorded IQ data from a file
-- Decodes up to 8 VDL2 channels simultaneously
+  - prerecorded IQ data from a file.
+- Decodes up to 8 VDL2 channels simultaneously.
 - Automatically reassembles multiblock ACARS messages, MIAM file transfers, and
-  fragmented X.25 packets
-- Supports various outputs and output formats (see below)
-- Enriches logged messages with ground station details read from a text file
-  (MultiPSK format)
-- Enriches logged messages with aircraft data read from Basestation SQLite
-  database
-- Supports message filtering by type or direction (uplink, downlink)
-- Can store raw frames in a binary file for later decoding or archiving
-  purposes.
-- Produces decoding statistics using [Etsy StatsD](https://github.com/etsy/statsd) protocol
+  fragmented X.25 packets.
+- Supports various outputs and output formats (see below).
+- Enriches logged messages with Ground Station details read from a text file
+  (MultiPSK format).
+- Enriches logged messages with Aircraft data read from BaseStation SQLite3 database.
+- Enriches Destination Airports data read from SQLite3 airports database.
+- Enriches Alternate Ground Stations data read from SQLite3 airports database.
+- Supports message filtering by type or direction (uplink, downlink).
+- Can store raw frames in a binary file for later decoding or archiving purposes.
+- Produces decoding statistics using [Etsy StatsD](https://github.com/etsy/statsd) protocol.
 
 ## Supported output formats
 
@@ -191,13 +191,19 @@ limitation will be removed in a future release of dumpvdl2.
 #### SQLite (optional)
 
 VDL2 message addressing is based on ICAO 24-bit hex codes (same as ADS-B).
-dumpvdl2 may use your basestation.sqb database to enrich logged messages with
-aircraft data (registration number, operator, type, etc). If you want this
+dumpvdl2 may use your BaseStation.sqb database to enrich logged messages with
+Aircraft data (registration number, operator, type, etc). If you want this
 feature, install SQLite3 library:
 
 ```
 sudo apt install libsqlite3-dev
 sudo ldconfig
+```
+
+If you want to generate the BaseStation DB or the Airports DB install SQLite3 commnand line interface.
+
+```
+sudo apt install sqlite3
 ```
 
 #### Etsy StatsD statistics (optional)
@@ -865,11 +871,14 @@ in order for the changes to take effect.
 ## Enriching messages with aircraft data
 
 If compiled with SQLite3 support, dumpvdl2 can read aircraft data from SQLite3
-database in a well-known Basestation format used in various plane tracking
-applications. Such data can be printed along the header of each message. Use
-`--bs-db /path/to/basestation.sqb` option to enable the feature. `--addrinfo`
-controls aircraft data verbosity in the same way as for ground stations (see
-above). Example with `--addrinfo` set to `normal`:
+database in a well-known BaseStation format used in various plane tracking
+applications. Such data can be printed along the header of each message.
+
+You can generate this database by running 'makebsdb.sh' script included in
+'extras' directory. Details in extras/README.md. Usage
+`--bs-db /path/to/BaseStation.sqb` option to enable the feature.
+`--addrinfo` controls aircraft data verbosity in the same way
+as for ground stations (see above). Example with `--addrinfo` set to `normal`:
 
 ```
 [2020-01-10 00:02:40 CET] [136.775] [-31.8/-51.6 dBFS] [19.8 dB] [-1.2 ppm]
@@ -891,6 +900,98 @@ allowed to be NULL (the program will substitute each NULL value with a dash).
 
 Entries from the database are read on the fly, when needed. They are cached in
 memory for 30 minutes and then re-read from the database or purged.
+
+## Enriching messages with Destination Airport details
+
+If compiled with SQLite3 support, dumpvdl2 can enrich Destination airport data
+from SQLite3 database ap4dumpvdl2.sqb.
+You can generate this database by running 'ap4dumpvdl2.sh' script included in
+'extras' directory. Details in extras/README.md. Usage 
+`--ap-db /path/to/ap4dumpvdl2.sqb` option to enable the feature.
+`--ap-details` controls Destination Airports details feature.
+
+```
+[2021-09-12 22:00:42 GMT] [136.975] [-23.4/-46.8 dBFS] [23.4 dB] [-1.2 ppm]
+4CA502 (Aircraft, Airborne) -> 209057 (Ground station): Command
+AC info: EI-DSA, AIRBUS, A320-216, Aircraft Purchase Company No.1 Limited
+GS info: LTBJ Adnan Menderes International Airport, Ä°zmir, Turkey
+AVLC type: U (XID) P/F: 1
+ XID: Link Establishment
+  Public params:
+   Parameter set ID: 8885:1993
+   Procedure classes: 00 01
+   HDLC options: 20 a4 80
+  VDL params:
+   Parameter set ID: V
+   Connection management: 00
+   XID sequencing: seq: 1 retry: 0
+   AVLC specific options: 25
+   Modulation support: VDL-M2, D8PSK, 31500 bps
+   Destination airport: HECA (Cairo International Airport, Cairo, Egypt)
+   Aircraft location: 36.0N 24.7E 39000 ft
+```
+
+Entries from the database are read on the fly, when needed. They are cached in
+memory for 30 minutes and then re-read from the database or purged.
+
+## Enriching messages with Alternate Ground Stations details
+
+If compiled with SQLite3 support, dumpvdl2 can enrich Alternate GS data
+from SQLite3 database ap4dumpvdl2.sqb.
+You can generate this database by running 'ap4dumpvdl2.sh' script included in
+'extras' directory. Details in extras/README.md. Usage 
+`--ap-db /path/to/ap4dumpvdl2.sqb` option to enable the feature.
+`--alt-gs-details` controls Alternate GS details feature.
+
+```
+[2021-09-06 16:47:21 GMT] [136.975] [-13.1/-47.0 dBFS] [33.9 dB] [0.5 ppm]
+484B2A (Aircraft, Airborne) -> 109E1A (Ground station): Command
+AC info: PH-HSA, BOEING, 737NG 8K2/W, Transavia
+GS info: LWSK Skopje International Airport, Skopje, North Macedonia
+AVLC type: U (XID) P/F: 1
+ XID: Link Establishment
+  Public params:
+   Parameter set ID: 8885:1993
+   Procedure classes: 00 01
+   HDLC options: 20 84 80
+  VDL params:
+   Parameter set ID: V
+   XID sequencing: seq: 0 retry: 0
+   Modulation support: VDL-M2, D8PSK, 31500 bps
+   Destination airport: LGSA (Chania International Airport, Souda, Greece)
+   Alternate ground stations: 10F67B(LIBR,Italy) 10F61B(LIBK,Italy)
+   AVLC specific options: 24
+   Connection management: 00
+```
+
+Entries from the database are read on the fly, when needed. They are cached in
+memory for 30 minutes and then re-read from the database or purged.
+
+## Transforming VDL2_Ground_Stations.txt data (optional)
+
+VDL2_Ground_Stations.txt file format is mostly applicable to MultiPSK program.
+
+Requires airports database. You can generate this database by running
+'ap4dumpvdl2.sh' script included in 'extras' directory. Details in extras/README.md.
+Then you can transform 'VDL2_Ground_Stations.txt' file to a compatible format
+but with more informative GS data. Execute the script 
+`xform-gs-txt.sh` included in 'extras' directory. Details in extras/README.md.
+
+Example: option `--addrinfo verbose` will give the following transformation:
+
+```
+[2020-01-10 00:02:40 CET] [136.775] [-31.8/-51.6 dBFS] [19.8 dB] [-1.2 ppm]
+06A0B7 (Aircraft, Airborne) -> 1090FA (Ground station): Response
+GS info: EDDC Dresden DE 51°00'N 013°48'E
+AVLC type: S (Receive Ready) P/F: 0 rseq: 2
+```
+
+```
+[2020-01-10 00:02:40 CET] [136.775] [-31.8/-51.6 dBFS] [19.8 dB] [-1.2 ppm]
+06A0B7 (Aircraft, Airborne) -> 1090FA (Ground station): Response
+GS info: EDDC Dresden Airport, Dresden, Germany
+AVLC type: S (Receive Ready) P/F: 0 rseq: 2
+```
 
 ## Decoding upper-level protocols in fragmented packets
 

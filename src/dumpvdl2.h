@@ -92,10 +92,13 @@
 #define __OPT_GS_FILE                22
 #ifdef WITH_SQLITE
 #define __OPT_BS_DB                  23
+#define __OPT_AP_DB                  29
 #endif
 #define __OPT_ADDRINFO_VERBOSITY     24
 #define __OPT_PRETTIFY_XML           25
 #define __OPT_MILLISECONDS           26
+#define __OPT_AP_DETAILS             27
+#define __OPT_ALT_GS_DETAILS         28
 
 #ifdef WITH_SDRPLAY3
 #define __OPT_SDRPLAY3               70
@@ -211,6 +214,9 @@ typedef struct {
 	bool output_raw_frames, dump_asn1, extended_header, decode_fragments;
 	bool ac_addrinfo_db_available;
 	bool gs_addrinfo_db_available;
+	bool ap_addrinfo_db_available;
+	bool ap_details;
+	bool alt_gs_details;
 	addrinfo_verbosity_t addrinfo_verbosity;
 } dumpvdl2_config_t;
 

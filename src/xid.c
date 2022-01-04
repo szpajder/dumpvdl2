@@ -28,6 +28,8 @@
 #include "dumpvdl2.h"               // la_dict_search()
 #include "tlv.h"
 #include "avlc.h"                   // avlc_addr_t
+#include "gs_data.h"                // gs_data_entry
+#include "ap_data.h"                // ap_data_entry
 #include "xid.h"
 
 /***************************************************************************
@@ -255,12 +257,24 @@ TLV_PARSER(dlc_addr_list_parse) {
 
 // Appends anonymous DLC address to the current line.
 // Executed via la_list_foreach().
+// Adding GS address details if requested.
 static void append_dlc_addr_as_text(void const *data, void *ctx) {
 	ASSERT(data != NULL);
 	ASSERT(ctx != NULL);
 	la_vstring *vstr = ctx;
 	avlc_addr_t const *a = data;
-	la_vstring_append_sprintf(vstr, " %06X", a->a_addr.addr);
+	if(Config.alt_gs_details == true) {
+	    gs_data_entry *gs = gs_data_entry_lookup(a->a_addr.addr);
+	    if(gs) {
+		ap_data_entry *ap = ap_data_entry_lookup(gs->airport_code);
+		if(ap) la_vstring_append_sprintf(vstr, " %06X(%s,%s)", a->a_addr.addr, gs->airport_code, ap->ap_country);
+		else la_vstring_append_sprintf(vstr, " %06X(%s)", a->a_addr.addr, gs->airport_code);
+	    } else {
+		la_vstring_append_sprintf(vstr, " %06X(?)", a->a_addr.addr);
+	    }
+	} else {
+	    la_vstring_append_sprintf(vstr, " %06X", a->a_addr.addr);
+	}
 }
 
 TLV_FORMATTER(dlc_addr_list_format_text) {
@@ -274,12 +288,24 @@ TLV_FORMATTER(dlc_addr_list_format_text) {
 	EOL(ctx->vstr);
 }
 
+// Adding GS address details if requested.
 TLV_FORMATTER(dlc_addr_format_json) {
 	ASSERT(ctx != NULL);
 	ASSERT(ctx->vstr != NULL);
 	avlc_addr_t const *a = data;
-	char addr_str[7];
-	sprintf(addr_str, "%06X", a->a_addr.addr);
+	char addr_str[64];
+	if(Config.alt_gs_details == true) {
+	    gs_data_entry *gs = gs_data_entry_lookup(a->a_addr.addr);
+	    if(gs) {
+		ap_data_entry *ap = ap_data_entry_lookup(gs->airport_code);
+		if(ap) sprintf(addr_str, " %06X(%s,%s)", a->a_addr.addr, gs->airport_code, ap->ap_country);
+		else sprintf(addr_str, " %06X(%s)", a->a_addr.addr, gs->airport_code);
+	    } else {
+		sprintf(addr_str, "%06X(?)", a->a_addr.addr);
+	    }
+	} else {
+	    sprintf(addr_str, "%06X", a->a_addr.addr);
+	}
 	la_json_append_string(ctx->vstr, label, addr_str);
 }
 

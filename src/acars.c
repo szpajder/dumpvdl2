@@ -99,14 +99,17 @@ static void update_statsd_acars_metrics(la_msg_dir msg_dir, la_proto_node *root)
 
 la_proto_node *parse_acars(uint8_t *buf, uint32_t len, uint32_t *msg_type,
 		la_reasm_ctx *reasm_ctx, struct timeval rx_time) {
+
 	la_msg_dir msg_dir = LA_MSG_DIR_UNKNOWN;
 	if(*msg_type & MSGFLT_SRC_AIR) {
 		msg_dir = LA_MSG_DIR_AIR2GND;
 	} else if(*msg_type & MSGFLT_SRC_GND) {
 		msg_dir = LA_MSG_DIR_GND2AIR;
 	}
+
 	la_proto_node *node = la_acars_parse_and_reassemble(buf, len, msg_dir, reasm_ctx, rx_time);
 	update_msg_type(msg_type, node);
+
 #ifdef WITH_STATSD
 	update_statsd_acars_metrics(msg_dir, node);
 #endif

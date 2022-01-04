@@ -57,6 +57,7 @@
 #include "dumpvdl2.h"
 #ifdef WITH_SQLITE
 #include "ac_data.h"
+#include "ap_data.h"
 #endif
 #include "gs_data.h"
 
@@ -470,6 +471,7 @@ void usage() {
 	describe_option("--gs-file <file>", "Read ground station info from <file> (MultiPSK format)", 1);
 #ifdef WITH_SQLITE
 	describe_option("--bs-db <file>", "Read aircraft info from Basestation database <file> (SQLite)", 1);
+	describe_option("--ap-db <file>", "Read airports info from Airports database <file> (SQLite)", 1);
 #endif
 	describe_option("--addrinfo terse|normal|verbose", "Aircraft/ground station info verbosity level (default: normal)", 1);
 	describe_option("--station-id <name>", "Receiver site identifier", 1);
@@ -487,6 +489,8 @@ void usage() {
 	describe_option("--dump-asn1", "Print full ASN.1 structure of CM and CPDLC messages", 1);
 	describe_option("--extended-header", "Print additional fields in message header", 1);
 	describe_option("--prettify-xml", "Pretty-print XML payloads in ACARS and MIAM CORE PDUs", 1);
+	describe_option("--ap-details", "Print airports details", 1);
+	describe_option("--alt-gs-details", "Print Alternate GS details", 1);
 	_exit(0);
 }
 
@@ -665,8 +669,11 @@ int main(int argc, char **argv) {
 		{ "decode-fragments",   no_argument,        NULL,   __OPT_DECODE_FRAGMENTS },
 		{ "prettify-xml",       no_argument,        NULL,   __OPT_PRETTIFY_XML },
 		{ "gs-file",            required_argument,  NULL,   __OPT_GS_FILE },
+		{ "ap-details",         no_argument,        NULL,   __OPT_AP_DETAILS },
+		{ "alt-gs-details",     no_argument,        NULL,   __OPT_ALT_GS_DETAILS },
 #ifdef WITH_SQLITE
 		{ "bs-db",              required_argument,  NULL,   __OPT_BS_DB },
+		{ "ap-db",              required_argument,  NULL,   __OPT_AP_DB },
 #endif
 		{ "addrinfo",           required_argument,  NULL,   __OPT_ADDRINFO_VERBOSITY },
 		{ "output",             required_argument,  NULL,   __OPT_OUTPUT },
@@ -732,6 +739,7 @@ int main(int argc, char **argv) {
 #endif
 #ifdef WITH_SQLITE
 	char *bs_db_file = NULL;
+	char *ap_db_file = NULL;
 #endif
 	char *infile = NULL;
 	char *gs_file = NULL;
@@ -771,6 +779,12 @@ int main(int argc, char **argv) {
 			case __OPT_UTC:
 				Config.utc = true;
 				break;
+			case __OPT_AP_DETAILS:
+				Config.ap_details = true;
+				break;
+			case __OPT_ALT_GS_DETAILS:
+				Config.alt_gs_details = true;
+				break;
 			case __OPT_MILLISECONDS:
 				Config.milliseconds = true;
 				break;
@@ -797,6 +811,9 @@ int main(int argc, char **argv) {
 #ifdef WITH_SQLITE
 			case __OPT_BS_DB:
 				bs_db_file = optarg;
+				break;
+			case __OPT_AP_DB:
+				ap_db_file = optarg;
 				break;
 #endif
 			case __OPT_ADDRINFO_VERBOSITY:
@@ -1036,6 +1053,16 @@ int main(int argc, char **argv) {
 					"Extended data for aircraft will not be logged.\n");
 		} else {
 			Config.ac_addrinfo_db_available = true;
+		}
+	}
+	if(ap_db_file != NULL) {
+		if(ap_data_init(ap_db_file) < 0) {
+			fprintf(stderr, "Failed to open airports database. "
+					"Extended data for airports and Alternate GS will not be logged.\n");
+			Config.ap_details = false;
+			Config.alt_gs_details = false;
+		} else {
+			Config.ap_addrinfo_db_available = true;
 		}
 	}
 #endif

@@ -107,6 +107,9 @@ static int out_zmq_init(void *selfptr) {
 				zmq_strerror(errno));
 		return -1;
 	}
+	fprintf(stderr, "output_zmq: started %s to %s\n",
+			self->mode == ZMQ_MODE_SERVER ? "bind" : "connect",
+			self->endpoint);
 	return 0;
 }
 
