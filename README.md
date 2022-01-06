@@ -973,11 +973,11 @@ VDL2_Ground_Stations.txt file format is mostly applicable to MultiPSK program.
 
 Requires airports database. You can generate this database by running
 'ap4dumpvdl2.sh' script included in 'extras' directory. Details in extras/README.md.
-Then you can transform 'VDL2_Ground_Stations.txt' file to a compatible format
-but with more informative GS data. Execute the script 
+You can then transform 'VDL2_Ground_Stations.txt' file to a compatible format
+but with more informative GS details. Execute the script 
 `xform-gs-txt.sh` included in 'extras' directory. Details in extras/README.md.
 
-Example: option `--addrinfo verbose` will give the following transformation:
+Example: with option `--addrinfo verbose` we will have the following transformation:
 
 ```
 [2020-01-10 00:02:40 CET] [136.775] [-31.8/-51.6 dBFS] [19.8 dB] [-1.2 ppm]

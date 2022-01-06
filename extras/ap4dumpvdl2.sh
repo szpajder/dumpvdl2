@@ -22,10 +22,10 @@ CREATE TEMP TABLE _airports_import("id" INTEGER,"ident" TEXT,"type" TEXT,"name" 
 .separator ","
 .import airports4.csv _airports_import
 DROP TABLE IF EXISTS AIRPORTS;
-CREATE TABLE AIRPORTS(ICAO TEXT PRIMARY KEY, IATA TEXT, NAME TEXT, CITY TEXT, COUNTRY TEXT, LAT REAL, LON REAL);
-INSERT OR IGNORE INTO AIRPORTS SELECT gps_code, iata_code, name, 
+CREATE TABLE AIRPORTS(ICAO TEXT PRIMARY KEY, IATA TEXT, NAME TEXT, CITY TEXT, COUNTRISO TEXT, COUNTRY TEXT, LAT REAL, LON REAL);
+INSERT OR IGNORE INTO AIRPORTS SELECT gps_code, iata_code, name,
 CASE WHEN iso_country = "US" THEN  municipality || ", " || local_region ELSE CASE WHEN LENGTH(municipality) = 0 THEN "Unknown City" ELSE municipality END END, 
-country_name, latitude_deg, longitude_deg 
+iso_country, country_name, latitude_deg, longitude_deg 
 FROM _airports_import 
 WHERE gps_code != '' AND LENGTH(gps_code) = 4 AND (type = 'medium_airport' OR type = 'large_airport' OR type = 'small_airport') 
 ORDER BY gps_code;

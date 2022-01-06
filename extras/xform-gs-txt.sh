@@ -16,8 +16,9 @@ local IFS='|'
 read -a strarr <<< "$3"
 name="${strarr[0]}"
 city="${strarr[1]}"
-country="${strarr[2]}"
-printf '%s [%s %s, %s] [%s]\r\n' "$1" "$2" "$name" "$country" "$city" >> VDL2_Ground_Stations_new.txt
+countriso="${strarr[2]}"
+country="${strarr[3]}"
+printf '%s [%s %s, %s] [%s, %s]\r\n' "$1" "$2" "$name" "$countriso" "$city" "$country" >> VDL2_Ground_Stations_new.txt
 }
 more_gss=0
 min_gs_txt_size=100000
@@ -36,7 +37,7 @@ if ! command sqlite3 -version >/dev/null; then
     exit
 fi
 if [ ! -f VDL2_Ground_Stations.txt ]; then
-    echo "VDL2_Ground_Stations.txt file Not found."
+    echo "VDL2_Ground_Stations.txt file not found."
     exit
 fi
 gs_txt_size=$(stat -c %s VDL2_Ground_Stations.txt)
@@ -44,7 +45,7 @@ if [ $gs_txt_size -lt $min_gs_txt_size ]; then
 	echo "VDL2_Ground_Stations.txt file size is smaller than $min_gs_txt_zize, corrupted file ?"
     exit
 fi
-echo "Transforming VDL2_Ground_Stations.txt to a more informative format ..."
+echo "Transforming VDL2_Ground_Stations.txt to a more informative format for dumpvdl2 ..."
 cp VDL2_Ground_Stations.txt VDL2_Ground_Stations.orig
 grep -oP "[A-Z0-9]{6} \[[A-Z0-9]{4}" VDL2_Ground_Stations.txt | sed 's/\[//' > tmp1.txt
 if [ $more_gss -ne 0 ]; then
@@ -57,7 +58,7 @@ rm -f VDL2_Ground_Stations_new.txt
 IFS=' '
 while IFS= read -r line; do
   read -r gsid apid <<< "$line"
-  apinfo=$(sqlite3 ap4dumpvdl2.sqb "select name, city, country from airports where icao='$apid' or iata='$apid';")
+  apinfo=$(sqlite3 ap4dumpvdl2.sqb "select name, city, countriso, country from airports where icao='$apid' or iata='$apid';")
   apx "$gsid" "$apid" "$apinfo"
 done < good1s.txt
 grep '\[, \]' VDL2_Ground_Stations_new.txt | sort -u -k 2 > tmp2.txt
