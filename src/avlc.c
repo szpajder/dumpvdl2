@@ -302,23 +302,25 @@ static void addrinfo_format_as_text(la_vstring *vstr, int indent, avlc_addr_t ad
 			} else if(Config.addrinfo_verbosity == ADDRINFO_VERBOSE) {
 				if(gs && gs->location && gs->details) {
 
-			// gs->entry: [airport_code details] [location]
+			// gs->entry format: [airport_code details] [location]
+
 			//  original: [EDDC Dresden DE 51°00'N 013°48'E] [Dresden]
 			//   xformed: [EDDC Dresden Airport, DE] [Dresden, Germany]
+
 			//  original: [KLGA LaGuardia 40°48'N 073°54'W] [New York NY]
 			//   xformed: [KLGA La Guardia Airport, US] [New York, NY, United States]
+
 			// is VDL2_Ground_Stations.txt transformed ? check if gs->location format is [City, Country]
-				    char *ptr_loc = strchr(gs->location, ',');
-				    if(ptr_loc != NULL) {
-					char *details = strdup(gs->details);
-					char *ptr_det = strsep(&details, ",");
+				    char *location_comma = strchr(gs->location, ',');
+				    if(location_comma != NULL) {
 					// full GS (transformed) information
-					LA_ISPRINTF(vstr, indent, "GS info: %s, %s\n", ptr_det ? ptr_det : "-", gs->location);
-					XFREE(details);
-				    } else {	        // original VDL2_Ground_Stations.txt details
+					LA_ISPRINTF(vstr, indent, "GS info: %s, %s\n", gs->details, gs->location);
+				    } else {
+	    				// original VDL2_Ground_Stations.txt details
 					LA_ISPRINTF(vstr, indent, "GS info: %s\n", gs->details);
 				    }
-				} else {	        // original VDL2_Ground_Stations.txt details
+				} else {
+	    			    // original VDL2_Ground_Stations.txt details
 				    LA_ISPRINTF(vstr, indent, "GS info: %s\n", gs && gs->details ? gs->details : "-");
 				}
 			}
