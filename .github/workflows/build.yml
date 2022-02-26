@@ -1,0 +1,57 @@
+name: CMake
+
+on:
+  [ push, pull_request ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, ubuntu-18.04, macos-11, macos-10.15 ]
+    runs-on: ${{ matrix.os }}
+    env:
+      VDL2_TEST1: "--iq-file ${{github.workspace}}/test/vdl2_model_16b_1050kHz.wav --sample-format S16_LE --extended-header"
+      VDL2_TEST1_EXPECT: "20 2d 52 41 20 42 52 20 4f 56 43 30 30 35 0a|20 53 4c 50 31 33 35 0a"
+      VDL2_TEST1_RESULT: 2
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install packaged dependencies
+      run: |
+        if [[ "$RUNNER_OS" == "Linux" ]]; then sudo apt-get update; fi
+        if [[ "$RUNNER_OS" == "Linux" ]]; then sudo apt-get install libconfig++-dev libglib2.0-dev libsoapysdr-dev librtlsdr-dev libsqlite3-dev libzmq3-dev libprotobuf-c-dev; fi
+        if [[ "$RUNNER_OS" == "macOS" ]]; then brew update; fi
+        if [[ "$RUNNER_OS" == "macOS" ]]; then brew install libconfig glib soapysdr librtlsdr sqlite zmq protobuf-c ; fi
+
+    - name: Install libacars
+      run: |
+        cd "$RUNNER_TEMP"
+        git clone https://github.com/szpajder/libacars.git
+        cd libacars
+        mkdir build
+        cd build
+        cmake ..
+        make -j
+        sudo make install
+        if [[ "$RUNNER_OS" == "Linux" ]]; then sudo ldconfig; fi
+        if [[ "$RUNNER_OS" == "macOS" ]]; then sudo update_dyld_shared_cache; fi
+
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+    - name: Install
+      run: sudo cmake --install ${{github.workspace}}/build
+
+    - name: Test run
+      run: |
+        /usr/local/bin/dumpvdl2 ${VDL2_TEST1}
+        res=$(/usr/local/bin/dumpvdl2 ${VDL2_TEST1} | egrep -c "${VDL2_TEST1_EXPECT}")
+        if [[ "x$res" = "x" ]]; then false; fi
+        if [[ $res -eq ${VDL2_TEST1_RESULT} ]]; then true; fi
