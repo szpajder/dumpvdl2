@@ -395,7 +395,6 @@ void usage() {
 #endif
 	fprintf(stderr, "common options:\n");
 	describe_option("<freq_1> [<freq_2> [...]]", "VDL2 channel frequencies, in Hz", 1);
-	fprintf(stderr, "\nMaximum number of simultaneous VDL2 channels supported is %d.\n", MAX_CHANNELS);
 	fprintf(stderr, "If channel frequencies are omitted, VDL2 Common Signalling Channel (%u Hz) will be used as default.\n\n", CSC_FREQ);
 
 #ifdef WITH_RTLSDR
@@ -962,10 +961,6 @@ int main(int argc, char **argv) {
 	if(input_is_iq) {
 		if(optind < argc) {
 			num_channels = argc - optind;
-			if(num_channels > MAX_CHANNELS) {
-				fprintf(stderr, "Error: too many channels specified (%d > %d)\n", num_channels, MAX_CHANNELS);
-				_exit(1);
-			}
 			freqs = XCALLOC(num_channels, sizeof(uint32_t));
 			for(int i = 0; i < num_channels; i++)
 				freqs[i] = strtoul(argv[optind+i], NULL, 10);
