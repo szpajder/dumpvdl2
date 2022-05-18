@@ -14,7 +14,7 @@ Current stable version: 2.1.1 (released July 8, 2021)
   - SDRPlay RSP (native support through official driver version 2 and 3)
   - SoapySDR (via [soapy-sdr project](https://github.com/pothosware/SoapySDR/wiki))
   - prerecorded IQ data from a file
-- Decodes up to 8 VDL2 channels simultaneously
+- Decodes multiple VDL2 channels simultaneously
 - Automatically reassembles multiblock ACARS messages, MIAM file transfers, and
   fragmented X.25 packets
 - Supports various outputs and output formats (see below)
@@ -389,7 +389,7 @@ frequency as a last parameter:
 ./dumpvdl2 --rtlsdr 0 --gain 40 --correction 42 136725000
 ```
 
-dumpvdl2 can decode up to 8 VDL2 channels simultaneously. Just list their
+dumpvdl2 can decode multiple VDL2 channels simultaneously. Just list their
 frequencies at the end of the command line:
 
 ```
