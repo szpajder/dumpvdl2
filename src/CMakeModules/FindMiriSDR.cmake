@@ -27,7 +27,7 @@ if(NOT MIRISDR_FOUND)
     include(FindPackageHandleStandardArgs)
     # handle the QUIETLY and REQUIRED arguments and set LibMIRISDR_FOUND to TRUE
     # if all listed variables are TRUE
-    find_package_handle_standard_args(mirisdr  DEFAULT_MSG
+    find_package_handle_standard_args(MiriSDR  DEFAULT_MSG
                                       MIRISDR_LIBRARY MIRISDR_INCLUDE_DIR)
 
     mark_as_advanced(MIRISDR_INCLUDE_DIR MIRISDR_LIBRARY)

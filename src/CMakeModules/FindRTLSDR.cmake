@@ -49,7 +49,7 @@ if(NOT RTLSDR_FOUND)
     include(FindPackageHandleStandardArgs)
     # handle the QUIETLY and REQUIRED arguments and set LibRTLSDR_FOUND to TRUE
     # if all listed variables are TRUE
-    find_package_handle_standard_args(rtlsdr  DEFAULT_MSG
+    find_package_handle_standard_args(RTLSDR  DEFAULT_MSG
                                       RTLSDR_LIBRARY RTLSDR_INCLUDE_DIR)
 
     mark_as_advanced(RTLSDR_INCLUDE_DIR RTLSDR_LIBRARY)
