@@ -207,6 +207,7 @@ set(ASN_MODULE_SOURCES
 	ReportingPoints.c
 	RevisionNumber.c
 	RouteAndLevels.c
+	RouteClearanceConstrainedData.c
 	RouteClearanceSequence.c
 	RouteClearance.c
 	RouteClearanceIndex.c

@@ -20,21 +20,12 @@ extern "C" {
 #endif
 
 /* Forward declarations */
-struct RouteClearanceSequence;
+struct RouteClearanceConstrainedData;
 
 /* ATCUplinkMessageData */
 typedef struct ATCUplinkMessageData {
 	ATCUplinkMsgElementIdSequence_t	 elementIds;
-	struct ATCUplinkMessageData__constrainedData {
-		struct RouteClearanceSequence	*routeClearanceData	/* OPTIONAL */;
-		/*
-		 * This type is extensible,
-		 * possible extensions are below.
-		 */
-		
-		/* Context for parsing across buffer boundaries */
-		asn_struct_ctx_t _asn_ctx;
-	} *constrainedData;
+	struct RouteClearanceConstrainedData	*constrainedData	/* OPTIONAL */;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;
@@ -48,7 +39,7 @@ extern asn_TYPE_descriptor_t asn_DEF_ATCUplinkMessageData;
 #endif
 
 /* Referred external types */
-#include "RouteClearanceSequence.h"
+#include "RouteClearanceConstrainedData.h"
 
 #endif	/* _ATCUplinkMessageData_H_ */
 #include "asn_internal.h"

@@ -7,60 +7,6 @@
 
 #include "ATCUplinkMessageData.h"
 
-static asn_TYPE_member_t asn_MBR_constrainedData_3[] = {
-	{ ATF_POINTER, 1, offsetof(struct ATCUplinkMessageData__constrainedData, routeClearanceData),
-		(ASN_TAG_CLASS_UNIVERSAL | (16 << 2)),
-		0,
-		&asn_DEF_RouteClearanceSequence,
-		0,	/* Defer constraints checking to the member type */
-		0,	/* No PER visible constraints */
-		0,
-		"routeClearanceData"
-		},
-};
-static const int asn_MAP_constrainedData_oms_3[] = { 0 };
-static const ber_tlv_tag_t asn_DEF_constrainedData_tags_3[] = {
-	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
-};
-static const asn_TYPE_tag2member_t asn_MAP_constrainedData_tag2el_3[] = {
-    { (ASN_TAG_CLASS_UNIVERSAL | (16 << 2)), 0, 0, 0 } /* routeClearanceData */
-};
-static asn_SEQUENCE_specifics_t asn_SPC_constrainedData_specs_3 = {
-	sizeof(struct ATCUplinkMessageData__constrainedData),
-	offsetof(struct ATCUplinkMessageData__constrainedData, _asn_ctx),
-	asn_MAP_constrainedData_tag2el_3,
-	1,	/* Count of tags in the map */
-	asn_MAP_constrainedData_oms_3,	/* Optional members */
-	1, 0,	/* Root/Additions */
-	0,	/* Start extensions */
-	2	/* Stop extensions */
-};
-static /* Use -fall-defs-global to expose */
-asn_TYPE_descriptor_t asn_DEF_constrainedData_3 = {
-	"constrainedData",
-	"constrainedData",
-	SEQUENCE_free,
-	SEQUENCE_print,
-	SEQUENCE_constraint,
-	SEQUENCE_decode_ber,
-	SEQUENCE_encode_der,
-	SEQUENCE_decode_xer,
-	SEQUENCE_encode_xer,
-	SEQUENCE_decode_uper,
-	SEQUENCE_encode_uper,
-	0,	/* Use generic outmost tag fetcher */
-	asn_DEF_constrainedData_tags_3,
-	sizeof(asn_DEF_constrainedData_tags_3)
-		/sizeof(asn_DEF_constrainedData_tags_3[0]), /* 1 */
-	asn_DEF_constrainedData_tags_3,	/* Same as above */
-	sizeof(asn_DEF_constrainedData_tags_3)
-		/sizeof(asn_DEF_constrainedData_tags_3[0]), /* 1 */
-	0,	/* No PER visible constraints */
-	asn_MBR_constrainedData_3,
-	1,	/* Elements count */
-	&asn_SPC_constrainedData_specs_3	/* Additional specs */
-};
-
 static asn_TYPE_member_t asn_MBR_ATCUplinkMessageData_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct ATCUplinkMessageData, elementIds),
 		(ASN_TAG_CLASS_UNIVERSAL | (16 << 2)),
@@ -74,7 +20,7 @@ static asn_TYPE_member_t asn_MBR_ATCUplinkMessageData_1[] = {
 	{ ATF_POINTER, 1, offsetof(struct ATCUplinkMessageData, constrainedData),
 		(ASN_TAG_CLASS_UNIVERSAL | (16 << 2)),
 		0,
-		&asn_DEF_constrainedData_3,
+		&asn_DEF_RouteClearanceConstrainedData,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
 		0,

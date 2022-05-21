@@ -659,6 +659,7 @@ la_asn1_formatter const asn1_icao_formatter_table_json[] = {
 	{ .type = &asn_DEF_RevisionNumber, .format = la_asn1_format_long_as_json, .label = "revision_number" },
 	{ .type = &asn_DEF_RouteAndLevels, .format = asn1_format_SEQUENCE_icao_as_json, .label = "route_levels" },
 	{ .type = &asn_DEF_RouteClearance, .format = asn1_format_SEQUENCE_icao_as_json, .label = "route_clearance" },
+	{ .type = &asn_DEF_RouteClearanceConstrainedData, .format = asn1_format_SEQUENCE_icao_as_json, .label = "route_clearance_data" },
 	{ .type = &asn_DEF_RouteClearanceIndex, .format = la_asn1_format_long_as_json, .label = "route_clearance_idx" },
 	{ .type = &asn_DEF_RouteClearanceSequence, .format = asn1_format_SEQUENCE_OF_icao_as_json, .label = "route_clearance_seq" },
 	{ .type = &asn_DEF_RouteInformation, .format = asn1_format_CHOICE_icao_as_json, .label = "route_info" },

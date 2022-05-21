@@ -1201,6 +1201,7 @@ la_asn1_formatter const asn1_icao_formatter_table_text[] = {
 	{ .type = &asn_DEF_RouteAndLevels, .format = asn1_format_SEQUENCE_icao_as_text, .label = NULL },
 	{ .type = &asn_DEF_RouteClearance, .format = asn1_format_SEQUENCE_icao_as_text, .label = "Route clearance" },
 	{ .type = &asn_DEF_RouteClearanceIndex, .format = la_asn1_format_any_as_text, .label = "Route clearance index" },
+	{ .type = &asn_DEF_RouteClearanceConstrainedData, .format = asn1_format_SEQUENCE_icao_as_text, .label = NULL },
 	{ .type = &asn_DEF_RouteClearanceSequence, .format = asn1_format_SEQUENCE_OF_icao_as_text, .label = NULL },
 	{ .type = &asn_DEF_RouteInformation, .format = asn1_format_CHOICE_icao_as_text, .label = NULL },
 	{ .type = &asn_DEF_RouteInformationAdditional, .format = asn1_format_SEQUENCE_icao_as_text, .label = "Additional route information" },
