@@ -962,7 +962,7 @@ la_asn1_formatter const asn1_icao_formatter_table_json[] = {
 	{ .type = &asn_DEF_WindQualityFlag, .format = la_asn1_format_ENUM_as_json, .label = "wind_quality_flag" },
 };
 
-size_t asn1_icao_formatter_table_json_len = sizeof(asn1_icao_formatter_table_json) / sizeof(la_asn1_formatter_func);
+size_t asn1_icao_formatter_table_json_len = sizeof(asn1_icao_formatter_table_json) / sizeof(la_asn1_formatter);
 
 la_asn1_formatter const asn1_acse_formatter_table_json[] = {
 	{ .type = &asn_DEF_AARE_apdu, .format = asn1_format_SEQUENCE_acse_as_json, .label = "assoc_response" },
@@ -1001,4 +1001,4 @@ la_asn1_formatter const asn1_acse_formatter_table_json[] = {
 	// { .type = &asn_DEF_RelativeDistinguishedName, .format = NULL, .label = NULL },
 };
 
-size_t asn1_acse_formatter_table_json_len = sizeof(asn1_acse_formatter_table_json) / sizeof(la_asn1_formatter_func);
+size_t asn1_acse_formatter_table_json_len = sizeof(asn1_acse_formatter_table_json) / sizeof(la_asn1_formatter);
