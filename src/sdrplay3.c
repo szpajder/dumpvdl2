@@ -112,6 +112,9 @@ static void sdrplay3_streamCallback(short *xi, short *xq, sdrplay_api_StreamCbPa
 
 static void sdrplay3_eventCallback(sdrplay_api_EventT eventId, sdrplay_api_TunerSelectT tuner,
 			sdrplay_api_EventParamsT *params, void *cbContext) {
+#ifndef DEBUG
+	UNUSED(params);
+#endif
 	switch(eventId) {
 		case sdrplay_api_GainChange:
 			debug_print(D_SDR, "sdrplay_api_EventCb: %s, tuner=%s gRdB=%d lnaGRdB=%d systemGain=%.2f\n",
