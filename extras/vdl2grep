@@ -83,7 +83,7 @@ shift @ARGV;
 if(@ARGV) {
 	my $fh;
 	for my $fname(@ARGV) {
-		if($fname =~ /\.(gz|bz2|xz|lzma)$/i) {
+		if($fname =~ /\.(gz|bz2|xz|lzma|zst|zip)$/i) {
 			require IO::Uncompress::AnyUncompress;
 			unless($fh = IO::Uncompress::AnyUncompress->new($fname)) {
 				print STDERR "uncompress($fname): failed to initialize descompressor\n";
