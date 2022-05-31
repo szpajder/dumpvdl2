@@ -238,7 +238,7 @@ la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 		}
 		pdu->pdu_id = extract_uint16_msbfirst(ptr);
 		pdu->seg_off = extract_uint16_msbfirst(ptr + 2);
-		pdu->total_init_pdu_len = extract_uint16_msbfirst(ptr + 4);
+		pdu->total_pdu_len = extract_uint16_msbfirst(ptr + 4);
 		ptr += 6; remaining -= 6;
 	}
 
@@ -395,7 +395,7 @@ void clnp_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 		indent++;
 		LA_ISPRINTF(vstr, indent, "PDU Id: 0x%x\n", pdu->pdu_id);
 		LA_ISPRINTF(vstr, indent, "Segment offset: %u\n", pdu->seg_off);
-		LA_ISPRINTF(vstr, indent, "PDU total length: %u\n", pdu->total_init_pdu_len);
+		LA_ISPRINTF(vstr, indent, "PDU total length: %u\n", pdu->total_pdu_len);
 		indent--;
 	}
 	if(pdu->options != NULL) {
@@ -434,7 +434,7 @@ void clnp_pdu_format_json(la_vstring * vstr, void const *data) {
 	    la_json_object_start(vstr, "segmentation");
 	    la_json_append_int64(vstr, "pdu_id", pdu->pdu_id);
 	    la_json_append_int64(vstr, "segment_offset", pdu->seg_off);
-	    la_json_append_int64(vstr, "pdu_total_len", pdu->total_init_pdu_len);
+	    la_json_append_int64(vstr, "pdu_total_len", pdu->total_pdu_len);
 	    la_json_object_end(vstr);
 	}
 
@@ -465,23 +465,24 @@ la_type_descriptor const proto_DEF_clnp_pdu = {
  **********************************/
 
 // Forward declaration
-la_type_descriptor const proto_DEF_clnp_compressed_init_data_pdu;
+la_type_descriptor const proto_DEF_clnp_compressed_data_pdu;
 
-la_proto_node *clnp_compressed_init_data_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
-	NEW(clnp_compressed_init_data_pdu_t, pdu);
+la_proto_node *clnp_compressed_data_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
+		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
+	NEW(clnp_compressed_data_pdu_t, pdu);
 	la_proto_node *node = la_proto_node_new();
-	node->td = &proto_DEF_clnp_compressed_init_data_pdu;
+	node->td = &proto_DEF_clnp_compressed_data_pdu;
 	node->data = pdu;
 	node->next = NULL;
 
 	pdu->err = true;    // fail-safe default
-	if(len < CLNP_COMPRESSED_INIT_MIN_LEN) {
-		debug_print(D_PROTO, "Too short (len %u < min len %u)\n", len, CLNP_COMPRESSED_INIT_MIN_LEN);
+	if(len < CLNP_COMPRESSED_MIN_LEN) {
+		debug_print(D_PROTO, "Too short (len %u < min len %u)\n", len, CLNP_COMPRESSED_MIN_LEN);
 		goto fail;
 	}
 
-	uint32_t hdrlen = CLNP_COMPRESSED_INIT_MIN_LEN;
-	clnp_compressed_init_data_pdu_hdr_t *hdr = (clnp_compressed_init_data_pdu_hdr_t *)buf;
+	uint32_t hdrlen = CLNP_COMPRESSED_MIN_LEN;
+	clnp_compressed_data_pdu_hdr_t *hdr = (clnp_compressed_data_pdu_hdr_t *)buf;
 	pdu->hdr = hdr;
 	if(hdr->exp != 0) hdrlen += 1;  // EXP flag = 1 means localRef/B octet is present
 	if(hdr->type & 1) hdrlen += 2;  // odd PDU type means PDU identifier is present
@@ -516,12 +517,12 @@ fail:
 	return node;
 }
 
-void clnp_compressed_init_data_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
+void clnp_compressed_data_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 	ASSERT(indent >= 0);
 
-	clnp_compressed_init_data_pdu_t const *pdu = data;
+	clnp_compressed_data_pdu_t const *pdu = data;
 	if(pdu->err == true) {
 		LA_ISPRINTF(vstr, indent, "%s", "-- Unparseable X.233 CLNP compressed header PDU\n");
 		return;
@@ -535,11 +536,11 @@ void clnp_compressed_init_data_pdu_format_text(la_vstring *vstr, void const *dat
 	}
 }
 
-void clnp_compressed_init_data_pdu_format_json(la_vstring *vstr, void const *data) {
+void clnp_compressed_data_pdu_format_json(la_vstring *vstr, void const *data) {
 	ASSERT(vstr != NULL);
 	ASSERT(data);
 
-	clnp_compressed_init_data_pdu_t const *pdu = data;
+	clnp_compressed_data_pdu_t const *pdu = data;
 	la_json_append_bool(vstr, "err", pdu->err);
 	if(pdu->err == true) {
 		return;
@@ -554,9 +555,9 @@ void clnp_compressed_init_data_pdu_format_json(la_vstring *vstr, void const *dat
 	}
 }
 
-la_type_descriptor const proto_DEF_clnp_compressed_init_data_pdu = {
-	.format_text = clnp_compressed_init_data_pdu_format_text,
-	.format_json = clnp_compressed_init_data_pdu_format_json,
+la_type_descriptor const proto_DEF_clnp_compressed_data_pdu = {
+	.format_text = clnp_compressed_data_pdu_format_text,
+	.format_json = clnp_compressed_data_pdu_format_json,
 	.json_key = "clnp",
 	.destroy = NULL,
 };

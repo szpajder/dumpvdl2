@@ -22,6 +22,7 @@
 #include <libacars/list.h>      // la_list
 #include "config.h"
 #include "x25.h"
+#include "reassembly.h"         // la_reasm_ctx
 
 #define CLNP_NPDU_DT  0x1c
 #define CLNP_NDPU_MD  0x1d
@@ -62,12 +63,12 @@ typedef struct {
 	uint16_t seg_len;
 	uint16_t cksum;
 	// segmentation part
-	uint16_t pdu_id, seg_off, total_init_pdu_len;
+	uint16_t pdu_id, seg_off, total_pdu_len;
 	// error flags
 	bool err;
 } clnp_pdu_t;
 
-#define CLNP_COMPRESSED_INIT_MIN_LEN 4
+#define CLNP_COMPRESSED_MIN_LEN 4
 typedef struct {
 #ifdef IS_BIG_ENDIAN
 	uint8_t type:4;
@@ -108,16 +109,17 @@ typedef struct {
 	uint8_t lref_a:7;
 	uint8_t exp:1;
 #endif
-} clnp_compressed_init_data_pdu_hdr_t;
+} clnp_compressed_data_pdu_hdr_t;
 
 typedef struct {
-	clnp_compressed_init_data_pdu_hdr_t *hdr;
+	clnp_compressed_data_pdu_hdr_t *hdr;
 	uint16_t lref;
 	uint16_t pdu_id;
 	bool pdu_id_present;
 	bool err;
-} clnp_compressed_init_data_pdu_t;
+} clnp_compressed_data_pdu_t;
 
 // clnp.c
 la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type);
-la_proto_node *clnp_compressed_init_data_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type);
+la_proto_node *clnp_compressed_data_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
+		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr);

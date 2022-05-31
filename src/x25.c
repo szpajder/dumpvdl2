@@ -329,7 +329,8 @@ static la_dict const x25_comp_algos[] = {
 
 // Forward declarations
 la_type_descriptor const proto_DEF_X25_SNDCF_error_report;
-static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *msg_type);
+static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *msg_type,
+		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr);
 
 typedef struct {
 	uint8_t error_code;
@@ -338,7 +339,8 @@ typedef struct {
 	bool errored_pdu_present;
 } sndcf_err_rpt_t;
 
-static la_proto_node *sndcf_error_report_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+static la_proto_node *sndcf_error_report_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
+		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
 	NEW(sndcf_err_rpt_t, rpt);
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_X25_SNDCF_error_report;
@@ -358,7 +360,8 @@ static la_proto_node *sndcf_error_report_parse(uint8_t *buf, uint32_t len, uint3
 		// direction, so we have to flip message direction bits for a moment in order
 		// to decode this message correctly (this is important if it's CPDLC or CM).
 		*msg_type ^= (MSGFLT_SRC_AIR | MSGFLT_SRC_GND);
-		node->next = parse_x25_user_data(buf + 3, len - 3, msg_type);
+		node->next = parse_x25_user_data(buf + 3, len - 3, msg_type,
+				rtables, rx_time, src_addr, dst_addr);
 		*msg_type ^= (MSGFLT_SRC_AIR | MSGFLT_SRC_GND);
 		rpt->errored_pdu_present = true;
 	} else {
@@ -548,7 +551,8 @@ static int parse_x25_facility_field(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) 
 	return 1 + fac_len;
 }
 
-static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *msg_type,
+		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
 	if(buf == NULL || len == 0) {
 		return NULL;
 	}
@@ -559,10 +563,16 @@ static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *
 		return esis_pdu_parse(buf, len, msg_type);
 	}
 	uint8_t pdu_type = proto >> 4;
-	if(pdu_type < 4) {
-		return clnp_compressed_init_data_pdu_parse(buf, len, msg_type);
-	} else if(proto == 0xe0) {
-		return sndcf_error_report_parse(buf, len, msg_type);
+	if(pdu_type < 0x4 ||
+			pdu_type == 0x6 ||
+			pdu_type == 0x7 ||
+			pdu_type == 0x9 ||
+			pdu_type == 0xa) {
+		return clnp_compressed_data_pdu_parse(buf, len, msg_type,
+				rtables, rx_time, src_addr, dst_addr);
+	} else if(pdu_type == 0xe) {
+		return sndcf_error_report_parse(buf, len, msg_type,
+				rtables, rx_time, src_addr, dst_addr);
 	}
 	return unknown_proto_pdu_new(buf, len);
 }
@@ -634,7 +644,8 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
 				}
 			}
 			// Fast Select is on, so there might be a data PDU in call req or accept
-			node->next = parse_x25_user_data(ptr, remaining, msg_type);
+			node->next = parse_x25_user_data(ptr, remaining, msg_type,
+					rtables, rx_time, src_addr, dst_addr);
 			break;
 		case X25_DATA:
 			{
@@ -679,7 +690,8 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
 					update_statsd_x25_metrics(pkt->reasm_status, *msg_type);
 				}
 				node->next = decode_user_data == true ?
-					parse_x25_user_data(x25_data, x25_data_len, msg_type) :
+					parse_x25_user_data(x25_data, x25_data_len, msg_type,
+							rtables, rx_time, src_addr, dst_addr) :
 					unknown_proto_pdu_new(x25_data, x25_data_len);
 			}
 			break;
