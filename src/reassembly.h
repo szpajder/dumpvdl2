@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <sys/time.h>
 #include <libacars/hash.h>
+#include <libacars/reassembly.h>
 
 typedef struct reasm_ctx_s reasm_ctx;
 typedef struct reasm_table_s reasm_table;
@@ -71,13 +72,8 @@ typedef enum {
 #define REASM_STATUS_MAX REASM_ARGS_INVALID
 
 // reassembly.c
-reasm_ctx *reasm_ctx_new();
-void reasm_ctx_destroy(void *ctx);
-reasm_table *reasm_table_new(reasm_ctx *rctx, void const *table_id,
-		reasm_table_funcs funcs, int cleanup_interval);
-reasm_table *reasm_table_lookup(reasm_ctx *rctx, void const *table_id);
-reasm_status reasm_fragment_add(reasm_table *rtable, reasm_fragment_info const *finfo);
-int reasm_payload_get(reasm_table *rtable, void const *msg_info, uint8_t **result);
+reasm_status reasm_fragment_add(la_reasm_table *rtable, reasm_fragment_info const *finfo);
+int reasm_payload_get(la_reasm_table *rtable, void const *msg_info, uint8_t **result);
 char const *reasm_status_name_get(reasm_status status);
 
 #endif // !REASSEMBLY_H
