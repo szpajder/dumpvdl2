@@ -88,7 +88,6 @@ int input_raw_frames_file_process(char const *file) {
 		while(available > 0) {
 			if(available >= OUT_BINARY_FRAME_LEN_OCTETS) {      // we can at least read frame length
 				frame_len = ntohs(*(uint16_t *)(buf + i));
-				debug_print(D_MISC, "frame_len: %zu\n", frame_len);
 				if(frame_len < OUT_BINARY_FRAME_LEN_OCTETS + 1) {
 					fprintf(stderr, "Frame too short: %zu\n", frame_len);
 					ret = 3;
