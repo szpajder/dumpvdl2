@@ -591,6 +591,10 @@ la_proto_node *clnp_compressed_data_pdu_parse(uint8_t *buf, uint32_t len, uint32
 					"Probably it's not a CLNP derived PDU.\n", pdu->offset, remaining, total_pdu_len);
 			goto fail;
 		}
+		if(remaining < 1) {
+			debug_print(D_PROTO, "Derived PDU with no user data - that's bogus, will not reassemble it.\n");
+			goto fail;
+		}
 	}
 
 	bool decode_payload = true;
