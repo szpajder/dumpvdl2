@@ -18,6 +18,7 @@
  */
 #include <stdint.h>
 #include <stdbool.h>
+#include <sys/time.h>           // struct timeval
 #include <libacars/libacars.h>  // la_proto_node
 #include <libacars/list.h>      // la_list
 #include "config.h"
@@ -113,9 +114,15 @@ typedef struct {
 
 typedef struct {
 	clnp_compressed_data_pdu_hdr_t *hdr;
+	uint8_t *reasm_buf;
+	reasm_status rstatus;
+	struct timeval lifetime;
 	uint16_t lref;
 	uint16_t pdu_id;
-	bool pdu_id_present;
+	uint16_t offset;
+	bool derived;
+	bool is_segmentation_permitted;
+	bool more_segments;
 	bool err;
 } clnp_compressed_data_pdu_t;
 

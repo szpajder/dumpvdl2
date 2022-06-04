@@ -570,7 +570,7 @@ static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *
 			pdu_type == 0xa) {
 		return clnp_compressed_data_pdu_parse(buf, len, msg_type,
 				rtables, rx_time, src_addr, dst_addr);
-	} else if(pdu_type == 0xe) {
+	} else if(proto == 0xe0) {
 		return sndcf_error_report_parse(buf, len, msg_type,
 				rtables, rx_time, src_addr, dst_addr);
 	}

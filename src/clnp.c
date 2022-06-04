@@ -26,10 +26,63 @@
 #include "dumpvdl2.h"
 #include "tlv.h"
 #include "clnp.h"
+#include "reassembly.h"
 #include "esis.h"                   // esis_pdu_parse()
 #include "idrp.h"                   // idrp_pdu_parse()
 #include "cotp.h"                   // cotp_concatenated_pdu_parse()
 #include "atn.h"                    // atn_sec_label_parse, atn_sec_label_format_{text,json}
+
+/***************************************************************************
+ * Packet reassembly types and callbacks
+ **************************************************************************/
+
+// Can't use CLNP header as msg_info during reassembly, because when the header
+// is compressed, it does not contain enough addressing information to
+// discriminate packes uniquely. We need AVLC addresses to do this.  This
+// structure is also used as a hash key in reassembly table.
+
+struct clnp_reasm_key {
+	uint32_t src_addr, dst_addr;
+	uint16_t pdu_id;
+};
+
+void *clnp_reasm_key_get(void const *msg) {
+	struct clnp_reasm_key const *key = msg;
+	NEW(struct clnp_reasm_key, newkey);
+	newkey->src_addr = key->src_addr;
+	newkey->dst_addr = key->dst_addr;
+	newkey->pdu_id = key->pdu_id;
+	return newkey;
+}
+
+void clnp_reasm_key_destroy(void *ptr) {
+	XFREE(ptr);
+}
+
+uint32_t clnp_reasm_key_hash(void const *ptr) {
+	struct clnp_reasm_key const *key = ptr;
+	uint32_t ret = key->src_addr * 11 + key->dst_addr * 23 + key->pdu_id * 31;
+	return ret;
+}
+
+bool clnp_reasm_key_compare(void const *key1, void const *key2) {
+	struct clnp_reasm_key const *k1 = key1;
+	struct clnp_reasm_key const *k2 = key2;
+	bool ret = k1->src_addr == k2->src_addr &&
+		k1->dst_addr == k2->dst_addr &&
+		k1->pdu_id == k2->pdu_id;
+	return ret;
+}
+
+static la_reasm_table_funcs clnp_reasm_funcs = {
+	.get_key = clnp_reasm_key_get,
+	.get_tmp_key = clnp_reasm_key_get,
+	.hash_key = clnp_reasm_key_hash,
+	.compare_keys = clnp_reasm_key_compare,
+	.destroy_key = clnp_reasm_key_destroy
+};
+
+#define CLNP_REASM_TABLE_CLEANUP_INTERVAL 20
 
 static la_proto_node *parse_clnp_pdu_payload(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	if(len == 0) {
@@ -484,8 +537,26 @@ la_proto_node *clnp_compressed_data_pdu_parse(uint8_t *buf, uint32_t len, uint32
 	uint32_t hdrlen = CLNP_COMPRESSED_MIN_LEN;
 	clnp_compressed_data_pdu_hdr_t *hdr = (clnp_compressed_data_pdu_hdr_t *)buf;
 	pdu->hdr = hdr;
-	if(hdr->exp != 0) hdrlen += 1;  // EXP flag = 1 means localRef/B octet is present
-	if(hdr->type & 1) hdrlen += 2;  // odd PDU type means PDU identifier is present
+	pdu->derived =
+		hdr->type == 0x6 ||
+		hdr->type == 0x7 ||
+		hdr->type == 0x9 ||
+		hdr->type == 0xa;
+	if(hdr->exp != 0) {
+		hdrlen += 1;  // EXP flag = 1 means localRef/B octet is present
+	}
+	pdu->is_segmentation_permitted =
+		hdr->type == 0x1 || hdr->type == 0x3 || pdu->derived;
+	if(pdu->is_segmentation_permitted) {
+		hdrlen += 2;  // if SP flag is on, then PDU identifier is present
+	}
+	if(pdu->derived) {
+		hdrlen += 4;  // If PDU is fragmented, then the offset and total length fields are present
+	}
+	pdu->more_segments = hdr->type == 0x7 || hdr->type == 0xa;
+	// hdr->lifetime is expressed in half-seconds
+	pdu->lifetime.tv_sec = hdr->lifetime >> 1;
+	pdu->lifetime.tv_usec = 500000 * (hdr->lifetime & 1);
 
 	debug_print(D_PROTO, "hdrlen: %u type: %02x prio: %02x lifetime: %02x flags: %02x exp: %d lref_a: %02x\n",
 			hdrlen, hdr->type, hdr->priority, hdr->lifetime, hdr->flags.val, hdr->exp, hdr->lref_a);
@@ -502,14 +573,56 @@ la_proto_node *clnp_compressed_data_pdu_parse(uint8_t *buf, uint32_t len, uint32
 	} else {
 		pdu->lref = (uint16_t)(hdr->lref_a);
 	}
-	if(hdr->type & 1) {
+	if(pdu->is_segmentation_permitted) {
 		pdu->pdu_id = extract_uint16_msbfirst(buf);
-		pdu->pdu_id_present = true;
 		buf += 2; len -= 2;
-	} else {
-		pdu->pdu_id_present = false;
 	}
-	node->next = parse_clnp_pdu_payload(buf, len, msg_type);
+	if(pdu->derived) {
+		pdu->offset = extract_uint16_msbfirst(buf);
+		// Skip PDU total length field (2 octets). We don't use this, since
+		// it includes the length of the full CLNP header, which is unknown
+		// in compressed PDUs.
+		buf += 4; len -= 4;
+	}
+
+	bool decode_payload = true;
+	if(pdu->derived && rtables != NULL) {   // reassembly engine is enabled
+		decode_payload = false;
+		la_reasm_table *clnp_rtable = la_reasm_table_lookup(rtables, &proto_DEF_clnp_compressed_data_pdu);
+		if(clnp_rtable == NULL) {
+			clnp_rtable = la_reasm_table_new(rtables, &proto_DEF_clnp_compressed_data_pdu,
+					clnp_reasm_funcs, CLNP_REASM_TABLE_CLEANUP_INTERVAL);
+		}
+		struct clnp_reasm_key reasm_key = {
+			.src_addr = src_addr, .dst_addr = dst_addr, .pdu_id = pdu->pdu_id
+		};
+		pdu->rstatus = reasm_fragment_add(clnp_rtable,
+				&(reasm_fragment_info){
+				.pdu_info = &reasm_key,
+				.fragment_data = buf,
+				.fragment_data_len = len,
+				.rx_time = rx_time,
+				.reasm_timeout = pdu->lifetime,
+				.offset = pdu->offset,
+				.is_final_fragment = !pdu->more_segments,
+				});
+		debug_print(D_MISC, "PDU %d: rstatus: %s\n", pdu->pdu_id, reasm_status_name_get(pdu->rstatus));
+		int reassembled_len = 0;
+		if(pdu->rstatus == REASM_COMPLETE &&
+				(reassembled_len = reasm_payload_get(clnp_rtable, &reasm_key, &buf)) > 0) {
+			len = reassembled_len;
+			// buf now points onto a newly allocated buffer.
+			// Keep the pointer for freeing it later.
+			pdu->reasm_buf = buf;
+			decode_payload = true;
+		} else if(pdu->rstatus == REASM_SKIPPED) {
+			decode_payload = true;
+		}
+	}
+	node->next = decode_payload == true ?
+		parse_clnp_pdu_payload(buf, len, msg_type) :
+		unknown_proto_pdu_new(buf, len);
+
 	pdu->err = false;
 	return node;
 fail:
@@ -531,8 +644,14 @@ void clnp_compressed_data_pdu_format_text(la_vstring *vstr, void const *data, in
 	indent++;
 	LA_ISPRINTF(vstr, indent, "LRef: 0x%x Prio: %u Lifetime: %u Flags: 0x%02x\n",
 			pdu->lref, pdu->hdr->priority, pdu->hdr->lifetime, pdu->hdr->flags.val);
-	if(pdu->pdu_id_present) {
+	if(pdu->is_segmentation_permitted) {
 		LA_ISPRINTF(vstr, indent, "PDU Id: %u\n", pdu->pdu_id);
+	}
+	if(pdu->derived) {
+		LA_ISPRINTF(vstr, indent, "Offset: %hu More: %d\n",
+				pdu->offset, pdu->more_segments);
+		LA_ISPRINTF(vstr, indent, "CLNP reasm status: %s\n",
+				reasm_status_name_get(pdu->rstatus));
 	}
 }
 
@@ -550,8 +669,13 @@ void clnp_compressed_data_pdu_format_json(la_vstring *vstr, void const *data) {
 	la_json_append_int64(vstr, "priority", pdu->hdr->priority);
 	la_json_append_int64(vstr, "lifetime", pdu->hdr->lifetime);
 	la_json_append_int64(vstr, "flags", pdu->hdr->flags.val);
-	if(pdu->pdu_id_present) {
+	if(pdu->is_segmentation_permitted) {
 		la_json_append_int64(vstr, "pdu_id", pdu->pdu_id);
+	}
+	if(pdu->derived) {
+		la_json_append_int64(vstr, "offset", pdu->offset);
+		la_json_append_bool(vstr, "more", pdu->more_segments);
+		la_json_append_string(vstr, "reasm_status", reasm_status_name_get(pdu->rstatus));
 	}
 }
 

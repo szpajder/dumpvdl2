@@ -285,6 +285,7 @@ add_library (dumpvdl2_base OBJECT
 	output-common.c
 	output-file.c
 	output-udp.c
+	reassembly.c
 	rs.c
 	tlv.c
 	util.c
