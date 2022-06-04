@@ -61,7 +61,8 @@ typedef struct {
 
 	struct timeval reasm_timeout;       /* reassembly timeout to be applied to this message */
 
-	la_list *fragment_list;          /* payloads of all fragments gathered so far */
+	la_list *fragment_list;             /* payloads of all fragments gathered so far */
+	bool have_first_fragment;           /* whether we've already collected the first fragment of this PDU */
 } reasm_table_entry;
 
 // fragment list entry
@@ -132,43 +133,25 @@ static void reasm_table_cleanup(la_reasm_table *rtable, struct timeval now) {
 reasm_status reasm_fragment_add(la_reasm_table *rtable, reasm_fragment_info const *finfo) {
 	ASSERT(rtable != NULL);
 	ASSERT(finfo != NULL);
-	if(finfo->pdu_info == NULL || finfo->offset < 0 || finfo->total_pdu_len < 1) {
+	if(finfo->pdu_info == NULL || finfo->offset < 0) {
 		return REASM_ARGS_INVALID;
 	}
 	if(finfo->fragment_data == NULL || finfo->fragment_data_len < 1) {
 		return REASM_ARGS_INVALID;
 	}
 
-	int frag_end = finfo->offset + finfo->fragment_data_len - 1;
-	// Skip non-fragmented packets
+	// Skip non-fragmented packets without further processing.
 	if(finfo->is_final_fragment && finfo->offset == 0) {
-		if(frag_end + 1 == finfo->total_pdu_len) {
-			return REASM_SKIPPED;
-		} else {
-			return REASM_BAD_LEN;
-		}
+		return REASM_SKIPPED;
 	}
 
-	// Don't allow zero timeout. This would prevent stale rt_entries from being expired,
-	// causing a massive memory leak.
+	// Don't allow zero timeout. This would prevent stale rt_entries from being
+	// expired, causing a massive memory leak.
 	if(finfo->reasm_timeout.tv_sec == 0 && finfo->reasm_timeout.tv_usec == 0) {
 		return REASM_ARGS_INVALID;
 	}
 
-	// Basic sanitization of the fragment offset
-	// Does the fragment extend past total PDU length?
-	if(frag_end >= finfo->total_pdu_len) {
-		return REASM_BAD_OFFSET;
-	}
-	// If this is the final fragment, it shall end at PDU length
-	if(finfo->is_final_fragment && frag_end + 1 != finfo->total_pdu_len) {
-		return REASM_BAD_OFFSET;
-	// Otherwise it shall not end at PDU length
-	// (this also disallows 0-length fragments)
-	} else if(!finfo->is_final_fragment && frag_end + 1 == finfo->total_pdu_len) {
-		return REASM_BAD_OFFSET;
-	}
-
+	int frag_end = finfo->offset + finfo->fragment_data_len - 1;
 	reasm_status ret = REASM_UNKNOWN;
 	void *lookup_key = rtable->funcs.get_tmp_key(finfo->pdu_info);
 	ASSERT(lookup_key != NULL);
@@ -179,7 +162,7 @@ restart:
 		rt_entry = XCALLOC(1, sizeof(reasm_table_entry));
 		rt_entry->first_frag_rx_time = finfo->rx_time;
 		rt_entry->reasm_timeout = finfo->reasm_timeout;
-		rt_entry->total_pdu_len = finfo->total_pdu_len;
+		rt_entry->total_pdu_len = 0;        // to be computed later
 		rt_entry->frags_collected_total_len = 0;
 		debug_print(D_MISC, "Adding new rt_table entry (rx_time: %lu.%lu timeout: %lu.%lu)\n",
 				rt_entry->first_frag_rx_time.tv_sec, rt_entry->first_frag_rx_time.tv_usec,
@@ -222,6 +205,21 @@ restart:
 		}
 	}
 
+	// If this is the final fragment of this PDU, then compute the
+	// total PDU length (provided that it has not been computed earlier)
+
+	if(finfo->is_final_fragment) {
+		if(rt_entry->total_pdu_len < 1) {
+			rt_entry->total_pdu_len = finfo->offset + finfo->fragment_data_len;
+			debug_print(D_MISC, "Final fragment: offset %d fragment_data_len %d -> total_pdu_len %d\n",
+					finfo->offset, finfo->fragment_data_len, rt_entry->total_pdu_len);
+		} else {
+			debug_print(D_MISC, "Multiple final fragments in this PDU? Discarding.\n");
+			ret = REASM_BOGUS_FINAL_FRAGMENT;
+			goto cleanup;
+		}
+	}
+
 	// All checks succeeded. Add the fragment to the list
 	debug_print(D_MISC, "Good fragment (start=%d end=%d), adding to the list\n",
 			current_fragment->start, current_fragment->end);
@@ -235,7 +233,7 @@ restart:
 	// Reassembly is complete if total_pdu_len for this rt_entry is set
 	// and we've already collected the required amount of data.
 
-	if(rt_entry->frags_collected_total_len < rt_entry->total_pdu_len) {
+	if(rt_entry->total_pdu_len < 1 || rt_entry->frags_collected_total_len < rt_entry->total_pdu_len) {
 		ret = REASM_IN_PROGRESS;
 	} else if(rt_entry->frags_collected_total_len == rt_entry->total_pdu_len) {
 		ret = REASM_COMPLETE;
@@ -329,9 +327,9 @@ char const *reasm_status_name_get(reasm_status status) {
 		[REASM_IN_PROGRESS] = "in progress",
 		[REASM_SKIPPED] = "skipped",
 		[REASM_DUPLICATE] = "duplicate",
-		[REASM_BAD_OFFSET] = "bad offset",
 		[REASM_BAD_LEN] = "bad length",
-		[REASM_OVERLAP] = "fragment overlap",
+		[REASM_OVERLAP] = "overlapped fragment",
+		[REASM_BOGUS_FINAL_FRAGMENT] = "bogus final fragment",
 		[REASM_ARGS_INVALID] = "invalid args"
 	};
 	if(status < 0 || status > REASM_STATUS_MAX) {

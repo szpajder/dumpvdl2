@@ -47,7 +47,6 @@ typedef struct {
 
 	int fragment_data_len;          /* fragment data buffer length */
 
-	int total_pdu_len;              /* Total length of the reassembled message */
 
 	struct timeval rx_time;         /* fragment receive timestamp */
 
@@ -67,6 +66,7 @@ typedef enum {
 	REASM_BAD_OFFSET,
 	REASM_BAD_LEN,
 	REASM_OVERLAP,
+	REASM_BOGUS_FINAL_FRAGMENT,
 	REASM_ARGS_INVALID
 } reasm_status;
 #define REASM_STATUS_MAX REASM_ARGS_INVALID
