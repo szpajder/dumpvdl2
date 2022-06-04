@@ -535,7 +535,9 @@ la_proto_node *clnp_compressed_data_pdu_parse(uint8_t *buf, uint32_t len, uint32
 	}
 
 	uint32_t hdrlen = CLNP_COMPRESSED_MIN_LEN;
-	clnp_compressed_data_pdu_hdr_t *hdr = (clnp_compressed_data_pdu_hdr_t *)buf;
+	uint8_t *ptr = buf;
+	uint32_t remaining = len;
+	clnp_compressed_data_pdu_hdr_t *hdr = (clnp_compressed_data_pdu_hdr_t *)ptr;
 	pdu->hdr = hdr;
 	pdu->derived =
 		hdr->type == 0x6 ||
@@ -561,28 +563,34 @@ la_proto_node *clnp_compressed_data_pdu_parse(uint8_t *buf, uint32_t len, uint32
 	debug_print(D_PROTO, "hdrlen: %u type: %02x prio: %02x lifetime: %02x flags: %02x exp: %d lref_a: %02x\n",
 			hdrlen, hdr->type, hdr->priority, hdr->lifetime, hdr->flags.val, hdr->exp, hdr->lref_a);
 
-	if(len < hdrlen) {
-		debug_print(D_PROTO, "header truncated: buf_len %u < hdr_len %u\n", len, hdrlen);
+	if(remaining < hdrlen) {
+		debug_print(D_PROTO, "header truncated: buf_len %u < hdr_len %u\n", remaining, hdrlen);
 		goto fail;
 	}
-	buf += 4; len -= 4;
+	ptr += 4; remaining -= 4;
 	if(hdr->exp != 0) {
-		debug_print(D_PROTO_DETAIL, "lref_b: %02x\n", buf[0]);
-		pdu->lref = ((uint16_t)(hdr->lref_a) << 8) | (uint16_t)buf[0];
-		buf++; len--;
+		debug_print(D_PROTO_DETAIL, "lref_b: %02x\n", ptr[0]);
+		pdu->lref = ((uint16_t)(hdr->lref_a) << 8) | (uint16_t)ptr[0];
+		ptr++; remaining--;
 	} else {
 		pdu->lref = (uint16_t)(hdr->lref_a);
 	}
 	if(pdu->is_segmentation_permitted) {
-		pdu->pdu_id = extract_uint16_msbfirst(buf);
-		buf += 2; len -= 2;
+		pdu->pdu_id = extract_uint16_msbfirst(ptr);
+		ptr += 2; remaining -= 2;
 	}
 	if(pdu->derived) {
-		pdu->offset = extract_uint16_msbfirst(buf);
-		// Skip PDU total length field (2 octets). We don't use this, since
-		// it includes the length of the full CLNP header, which is unknown
-		// in compressed PDUs.
-		buf += 4; len -= 4;
+		pdu->offset = extract_uint16_msbfirst(ptr);
+		uint32_t total_pdu_len = extract_uint16_msbfirst(ptr + 2);
+		// Rudimentary check if the PDU makes sense, ie. whether the offset + length does
+		// not exceed the value of total PDU length field. It might be just an incomplete
+		// X.25 reassembly result, which resembles a CLNP derived PDU.
+		ptr += 4; remaining -= 4;
+		if(pdu->offset + remaining > total_pdu_len) {
+			debug_print(D_PROTO, "offset %hu + fragment data length %u > total_pdu_len %u. "
+					"Probably it's not a CLNP derived PDU.\n", pdu->offset, remaining, total_pdu_len);
+			goto fail;
+		}
 	}
 
 	bool decode_payload = true;
@@ -599,8 +607,8 @@ la_proto_node *clnp_compressed_data_pdu_parse(uint8_t *buf, uint32_t len, uint32
 		pdu->rstatus = reasm_fragment_add(clnp_rtable,
 				&(reasm_fragment_info){
 				.pdu_info = &reasm_key,
-				.fragment_data = buf,
-				.fragment_data_len = len,
+				.fragment_data = ptr,
+				.fragment_data_len = remaining,
 				.rx_time = rx_time,
 				.reasm_timeout = pdu->lifetime,
 				.offset = pdu->offset,
@@ -609,19 +617,19 @@ la_proto_node *clnp_compressed_data_pdu_parse(uint8_t *buf, uint32_t len, uint32
 		debug_print(D_MISC, "PDU %d: rstatus: %s\n", pdu->pdu_id, reasm_status_name_get(pdu->rstatus));
 		int reassembled_len = 0;
 		if(pdu->rstatus == REASM_COMPLETE &&
-				(reassembled_len = reasm_payload_get(clnp_rtable, &reasm_key, &buf)) > 0) {
-			len = reassembled_len;
-			// buf now points onto a newly allocated buffer.
+				(reassembled_len = reasm_payload_get(clnp_rtable, &reasm_key, &ptr)) > 0) {
+			remaining = reassembled_len;
+			// ptr now points onto a newly allocated buffer.
 			// Keep the pointer for freeing it later.
-			pdu->reasm_buf = buf;
+			pdu->reasm_buf = ptr;
 			decode_payload = true;
 		} else if(pdu->rstatus == REASM_SKIPPED) {
 			decode_payload = true;
 		}
 	}
 	node->next = decode_payload == true ?
-		parse_clnp_pdu_payload(buf, len, msg_type) :
-		unknown_proto_pdu_new(buf, len);
+		parse_clnp_pdu_payload(ptr, remaining, msg_type) :
+		unknown_proto_pdu_new(ptr, remaining);
 
 	pdu->err = false;
 	return node;
