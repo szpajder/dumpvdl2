@@ -586,14 +586,14 @@ la_proto_node *clnp_compressed_data_pdu_parse(uint8_t *buf, uint32_t len, uint32
 	}
 	if(pdu->derived) {
 		pdu->offset = extract_uint16_msbfirst(ptr);
-		uint32_t total_pdu_len = extract_uint16_msbfirst(ptr + 2);
+		pdu->total_pdu_len = extract_uint16_msbfirst(ptr + 2);
 		// Rudimentary check if the PDU makes sense, ie. whether the offset + length does
 		// not exceed the value of total PDU length field. It might be just an incomplete
 		// X.25 reassembly result, which resembles a CLNP derived PDU.
 		ptr += 4; remaining -= 4;
-		if(pdu->offset + remaining > total_pdu_len) {
+		if(pdu->offset + remaining > pdu->total_pdu_len) {
 			debug_print(D_PROTO, "offset %hu + fragment data length %u > total_pdu_len %u. "
-					"Probably it's not a CLNP derived PDU.\n", pdu->offset, remaining, total_pdu_len);
+					"Probably it's not a CLNP derived PDU.\n", pdu->offset, remaining, pdu->total_pdu_len);
 			goto fail;
 		}
 		if(remaining < 1) {
@@ -667,6 +667,7 @@ void clnp_compressed_data_pdu_format_text(la_vstring *vstr, void const *data, in
 	if(pdu->derived) {
 		LA_ISPRINTF(vstr, indent, "Segment offset: %hu More: %d\n",
 				pdu->offset, pdu->more_segments);
+		LA_ISPRINTF(vstr, indent, "PDU total length: %hu\n", pdu->total_pdu_len);
 		LA_ISPRINTF(vstr, indent, "CLNP reasm status: %s\n",
 				reasm_status_name_get(pdu->rstatus));
 	}
@@ -691,6 +692,7 @@ void clnp_compressed_data_pdu_format_json(la_vstring *vstr, void const *data) {
 	}
 	if(pdu->derived) {
 		la_json_append_int64(vstr, "offset", pdu->offset);
+	    la_json_append_int64(vstr, "pdu_total_len", pdu->total_pdu_len);
 		la_json_append_bool(vstr, "more", pdu->more_segments);
 		la_json_append_string(vstr, "reasm_status", reasm_status_name_get(pdu->rstatus));
 	}

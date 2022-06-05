@@ -119,8 +119,7 @@ typedef struct {
 	reasm_status rstatus;
 	struct timeval lifetime;
 	uint16_t lref;
-	uint16_t pdu_id;
-	uint16_t offset;
+	uint16_t pdu_id, offset, total_pdu_len;
 	bool derived;
 	bool is_segmentation_permitted;
 	bool more_segments;
