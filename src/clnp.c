@@ -696,9 +696,19 @@ void clnp_compressed_data_pdu_format_json(la_vstring *vstr, void const *data) {
 	}
 }
 
+void clnp_compressed_data_pdu_destroy(void *data) {
+	if(data == NULL) {
+		return;
+	}
+	clnp_compressed_data_pdu_t *pdu = data;
+	XFREE(pdu->reasm_buf);
+	XFREE(data);
+}
+
+
 la_type_descriptor const proto_DEF_clnp_compressed_data_pdu = {
 	.format_text = clnp_compressed_data_pdu_format_text,
 	.format_json = clnp_compressed_data_pdu_format_json,
 	.json_key = "clnp",
-	.destroy = NULL,
+	.destroy = clnp_compressed_data_pdu_destroy,
 };
