@@ -132,11 +132,13 @@ void mirisdr_init(vdl2_state_t *ctx, char *dev, int flavour, uint32_t freq, floa
 	int device = mirisdr_verbose_device_search(dev);
 	if(device < 0)
 		_exit(1);
-	r = mirisdr_open(&mirisdr, hw_flavour, device);
+	r = mirisdr_open(&mirisdr, device);
 	if(mirisdr == NULL) {
 		fprintf(stderr, "Failed to open mirisdr device #%u: error %d\n", device, r);
 		_exit(1);
 	}
+
+	mirisdr_set_hw_flavour(mirisdr, hw_flavour);
 
 	if(usb_xfer_mode == 0)
 		r = mirisdr_set_transfer(mirisdr, "ISOC");
