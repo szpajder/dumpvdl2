@@ -451,9 +451,9 @@ void clnp_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 	if(pdu->hdr->sp != 0) {
 		LA_ISPRINTF(vstr, indent, "%s", "Segmentation:\n");
 		indent++;
-		LA_ISPRINTF(vstr, indent, "PDU Id: 0x%x\n", pdu->pdu_id);
-		LA_ISPRINTF(vstr, indent, "Segment offset: %u\n", pdu->seg_off);
-		LA_ISPRINTF(vstr, indent, "PDU total length: %u\n", pdu->total_pdu_len);
+		LA_ISPRINTF(vstr, indent, "PDU Id: 0x%hx\n", pdu->pdu_id);
+		LA_ISPRINTF(vstr, indent, "Segment offset: %hu\n", pdu->seg_off);
+		LA_ISPRINTF(vstr, indent, "PDU total length: %hu\n", pdu->total_pdu_len);
 		indent--;
 	}
 	if(pdu->options != NULL) {
@@ -659,13 +659,13 @@ void clnp_compressed_data_pdu_format_text(la_vstring *vstr, void const *data, in
 	}
 	LA_ISPRINTF(vstr, indent, "%s", "X.233 CLNP Data (compressed header):\n");
 	indent++;
-	LA_ISPRINTF(vstr, indent, "LRef: 0x%x Prio: %u Lifetime: %u Flags: 0x%02x\n",
+	LA_ISPRINTF(vstr, indent, "LRef: 0x%x Prio: %hhu Lifetime: %hhu Flags: 0x%02hhx\n",
 			pdu->lref, pdu->hdr->priority, pdu->hdr->lifetime, pdu->hdr->flags.val);
 	if(pdu->is_segmentation_permitted) {
-		LA_ISPRINTF(vstr, indent, "PDU Id: %u\n", pdu->pdu_id);
+		LA_ISPRINTF(vstr, indent, "PDU Id: 0x%hx\n", pdu->pdu_id);
 	}
 	if(pdu->derived) {
-		LA_ISPRINTF(vstr, indent, "Offset: %hu More: %d\n",
+		LA_ISPRINTF(vstr, indent, "Segment offset: %hu More: %d\n",
 				pdu->offset, pdu->more_segments);
 		LA_ISPRINTF(vstr, indent, "CLNP reasm status: %s\n",
 				reasm_status_name_get(pdu->rstatus));
