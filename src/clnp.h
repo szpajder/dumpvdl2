@@ -61,7 +61,7 @@ typedef struct {
 	// address part
 	octet_string_t src_nsap, dst_nsap;
 	// decoded fields from fixed part
-	float lifetime_sec;
+	struct timeval lifetime;
 	uint16_t seg_len;
 	uint16_t cksum;
 	// segmentation part

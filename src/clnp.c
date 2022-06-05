@@ -265,7 +265,9 @@ la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
 		debug_print(D_PROTO, "unsupported PDU version %u\n", hdr->version);
 		goto fail;
 	}
-	pdu->lifetime_sec = (float)hdr->lifetime * 0.5f;
+	// hdr->lifetime is expressed in half-seconds
+	pdu->lifetime.tv_sec = hdr->lifetime >> 1;
+	pdu->lifetime.tv_usec = 500000 * (hdr->lifetime & 1);
 	pdu->seg_len = extract_uint16_msbfirst(hdr->seg_len);
 	pdu->cksum = extract_uint16_msbfirst(hdr->cksum);
 	debug_print(D_PROTO_DETAIL, "seg_len: %u, cksum: 0x%x\n", pdu->seg_len, pdu->cksum);
@@ -440,7 +442,8 @@ void clnp_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 	octet_string_with_ascii_format_text(vstr, &pdu->dst_nsap, 0);
 	EOL(vstr);
 
-	LA_ISPRINTF(vstr, indent, "Lifetime: %.1f sec\n", pdu->lifetime_sec);
+	LA_ISPRINTF(vstr, indent, "Lifetime: %.1f sec\n",
+			(double)pdu->lifetime.tv_sec + (double)pdu->lifetime.tv_usec / 1e6 );
 	LA_ISPRINTF(vstr, indent, "Flags:%s%s%s\n",
 			pdu->hdr->sp ? " SP" : "",
 			pdu->hdr->ms ? " MS" : "",
@@ -480,7 +483,8 @@ void clnp_pdu_format_json(la_vstring * vstr, void const *data) {
 	SAFE_JSON_APPEND_STRING(vstr, "pdu_type_name", pdu_type);
 	la_json_append_octet_string(vstr, "src_nsap", pdu->src_nsap.buf, pdu->src_nsap.len);
 	la_json_append_octet_string(vstr, "dst_nsap", pdu->dst_nsap.buf, pdu->dst_nsap.len);
-	la_json_append_double(vstr, "lifetime", pdu->lifetime_sec);
+	la_json_append_double(vstr, "lifetime",
+			(double)pdu->lifetime.tv_sec + (double)pdu->lifetime.tv_usec / 1e6 );
 
 	la_json_object_start(vstr, "flags");
 	la_json_append_bool(vstr, "SP", pdu->hdr->sp);
@@ -659,8 +663,10 @@ void clnp_compressed_data_pdu_format_text(la_vstring *vstr, void const *data, in
 	}
 	LA_ISPRINTF(vstr, indent, "%s", "X.233 CLNP Data (compressed header):\n");
 	indent++;
-	LA_ISPRINTF(vstr, indent, "LRef: 0x%x Prio: %hhu Lifetime: %hhu Flags: 0x%02hhx\n",
-			pdu->lref, pdu->hdr->priority, pdu->hdr->lifetime, pdu->hdr->flags.val);
+	LA_ISPRINTF(vstr, indent, "LRef: 0x%x Prio: %hhu Flags: 0x%02hhx\n",
+			pdu->lref, pdu->hdr->priority, pdu->hdr->flags.val);
+	LA_ISPRINTF(vstr, indent, "Lifetime: %.1f sec\n",
+			(double)pdu->lifetime.tv_sec + (double)pdu->lifetime.tv_usec / 1e6 );
 	if(pdu->is_segmentation_permitted) {
 		LA_ISPRINTF(vstr, indent, "PDU Id: 0x%hx\n", pdu->pdu_id);
 	}
@@ -685,7 +691,8 @@ void clnp_compressed_data_pdu_format_json(la_vstring *vstr, void const *data) {
 	la_json_append_bool(vstr, "compressed", true);
 	la_json_append_int64(vstr, "local_ref_a", pdu->lref);
 	la_json_append_int64(vstr, "priority", pdu->hdr->priority);
-	la_json_append_int64(vstr, "lifetime", pdu->hdr->lifetime);
+	la_json_append_double(vstr, "lifetime",
+			(double)pdu->lifetime.tv_sec + (double)pdu->lifetime.tv_usec / 1e6 );
 	la_json_append_int64(vstr, "flags", pdu->hdr->flags.val);
 	if(pdu->is_segmentation_permitted) {
 		la_json_append_int64(vstr, "pdu_id", pdu->pdu_id);
