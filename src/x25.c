@@ -558,7 +558,8 @@ static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *
 	}
 	uint8_t proto = *buf;
 	if(proto == SN_PROTO_CLNP) {
-		return clnp_pdu_parse(buf, len, msg_type);
+		return clnp_pdu_parse(buf, len, msg_type,
+				rtables, rx_time, src_addr, dst_addr);
 	} else if(proto == SN_PROTO_ESIS) {
 		return esis_pdu_parse(buf, len, msg_type);
 	}

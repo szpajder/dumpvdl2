@@ -18,8 +18,10 @@
  */
 #include <stdint.h>
 #include <stdbool.h>
+#include <sys/time.h>               // struct timeval
 #include <libacars/libacars.h>      // la_proto_node
 #include <libacars/list.h>          // la_list
+#include <libacars/reassembly.h>    // la_reasm_ctx
 
 // These defines apply to upper nibble of the TPDU code only
 #define COTP_TPDU_CR    0xe0
@@ -35,7 +37,9 @@
 
 typedef struct {
 	la_list *variable_part_params;
+	uint8_t *reasm_buf;             /* Raw reassembled payload */
 	uint32_t tpdu_seq;              /* TPDU sequence number (valid for DT, ED, AK) */
+	la_reasm_status rstatus;        /* Reassembly status */
 	uint16_t src_ref, dst_ref;
 	uint16_t credit;                /* Credit for AK, RJ, initial credit for CR, CC */
 	int16_t x225_transport_disc_reason;
@@ -51,4 +55,5 @@ typedef struct {
 } cotp_pdu_t;
 
 // cotp.c
-la_proto_node *cotp_concatenated_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type);
+la_proto_node *cotp_concatenated_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
+		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr);

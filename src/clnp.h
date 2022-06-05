@@ -18,12 +18,13 @@
  */
 #include <stdint.h>
 #include <stdbool.h>
-#include <sys/time.h>           // struct timeval
-#include <libacars/libacars.h>  // la_proto_node
-#include <libacars/list.h>      // la_list
+#include <sys/time.h>               // struct timeval
+#include <libacars/libacars.h>      // la_proto_node
+#include <libacars/list.h>          // la_list
+#include <libacars/reassembly.h>    // la_reasm_ctx
 #include "config.h"
 #include "x25.h"
-#include "reassembly.h"         // la_reasm_ctx
+#include "reassembly.h"             // reasm_status
 
 #define CLNP_NPDU_DT  0x1c
 #define CLNP_NDPU_MD  0x1d
@@ -127,6 +128,7 @@ typedef struct {
 } clnp_compressed_data_pdu_t;
 
 // clnp.c
-la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type);
+la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
+		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr);
 la_proto_node *clnp_compressed_data_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
 		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr);

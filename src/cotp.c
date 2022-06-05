@@ -1,7 +1,7 @@
 /*
  *  This file is a part of dumpvdl2
  *
- *  Copyright (c) 2017-2020 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2017-2022 Tomasz Lemiech <szpajder@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,15 +21,76 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>               // struct timeval
 #include <libacars/libacars.h>      // la_proto_node
 #include <libacars/vstring.h>       // la_vstring
 #include <libacars/dict.h>          // la_dict
 #include <libacars/list.h>          // la_list
 #include <libacars/json.h>
+#include <libacars/reassembly.h>
 #include "dumpvdl2.h"
 #include "tlv.h"
 #include "cotp.h"
 #include "icao.h"
+
+/***************************************************************************
+ * Packet reassembly types and callbacks
+ **************************************************************************/
+
+#define COTP_REASM_TABLE_CLEANUP_INTERVAL 10
+#define COTP_REASM_TIMEOUT_SECONDS 30
+
+struct cotp_reasm_key {
+	uint32_t src_addr, dst_addr;
+	uint16_t dst_ref;
+};
+
+// Allocates COTP persistent key for a new hash entry.
+// As there are no allocations performed for cotp_reasm_key structure members,
+// it is used as a temporary key allocator as well.
+void *cotp_key_get(void const *msg) {
+	ASSERT(msg != NULL);
+	struct cotp_reasm_key const *key = msg;
+	NEW(struct cotp_reasm_key, newkey);
+	newkey->src_addr = key->src_addr;
+	newkey->dst_addr = key->dst_addr;
+	newkey->dst_ref = key->dst_ref;
+	return (void *)newkey;
+}
+
+void cotp_key_destroy(void *ptr) {
+	XFREE(ptr);
+}
+
+uint32_t cotp_key_hash(void const *key) {
+	struct cotp_reasm_key const *k = key;
+	return k->src_addr * 11 + k->dst_addr * 23 + k->dst_ref * 31;
+}
+
+bool cotp_key_compare(void const *key1, void const *key2) {
+	struct cotp_reasm_key const *k1 = key1;
+	struct cotp_reasm_key const *k2 = key2;
+	return k1->src_addr == k2->src_addr &&
+		k1->dst_addr == k2->dst_addr &&
+		k1->dst_ref == k2->dst_ref;
+}
+
+static la_reasm_table_funcs cotp_reasm_funcs = {
+	.get_key = cotp_key_get,
+	.get_tmp_key = cotp_key_get,
+	.hash_key = cotp_key_hash,
+	.compare_keys = cotp_key_compare,
+	.destroy_key = cotp_key_destroy
+};
+
+static struct timeval cotp_reasm_timeout = {
+	.tv_sec = COTP_REASM_TIMEOUT_SECONDS,
+	.tv_usec = 0
+};
+
+/***************************************************************************
+ * Option parsers and formatters
+ **************************************************************************/
 
 // X.225 Session Protocol Machine disconnect reason codes
 #define SPM_PROTOCOL_ERROR 0
@@ -378,7 +439,8 @@ typedef struct {
 	int consumed;
 } cotp_pdu_parse_result;
 
-static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
+		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
 	ASSERT(buf != NULL);
 	cotp_pdu_parse_result r = { NULL, NULL, 0 };
 	NEW(cotp_pdu_t, pdu);
@@ -534,7 +596,45 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 					r.next_node = unknown_proto_pdu_new(ptr, remaining);
 				}
 			} else {
-				r.next_node = icao_apdu_parse(ptr, remaining, msg_type);
+				bool decode_payload = true;
+				// perform reassembly if it's a data TPDU and reassembly engine is enabled
+				if((pdu->code == COTP_TPDU_DT || pdu->code == COTP_TPDU_ED) && rtables != NULL) {
+					la_reasm_table *cotp_rtable = la_reasm_table_lookup(rtables, &proto_DEF_cotp_concatenated_pdu);
+					if(cotp_rtable == NULL) {
+						cotp_rtable = la_reasm_table_new(rtables, &proto_DEF_cotp_concatenated_pdu,
+								cotp_reasm_funcs, COTP_REASM_TABLE_CLEANUP_INTERVAL);
+					}
+					struct cotp_reasm_key reasm_key = {
+						.src_addr = src_addr, .dst_addr = dst_addr, .dst_ref = pdu->dst_ref
+					};
+					pdu->rstatus = la_reasm_fragment_add(cotp_rtable,
+							&(la_reasm_fragment_info){
+							.msg_info = &reasm_key,
+							.msg_data = ptr,
+							.msg_data_len = remaining,
+							.total_pdu_len = 0,     // not used here
+							.seq_num = pdu->tpdu_seq,
+							.seq_num_first = SEQ_FIRST_NONE,
+							.seq_num_wrap = pdu->extended ? 0x7fffffffu : 0x7fu,
+							.is_final_fragment = pdu->eot != 0,
+							.rx_time = rx_time,
+							.reasm_timeout = cotp_reasm_timeout
+							});
+					int reassembled_len = 0;
+					if(pdu->rstatus == LA_REASM_COMPLETE &&
+							(reassembled_len = la_reasm_payload_get(cotp_rtable, &reasm_key, &ptr)) > 0) {
+						remaining = reassembled_len;
+						decode_payload = true;
+						// cotp_data is a newly allocated buffer; keep the pointer for freeing it later
+						pdu->reasm_buf = ptr;
+					} else if((pdu->rstatus == LA_REASM_IN_PROGRESS ||
+								pdu->rstatus == LA_REASM_DUPLICATE) &&
+							Config.decode_fragments == false) {
+						decode_payload = false;
+					}
+				}
+				r.next_node = decode_payload ? icao_apdu_parse(ptr, remaining, msg_type) :
+					unknown_proto_pdu_new(ptr, remaining);
 			}
 		}
 		r.consumed = len;   // whole buffer consumed
@@ -549,7 +649,8 @@ fail:
 	return r;
 }
 
-la_proto_node *cotp_concatenated_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+la_proto_node *cotp_concatenated_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
+		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
 	la_list *pdu_list = NULL;
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_cotp_concatenated_pdu;
@@ -563,7 +664,7 @@ la_proto_node *cotp_concatenated_pdu_parse(uint8_t *buf, uint32_t len, uint32_t 
 		// concatenated PDU instead of having a separate next node for each contained PDU,
 		// which (the next node) would be NULL anyway, except for the last one.
 		debug_print(D_PROTO_DETAIL, "Remaining length: %u\n", len);
-		cotp_pdu_parse_result r = cotp_pdu_parse(buf, len, msg_type);
+		cotp_pdu_parse_result r = cotp_pdu_parse(buf, len, msg_type, rtables, rx_time, src_addr, dst_addr);
 		pdu_list = la_list_append(pdu_list, r.pdu);
 		if(r.next_node != NULL) {
 			// We reached final PDU and we have a next protocol node in the hierarchy.
@@ -680,6 +781,8 @@ static void output_cotp_pdu_as_text(void const *data, void const *ctx_ptr) {
 		case COTP_TPDU_ED:
 			LA_ISPRINTF(vstr, indent, "sseq: %u req_of_ack: %u EoT: %u\n",
 					pdu->tpdu_seq, pdu->roa, pdu->eot);
+			LA_ISPRINTF(vstr, indent, "COTP reasm status: %s\n",
+					la_reasm_status_name_get(pdu->rstatus));
 			break;
 		case COTP_TPDU_DR:
 			str = la_dict_search(cotp_dr_reasons, pdu->class_or_disc_reason);
@@ -759,6 +862,7 @@ static void output_cotp_pdu_as_json(void const *data, void const *ctx_ptr) {
 			la_json_append_int64(vstr, "sseq", pdu->tpdu_seq);
 			la_json_append_int64(vstr, "req_of_ack", pdu->roa);
 			la_json_append_int64(vstr, "eot", pdu->eot);
+			la_json_append_string(vstr, "reasm_status", la_reasm_status_name_get(pdu->rstatus));
 			break;
 		case COTP_TPDU_DR:
 			la_json_append_int64(vstr, "disc_reason_code", pdu->class_or_disc_reason);
@@ -804,6 +908,7 @@ void cotp_concatenated_pdu_format_json(la_vstring *vstr, void const *data) {
 static void cotp_pdu_destroy(void *ptr) {
 	cotp_pdu_t *pdu = ptr;
 	tlv_list_destroy(pdu->variable_part_params);
+	XFREE(pdu->reasm_buf);
 	XFREE(pdu);
 }
 

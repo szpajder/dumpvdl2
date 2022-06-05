@@ -84,7 +84,8 @@ static la_reasm_table_funcs clnp_reasm_funcs = {
 
 #define CLNP_REASM_TABLE_CLEANUP_INTERVAL 20
 
-static la_proto_node *parse_clnp_pdu_payload(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+static la_proto_node *parse_clnp_pdu_payload(uint8_t *buf, uint32_t len, uint32_t *msg_type,
+		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
 	if(len == 0) {
 		return NULL;
 	}
@@ -98,7 +99,8 @@ static la_proto_node *parse_clnp_pdu_payload(uint8_t *buf, uint32_t len, uint32_
 			break;
 		default:
 			// assume X.224 COTP TPDU
-			return cotp_concatenated_pdu_parse(buf, len, msg_type);
+			return cotp_concatenated_pdu_parse(buf, len, msg_type,
+					rtables, rx_time, src_addr, dst_addr);
 	}
 	return unknown_proto_pdu_new(buf, len);
 }
@@ -233,7 +235,8 @@ static la_dict const clnp_options[] = {
 	}
 };
 
-la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
+la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
+		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
 	NEW(clnp_pdu_t, pdu);
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_clnp_pdu;
@@ -308,10 +311,12 @@ la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type) {
 	// If this is an Error Report NPDU, the data part contains a header (and possibly some data)
 	// of the NPDU which caused the error, so we re-run CLNP parser here.
 	if(pdu->hdr->type == CLNP_NDPU_ER) {
-		node->next = clnp_pdu_parse(buf + hdr->len, len - hdr->len, msg_type);
+		node->next = clnp_pdu_parse(buf + hdr->len, len - hdr->len, msg_type,
+				rtables, rx_time, src_addr, dst_addr);
 	} else {
 		// Otherwise process as a normal CLNP payload.
-		node->next = parse_clnp_pdu_payload(buf + hdr->len, len - hdr->len, msg_type);
+		node->next = parse_clnp_pdu_payload(buf + hdr->len, len - hdr->len, msg_type,
+				rtables, rx_time, src_addr, dst_addr);
 	}
 	pdu->err = false;
 	return node;
@@ -632,7 +637,7 @@ la_proto_node *clnp_compressed_data_pdu_parse(uint8_t *buf, uint32_t len, uint32
 		}
 	}
 	node->next = decode_payload == true ?
-		parse_clnp_pdu_payload(ptr, remaining, msg_type) :
+		parse_clnp_pdu_payload(ptr, remaining, msg_type, rtables, rx_time, src_addr, dst_addr) :
 		unknown_proto_pdu_new(ptr, remaining);
 
 	pdu->err = false;
