@@ -65,7 +65,7 @@ typedef struct {
 	uint16_t seg_len;
 	uint16_t cksum;
 	// segmentation part
-	uint16_t pdu_id, seg_off, total_pdu_len;
+	uint16_t pdu_id, offset, total_pdu_len;
 	// error flags
 	bool err;
 } clnp_pdu_t;
@@ -116,7 +116,7 @@ typedef struct {
 typedef struct {
 	clnp_compressed_data_pdu_hdr_t *hdr;
 	uint8_t *reasm_buf;
-	reasm_status rstatus;
+	reasm_status reasm_status;
 	struct timeval lifetime;
 	uint16_t lref;
 	uint16_t pdu_id, offset, total_pdu_len;

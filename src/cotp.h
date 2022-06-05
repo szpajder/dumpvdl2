@@ -39,7 +39,7 @@ typedef struct {
 	la_list *variable_part_params;
 	uint8_t *reasm_buf;             /* Raw reassembled payload */
 	uint32_t tpdu_seq;              /* TPDU sequence number (valid for DT, ED, AK) */
-	la_reasm_status rstatus;        /* Reassembly status */
+	la_reasm_status reasm_status;   /* Reassembly status */
 	uint16_t src_ref, dst_ref;
 	uint16_t credit;                /* Credit for AK, RJ, initial credit for CR, CC */
 	int16_t x225_transport_disc_reason;

@@ -607,7 +607,7 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 					struct cotp_reasm_key reasm_key = {
 						.src_addr = src_addr, .dst_addr = dst_addr, .dst_ref = pdu->dst_ref
 					};
-					pdu->rstatus = la_reasm_fragment_add(cotp_rtable,
+					pdu->reasm_status = la_reasm_fragment_add(cotp_rtable,
 							&(la_reasm_fragment_info){
 							.msg_info = &reasm_key,
 							.msg_data = ptr,
@@ -621,14 +621,14 @@ static cotp_pdu_parse_result cotp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t
 							.reasm_timeout = cotp_reasm_timeout
 							});
 					int reassembled_len = 0;
-					if(pdu->rstatus == LA_REASM_COMPLETE &&
+					if(pdu->reasm_status == LA_REASM_COMPLETE &&
 							(reassembled_len = la_reasm_payload_get(cotp_rtable, &reasm_key, &ptr)) > 0) {
 						remaining = reassembled_len;
 						decode_payload = true;
 						// cotp_data is a newly allocated buffer; keep the pointer for freeing it later
 						pdu->reasm_buf = ptr;
-					} else if((pdu->rstatus == LA_REASM_IN_PROGRESS ||
-								pdu->rstatus == LA_REASM_DUPLICATE) &&
+					} else if((pdu->reasm_status == LA_REASM_IN_PROGRESS ||
+								pdu->reasm_status == LA_REASM_DUPLICATE) &&
 							Config.decode_fragments == false) {
 						decode_payload = false;
 					}
@@ -782,7 +782,7 @@ static void output_cotp_pdu_as_text(void const *data, void const *ctx_ptr) {
 			LA_ISPRINTF(vstr, indent, "sseq: %u req_of_ack: %u EoT: %u\n",
 					pdu->tpdu_seq, pdu->roa, pdu->eot);
 			LA_ISPRINTF(vstr, indent, "COTP reasm status: %s\n",
-					la_reasm_status_name_get(pdu->rstatus));
+					la_reasm_status_name_get(pdu->reasm_status));
 			break;
 		case COTP_TPDU_DR:
 			str = la_dict_search(cotp_dr_reasons, pdu->class_or_disc_reason);
@@ -862,7 +862,7 @@ static void output_cotp_pdu_as_json(void const *data, void const *ctx_ptr) {
 			la_json_append_int64(vstr, "sseq", pdu->tpdu_seq);
 			la_json_append_int64(vstr, "req_of_ack", pdu->roa);
 			la_json_append_int64(vstr, "eot", pdu->eot);
-			la_json_append_string(vstr, "reasm_status", la_reasm_status_name_get(pdu->rstatus));
+			la_json_append_string(vstr, "reasm_status", la_reasm_status_name_get(pdu->reasm_status));
 			break;
 		case COTP_TPDU_DR:
 			la_json_append_int64(vstr, "disc_reason_code", pdu->class_or_disc_reason);

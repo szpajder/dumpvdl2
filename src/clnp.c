@@ -293,7 +293,7 @@ la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
 			goto fail;
 		}
 		pdu->pdu_id = extract_uint16_msbfirst(ptr);
-		pdu->seg_off = extract_uint16_msbfirst(ptr + 2);
+		pdu->offset = extract_uint16_msbfirst(ptr + 2);
 		pdu->total_pdu_len = extract_uint16_msbfirst(ptr + 4);
 		ptr += 6; remaining -= 6;
 	}
@@ -452,7 +452,7 @@ void clnp_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 		LA_ISPRINTF(vstr, indent, "%s", "Segmentation:\n");
 		indent++;
 		LA_ISPRINTF(vstr, indent, "PDU Id: 0x%hx\n", pdu->pdu_id);
-		LA_ISPRINTF(vstr, indent, "Segment offset: %hu\n", pdu->seg_off);
+		LA_ISPRINTF(vstr, indent, "Segment offset: %hu\n", pdu->offset);
 		LA_ISPRINTF(vstr, indent, "PDU total length: %hu\n", pdu->total_pdu_len);
 		indent--;
 	}
@@ -491,7 +491,7 @@ void clnp_pdu_format_json(la_vstring * vstr, void const *data) {
 	if(pdu->hdr->sp != 0) {
 	    la_json_object_start(vstr, "segmentation");
 	    la_json_append_int64(vstr, "pdu_id", pdu->pdu_id);
-	    la_json_append_int64(vstr, "segment_offset", pdu->seg_off);
+	    la_json_append_int64(vstr, "segment_offset", pdu->offset);
 	    la_json_append_int64(vstr, "pdu_total_len", pdu->total_pdu_len);
 	    la_json_object_end(vstr);
 	}
@@ -613,7 +613,7 @@ la_proto_node *clnp_compressed_data_pdu_parse(uint8_t *buf, uint32_t len, uint32
 		struct clnp_reasm_key reasm_key = {
 			.src_addr = src_addr, .dst_addr = dst_addr, .pdu_id = pdu->pdu_id
 		};
-		pdu->rstatus = reasm_fragment_add(clnp_rtable,
+		pdu->reasm_status = reasm_fragment_add(clnp_rtable,
 				&(reasm_fragment_info){
 				.pdu_info = &reasm_key,
 				.fragment_data = ptr,
@@ -623,16 +623,16 @@ la_proto_node *clnp_compressed_data_pdu_parse(uint8_t *buf, uint32_t len, uint32
 				.offset = pdu->offset,
 				.is_final_fragment = !pdu->more_segments,
 				});
-		debug_print(D_MISC, "PDU %d: rstatus: %s\n", pdu->pdu_id, reasm_status_name_get(pdu->rstatus));
+		debug_print(D_MISC, "PDU %d: reasm_status: %s\n", pdu->pdu_id, reasm_status_name_get(pdu->reasm_status));
 		int reassembled_len = 0;
-		if(pdu->rstatus == REASM_COMPLETE &&
+		if(pdu->reasm_status == REASM_COMPLETE &&
 				(reassembled_len = reasm_payload_get(clnp_rtable, &reasm_key, &ptr)) > 0) {
 			remaining = reassembled_len;
 			// ptr now points onto a newly allocated buffer.
 			// Keep the pointer for freeing it later.
 			pdu->reasm_buf = ptr;
 			decode_payload = true;
-		} else if(pdu->rstatus == REASM_SKIPPED) {
+		} else if(pdu->reasm_status == REASM_SKIPPED) {
 			decode_payload = true;
 		}
 	}
@@ -669,7 +669,7 @@ void clnp_compressed_data_pdu_format_text(la_vstring *vstr, void const *data, in
 				pdu->offset, pdu->more_segments);
 		LA_ISPRINTF(vstr, indent, "PDU total length: %hu\n", pdu->total_pdu_len);
 		LA_ISPRINTF(vstr, indent, "CLNP reasm status: %s\n",
-				reasm_status_name_get(pdu->rstatus));
+				reasm_status_name_get(pdu->reasm_status));
 	}
 }
 
@@ -694,7 +694,7 @@ void clnp_compressed_data_pdu_format_json(la_vstring *vstr, void const *data) {
 		la_json_append_int64(vstr, "offset", pdu->offset);
 	    la_json_append_int64(vstr, "pdu_total_len", pdu->total_pdu_len);
 		la_json_append_bool(vstr, "more", pdu->more_segments);
-		la_json_append_string(vstr, "reasm_status", reasm_status_name_get(pdu->rstatus));
+		la_json_append_string(vstr, "reasm_status", reasm_status_name_get(pdu->reasm_status));
 	}
 }
 
