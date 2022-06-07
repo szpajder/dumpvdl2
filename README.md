@@ -15,8 +15,8 @@ Current stable version: 2.1.1 (released July 8, 2021)
   - SoapySDR (via [soapy-sdr project](https://github.com/pothosware/SoapySDR/wiki))
   - prerecorded IQ data from a file
 - Decodes multiple VDL2 channels simultaneously
-- Automatically reassembles multiblock ACARS messages, MIAM file transfers, and
-  fragmented X.25 packets
+- Automatically reassembles multiblock ACARS messages, MIAM file transfers,
+  fragmented X.25, CLNP and COTP packets.
 - Supports various outputs and output formats (see below)
 - Enriches logged messages with ground station details read from a text file
   (MultiPSK format)
@@ -887,7 +887,7 @@ dumpvdl2 reads data from `Aircraft` table. The following fields are used:
 
 ICAO hex code is read from ModeS field. All fields are expected to have a data
 type `varchar`. ModeS field must be unique and non-NULL. Other fields are
-allowed to be NULL (the program will substitute each NULL value with a dash).
+allowed to be NULL (the program substitutes each NULL value with a dash).
 
 Entries from the database are read on the fly, when needed. They are cached in
 memory for 30 minutes and then re-read from the database or purged.
@@ -896,23 +896,23 @@ memory for 30 minutes and then re-read from the database or purged.
 
 ACARS messages, MIAM file transfers and X.25 packets are limited in size.
 Whenever there is a need to send a larger message than the protocol allows, it
-must be split into smaller parts (fragments). dumpvdl2 will automatically
-reassemble such messages. Individual fragments will be logged too, as they
-arrive. Only when all parts of the message are successfully received, dumpvdl2
-will reassemble the message and log its payload in one piece.
+must be split into smaller parts (fragments). dumpvdl2 automatically reassembles
+such messages. Individual fragments are logged too, as they arrive. Only when
+all parts of the message are successfully received, dumpvdl2 cat reassemble the
+message and log its payload in one piece.
 
 ACARS messages, MIAM file transfers and X.25 packets often contain binary data
-of higher level protocols or applications, which dumpvdl2 can also decode (for
-example: CPDLC, ADS-C, IDRP or MIAM CORE). Such protocols will only decode
+of higher level protocols or applications, which dumpvdl2 can decode as well
+(for example: CPDLC, ADS-C, IDRP or MIAM CORE). Such protocols would only decode
 correctly when a complete payload is presented to the decoder. If the message is
 fragmented, there is no point in decoding higher level protocol in individual
 fragments, because this will often result in a partial decode with an
-`-- Unparseable <protocol name> PDU` error printed to the log file. To reduce
-log file cluttering, dumpvdl2 does not decode higher level protocols in
-fragmented packets. Data contained in individual fragments will be printed in
-hex, but this does not mean the packet type is unknown - it's just not decodable
-yet. When all the fragments have been received and correctly reassembled, the
-packet will be decoded and logged in full.
+``-- Unparseable <protocol name> PDU`` error printed to the log file. To reduce log
+file cluttering, dumpvdl2 does not decode higher level protocols in fragmented
+packets. Data contained in individual fragments are printed in hex, but this
+does not mean that the packet type is unknown - it's just not decodable yet.
+When all the fragments have been received and correctly reassembled, the packet
+will be decoded and logged in full.
 
 Before version 1.8.0, dumpvdl2 always attempted to decode higher level
 protocols, regardless of whether the packet was a fragment of a larger packet or
