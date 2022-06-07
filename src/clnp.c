@@ -317,8 +317,48 @@ la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
 				rtables, rx_time, src_addr, dst_addr);
 	} else {
 		// Otherwise process as a normal CLNP payload.
-		node->next = parse_clnp_pdu_payload(buf + hdr->len, len - hdr->len, msg_type,
-				rtables, rx_time, src_addr, dst_addr);
+		bool decode_payload = true;
+		if(len == hdr->len) {                   // empty data part?
+			pdu->reasm_status = REASM_SKIPPED;
+		} else if(hdr->sp && rtables != NULL) {
+			// segmentation is permitted and reassembly engine is enabled
+			decode_payload = false;
+			la_reasm_table *clnp_rtable = la_reasm_table_lookup(rtables, &proto_DEF_clnp_pdu);
+			if(clnp_rtable == NULL) {
+				clnp_rtable = la_reasm_table_new(rtables, &proto_DEF_clnp_pdu,
+						clnp_reasm_funcs, CLNP_REASM_TABLE_CLEANUP_INTERVAL);
+			}
+			struct clnp_reasm_key reasm_key = {
+				.src_addr = src_addr, .dst_addr = dst_addr, .pdu_id = pdu->pdu_id
+			};
+			pdu->reasm_status = reasm_fragment_add(clnp_rtable,
+					&(reasm_fragment_info){
+					.pdu_info = &reasm_key,
+					.fragment_data = buf + hdr->len,
+					.fragment_data_len = len - hdr->len,
+					.rx_time = rx_time,
+					.reasm_timeout = pdu->lifetime,
+					.offset = pdu->offset,
+					.is_final_fragment = !hdr->ms,
+					});
+			debug_print(D_MISC, "PDU %d: reasm_status: %s\n", pdu->pdu_id, reasm_status_name_get(pdu->reasm_status));
+			int reassembled_len = 0;
+			if(pdu->reasm_status == REASM_COMPLETE &&
+					(reassembled_len = reasm_payload_get(clnp_rtable, &reasm_key, &ptr)) > 0) {
+				remaining = reassembled_len;
+				// ptr now points onto a newly allocated buffer.
+				// Keep the pointer for freeing it later.
+				pdu->reasm_buf = ptr;
+				decode_payload = true;
+			} else if(pdu->reasm_status == REASM_SKIPPED) {
+				decode_payload = true;
+			}
+		}
+
+		node->next = decode_payload == true ?
+			parse_clnp_pdu_payload(buf + hdr->len, len - hdr->len, msg_type,
+				rtables, rx_time, src_addr, dst_addr) :
+			unknown_proto_pdu_new(buf + hdr->len, len - hdr->len);
 	}
 	pdu->err = false;
 	return node;
@@ -457,6 +497,8 @@ void clnp_pdu_format_text(la_vstring *vstr, void const *data, int indent) {
 		LA_ISPRINTF(vstr, indent, "PDU Id: 0x%hx\n", pdu->pdu_id);
 		LA_ISPRINTF(vstr, indent, "Segment offset: %hu\n", pdu->offset);
 		LA_ISPRINTF(vstr, indent, "PDU total length: %hu\n", pdu->total_pdu_len);
+		LA_ISPRINTF(vstr, indent, "CLNP reasm status: %s\n",
+				reasm_status_name_get(pdu->reasm_status));
 		indent--;
 	}
 	if(pdu->options != NULL) {
@@ -499,6 +541,7 @@ void clnp_pdu_format_json(la_vstring * vstr, void const *data) {
 	    la_json_append_int64(vstr, "pdu_total_len", pdu->total_pdu_len);
 	    la_json_object_end(vstr);
 	}
+	la_json_append_string(vstr, "reasm_status", reasm_status_name_get(pdu->reasm_status));
 
 	if(pdu->options != NULL) {
 		tlv_list_format_json(vstr, "options", pdu->options);
@@ -512,6 +555,7 @@ void clnp_pdu_destroy(void *data) {
 	clnp_pdu_t *pdu = data;
 	tlv_list_destroy(pdu->options);
 	pdu->options = NULL;
+	XFREE(pdu->reasm_buf);
 	XFREE(data);
 }
 
@@ -611,7 +655,7 @@ la_proto_node *clnp_compressed_data_pdu_parse(uint8_t *buf, uint32_t len, uint32
 		decode_payload = false;
 		la_reasm_table *clnp_rtable = la_reasm_table_lookup(rtables, &proto_DEF_clnp_compressed_data_pdu);
 		if(clnp_rtable == NULL) {
-			clnp_rtable = la_reasm_table_new(rtables, &proto_DEF_clnp_compressed_data_pdu,
+			clnp_rtable = la_reasm_table_new(rtables, &proto_DEF_clnp_pdu,
 					clnp_reasm_funcs, CLNP_REASM_TABLE_CLEANUP_INTERVAL);
 		}
 		struct clnp_reasm_key reasm_key = {

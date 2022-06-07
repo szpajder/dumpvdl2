@@ -54,6 +54,8 @@ typedef struct {
 } clnp_hdr_t;
 
 typedef struct {
+	uint8_t *reasm_buf;
+	reasm_status reasm_status;
 	// fixed part
 	clnp_hdr_t *hdr;
 	// options
