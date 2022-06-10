@@ -956,7 +956,7 @@ static void x25_format_text(la_vstring *vstr, void const *data, int indent) {
 			EOL(vstr);
 			break;
 		case X25_DATA:
-			LA_ISPRINTF(vstr, indent, "Reasm status: %s\n", la_reasm_status_name_get(pkt->reasm_status));
+			LA_ISPRINTF(vstr, indent, "X.25 reasm status: %s\n", la_reasm_status_name_get(pkt->reasm_status));
 			break;
 		case X25_CLEAR_REQUEST:
 			cause_dict = x25_clr_causes;
