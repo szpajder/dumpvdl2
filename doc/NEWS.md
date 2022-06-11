@@ -1,5 +1,22 @@
 # NEWS
 
+## Version 2.2.0 (2022-06-11)
+
+* Added support for reassembly of multipart CLNP and COTP packets. This brings
+  the ability to decode ADS-C v2 messages which are too large to fit in a single
+  CLNP / COTP packet, even if fragmented in the X.25 layer.
+* Added proper formatting of Route Clearance CPDLC message elements.
+* Removed the obsolete 8-channel limit. The maximum number of VDL2 channels that
+  can be decoded simultaneously is now limited only by the hardware (thx
+  @rpatel3001).
+* Station ID (specified with --station-id option) is now appended to the StatsD
+  namespace if StatsD metric collection is enabled. For example, if the station
+  ID is set to KLAX, the new namespace would be "dumpvdl2.KLAX" instead of just
+  "dumpvdl2". This allows simultaneous monitoring of several dumpvdl2 instances
+  separately in Grafana (thx @cdschuett).
+* Fixed a crash which occurred when the ground station list file could not be
+  opened.
+
 ## Version 2.1.1 (2021-07-08)
 
 * Fixed wrong ZeroMQ version check, which incorrectly declared ZMQ version
