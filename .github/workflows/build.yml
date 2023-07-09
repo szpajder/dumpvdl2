@@ -10,7 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ ubuntu-latest, ubuntu-18.04, macos-11, macos-10.15 ]
+        os: [ ubuntu-latest, ubuntu-20.04, macos-latest, macos-11 ]
     runs-on: ${{ matrix.os }}
     env:
       VDL2_TEST1: "--iq-file ${{github.workspace}}/test/vdl2_model_16b_1050kHz.wav --sample-format S16_LE --extended-header"
