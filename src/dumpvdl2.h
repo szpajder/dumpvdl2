@@ -95,6 +95,7 @@
 #define __OPT_ADDRINFO_VERBOSITY     24
 #define __OPT_PRETTIFY_XML           25
 #define __OPT_MILLISECONDS           26
+#define __OPT_PRETTIFY_JSON          27
 
 #ifdef WITH_SDRPLAY3
 #define __OPT_SDRPLAY3               70

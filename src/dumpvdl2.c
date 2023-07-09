@@ -486,6 +486,7 @@ void usage() {
 	describe_option("--dump-asn1", "Print full ASN.1 structure of CM and CPDLC messages", 1);
 	describe_option("--extended-header", "Print additional fields in message header", 1);
 	describe_option("--prettify-xml", "Pretty-print XML payloads in ACARS and MIAM CORE PDUs", 1);
+	describe_option("--prettify-json", "Pretty-print JSON payloads in OHMA messages", 1);
 	_exit(0);
 }
 
@@ -664,6 +665,7 @@ int main(int argc, char **argv) {
 		{ "decode-fragments",   no_argument,        NULL,   __OPT_DECODE_FRAGMENTS },
 		{ "prettify-xml",       no_argument,        NULL,   __OPT_PRETTIFY_XML },
 		{ "gs-file",            required_argument,  NULL,   __OPT_GS_FILE },
+		{ "prettify-json",      no_argument,        NULL,   __OPT_PRETTIFY_JSON },
 #ifdef WITH_SQLITE
 		{ "bs-db",              required_argument,  NULL,   __OPT_BS_DB },
 #endif
@@ -792,6 +794,9 @@ int main(int argc, char **argv) {
 				break;
 			case __OPT_GS_FILE:
 				gs_file = optarg;
+				break;
+			case __OPT_PRETTIFY_JSON:
+				la_config_set_bool("prettify_json", true);
 				break;
 #ifdef WITH_SQLITE
 			case __OPT_BS_DB:

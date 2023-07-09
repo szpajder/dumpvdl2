@@ -799,6 +799,12 @@ The following options work globally across all outputs with text format:
   with proper indentation for easier reading. This feature requires libacars
   built with libxml2 library support - otherwise this option has no effect.
 
+- OHMA messages (ie. B737MAX diagnostics) contain XML data. Use
+  `--prettify-json` option to enable pretty-printing of such content. JSON will
+  be reformatted with proper indentation built for easier reading. This feature
+  requires libacars 2.2.0 or later, built with jansson library support -
+  otherwise this option has no effect.
+
 ## Enriching messages with ground station data
 
 VDL2 messages formatted as text are normally logged like this:
