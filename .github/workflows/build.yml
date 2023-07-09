@@ -16,6 +16,7 @@ jobs:
       VDL2_TEST1: "--iq-file ${{github.workspace}}/test/vdl2_model_16b_1050kHz.wav --sample-format S16_LE --extended-header"
       VDL2_TEST1_EXPECT: "20 2d 52 41 20 42 52 20 4f 56 43 30 30 35 0a|20 53 4c 50 31 33 35 0a"
       VDL2_TEST1_RESULT: 2
+      HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
