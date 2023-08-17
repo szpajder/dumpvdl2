@@ -21,18 +21,12 @@
 #include <string.h>                     // strdup
 #include <libacars/hash.h>              // la_hash
 #include <libacars/list.h>              // la_list
-#include <libacars/reassembly.h>        // la_reasm_ctx, la_reasm_table
 #include "dumpvdl2.h"                   // NEW, XCALLOC
 #include "reassembly.h"
 
-// Hack: this is a private struct copied from libacars.  It's needed here
-// because reasm_fragment_add() and reasm_payload_get() functions operate on a
-// la_reasm_table from libacars. We can't make a local copy of this type with a
-// different name because these tables have to be stored in a common reassembly
-// context (managed with la_reasm_table_new/lookup), so that the application
-// can use sequence-based reassembly (from libacars) and offset-based
-// reassembly (implemented here) simultaneously.
-struct la_reasm_table_s {
+dumpvdl2_config_t Config;
+
+typedef struct reasm_table_s {
 	void const *key;                    /* a pointer identifying the protocol
 	                                       owning this reasm_table (type_descriptor
 	                                       can be used for this purpose). Due to small
@@ -44,7 +38,7 @@ struct la_reasm_table_s {
 	int cleanup_interval;               /* expire old entries every cleanup_interval
 	                                       number of processed fragments */
 	int frag_cnt;                       /* counts added fragments (up to cleanup_interval) */
-};
+} reasm_table;
 
 struct reasm_ctx_s {
 	la_list *rtables;                   /* list of reasm_tables, one per protocol */
@@ -71,6 +65,90 @@ struct fragment {
 	int end;
 	octet_string_t *data;
 };
+
+reasm_ctx *reasm_ctx_new() {
+	NEW(reasm_ctx, rctx);
+	return rctx;
+}
+
+static void fragment_destroy(void *data) {
+	if(data == NULL) {
+		return;
+	}
+	struct fragment *f = data;
+	octet_string_destroy(f->data);
+	XFREE(f);
+}
+
+static void reasm_table_entry_destroy(void *rt_ptr) {
+	if(rt_ptr == NULL) {
+		return;
+	}
+	reasm_table_entry *rt_entry = rt_ptr;
+	la_list_free_full(rt_entry->fragment_list, fragment_destroy);
+	XFREE(rt_entry);
+}
+
+static void reasm_table_destroy(void *table) {
+	if(table == NULL) {
+		return;
+	}
+	reasm_table *rtable = table;
+	la_hash_destroy(rtable->fragment_table);
+	XFREE(rtable);
+}
+
+void reasm_ctx_destroy(void *ctx) {
+	if(ctx == NULL) {
+		return;
+	}
+	reasm_ctx *rctx = ctx;
+	la_list_free_full(rctx->rtables, reasm_table_destroy);
+	XFREE(rctx);
+}
+
+reasm_table *reasm_table_lookup(reasm_ctx *rctx, void const *table_id) {
+	ASSERT(rctx != NULL);
+	ASSERT(table_id != NULL);
+
+	for(la_list *l = rctx->rtables; l != NULL; l = la_list_next(l)) {
+		reasm_table *rt = l->data;
+		if(rt->key == table_id) {
+			return rt;
+		}
+	}
+	return NULL;
+}
+
+#define REASM_DEFAULT_CLEANUP_INTERVAL 100
+
+reasm_table *reasm_table_new(reasm_ctx *rctx, void const *table_id,
+		reasm_table_funcs funcs, int cleanup_interval) {
+	ASSERT(rctx != NULL);
+	ASSERT(table_id != NULL);
+	ASSERT(funcs.get_key);
+	ASSERT(funcs.get_tmp_key);
+	ASSERT(funcs.hash_key);
+	ASSERT(funcs.compare_keys);
+	ASSERT(funcs.destroy_key);
+
+	reasm_table *rtable = reasm_table_lookup(rctx, table_id);
+	if(rtable != NULL) {
+		goto end;
+	}
+	rtable = XCALLOC(1, sizeof(reasm_table));
+	rtable->key = table_id;
+	rtable->fragment_table = la_hash_new(funcs.hash_key, funcs.compare_keys,
+			funcs.destroy_key, reasm_table_entry_destroy);
+	rtable->funcs = funcs;
+
+	// Replace insane values with reasonable default
+	rtable->cleanup_interval = cleanup_interval > 0 ?
+		cleanup_interval : REASM_DEFAULT_CLEANUP_INTERVAL;
+	rctx->rtables = la_list_append(rctx->rtables, rtable);
+end:
+	return rtable;
+}
 
 // Checks if time difference between rx_first and rx_last is greater than timeout.
 static bool reasm_timed_out(struct timeval rx_last, struct timeval rx_first,
@@ -117,7 +195,7 @@ static bool is_rt_entry_expired(void const *keyptr, void const *valptr, void *ct
 }
 
 // Removes expired entries from the given reassembly table.
-static void reasm_table_cleanup(la_reasm_table *rtable, struct timeval now) {
+static void reasm_table_cleanup(reasm_table *rtable, struct timeval now) {
 	ASSERT(rtable != NULL);
 	ASSERT(rtable->fragment_table != NULL);
 	int deleted_count = la_hash_foreach_remove(rtable->fragment_table,
@@ -130,7 +208,7 @@ static void reasm_table_cleanup(la_reasm_table *rtable, struct timeval now) {
 // Core reassembly logic.
 // Validates the given message fragment and appends it to the reassembly table
 // fragment la_list.
-reasm_status reasm_fragment_add(la_reasm_table *rtable, reasm_fragment_info const *finfo) {
+reasm_status reasm_fragment_add(reasm_table *rtable, reasm_fragment_info const *finfo) {
 	ASSERT(rtable != NULL);
 	ASSERT(finfo != NULL);
 	if(finfo->pdu_info == NULL || finfo->offset < 0) {
@@ -221,6 +299,7 @@ restart:
 	}
 
 	// All checks succeeded. Add the fragment to the list
+
 	debug_print(D_MISC, "Good fragment (start=%d end=%d), adding to the list\n",
 			current_fragment->start, current_fragment->end);
 
@@ -267,7 +346,7 @@ end:
 }
 
 // Returns the reassembled payload and removes the packet data from reassembly table
-int reasm_payload_get(la_reasm_table *rtable, void const *pdu_info, uint8_t **result) {
+int reasm_payload_get(reasm_table *rtable, void const *pdu_info, uint8_t **result) {
 	ASSERT(rtable != NULL);
 	ASSERT(pdu_info != NULL);
 	ASSERT(result != NULL);
