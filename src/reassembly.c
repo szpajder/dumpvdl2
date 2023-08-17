@@ -17,14 +17,18 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/* Offset-based reassembly engine. Currently only CLNP needs this.
+ * The algo and data structures are different enough from sequence-based
+ * reassembly implementation in libacars, that it justifies keeping them
+ * separate at the expense of a slight code duplication.
+ */
+
 #include <sys/time.h>                   // struct timeval
 #include <string.h>                     // strdup
 #include <libacars/hash.h>              // la_hash
 #include <libacars/list.h>              // la_list
 #include "dumpvdl2.h"                   // NEW, XCALLOC
 #include "reassembly.h"
-
-dumpvdl2_config_t Config;
 
 typedef struct reasm_table_s {
 	void const *key;                    /* a pointer identifying the protocol

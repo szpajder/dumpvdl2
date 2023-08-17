@@ -74,7 +74,7 @@ bool clnp_reasm_key_compare(void const *key1, void const *key2) {
 	return ret;
 }
 
-static la_reasm_table_funcs clnp_reasm_funcs = {
+static reasm_table_funcs clnp_reasm_funcs = {
 	.get_key = clnp_reasm_key_get,
 	.get_tmp_key = clnp_reasm_key_get,
 	.hash_key = clnp_reasm_key_hash,
@@ -85,7 +85,7 @@ static la_reasm_table_funcs clnp_reasm_funcs = {
 #define CLNP_REASM_TABLE_CLEANUP_INTERVAL 20
 
 static la_proto_node *parse_clnp_pdu_payload(uint8_t *buf, uint32_t len, uint32_t *msg_type,
-		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
+		reasm_contexts *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
 	if(len == 0) {
 		return NULL;
 	}
@@ -100,7 +100,7 @@ static la_proto_node *parse_clnp_pdu_payload(uint8_t *buf, uint32_t len, uint32_
 		default:
 			// assume X.224 COTP TPDU
 			return cotp_concatenated_pdu_parse(buf, len, msg_type,
-					rtables, rx_time, src_addr, dst_addr);
+					rtables->seqbased, rx_time, src_addr, dst_addr);
 	}
 	return unknown_proto_pdu_new(buf, len);
 }
@@ -236,7 +236,7 @@ static la_dict const clnp_options[] = {
 };
 
 la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
-		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
+		reasm_contexts *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
 	NEW(clnp_pdu_t, pdu);
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_clnp_pdu;
@@ -320,12 +320,12 @@ la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
 		bool decode_payload = true;
 		if(len == hdr->len) {                   // empty data part?
 			pdu->reasm_status = REASM_SKIPPED;
-		} else if(hdr->sp && rtables != NULL) {
+		} else if(hdr->sp && rtables->offsetbased != NULL) {
 			// segmentation is permitted and reassembly engine is enabled
 			decode_payload = false;
-			la_reasm_table *clnp_rtable = la_reasm_table_lookup(rtables, &proto_DEF_clnp_pdu);
+			reasm_table *clnp_rtable = reasm_table_lookup(rtables->offsetbased, &proto_DEF_clnp_pdu);
 			if(clnp_rtable == NULL) {
-				clnp_rtable = la_reasm_table_new(rtables, &proto_DEF_clnp_pdu,
+				clnp_rtable = reasm_table_new(rtables->offsetbased, &proto_DEF_clnp_pdu,
 						clnp_reasm_funcs, CLNP_REASM_TABLE_CLEANUP_INTERVAL);
 			}
 			struct clnp_reasm_key reasm_key = {
@@ -574,7 +574,7 @@ la_type_descriptor const proto_DEF_clnp_pdu = {
 la_type_descriptor const proto_DEF_clnp_compressed_data_pdu;
 
 la_proto_node *clnp_compressed_data_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
-		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
+		reasm_contexts *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
 	NEW(clnp_compressed_data_pdu_t, pdu);
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_clnp_compressed_data_pdu;
@@ -653,9 +653,9 @@ la_proto_node *clnp_compressed_data_pdu_parse(uint8_t *buf, uint32_t len, uint32
 	bool decode_payload = true;
 	if(pdu->derived && rtables != NULL) {   // reassembly engine is enabled
 		decode_payload = false;
-		la_reasm_table *clnp_rtable = la_reasm_table_lookup(rtables, &proto_DEF_clnp_compressed_data_pdu);
+		reasm_table *clnp_rtable = reasm_table_lookup(rtables->offsetbased, &proto_DEF_clnp_compressed_data_pdu);
 		if(clnp_rtable == NULL) {
-			clnp_rtable = la_reasm_table_new(rtables, &proto_DEF_clnp_pdu,
+			clnp_rtable = reasm_table_new(rtables->offsetbased, &proto_DEF_clnp_pdu,
 					clnp_reasm_funcs, CLNP_REASM_TABLE_CLEANUP_INTERVAL);
 		}
 		struct clnp_reasm_key reasm_key = {

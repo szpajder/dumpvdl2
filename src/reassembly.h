@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <sys/time.h>
 #include <libacars/hash.h>
+#include <libacars/reassembly.h>        // la_reasm_ctx
 
 typedef struct reasm_ctx_s reasm_ctx;
 typedef struct reasm_table_s reasm_table;
@@ -69,6 +70,11 @@ typedef enum {
 	REASM_ARGS_INVALID
 } reasm_status;
 #define REASM_STATUS_MAX REASM_ARGS_INVALID
+
+typedef struct {
+	la_reasm_ctx *seqbased;
+	reasm_ctx *offsetbased;
+} reasm_contexts;
 
 // reassembly.c
 reasm_ctx *reasm_ctx_new();

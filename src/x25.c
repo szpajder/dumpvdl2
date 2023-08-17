@@ -29,6 +29,7 @@
 #include "config.h"                 // IS_BIG_ENDIAN
 #include "dumpvdl2.h"
 #include "x25.h"
+#include "reassembly.h"             // reasm_contexts
 #include "clnp.h"
 #include "esis.h"
 #include "tlv.h"
@@ -330,7 +331,7 @@ static la_dict const x25_comp_algos[] = {
 // Forward declarations
 la_type_descriptor const proto_DEF_X25_SNDCF_error_report;
 static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *msg_type,
-		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr);
+		reasm_contexts *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr);
 
 typedef struct {
 	uint8_t error_code;
@@ -340,7 +341,7 @@ typedef struct {
 } sndcf_err_rpt_t;
 
 static la_proto_node *sndcf_error_report_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
-		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
+		reasm_contexts *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
 	NEW(sndcf_err_rpt_t, rpt);
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_X25_SNDCF_error_report;
@@ -552,7 +553,7 @@ static int parse_x25_facility_field(x25_pkt_t *pkt, uint8_t *buf, uint32_t len) 
 }
 
 static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *msg_type,
-		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
+		reasm_contexts *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
 	if(buf == NULL || len == 0) {
 		return NULL;
 	}
@@ -579,7 +580,7 @@ static la_proto_node *parse_x25_user_data(uint8_t *buf, uint32_t len, uint32_t *
 }
 
 la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
-		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
+		reasm_contexts *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr) {
 	NEW(x25_pkt_t, pkt);
 	la_proto_node *node = la_proto_node_new();
 	node->td = &proto_DEF_X25_pkt;
@@ -655,10 +656,10 @@ la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
 				pkt->reasm_status = LA_REASM_UNKNOWN;
 				bool decode_user_data = true;
 
-				if(rtables != NULL) {   // reassembly engine is enabled
-					la_reasm_table *x25_rtable = la_reasm_table_lookup(rtables, &proto_DEF_X25_pkt);
+				if(rtables->seqbased != NULL) {   // reassembly engine is enabled
+					la_reasm_table *x25_rtable = la_reasm_table_lookup(rtables->seqbased, &proto_DEF_X25_pkt);
 					if(x25_rtable == NULL) {
-						x25_rtable = la_reasm_table_new(rtables, &proto_DEF_X25_pkt,
+						x25_rtable = la_reasm_table_new(rtables->seqbased, &proto_DEF_X25_pkt,
 								x25_reasm_funcs, X25_REASM_TABLE_CLEANUP_INTERVAL);
 					}
 					x25_avlc_info avlc_info = {

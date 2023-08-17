@@ -130,6 +130,6 @@ typedef struct {
 
 // clnp.c
 la_proto_node *clnp_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
-		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr);
+		reasm_contexts *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr);
 la_proto_node *clnp_compressed_data_pdu_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
-		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr);
+		reasm_contexts *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr);

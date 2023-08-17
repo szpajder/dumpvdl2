@@ -23,9 +23,10 @@
 #include <sys/time.h>               // struct timeval
 #include <libacars/libacars.h>      // la_proto_node
 #include <libacars/list.h>          // la_list
-#include <libacars/reassembly.h>    // la_reasm_ctx
+#include <libacars/reassembly.h>    // la_reasm_status
 #include "config.h"                 // IS_BIG_ENDIAN
 #include "dumpvdl2.h"               // octet_string_t
+#include "reassembly.h"             // reasm_contexts
 
 #define X25_MIN_LEN                  3
 #define GFI_X25_MOD8                 1
@@ -114,5 +115,5 @@ typedef struct {
 
 // x25.c
 la_proto_node *x25_parse(uint8_t *buf, uint32_t len, uint32_t *msg_type,
-		la_reasm_ctx *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr);
+		reasm_contexts *rtables, struct timeval rx_time, uint32_t src_addr, uint32_t dst_addr);
 #endif // !_X25_H

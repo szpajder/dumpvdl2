@@ -35,6 +35,7 @@
 #include "output-common.h"
 #include "dumpvdl2.h"
 #include "avlc.h"                   // avlc_frame_qentry_t
+#include "reassembly.h"             // reasm_ctx, reasm_ctx_new()
 
 // Reasonable limits for transmission lengths in bits
 // This is to avoid blocking the decoder in DEC_DATA for a long time
@@ -420,7 +421,26 @@ void *avlc_decoder_thread(void *arg) {
 	uint32_t msg_type = 0;
 
 	decoder_thread_active = true;
-	la_reasm_ctx *reasm_ctx = la_reasm_ctx_new();
+
+// Currently there are two reassembly engine implementations:
+// - based on fragment offsets (in dumpvdl2, used only for CLNP)
+// - based on sequence numbers (in libacars, used for all other protocols)
+// Reassembly tables of these two engines use incompatible data structures,
+// so they need separate constructors/destructors and therefore can't be
+// stored in a common reassembly context. The interim solution is to
+// create two separate reassembly contexts - one for storing offset-based
+// reassembly tables and the other one - for sequence-based tables. We
+// store pointers to both context in a struct to avoid passing two
+// context pointers through the whole decoding stack of functions. This
+// is probably the least messy way to implement this for now, but it
+// needs an improvement.
+	la_reasm_ctx *seqbased_reasm_ctx = la_reasm_ctx_new();
+	reasm_ctx *offsetbased_reasm_ctx = reasm_ctx_new();
+	reasm_contexts rcontexts = {
+		.offsetbased = offsetbased_reasm_ctx,
+		.seqbased = seqbased_reasm_ctx
+	};
+
 	enum {
 		DEC_NOT_DONE,
 		DEC_SUCCESS,
@@ -447,7 +467,7 @@ void *avlc_decoder_thread(void *arg) {
 				// Decode the frame unless we've done it before
 				if(decoding_status == DEC_NOT_DONE) {
 					msg_type = 0;
-					root = avlc_parse(q, &msg_type, reasm_ctx);
+					root = avlc_parse(q, &msg_type, &rcontexts);
 					if(root != NULL) {
 						decoding_status = DEC_SUCCESS;
 					} else {

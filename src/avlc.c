@@ -26,7 +26,7 @@
 #include <libacars/libacars.h>      // la_type_descriptor, la_proto_node
 #include <libacars/vstring.h>       // la_vstring
 #include <libacars/json.h>
-#include <libacars/reassembly.h>    // la_reasm_ctx_new()
+#include "reassembly.h"             // reasm_contexts
 #include "config.h"                 // IS_BIG_ENDIAN
 #include "dumpvdl2.h"
 #include "avlc.h"
@@ -161,7 +161,7 @@ uint32_t parse_dlc_addr(uint8_t *buf) {
 	return reverse((buf[0] >> 1) | (buf[1] << 6) | (buf[2] << 13) | ((buf[3] & 0xfe) << 20), 28) & ONES(28);
 }
 
-la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_ctx *reasm_ctx) {
+la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, reasm_contexts *reasm_ctx) {
 	ASSERT(q != NULL);
 	uint8_t *buf = q->frame->buf;
 	uint32_t len = q->frame->len;
@@ -255,7 +255,7 @@ la_proto_node *avlc_parse(avlc_frame_qentry_t *q, uint32_t *msg_type, la_reasm_c
 	} else {     // IS_I(frame->lcf) == true
 		*msg_type |= MSGFLT_AVLC_I;
 		if(len > 3 && ptr[0] == 0xff && ptr[1] == 0xff && ptr[2] == 0x01) {
-			node->next = parse_acars(ptr + 3, len - 3, msg_type, reasm_ctx, q->metadata->burst_timestamp);
+			node->next = parse_acars(ptr + 3, len - 3, msg_type, reasm_ctx->seqbased, q->metadata->burst_timestamp);
 		} else {
 			node->next = x25_parse(ptr, len, msg_type, reasm_ctx, q->metadata->burst_timestamp,
 					frame->src.a_addr.addr, frame->dst.a_addr.addr);
