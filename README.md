@@ -1027,6 +1027,8 @@ dumpvdl2 --iq-file <file_name> [--sample-format <sample_format>] [--oversample <
   [--centerfreq <center_frequency>] [vdl_freq_1] [vdl_freq_2] [...]
 ```
 
+Specify `-` as the file name to read data from standard input.
+
 The symbol rate for VDL2 is 10500 symbols/sec. dumpvdl2 internal processing rate
 is 10 samples per symbol. Therefore the file must be recorded with sampling rate
 set to an integer multiple of 105000. Specify the multiplier value with
@@ -1083,6 +1085,8 @@ dumpvdl2 --raw-frames-file /some/dir/file.raw --output [...]
 
 As there is no demodulation done in this case, there is no need to specify
 any radio-related options, like `--centerfreq` or channel frequencies.
+
+Specify `-` as the file name to read data from standard input.
 
 ## Launching dumpvdl2 in background on system boot
 

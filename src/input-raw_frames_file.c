@@ -73,9 +73,14 @@ static int process_frame(uint8_t *buf, size_t len) {
 
 int input_raw_frames_file_process(char const *file) {
 	ASSERT(file != NULL);
-	FILE *fh = fopen(file, "r");
+	FILE *fh = NULL;
+	if(!strcmp(file, "-")) {
+		fh = stdin;
+	} else {
+		fh = fopen(file, "r");
+	}
 	if (fh == NULL) {
-		perror("fopen()");
+		perror("Could not open input file");
 		return 2;
 	}
 	int ret = 0;

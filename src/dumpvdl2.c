@@ -314,8 +314,13 @@ void process_iq_file(vdl2_state_t *ctx, char *path, enum sample_formats sfmt) {
 	unsigned char buf[FILE_BUFSIZE];
 	void (*process_buf)() = NULL;
 
-	if((f = fopen(path, "r")) == NULL) {
-		perror("fopen()");
+	if(!strcmp(path, "-")) {
+		f = stdin;
+	} else {
+		f = fopen(path, "r");
+	}
+	if(f == NULL) {
+		perror("Could not open input file");
 		_exit(2);
 	}
 	switch(sfmt) {
@@ -379,11 +384,11 @@ void usage() {
 			"%*sdumpvdl2 [output_options] --soapysdr <device_id> [soapysdr_options] [<freq_1> [<freq_2> [...]]]\n",
 			IND(1), "");
 #endif
-	fprintf(stderr, "\nRead I/Q samples from file:\n\n"
+	fprintf(stderr, "\nRead I/Q samples from a file (use \"-\" to read from standard input):\n\n"
 			"%*sdumpvdl2 [output_options] --iq-file <input_file> [file_options] [<freq_1> [<freq_2> [...]]]\n",
 			IND(1), "");
 #ifdef WITH_PROTOBUF_C
-	fprintf(stderr, "\nRead raw AVLC frames from file:\n\n"
+	fprintf(stderr, "\nRead raw AVLC frames from a file (use \"-\" to read from standard input):\n\n"
 			"%*sdumpvdl2 [output_options] --raw-frames-file <input_file>\n",
 			IND(1), "");
 #endif
@@ -450,7 +455,7 @@ void usage() {
 	describe_option("--soapy-gain <gain1=val1,gain2=val2,...>", "Set gain components (default: none)", 1);
 #endif
 	fprintf(stderr, "\nfile_options:\n");
-	describe_option("--iq-file <input_file>", "Read I/Q samples from file", 1);
+	describe_option("--iq-file <input_file>", "Read I/Q samples from a file (use \"-\" to read from standard input)", 1);
 	describe_option("--centerfreq <center_frequency>", "Center frequency of the input data, in Hz (default: 0)", 1);
 	describe_option("--oversample <oversample_rate>", "Oversampling rate for recorded data", 1);
 	fprintf(stderr, "%*s(sampling rate will be set to %u * oversample_rate)\n", USAGE_OPT_NAME_COLWIDTH, "", SYMBOL_RATE * SPS);
