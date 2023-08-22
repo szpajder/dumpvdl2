@@ -1,5 +1,15 @@
 # NEWS
 
+## Version 2.3.0 (2023-08-22)
+* Allow reading raw frames or I/Q data from standard input. To enable this,
+  specify "-" as the argument to `--iq-file` or `--raw-frames-file` option,
+  respectively.
+* Added `--prettify-json` command line option which enables prettification of
+  JSON payloads in libacars >= 2.2.0. This currently applies to OHMA messages
+  only.
+* Fixed incompatibility with libacars 2.2.0 which might cause a crash during
+  reassembly of CLNP packets.
+
 ## Version 2.2.0 (2022-06-11)
 
 * Added support for reassembly of multipart CLNP and COTP packets. This brings
