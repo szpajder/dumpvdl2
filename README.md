@@ -1228,6 +1228,10 @@ It basically comes down to three things:
 **Method 1:** use `rtl_test` utility which comes with `librtlsdr` library. Run
 it with `-p` option and observe the output:
 
+### Where can I find a fresh basestation.sqb file?
+
+For example in [this repository](https://github.com/varnav/BaseStation.sqb).
+
 ```
 root@linux:~ # rtl_test -p
 Found 1 device(s):
