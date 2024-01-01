@@ -392,6 +392,7 @@ int input_raw_frames_file_process(char const *file);
 // statsd.c
 #ifdef WITH_STATSD
 int statsd_initialize(char *statsd_addr);
+void statsd_initialize_counters_combined_channels();
 void statsd_initialize_counters_per_channel(uint32_t freq);
 void statsd_initialize_counters_per_msgdir();
 void statsd_initialize_counter_set(char **counter_set);

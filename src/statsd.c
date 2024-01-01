@@ -64,6 +64,8 @@ static char const *counters_per_channel[] = {
 	NULL
 };
 
+#define STATSD_COMBINED_CHANNELS_PREFIX "combined"
+
 static char const *counters_per_msgdir[] = {
 	"acars.reasm.unknown",
 	"acars.reasm.complete",
@@ -115,6 +117,17 @@ int statsd_initialize(char *statsd_addr) {
 	return 0;
 }
 
+void statsd_initialize_counters_combined_channels() {
+	if(statsd == NULL) {
+		return;
+	}
+	char metric[256];
+	for(int n = 0; counters_per_channel[n] != NULL; n++) {
+		snprintf(metric, sizeof(metric), STATSD_COMBINED_CHANNELS_PREFIX ".%s", counters_per_channel[n]);
+		statsd_count(statsd, metric, 0, 1.0);
+	}
+}
+
 void statsd_initialize_counters_per_channel(uint32_t freq) {
 	if(statsd == NULL) {
 		return;
@@ -158,6 +171,8 @@ void statsd_counter_per_channel_increment(uint32_t freq, char *counter) {
 	char metric[256];
 	snprintf(metric, sizeof(metric), "%d.%s", freq, counter);
 	statsd_inc(statsd, metric, 1.0);
+	snprintf(metric, sizeof(metric), STATSD_COMBINED_CHANNELS_PREFIX ".%s", counter);
+	statsd_inc(statsd, metric, 1.0);
 }
 
 void statsd_counter_per_msgdir_increment(la_msg_dir msg_dir, char *counter) {
@@ -200,4 +215,5 @@ void statsd_timing_delta_per_channel_send(uint32_t freq, char *timer, struct tim
 	debug_print(D_STATS, "tdiff: %u ms\n", tdiff);
 	snprintf(metric, sizeof(metric), "%d.%s", freq, timer);
 	statsd_timing(statsd, metric, tdiff);
+	// Not including in combined channel stats (on purpose)
 }

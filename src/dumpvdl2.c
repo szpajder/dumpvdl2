@@ -1023,6 +1023,7 @@ int main(int argc, char **argv) {
 			statsd_enabled = false;
 		} else {
 			if(input_is_iq) {
+				statsd_initialize_counters_combined_channels();
 				for(int i = 0; i < num_channels; i++) {
 					statsd_initialize_counters_per_channel(freqs[i]);
 				}
