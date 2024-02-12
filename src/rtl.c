@@ -116,7 +116,7 @@ static int rtl_verbose_device_search(char *s) {
 	return -1;
 }
 
-void rtl_init(vdl2_state_t *ctx, char *dev, int freq, float gain, int correction) {
+void rtl_init(vdl2_state_t *ctx, char *dev, int freq, float gain, int correction, int bias) {
 	UNUSED(ctx);
 	int r;
 
@@ -174,6 +174,15 @@ void rtl_init(vdl2_state_t *ctx, char *dev, int freq, float gain, int correction
 		fprintf(stderr, "Failed to disable AGC for device #%d: error %d\n", device, r);
 		_exit(1);
 	}
+	
+        r = rtlsdr_set_bias_tee(rtl, bias);
+        fprintf(stderr, "Device %d bias tee set to %d\n", device, bias);
+	if(r < 0) {
+                fprintf(stderr, "Failed to set bias tee for device #%d: error %d\n", device, r);
+                _exit(1);
+        }       
+        
+
 	rtlsdr_reset_buffer(rtl);
 	fprintf(stderr, "Device %d started\n", device);
 	sbuf = XCALLOC(RTL_BUFSIZE / sizeof(uint8_t), sizeof(float));
@@ -182,6 +191,7 @@ void rtl_init(vdl2_state_t *ctx, char *dev, int freq, float gain, int correction
 		fprintf(stderr, "Device #%d: async read failed\n", device);
 		_exit(1);
 	}
+	
 }
 
 void rtl_cancel() {
