@@ -68,6 +68,7 @@
 
 #ifdef WITH_RTLSDR
 #define __OPT_RTLSDR                 11
+#define __OPT_BIAS		      0
 #endif
 
 #if defined WITH_MIRISDR || defined WITH_RTLSDR || defined WITH_SOAPYSDR

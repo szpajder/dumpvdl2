@@ -408,6 +408,7 @@ void usage() {
 	describe_option("--gain <gain>", "Set gain (decibels)", 1);
 	describe_option("--correction <correction>", "Set freq correction (ppm)", 1);
 	describe_option("--centerfreq <center_frequency>", "Set center frequency in Hz (default: auto)", 1);
+	describe_option("--bias <bias>","Enable(1) or Disable(0) bias tee (defualt: 0)",1);
 #endif
 #ifdef WITH_MIRISDR
 	fprintf(stderr, "\nmirisdr_options:\n");
@@ -633,6 +634,7 @@ int main(int argc, char **argv) {
 	char *device = NULL;
 	float gain = SDR_AUTO_GAIN;
 	int correction = 0;
+	int bias = 0;
 #endif
 #ifdef WITH_MIRISDR
 	int mirisdr_hw_flavour = 0;
@@ -711,6 +713,7 @@ int main(int argc, char **argv) {
 #endif
 #ifdef WITH_RTLSDR
 		{ "rtlsdr",             required_argument,  NULL,   __OPT_RTLSDR },
+		{ "bias",		required_argument, NULL,    __OPT_BIAS },
 #endif
 #if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SOAPYSDR
 		{ "gain",               required_argument,  NULL,   __OPT_GAIN },
@@ -909,6 +912,9 @@ int main(int argc, char **argv) {
 				input = INPUT_RTLSDR;
 				oversample = RTL_OVERSAMPLE;
 				break;
+			case __OPT_BIAS:
+				bias = atoi(optarg);
+				break;
 #endif
 #if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SOAPYSDR
 			case __OPT_GAIN:
@@ -1079,7 +1085,7 @@ int main(int argc, char **argv) {
 			break;
 #ifdef WITH_RTLSDR
 		case INPUT_RTLSDR:
-			rtl_init(&ctx, device, centerfreq, gain, correction);
+			rtl_init(&ctx, device, centerfreq, gain, correction, bias);
 			break;
 #endif
 #ifdef WITH_MIRISDR
