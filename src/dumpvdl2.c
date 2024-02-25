@@ -408,7 +408,7 @@ void usage() {
 	describe_option("--gain <gain>", "Set gain (decibels)", 1);
 	describe_option("--correction <correction>", "Set freq correction (ppm)", 1);
 	describe_option("--centerfreq <center_frequency>", "Set center frequency in Hz (default: auto)", 1);
-	describe_option("--bias <bias>","Enable(1) or Disable(0) bias tee (defualt: 0)",1);
+	describe_option("--bias <bias>", "Enable(1) or Disable(0) bias tee (default: 0)", 1);
 #endif
 #ifdef WITH_MIRISDR
 	fprintf(stderr, "\nmirisdr_options:\n");
@@ -713,7 +713,7 @@ int main(int argc, char **argv) {
 #endif
 #ifdef WITH_RTLSDR
 		{ "rtlsdr",             required_argument,  NULL,   __OPT_RTLSDR },
-		{ "bias",		required_argument, NULL,    __OPT_BIAS },
+		{ "bias",               required_argument,  NULL,   __OPT_BIAS },
 #endif
 #if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SOAPYSDR
 		{ "gain",               required_argument,  NULL,   __OPT_GAIN },
