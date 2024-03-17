@@ -163,6 +163,17 @@ void soapysdr_init(vdl2_state_t *ctx, char *dev, char *antenna, int freq, float 
 		long timeoutNs = 1000000;
 		int r;
 		r = SoapySDRDevice_readStream(sdr, rxStream, buffs, SOAPYSDR_SAMPLE_PER_BUFFER, &flags, &timeNs, timeoutNs);
+		if (r == 0) {
+			// this is a rare transitory occurence at least with some soapySDR drivers
+			// just sleep very briefly to avoid looping too fast until we get data again
+			usleep(500);
+			continue;
+		}
+		if (r < 0) {
+			fprintf(stderr, "readStream failed: %s\n", SoapySDRDevice_lastError());
+			do_exit = 1;
+			break;
+		}
 		int iq_count = r * 2;
 		// copy to ring_buffer
 		// Ring_index is on unsigned char
