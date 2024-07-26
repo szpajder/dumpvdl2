@@ -33,11 +33,7 @@ static bool fmtr_text_supports_data_type(fmtr_input_type_t type) {
 static la_vstring *format_timestamp(struct timeval tv) {
 	int millis = 0;
 	if(Config.milliseconds == true) {
-		millis = round(tv.tv_usec / 1000.0);
-		if(millis > 999) {
-		    millis -= 1000;
-		    tv.tv_sec++;
-		}
+		millis = tv.tv_usec / 1000;
 	}
 	struct tm *tmstruct = (Config.utc == true ? gmtime(&tv.tv_sec) : localtime(&tv.tv_sec));
 
