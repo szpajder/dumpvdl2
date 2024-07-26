@@ -31,10 +31,6 @@ static bool fmtr_text_supports_data_type(fmtr_input_type_t type) {
 }
 
 static la_vstring *format_timestamp(struct timeval tv) {
-	int millis = 0;
-	if(Config.milliseconds == true) {
-		millis = tv.tv_usec / 1000;
-	}
 	struct tm *tmstruct = (Config.utc == true ? gmtime(&tv.tv_sec) : localtime(&tv.tv_sec));
 
 	char tbuf[30], tzbuf[8];
@@ -44,7 +40,7 @@ static la_vstring *format_timestamp(struct timeval tv) {
 	la_vstring *vstr = la_vstring_new();
 	la_vstring_append_sprintf(vstr, "%s", tbuf);
 	if(Config.milliseconds == true) {
-		la_vstring_append_sprintf(vstr, ".%03d", millis);
+		la_vstring_append_sprintf(vstr, ".%03ld", tv.tv_usec / 1000);
 	}
 	la_vstring_append_sprintf(vstr, " %s", tzbuf);
 	return vstr;
