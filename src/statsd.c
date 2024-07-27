@@ -58,6 +58,7 @@ static char const *counters_per_channel[] = {
 	"decoder.errors.truncated_octets",
 	"decoder.errors.unstuff",
 	"decoder.msg.good",
+	"decoder.msg.good_loud",
 	"decoder.preambles.good",
 	"demod.sync.good",
 	NULL

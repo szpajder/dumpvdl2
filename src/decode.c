@@ -366,6 +366,9 @@ void decode_vdl2_burst(vdl2_channel_t *v) {
 				goto cleanup;
 			}
 			statsd_timing_delta_per_channel(v->freq, "decoder.msg.processing_time", v->tstart);
+			if(v->frame_pwr > 1.0F) {	// check for log(v->frame_power) > 0dBFs
+				statsd_increment_per_channel(v->freq, "decoder.msg.good_loud");
+			}
 cleanup:
 			XFREE(data);
 			XFREE(fec);
