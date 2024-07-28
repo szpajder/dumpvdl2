@@ -403,6 +403,14 @@ bit to the side of the desired channel frequency, like this:
 ./dumpvdl2 --rtlsdr 0 --gain 40 --correction 42 --centerfreq 137100000 <channel freqs here...>
 ```
 
+Frequencies might be specified in Hertz (as integer numbers) or in kHz, MHz, GHz
+(as integer or floating-point numbers followed by any of the following suffixes:
+k, K, m, M, g, G).
+
+```
+./dumpvdl2 --rtlsdr 0 --gain 40 --centerfreq 136M 136.725M 136975k 0.136875G
+```
+
 ### Mirics
 
 Mirics is similar, however `libmirisdr-4` library currently lacks support for
@@ -465,7 +473,7 @@ as an "expert mode" knob, which is hardly ever needed.
 Example 1: use SDRplay device ID=0, with auto gain and three VDL2 channels:
 
 ```
-./dumpvdl2 --sdrplay 0 136975000 136875000 136775000
+./dumpvdl2 --sdrplay 0 136.975M 136.875M 136.775M
 ```
 
 Example 2: use SDRplay device with serial number 35830222, set gain reduction to
@@ -473,7 +481,7 @@ Example 2: use SDRplay device with serial number 35830222, set gain reduction to
 frequency correction to -1ppm:
 
 ```
-./dumpvdl2 --sdrplay 35830222 --gr 40 --correction -1 --antenna A --biast 0 --notch-filter 1 136975000
+./dumpvdl2 --sdrplay 35830222 --gr 40 --correction -1 --antenna A --biast 0 --notch-filter 1 136.975M
 ```
 
 ### SDRplay RSP native driver, version 3
@@ -1062,7 +1070,7 @@ dumpvdl2 --iq-file <file_name> --centerfreq 136955000 136975000
 Putting it all together:
 
 ```
-dumpvdl2 --iq-file iq.dat --sample-format S16_LE --oversample 13 --centerfreq 136955000 136975000 136725000
+dumpvdl2 --iq-file iq.dat --sample-format S16_LE --oversample 13 --centerfreq 136.955M 136.975M 136.725M
 ```
 
 processes `iq.dat` file recorded at 1365000 samples/sec using 16-bit signed
