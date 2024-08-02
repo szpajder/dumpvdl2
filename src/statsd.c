@@ -2,6 +2,7 @@
  *  This file is a part of dumpvdl2
  *
  *  Copyright (c) 2017-2023 Tomasz Lemiech <szpajder@gmail.com>
+ *  Copyright (c) 2024 Thibaut VARENE <hacks@slashdirt.org>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,14 +23,17 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/time.h>
-#include <statsd/statsd-client.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 #include <libacars/libacars.h>      // la_msg_dir
 #include <libacars/vstring.h>       // la_vstring
 #include "dumpvdl2.h"
 #include "config.h"
 
+#define STATSD_UDP_BUFSIZE	1432	///< udp buffer size. Untold rule seems to be that the datagram must not be fragmented.
+
 #define STATSD_NAMESPACE "dumpvdl2"
-static statsd_link *statsd = NULL;
 
 static char const *counters_per_channel[] = {
 	"avlc.errors.bad_fcs",
@@ -88,6 +92,251 @@ static char const *msg_dir_labels[] = {
 	[LA_MSG_DIR_GND2AIR] = "gnd2air"
 };
 
+static struct _statsd_runtime {
+	char *namespace;		///< statsd namespace prefix (dot-terminated)
+	struct sockaddr_storage ai_addr;
+	socklen_t ai_addrlen;
+	int sockfd;
+} statsd_runtime = {};
+
+typedef struct _statsd_runtime statsd_link;
+
+static statsd_link *statsd = NULL;
+
+static statsd_link *statsd_init_with_namespace(const char *host, const char *port, const char *ns)
+{
+	int sockfd;
+	struct addrinfo hints;
+	struct addrinfo *result, *rp;
+	int ret;
+
+	// obtain address(es) matching host/port
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_protocol = IPPROTO_UDP;
+
+	ret = getaddrinfo(host, port, &hints, &result);
+	if (ret) {
+		fprintf(stderr, "statsd: getaddrinfo: %s\n", gai_strerror(ret));
+		return NULL;
+	}
+
+	// try each address until one succeeds
+	for (rp = result; rp; rp = rp->ai_next) {
+		sockfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+		if (-1 != sockfd)
+			break;	// success
+	}
+
+	if (!rp) {
+		fprintf(stderr, "statsd: Could not reach server\n");
+		goto cleanup;
+	}
+
+	memcpy(&statsd_runtime.ai_addr, rp->ai_addr, rp->ai_addrlen);	// ai_addrlen is guaranteed to be <= sizeof(sockaddr_storage)
+	statsd_runtime.ai_addrlen = rp->ai_addrlen;
+
+	ret = strlen(ns);
+	statsd_runtime.namespace = malloc(ret + 2);
+	if(!statsd_runtime.namespace) {
+		perror("statsd");
+		goto cleanup;
+	}
+
+	strcpy(statsd_runtime.namespace, ns);
+	statsd_runtime.namespace[ret++] = '.';
+	statsd_runtime.namespace[ret] = '\0';
+
+	statsd_runtime.sockfd = sockfd;
+
+	freeaddrinfo(result);
+	return &statsd_runtime;
+
+cleanup:
+	freeaddrinfo(result);
+
+	return NULL;
+}
+
+#ifdef DEBUG
+static int statsd_validate(const char * stat)
+{
+	const char * p;
+	for (p = stat; *p; p++) {
+		switch (*p) {
+			case ':':
+			case '|':
+			case '@':
+				return (-1);
+			default:
+				;	// nothing
+		}
+	}
+
+	return 0;
+}
+#endif
+
+struct statsd_metric {
+	enum { STATSD_UCOUNTER, STATSD_IGAUGE, STATSD_FGAUGE, STATSD_TIMING } type;
+	const char *name;
+	union { unsigned long u; long l; float f; } value;
+};
+
+/**
+ * Update StatsD metrics.
+ * @param metrics an array of metrics to push to StatsD
+ * @param nmetrics the array size
+ * @return exec status
+ */
+static int statsd_update(const struct statsd_metric * const metrics, const unsigned int nmetrics)
+{
+	char sbuffer[STATSD_UDP_BUFSIZE];
+	const char *mtype;
+	char * buffer;
+	bool zerofirst;
+	int ret;
+	ssize_t sent;
+	size_t avail;
+	unsigned int i;
+
+	buffer = sbuffer;
+	avail = STATSD_UDP_BUFSIZE;
+
+	for (i = 0; i < nmetrics; i++) {
+#ifdef DEBUG
+		if ((statsd_validate(metrics[i].name) != 0)) {
+			fprintf(stderr, "statsd: ignoring invalid name \"%s\"", metrics[i].name);
+			continue;
+		}
+#endif
+
+		zerofirst = false;
+
+		switch (metrics[i].type) {
+			case STATSD_IGAUGE:
+				mtype = "g";
+				if (metrics[i].value.l < 0)
+					zerofirst = true;
+				break;
+			case STATSD_FGAUGE:
+				mtype = "g";
+				if (metrics[i].value.f < 0.0F)
+					zerofirst = true;
+				break;
+			case STATSD_UCOUNTER:
+				mtype = "c";
+				break;
+			case STATSD_TIMING:
+				mtype = "ms";
+				break;
+			default:
+				ret = -1;
+				goto cleanup;
+		}
+
+restartzero:
+		// StatsD has a schizophrenic idea of what a gauge is (negative values are subtracted from previous data and not registered as is): work around its dementia
+		if (zerofirst) {
+			ret = snprintf(buffer, avail, "%s%s:0|%s\n", statsd_runtime.namespace ? statsd_runtime.namespace : "", metrics[i].name, mtype);
+			if (ret < 0) {
+				ret = -1;
+				goto cleanup;
+			}
+			else if ((size_t)ret >= avail) {
+				// send what we have, reset buffer, restart - no need to add '\0': sendto will truncate anyway
+				sendto(statsd_runtime.sockfd, sbuffer, STATSD_UDP_BUFSIZE - avail, 0, (struct sockaddr *)&statsd_runtime.ai_addr, statsd_runtime.ai_addrlen);
+				buffer = sbuffer;
+				avail = STATSD_UDP_BUFSIZE;
+				goto restartzero;
+			}
+			buffer += ret;
+			avail -= (size_t)ret;
+		}
+
+restartbuffer:
+		switch (metrics[i].type) {
+			case STATSD_IGAUGE:
+				ret = snprintf(buffer, avail, "%s%s:%ld|%s\n", statsd_runtime.namespace ? statsd_runtime.namespace : "", metrics[i].name, metrics[i].value.l, mtype);
+				break;
+			case STATSD_UCOUNTER:
+			case STATSD_TIMING:
+				ret = snprintf(buffer, avail, "%s%s:%lu|%s\n", statsd_runtime.namespace ? statsd_runtime.namespace : "", metrics[i].name, metrics[i].value.u, mtype);
+				break;
+			case STATSD_FGAUGE:
+				ret = snprintf(buffer, avail, "%s%s:%f|%s\n", statsd_runtime.namespace ? statsd_runtime.namespace : "", metrics[i].name, metrics[i].value.f, mtype);
+				break;
+			default:
+				ret = 0;
+				break;	// cannot happen thanks to previous switch()
+		}
+
+		if (ret < 0) {
+			ret = -1;
+			goto cleanup;
+		}
+		else if ((size_t)ret >= avail) {
+			// send what we have, reset buffer, restart - no need to add '\0': sendto will truncate anyway
+			sendto(statsd_runtime.sockfd, sbuffer, STATSD_UDP_BUFSIZE - avail, 0, (struct sockaddr *)&statsd_runtime.ai_addr, statsd_runtime.ai_addrlen);
+			buffer = sbuffer;
+			avail = STATSD_UDP_BUFSIZE;
+			goto restartbuffer;
+		}
+		buffer += ret;
+		avail -= (size_t)ret;
+	}
+
+	ret = 0;
+
+cleanup:
+	// we only check for sendto() errors here
+	sent = sendto(statsd_runtime.sockfd, sbuffer, STATSD_UDP_BUFSIZE - avail, 0, (struct sockaddr *)&statsd_runtime.ai_addr, statsd_runtime.ai_addrlen);
+	if (-1 == sent)
+		perror("statsd");
+
+	return ret;
+}
+
+int statsd_count(__attribute__ ((unused)) statsd_link *link, char *stat, unsigned long value, __attribute__ ((unused)) float sample_rate)
+{
+	struct statsd_metric m = {
+		.type = STATSD_UCOUNTER,
+		.name = stat,
+		.value.u = value,
+	};
+
+	return statsd_update(&m, 1);
+}
+
+int statsd_inc(statsd_link *link, char *stat, float sample_rate)
+{
+	return statsd_count(link, stat, 1, sample_rate);
+}
+
+int statsd_gauge(__attribute__ ((unused)) statsd_link *link, char *stat, long value)
+{
+	struct statsd_metric m = {
+		.type = STATSD_IGAUGE,
+		.name = stat,
+		.value.l = value,
+	};
+
+	return statsd_update(&m, 1);
+}
+
+int statsd_timing(__attribute__ ((unused)) statsd_link *link, char *stat, unsigned long ms)
+{
+	struct statsd_metric m = {
+		.type = STATSD_TIMING,
+		.name = stat,
+		.value.u = ms,
+	};
+
+	return statsd_update(&m, 1);
+
+}
+
 int statsd_initialize(char *statsd_addr) {
 	char *addr;
 	char *port;
@@ -107,7 +356,7 @@ int statsd_initialize(char *statsd_addr) {
 		fprintf(stderr, "Using extended statsd namespace %s.%s\n", STATSD_NAMESPACE, Config.station_id);
 		la_vstring_append_sprintf(statsd_namespace, ".%s", Config.station_id);
 	}
-	statsd = statsd_init_with_namespace(addr, atoi(port), statsd_namespace->str);
+	statsd = statsd_init_with_namespace(addr, port, statsd_namespace->str);
 	la_vstring_destroy(statsd_namespace, true);
 	if(statsd == NULL) {
 		return -2;
@@ -176,7 +425,7 @@ void statsd_counter_increment(char *counter) {
 	statsd_inc(statsd, counter, 1.0);
 }
 
-void statsd_gauge_set(char *gauge, size_t value) {
+void statsd_gauge_set(char *gauge, long value) {
 	if(statsd == NULL) {
 		return;
 	}
