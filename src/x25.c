@@ -955,6 +955,7 @@ static void x25_format_text(la_vstring *vstr, void const *data, int indent) {
 			LA_ISPRINTF(vstr, indent, "%s: ", "Compression support");
 			bitfield_format_text(vstr, &pkt->compression, 1, x25_comp_algos);
 			EOL(vstr);
+			LA_ISPRINTF(vstr, indent, "M/I: %u\n", (pkt->compression & 0x10) != 0);
 			break;
 		case X25_DATA:
 			LA_ISPRINTF(vstr, indent, "X.25 reasm status: %s\n", la_reasm_status_name_get(pkt->reasm_status));
