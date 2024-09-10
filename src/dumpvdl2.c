@@ -152,6 +152,18 @@ void start_all_output_threads(la_list *fmtr_list) {
 	la_list_foreach(fmtr_list, start_all_output_threads_for_fmtr, NULL);
 }
 
+static uint32_t calc_bandwidth(uint32_t *freq, int cnt)
+{
+	uint32_t freq_min, freq_max;
+	freq_min = freq_max = freq[0];
+	for(int i = 0; i < cnt; i++) {
+		if(freq[i] < freq_min) freq_min = freq[i];
+		if(freq[i] > freq_max) freq_max = freq[i];
+	}
+
+	return freq_max - freq_min + SYMBOL_RATE * 2;
+}
+
 static uint32_t calc_centerfreq(uint32_t *freq, int cnt, uint32_t source_rate) {
 	uint32_t freq_min, freq_max;
 	freq_min = freq_max = freq[0];
@@ -677,7 +689,7 @@ static bool parse_frequency(char const *str, uint32_t *result) {
 
 int main(int argc, char **argv) {
 	vdl2_state_t ctx;
-	uint32_t centerfreq = 0, sample_rate = 0, oversample = 0;
+	uint32_t centerfreq = 0, sample_rate = 0, oversample = 0, bandwidth = 0;
 	uint32_t *freqs = NULL;
 	int num_channels = 0;
 	enum input_types input = INPUT_UNDEF;
@@ -1056,6 +1068,9 @@ int main(int argc, char **argv) {
 			}
 		}
 
+		if(bandwidth == 0)
+			bandwidth = calc_bandwidth(freqs, num_channels);
+
 		memset(&ctx, 0, sizeof(vdl2_state_t));
 		ctx.num_channels = num_channels;
 		ctx.channels = XCALLOC(num_channels, sizeof(vdl2_channel_t *));
@@ -1144,7 +1159,7 @@ int main(int argc, char **argv) {
 			break;
 #ifdef WITH_RTLSDR
 		case INPUT_RTLSDR:
-			rtl_init(&ctx, device, centerfreq, gain, correction, bias);
+			rtl_init(&ctx, device, centerfreq, bandwidth, gain, correction, bias);
 			break;
 #endif
 #ifdef WITH_MIRISDR
@@ -1166,7 +1181,7 @@ int main(int argc, char **argv) {
 #endif
 #ifdef WITH_SOAPYSDR
 		case INPUT_SOAPYSDR:
-			soapysdr_init(&ctx, device, soapysdr_antenna, centerfreq, gain, correction,
+			soapysdr_init(&ctx, device, soapysdr_antenna, centerfreq, bandwidth, gain, correction,
 					soapysdr_settings, soapysdr_gain);
 			break;
 #endif

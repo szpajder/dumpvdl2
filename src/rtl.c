@@ -120,7 +120,7 @@ find_serial:
 	return -1;
 }
 
-void rtl_init(vdl2_state_t *ctx, char *dev, int freq, float gain, int correction, int bias) {
+void rtl_init(vdl2_state_t *ctx, char *dev, int freq, int bw, float gain, int correction, int bias) {
 	UNUSED(ctx);
 	int r;
 
@@ -148,6 +148,9 @@ void rtl_init(vdl2_state_t *ctx, char *dev, int freq, float gain, int correction
 		fprintf(stderr, "Failed to set freq correction for device #%d error %d\n", device, r);
 		_exit(1);
 	}
+	r = rtlsdr_set_tuner_bandwidth(rtl, bw);
+	if (r == 0)
+		fprintf(stderr, "Bandwidth set to %u Hz\n", bw);	// ignore failure
 
 	if(gain == SDR_AUTO_GAIN) {
 		r = rtlsdr_set_tuner_gain_mode(rtl, 0);
