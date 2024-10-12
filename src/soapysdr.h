@@ -25,6 +25,6 @@
 #define SOAPYSDR_RATE (SYMBOL_RATE * SPS * SOAPYSDR_OVERSAMPLE)
 
 // soapysdr.c
-void soapysdr_init(vdl2_state_t *ctx, char *dev, char *antenna, int freq,
+void soapysdr_init(vdl2_state_t *ctx, char *dev, char *antenna, int freq, int bw,
 		float gain, int correction, char *settings, char *gains);
 void soapysdr_cancel();

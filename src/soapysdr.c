@@ -40,7 +40,7 @@ static void soapysdr_verbose_device_search() {
 	SoapySDRKwargsList_clear(results, length);
 }
 
-void soapysdr_init(vdl2_state_t *ctx, char *dev, char *antenna, int freq, float gain,
+void soapysdr_init(vdl2_state_t *ctx, char *dev, char *antenna, int freq, int bw, float gain,
 		int ppm_error, char* settings, char* gains_param) {
 	UNUSED(ctx);
 	soapysdr_verbose_device_search();
@@ -62,6 +62,8 @@ void soapysdr_init(vdl2_state_t *ctx, char *dev, char *antenna, int freq, float 
 		fprintf(stderr, "setFrequencyCorrection failed: %s\n", SoapySDRDevice_lastError());
 		_exit(1);
 	}
+	if(SoapySDRDevice_setBandwidth(sdr, SOAPY_SDR_RX, 0, bw) == 0)
+		fprintf(stderr, "Bandwidth set to %d Hz\n", bw);	// ignore error
 	if(SoapySDRDevice_hasDCOffsetMode(sdr, SOAPY_SDR_RX, 0)) {
 		if(SoapySDRDevice_setDCOffsetMode(sdr, SOAPY_SDR_RX, 0, true) != 0) {
 			fprintf(stderr, "setDCOffsetMode failed: %s\n", SoapySDRDevice_lastError());

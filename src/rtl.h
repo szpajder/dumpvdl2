@@ -24,5 +24,5 @@
 #define RTL_RATE (SYMBOL_RATE * SPS * RTL_OVERSAMPLE)
 
 // rtl.c
-void rtl_init(vdl2_state_t *ctx, char *dev, int freq, float gain, int correction, int bias);
+void rtl_init(vdl2_state_t *ctx, char *dev, int freq, int bw, float gain, int correction, int bias);
 void rtl_cancel();
