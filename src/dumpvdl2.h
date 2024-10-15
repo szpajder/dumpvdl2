@@ -402,7 +402,7 @@ void statsd_counter_per_channel_increment(uint32_t freq, char *counter);
 void statsd_timing_delta_per_channel_send(uint32_t freq, char *timer, struct timeval ts);
 void statsd_counter_per_msgdir_increment(la_msg_dir msg_dir, char *counter);
 void statsd_counter_increment(char *counter);
-void statsd_gauge_set(char *gauge, size_t value);
+void statsd_gauge_set(char *gauge, long value);
 #define statsd_increment_per_channel(freq, counter) statsd_counter_per_channel_increment(freq, counter)
 #define statsd_timing_delta_per_channel(freq, timer, start) statsd_timing_delta_per_channel_send(freq, timer, start)
 #define statsd_increment_per_msgdir(counter, msgdir) statsd_counter_per_msgdir_increment(counter, msgdir)
