@@ -10,7 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ ubuntu-latest, ubuntu-20.04, macos-13, macos-12 ]
+        os: [ ubuntu-24.04, ubuntu-22.04, macos-15, macos-14 ]
     runs-on: ${{ matrix.os }}
     env:
       VDL2_TEST1: "--iq-file ${{github.workspace}}/test/vdl2_model_16b_1050kHz.wav --sample-format S16_LE --extended-header"
@@ -34,6 +34,8 @@ jobs:
         cd "$RUNNER_TEMP"
         git clone https://github.com/szpajder/libacars.git
         cd libacars
+        if [[ "${{ github.ref_name }}" == "master" ]]; then branch=master; else branch=unstable; fi
+        echo "libacars branch used: $branch"
         mkdir build
         cd build
         cmake ..
