@@ -43,7 +43,6 @@ jobs:
         sudo make install
         if [[ "$RUNNER_OS" == "Linux" ]]; then sudo ldconfig; fi
         if [[ "$RUNNER_OS" == "macOS" ]]; then sudo update_dyld_shared_cache; fi
-        if [[ "$RUNNER_OS" == "macOS" ]]; then echo dumpvdl2 LC_RPATH; otool -l /usr/local/bin/dumpvdl2 | grep LC_RPATH; echo libacars LC_ID_DYLIB:; otool -l /usr/local/lib/libacars-2.dylib | grep -A 2 LC_ID_DYLIB; fi
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
@@ -56,6 +55,7 @@ jobs:
 
     - name: Test run
       run: |
+        if [[ "$RUNNER_OS" == "macOS" ]]; then echo dumpvdl2 LC_RPATH; otool -l /usr/local/bin/dumpvdl2 | grep LC_RPATH; echo libacars LC_ID_DYLIB:; otool -l /usr/local/lib/libacars-2.dylib | grep -A 2 LC_ID_DYLIB; fi
         /usr/local/bin/dumpvdl2 ${VDL2_TEST1}
         res=$(/usr/local/bin/dumpvdl2 ${VDL2_TEST1} | egrep -c "${VDL2_TEST1_EXPECT}")
         if [[ "x$res" = "x" ]]; then false; fi
