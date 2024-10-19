@@ -35,7 +35,7 @@ jobs:
         git clone https://github.com/szpajder/libacars.git
         cd libacars
         if [[ "${{ github.ref_name }}" == "master" ]]; then branch=master; else branch=unstable; fi
-        echo "libacars branch used: "$branch"
+        echo "libacars branch used: $branch"
         mkdir build
         cd build
         cmake ..
