@@ -8,9 +8,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 # strdup
 add_definitions(-D_XOPEN_SOURCE=600)
 
-# strsep on MacOS
 if(APPLE)
+    # strsep on MacOS
 	add_definitions(-D_DARWIN_C_SOURCE)
+	# libacars gets installed to /usr/local/lib by default,
+	# however dyld doesn't search this dir by default.
+	# We need to set the RPATH in the installed binary to the full path of the library.
+	set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif()
 
 # silence warnings about obsolete _BSD_SOURCE in asn_system.h
