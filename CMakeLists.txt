@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.12)
+cmake_minimum_required (VERSION 3.6)
 project (dumpvdl2 C)
 
 set (DUMPVDL2_VERSION_MAJOR 2)
