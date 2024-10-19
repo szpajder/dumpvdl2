@@ -55,7 +55,7 @@ jobs:
 
     - name: Test run
       run: |
-        if [[ "$RUNNER_OS" == "macOS" ]]; then echo dumpvdl2 libraries:; otool -L /usr/local/bin/dumpvdl2; echo libacars install_name:; otool -D /usr/local/lib/libacars-2.dylib; echo dumpvdl2 LC_RPATHs: otool -l /usr/local/bin/dumpvdl2 | grep LC_RPATH -A2; fi
+        if [[ "$RUNNER_OS" == "macOS" ]]; then echo dumpvdl2 LC_RPATHs:; otool -l /usr/local/bin/dumpvdl2; fi
         DYLD_PRINT_SEARCHING=1 DYLD_PRINT_LIBRARIES=1 /usr/local/bin/dumpvdl2 ${VDL2_TEST1}
         res=$(/usr/local/bin/dumpvdl2 ${VDL2_TEST1} | egrep -c "${VDL2_TEST1_EXPECT}")
         if [[ "x$res" = "x" ]]; then false; fi
