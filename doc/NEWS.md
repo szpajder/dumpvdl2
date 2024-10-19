@@ -1,5 +1,37 @@
 # NEWS
 
+## Version 2.4.0 (2024-10-10)
+
+* Allow specifying frequencies in kHz, MHz or GHz. Frequencies might be
+  specified in Hertz (as integer numbers) or in kHz, MHz, GHz (as integer or
+  floating-point numbers followed by any of the following suffixes: k, K, m, M,
+  g, G). This applies to the --centerfreq option argument and VDL2 channel
+  frequencies.
+* Added support for RTLSDR bias tee. "--bias 1" command line option enables
+  it, "--bias 0" disables. Default: disabled. (thx @Reoost)
+* Fix RTLSDR device selection. If the --rtlsdr option argument is exactly
+  8 characters long, the program will now always attempt to find the device
+  by its serial number rather than by the device index. Now "--rtlsdr 00000002"
+  means "device with a serial number 00000002" rather than "device with
+  and index of 2". (thx @f00b4r0)
+* Exit on SoapySDR errors. If the program is unable to continue reading
+  samples from the radio, it terminates, so that it could be restarted by
+  the service manager (eg. systemd). (thx @wiedehopf)
+* Do not round timestamps to the nearest millisecond, truncate it instead.
+  Rounding may have caused message timestamps to be pushed forward. (thx
+  @f00b4r0)
+* Report loud (ie. possibly overloaded) messages via statsd statistics.
+  Introduces a new counter "decoder.msg.good_loud" which gets incremented on
+  every good message with a signal level above 0 dBFS. Might be useful for
+  tuning SDR gain levels. (thx @f00b4r0)
+* Enable IF bandwidth filter on RTLSDR and SoapySDR devices. This could
+  potentially help in noisy environments by improving rejection of nearby strong
+  signals. The filter is automatically enabled if supported by the SDR. (thx
+  @f00b4r0)
+* Print Maintenance/Initialized (M/I) status bit in text output of X.25 Call
+  Request and Call Accepted messages.
+* Fix libacars library search issue at runtime on MacOS 14 and 15.
+
 ## Version 2.3.0 (2023-08-22)
 * Allow reading raw frames or I/Q data from standard input. To enable this,
   specify "-" as the argument to `--iq-file` or `--raw-frames-file` option,
