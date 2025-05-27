@@ -25,6 +25,7 @@
 #include <getopt.h>
 #include <signal.h>
 #include <errno.h>
+#include <math.h>
 #include <libacars/libacars.h>  // LA_VERSION, la_config_set_bool()
 #include <libacars/acars.h>     // LA_ACARS_BEARER_VHF
 #include <libacars/list.h>      // la_list
@@ -411,6 +412,7 @@ void usage() {
 	describe_option("--debug <filter_spec>", "Debug message classes to display (default: none) (\"--debug help\" for details)", 1);
 #endif
 	fprintf(stderr, "common options:\n");
+	describe_option("--max-ppm <max_ppm>", "Set maximum allowable absolute PPM deviation for valid messages (default: 0 == unlimited)", 1);
 	describe_option("<freq_1> [<freq_2> [...]]", "VDL2 channel frequencies", 1);
 	fprintf(stderr, "If channel frequencies are omitted, VDL2 Common Signalling Channel (%u Hz) will be used as default.\n\n", CSC_FREQ);
 
@@ -750,6 +752,7 @@ int main(int argc, char **argv) {
 		{ "oversample",         required_argument,  NULL,   __OPT_OVERSAMPLE },
 		{ "sample-format",      required_argument,  NULL,   __OPT_SAMPLE_FORMAT },
 		{ "msg-filter",         required_argument,  NULL,   __OPT_MSG_FILTER },
+		{ "max-ppm",            required_argument,  NULL,   __OPT_MAX_PPM },
 #ifdef WITH_MIRISDR
 		{ "mirisdr",            required_argument,  NULL,   __OPT_MIRISDR },
 		{ "hw-type",            required_argument,  NULL,   __OPT_HW_TYPE },
@@ -872,6 +875,9 @@ int main(int argc, char **argv) {
 				break;
 			case __OPT_PRETTIFY_JSON:
 				la_config_set_bool("prettify_json", true);
+				break;
+			case __OPT_MAX_PPM:
+				Config.max_ppm = fabsf(strtof(optarg, NULL));
 				break;
 #ifdef WITH_SQLITE
 			case __OPT_BS_DB:
