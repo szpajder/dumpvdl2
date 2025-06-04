@@ -188,7 +188,8 @@ static int got_sync(vdl2_channel_t *v) {
 				v->samplenum - SYNC_SKIP, v->pherr[2], v->pherr[1], v->pherr[0], vertex_x, v->syncbufidx,
 				sp, v->prev_phi, v->sclk, v->dphi, v->ppm_error);
 		v->pherr[1] = v->pherr[2] = PHERR_MAX;
-		return 1;
+		// ignore this preample if the ppm deviation is above the required threshold (if set)
+		return !(Config.max_ppm && fabsf(v->ppm_error) > Config.max_ppm);
 	}
 	v->pherr[2] = v->pherr[1];
 	v->pherr[1] = v->pherr[0];

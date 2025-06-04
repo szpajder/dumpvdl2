@@ -97,6 +97,7 @@
 #define __OPT_PRETTIFY_XML           25
 #define __OPT_MILLISECONDS           26
 #define __OPT_PRETTIFY_JSON          27
+#define __OPT_MAX_PPM                 28
 
 #ifdef WITH_SDRPLAY3
 #define __OPT_SDRPLAY3               70
@@ -206,6 +207,7 @@ typedef struct {
 	uint32_t debug_filter;
 #endif
 	uint32_t msg_filter;
+	float max_ppm;
 	int output_queue_hwm;
 	char *station_id;
 	bool hourly, daily, utc, milliseconds;
