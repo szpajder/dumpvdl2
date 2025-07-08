@@ -422,6 +422,7 @@ void usage() {
 	describe_option("--gain <gain>", "Set gain (decibels)", 1);
 	describe_option("--correction <correction>", "Set freq correction (ppm)", 1);
 	describe_option("--centerfreq <center_frequency>", "Set center frequency (default: auto)", 1);
+	describe_option("--oversample <oversample_rate>", "Oversampling factor (sampling rate will be set to 105000 * oversample)", 1);
 	describe_option("--bias <bias>", "Enable(1) or Disable(0) bias tee (default: 0)", 1);
 #endif
 #ifdef WITH_MIRISDR
@@ -431,6 +432,7 @@ void usage() {
 	describe_option("--gain <gain>", "Set gain (in decibels, from 0 to 102 dB)", 1);
 	describe_option("--correction <correction>", "Set freq correction (in Hertz)", 1);
 	describe_option("--centerfreq <center_frequency>", "Set center frequency (default: auto)", 1);
+	describe_option("--oversample <oversample_rate>", "Oversampling factor (sampling rate will be set to 105000 * oversample)", 1);
 	describe_option("--usb-mode <usb_transfer_mode>", "0 - isochronous (default), 1 - bulk", 1);
 #endif
 #ifdef WITH_SDRPLAY
@@ -440,6 +442,7 @@ void usage() {
 	describe_option("--agc <AGC_set_point>", "Auto gain set point in dBFS, negative (default: -30)", 1);
 	describe_option("--correction <correction>", "Set freq correction (ppm)", 1);
 	describe_option("--centerfreq <center_frequency>", "Set center frequency (default: auto)", 1);
+	describe_option("--oversample <oversample_rate>", "Oversampling factor (sampling rate will be set to 105000 * oversample)", 1);
 	describe_option("--antenna <A/B>", "RSP2 antenna port selection (default: A)", 1);
 	describe_option("--biast <0/1>", "RSP2/1a/duo Bias-T control: 0 - off (default), 1 - on", 1);
 	describe_option("--notch-filter <0/1>", "RSP2/1a/duo AM/FM/bcast notch filter control: 0 - off (default), 1 - on", 1);
@@ -454,6 +457,7 @@ void usage() {
 	describe_option("--agc <AGC_set_point>", "Auto gain set point in dBFS, negative (default: -30)", 1);
 	describe_option("--correction <correction>", "Set freq correction (ppm)", 1);
 	describe_option("--centerfreq <center_frequency>", "Set center frequency (default: auto)", 1);
+	describe_option("--oversample <oversample_rate>", "Oversampling factor (sampling rate will be set to 105000 * oversample)", 1);
 	describe_option("--antenna <A/B/C>", "RSP2/dx antenna port selection (default: A)", 1);
 	describe_option("--biast <0/1>", "RSP2/1a/duo/dx Bias-T control: 0 - off (default), 1 - on", 1);
 	describe_option("--notch-filter <0/1>", "RSP2/1a/duo/dx AM/FM/bcast notch filter control: 0 - off (default), 1 - on", 1);
@@ -466,13 +470,15 @@ void usage() {
 	describe_option("--device-settings <key1=val1,key2=val2,...>", "Set device-specific parameters (default: none)", 1);
 	describe_option("--gain <gain>", "Set gain (decibels)", 1);
 	describe_option("--correction <correction>", "Set freq correction (ppm)", 1);
+	describe_option("--centerfreq <center_frequency>", "Center frequency of the input data, (default: 0)", 1);
+	describe_option("--oversample <oversample_rate>", "Oversampling factor (sampling rate will be set to 105000 * oversample)", 1);
 	describe_option("--soapy-antenna <antenna>", "Set antenna port selection (default: RX)", 1);
 	describe_option("--soapy-gain <gain1=val1,gain2=val2,...>", "Set gain components (default: none)", 1);
 #endif
 	fprintf(stderr, "\nfile_options:\n");
 	describe_option("--iq-file <input_file>", "Read I/Q samples from a file (use \"-\" to read from standard input)", 1);
 	describe_option("--centerfreq <center_frequency>", "Center frequency of the input data, (default: 0)", 1);
-	describe_option("--oversample <oversample_rate>", "Oversampling rate for recorded data", 1);
+	describe_option("--oversample <oversample_rate>", "Oversampling factor (sampling rate will be set to 105000 * oversample)", 1);
 	fprintf(stderr, "%*s(sampling rate will be set to %u * oversample_rate)\n", USAGE_OPT_NAME_COLWIDTH, "", SYMBOL_RATE * SPS);
 	fprintf(stderr, "%*sDefault: %u\n", USAGE_OPT_NAME_COLWIDTH, "", FILE_OVERSAMPLE);
 
@@ -1165,29 +1171,29 @@ int main(int argc, char **argv) {
 			break;
 #ifdef WITH_RTLSDR
 		case INPUT_RTLSDR:
-			rtl_init(&ctx, device, centerfreq, bandwidth, gain, correction, bias);
+			rtl_init(&ctx, device, sample_rate, centerfreq, bandwidth, gain, correction, bias);
 			break;
 #endif
 #ifdef WITH_MIRISDR
 		case INPUT_MIRISDR:
-			mirisdr_init(&ctx, device, mirisdr_hw_flavour, centerfreq, gain, correction, mirisdr_usb_xfer_mode);
+			mirisdr_init(&ctx, device, mirisdr_hw_flavour, sample_rate, centerfreq, gain, correction, mirisdr_usb_xfer_mode);
 			break;
 #endif
 #ifdef WITH_SDRPLAY
 		case INPUT_SDRPLAY:
-			sdrplay_init(&ctx, device, sdrplay_antenna, centerfreq, sdrplay_gr, correction,
+			sdrplay_init(&ctx, device, sample_rate, sdrplay_antenna, centerfreq, sdrplay_gr, correction,
 					sdrplay_biast, sdrplay_notch_filter, sdrplay_agc, sdrplay_tuner);
 			break;
 #endif
 #ifdef WITH_SDRPLAY3
 		case INPUT_SDRPLAY3:
-			sdrplay3_init(&ctx, device, sdrplay_antenna, centerfreq, sdrplay3_ifgr, sdrplay3_lna_state, correction,
+			sdrplay3_init(&ctx, device, sample_rate, sdrplay_antenna, centerfreq, sdrplay3_ifgr, sdrplay3_lna_state, correction,
 					sdrplay_biast, sdrplay_notch_filter, sdrplay3_dab_notch_filter, sdrplay_agc, sdrplay_tuner);
 			break;
 #endif
 #ifdef WITH_SOAPYSDR
 		case INPUT_SOAPYSDR:
-			soapysdr_init(&ctx, device, soapysdr_antenna, centerfreq, bandwidth, gain, correction,
+			soapysdr_init(&ctx, device, sample_rate, soapysdr_antenna, centerfreq, bandwidth, gain, correction,
 					soapysdr_settings, soapysdr_gain);
 			break;
 #endif

@@ -30,7 +30,6 @@
 #define MIXER_GR                 19
 #define ASYNC_BUF_NUMBER         15
 #define ASYNC_BUF_SIZE           (32*16384) // 512k shorts
-#define SDRPLAY_RATE (SYMBOL_RATE * SPS * SDRPLAY_OVERSAMPLE)
 #define SDRPLAY_DEFAULT_AGC_SETPOINT    -30
 
 typedef struct {
@@ -219,7 +218,7 @@ dev_found:
 	return devIdx;
 }
 
-void sdrplay_init(vdl2_state_t const *ctx, char const *dev, char const *antenna,
+void sdrplay_init(vdl2_state_t const *ctx, char const *dev, uint32_t sample_rate, char const *antenna,
 		uint32_t freq, int gr, int ppm_error, int enable_biast,
 		int enable_notch_filter, int enable_agc, int tuner) {
 	UNUSED(ctx);
@@ -373,7 +372,7 @@ void sdrplay_init(vdl2_state_t const *ctx, char const *dev, char const *antenna,
 	SDRPlay.data_index = 0;
 	int sdrplaySamplesPerPacket = 0;
 
-	err = mir_sdr_StreamInit (&gRdb, (double)SDRPLAY_RATE/1e6, (double)freq/1e6, mir_sdr_BW_1_536, mir_sdr_IF_Zero,
+	err = mir_sdr_StreamInit (&gRdb, (double)sample_rate/1e6, (double)freq/1e6, mir_sdr_BW_1_536, mir_sdr_IF_Zero,
 			lna_state, &gRdBsystem, mir_sdr_USE_RSP_SET_GR, &sdrplaySamplesPerPacket,
 			sdrplay_streamCallback, sdrplay_gainCallback, &SDRPlay);
 	if(err != mir_sdr_Success) {

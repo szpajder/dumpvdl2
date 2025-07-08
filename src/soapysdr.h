@@ -22,9 +22,8 @@
 #define SOAPYSDR_BUFCNT 15
 #define SOAPYSDR_OVERSAMPLE 20
 #define SOAPYSDR_SAMPLE_PER_BUFFER 65536
-#define SOAPYSDR_RATE (SYMBOL_RATE * SPS * SOAPYSDR_OVERSAMPLE)
 
 // soapysdr.c
-void soapysdr_init(vdl2_state_t *ctx, char *dev, char *antenna, int freq, int bw,
+void soapysdr_init(vdl2_state_t *ctx, char *dev, uint32_t sample_rate, char *antenna, int freq, int bw,
 		float gain, int correction, char *settings, char *gains);
 void soapysdr_cancel();

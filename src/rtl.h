@@ -21,8 +21,7 @@
 #define RTL_BUFSIZE 320000
 #define RTL_BUFCNT 15
 #define RTL_OVERSAMPLE 10
-#define RTL_RATE (SYMBOL_RATE * SPS * RTL_OVERSAMPLE)
 
 // rtl.c
-void rtl_init(vdl2_state_t *ctx, char *dev, int freq, int bw, float gain, int correction, int bias);
+void rtl_init(vdl2_state_t *ctx, char *dev, uint32_t sample_rate, int freq, int bw, float gain, int correction, int bias);
 void rtl_cancel();

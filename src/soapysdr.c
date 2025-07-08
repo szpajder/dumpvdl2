@@ -40,7 +40,7 @@ static void soapysdr_verbose_device_search() {
 	SoapySDRKwargsList_clear(results, length);
 }
 
-void soapysdr_init(vdl2_state_t *ctx, char *dev, char *antenna, int freq, int bw, float gain,
+void soapysdr_init(vdl2_state_t *ctx, char *dev, uint32_t sample_rate, char *antenna, int freq, int bw, float gain,
 		int ppm_error, char* settings, char* gains_param) {
 	UNUSED(ctx);
 	soapysdr_verbose_device_search();
@@ -50,7 +50,7 @@ void soapysdr_init(vdl2_state_t *ctx, char *dev, char *antenna, int freq, int bw
 		fprintf(stderr, "Could not open SoapySDR device '%s': %s\n", dev, SoapySDRDevice_lastError());
 		_exit(1);
 	}
-	if(SoapySDRDevice_setSampleRate(sdr, SOAPY_SDR_RX, 0, SOAPYSDR_RATE) != 0) {
+	if(SoapySDRDevice_setSampleRate(sdr, SOAPY_SDR_RX, 0, sample_rate) != 0) {
 		fprintf(stderr, "setSampleRate failed: %s\n", SoapySDRDevice_lastError());
 		_exit(1);
 	}

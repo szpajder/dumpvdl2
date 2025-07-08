@@ -120,7 +120,7 @@ find_serial:
 	return -1;
 }
 
-void rtl_init(vdl2_state_t *ctx, char *dev, int freq, int bw, float gain, int correction, int bias) {
+void rtl_init(vdl2_state_t *ctx, char *dev, uint32_t sample_rate, int freq, int bw, float gain, int correction, int bias) {
 	UNUSED(ctx);
 	int r;
 
@@ -132,7 +132,7 @@ void rtl_init(vdl2_state_t *ctx, char *dev, int freq, int bw, float gain, int co
 		fprintf(stderr, "Failed to open rtlsdr device #%u: error %d\n", device, r);
 		_exit(1);
 	}
-	r = rtlsdr_set_sample_rate(rtl, RTL_RATE);
+	r = rtlsdr_set_sample_rate(rtl, sample_rate);
 	if (r < 0) {
 		fprintf(stderr, "Failed to set sample rate for device #%d: error %d\n", device, r);
 		_exit(1);

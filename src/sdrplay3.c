@@ -27,7 +27,6 @@
 
 #define SDRPLAY3_ASYNC_BUF_NUMBER           15
 #define SDRPLAY3_ASYNC_BUF_SIZE             (32*16384) // 512k shorts
-#define SDRPLAY3_RATE (SYMBOL_RATE * SPS * SDRPLAY3_OVERSAMPLE)
 #define SDRPLAY3_DEFAULT_AGC_SETPOINT       -30
 
 typedef struct {
@@ -314,7 +313,7 @@ dev_found:
 	return devIdx;
 }
 
-void sdrplay3_init(vdl2_state_t const *ctx, char const *dev, char const *antenna,
+void sdrplay3_init(vdl2_state_t const *ctx, char const *dev, uint32_t sample_rate, char const *antenna,
 		double freq, int ifgr, int lna_state, double freq_correction_ppm,
 		int enable_biast, int enable_notch_filter, int enable_dab_notch_filter,
 		int agc_set_point, int tuner) {
@@ -395,7 +394,7 @@ void sdrplay3_init(vdl2_state_t const *ctx, char const *dev, char const *antenna
 		fprintf(stderr, "Unable to read device %s parameters: %s\n", device->SerNo, sdrplay_api_GetErrorString(err));
 		goto fail;
 	}
-	devParams->devParams->fsFreq.fsHz = SDRPLAY3_RATE;
+	devParams->devParams->fsFreq.fsHz = sample_rate;
 	devParams->devParams->ppm = freq_correction_ppm;
 
 	sdrplay_api_RxChannelParamsT *chParams = devParams->rxChannelA;

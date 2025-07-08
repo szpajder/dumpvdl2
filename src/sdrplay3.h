@@ -23,7 +23,7 @@
 #include "dumpvdl2.h"                       // vdl2_state_t
 #define SDRPLAY3_OVERSAMPLE                  20
 
-void sdrplay3_init(vdl2_state_t const *ctx, char const *dev, char const *antenna,
+void sdrplay3_init(vdl2_state_t const *ctx, char const *dev, uint32_t sample_rate, char const *antenna,
 		double freq, int ifgr, int lna_state, double freq_correction_ppm,
 		int enable_biast, int enable_notch_filter, int enable_dab_notch_filter,
 		int agc_set_point, int tuner);

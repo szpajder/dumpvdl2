@@ -112,7 +112,7 @@ static int mirisdr_verbose_device_search(char *s) {
 	return -1;
 }
 
-void mirisdr_init(vdl2_state_t *ctx, char *dev, int flavour, uint32_t freq, float gain,
+void mirisdr_init(vdl2_state_t *ctx, char *dev, int flavour, uint32_t sample_rate, uint32_t freq, float gain,
 		int freq_offset, int usb_xfer_mode) {
 	UNUSED(ctx);
 	int r;
@@ -157,7 +157,7 @@ void mirisdr_init(vdl2_state_t *ctx, char *dev, int flavour, uint32_t freq, floa
 	}
 	fprintf(stderr, "Using USB transfer mode %s\n", mirisdr_get_transfer(mirisdr));
 
-	r = mirisdr_set_sample_rate(mirisdr, MIRISDR_RATE);
+	r = mirisdr_set_sample_rate(mirisdr, sample_rate);
 	if (r < 0) {
 		fprintf(stderr, "Failed to set sample rate for device #%d: error %d\n", device, r);
 		_exit(1);
