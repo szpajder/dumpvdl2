@@ -20,7 +20,7 @@
 #include "dumpvdl2.h"
 #define RTL_BUFSIZE 320000
 #define RTL_BUFCNT 15
-#define RTL_OVERSAMPLE 10
+#define RTL_OVERSAMPLE 12
 #define RTL_RATE (SYMBOL_RATE * SPS * RTL_OVERSAMPLE)
 
 // rtl.c
