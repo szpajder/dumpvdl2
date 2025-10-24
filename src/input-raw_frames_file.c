@@ -71,6 +71,41 @@ static int process_frame(uint8_t *buf, size_t len) {
 	return 0;
 }
 
+static int input_raw_frames_file_process_unbuffered(FILE* fh) {
+
+	uint8_t buf[OUT_BINARY_FRAME_LEN_MAX];
+
+	while(do_exit == 0) {
+		int ret = fread(buf, sizeof(uint8_t), OUT_BINARY_FRAME_LEN_OCTETS, fh);
+		if (0 == ret) {
+			return 0;
+		}
+		if (ret < OUT_BINARY_FRAME_LEN_OCTETS) {
+			fprintf(stderr, "Input file is truncated\n");
+			return 3;
+		}
+		size_t frame_len = ntohs(*(uint16_t *)(buf));
+		if(frame_len < OUT_BINARY_FRAME_LEN_OCTETS + 1) {
+			fprintf(stderr, "Frame too short: %zu\n", frame_len);
+			return 3;
+		}
+		if (frame_len > OUT_BINARY_FRAME_LEN_MAX + OUT_BINARY_FRAME_LEN_OCTETS) {
+			fprintf(stderr, "Frame too long: %zu\n", frame_len);
+			return 3;
+		}
+		int payload_len = frame_len - OUT_BINARY_FRAME_LEN_OCTETS;
+		ret = fread(buf, sizeof(uint8_t), payload_len, fh);
+		if (ret < payload_len) {
+			fprintf(stderr, "Input file is truncated\n");
+			return 3;
+		}
+		if (process_frame(buf, payload_len) != 0) {
+			return 3;
+		}
+	}
+	return 0;
+}
+
 int input_raw_frames_file_process(char const *file) {
 	ASSERT(file != NULL);
 	FILE *fh = NULL;
@@ -83,7 +118,14 @@ int input_raw_frames_file_process(char const *file) {
 		perror("Could not open input file");
 		return 2;
 	}
+
 	int ret = 0;
+
+	if (fh == stdin) {
+		ret = input_raw_frames_file_process_unbuffered(fh);
+		goto cleanup;
+	}
+
 	size_t available = 0, offset = 0, i = 0;
 	size_t frame_len = 0;
 	uint8_t buf[BUF_SIZE];
