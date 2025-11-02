@@ -36,6 +36,7 @@ jobs:
         cd libacars
         if [[ "${{ github.ref_name }}" == "master" ]]; then branch=master; else branch=unstable; fi
         echo "libacars branch used: $branch"
+        git checkout $branch
         mkdir build
         cd build
         cmake ..
