@@ -34,7 +34,7 @@ jobs:
         cd "$RUNNER_TEMP"
         git clone https://github.com/szpajder/libacars.git
         cd libacars
-        if [[ "${{ github.ref_name }}" == "master" ]]; then branch=master; else branch=unstable; fi
+        if [[ "${{ github.ref_name }}" == "master" ]]; then branch=master; else branch=devel; fi
         echo "libacars branch used: $branch"
         git checkout $branch
         mkdir build
