@@ -1502,7 +1502,7 @@ Maybe. I may do it one day, but it's not currently top priority.
 
 ## Contributing
 
-Please submit your pull requests against the unstable branch - this is where
+Please submit your pull requests against the devel branch - this is where
 all the new code goes first. master branch is only for making stable releases.
 
 If you want to make large changes or implement a significant new feature, please
