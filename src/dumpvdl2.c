@@ -172,7 +172,7 @@ static uint32_t calc_centerfreq(uint32_t *freq, int cnt, uint32_t source_rate) {
 		if(freq[i] < freq_min) freq_min = freq[i];
 		if(freq[i] > freq_max) freq_max = freq[i];
 	}
-	if(freq_max - freq_min > source_rate * 0.8f) {
+	if(freq_max - freq_min > source_rate - SYMBOL_RATE * 2) {
 		fprintf(stderr, "Error: given frequencies are too far apart\n");
 		return 0;
 	}
