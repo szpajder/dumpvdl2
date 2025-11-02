@@ -1,5 +1,17 @@
 # NEWS
 
+## Version 2.5.0 (2025-11-02)
+
+* Added `--max-ppm <ppm>` option which drops messages if their PPM error exceeds
+  a configured threshold. This is useful for filtering out loud message
+  crosstalk from adjacent channels and avoiding cross-channel duplicates (thx
+  @f00b4r0).
+* `--oversample` option may now be used for any input type, not only
+  `--iq-file`.
+* Decoding of raw frames from standard input is now done without buffering. This
+  improves interaction with 3rd party message generators and simulators (thx
+  @sbabbi).
+
 ## Version 2.4.0 (2024-10-10)
 
 * Allow specifying frequencies in kHz, MHz or GHz. Frequencies might be
