@@ -241,6 +241,9 @@ void decode_vdl2_burst(vdl2_channel_t *v) {
 
 			v->fec_octets += get_fec_octetcount(v->last_block_len_octets);
 
+			if(v->last_block_len_octets==0)
+				v->last_block_len_octets=249;
+
 			debug_print(D_BURST, "Data length: %u (0x%x) bits (%u octets), num_blocks=%u, last_block_len_octets=%u fec_octets=%u\n",
 					v->datalen, v->datalen, v->datalen_octets, v->num_blocks, v->last_block_len_octets, v->fec_octets);
 
