@@ -1,5 +1,10 @@
 # NEWS
 
+## Version 2.5.1 (2026-01-06)
+
+* Fixed failed decoding of VDL2 blocks whose length is a multiple of 249
+  octets (thx @terrymarkovich).
+
 ## Version 2.5.0 (2025-11-02)
 
 * Added `--max-ppm <ppm>` option which drops messages if their PPM error exceeds
