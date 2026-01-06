@@ -3,7 +3,7 @@
 # vdl2grep - a simple script for grepping dumpvdl2 log files.
 # Prints whole VDL2 messages containing (or not containing) given text string.
 #
-# Copyright (c) 2017-2023 Tomasz Lemiech <szpajder@gmail.com>
+# Copyright (c) 2017-2026 Tomasz Lemiech <szpajder@gmail.com>
 
 use Getopt::Std;
 

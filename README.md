@@ -1523,7 +1523,7 @@ testing of dumpvdl2. Special thanks go to:
 
 ## License
 
-Copyright (c) 2017-2023 Tomasz Lemiech <szpajder@gmail.com>
+Copyright (c) 2017-2026 Tomasz Lemiech <szpajder@gmail.com>
 
 Contains code from the following software projects:
 
