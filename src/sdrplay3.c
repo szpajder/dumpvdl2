@@ -43,6 +43,8 @@ static char const *get_hw_descr(int hw_id) {
 		{ .id = SDRPLAY_RSP1A_ID, .val = "RSP1A" },
 		{ .id = SDRPLAY_RSPduo_ID, .val = "RSPduo" },
 		{ .id = SDRPLAY_RSPdx_ID, .val = "RSPdx" },
+		{ .id = SDRPLAY_RSP1B_ID, .val = "RSP1B" },
+		{ .id = SDRPLAY_RSPdxR2_ID, .val = "RSPdxR2" },
 		{ .id = 0, .val = NULL }
 	};
 	char const *ret = la_dict_search(hw_descr, hw_id);
@@ -171,12 +173,14 @@ static void sdrplay3_set_biast(sdrplay_api_DeviceParamsT *devParams,
 			chParams->rsp2TunerParams.biasTEnable = 1;
 			break;
 		case SDRPLAY_RSP1A_ID:
+		case SDRPLAY_RSP1B_ID:
 			chParams->rsp1aTunerParams.biasTEnable = 1;
 			break;
 		case SDRPLAY_RSPduo_ID:
 			chParams->rspDuoTunerParams.biasTEnable = 1;
 			break;
 		case SDRPLAY_RSPdx_ID:
+		case SDRPLAY_RSPdxR2_ID:
 			devParams->devParams->rspDxParams.biasTEnable = 1;
 			break;
 		default:
@@ -197,12 +201,14 @@ static void sdrplay3_set_notch_filter(sdrplay_api_DeviceParamsT *devParams,
 			chParams->rsp2TunerParams.rfNotchEnable = 1;
 			break;
 		case SDRPLAY_RSP1A_ID:
+		case SDRPLAY_RSP1B_ID:
 			devParams->devParams->rsp1aParams.rfNotchEnable = 1;
 			break;
 		case SDRPLAY_RSPduo_ID:
 			chParams->rspDuoTunerParams.rfNotchEnable = 1;
 			break;
 		case SDRPLAY_RSPdx_ID:
+		case SDRPLAY_RSPdxR2_ID:
 			devParams->devParams->rspDxParams.rfNotchEnable = 1;
 			break;
 		default:
@@ -221,12 +227,14 @@ static void sdrplay3_set_dab_notch_filter(sdrplay_api_DeviceParamsT *devParams,
 					get_hw_descr(hwVer));
 			return;
 		case SDRPLAY_RSP1A_ID:
+		case SDRPLAY_RSP1B_ID:
 			devParams->devParams->rsp1aParams.rfDabNotchEnable = 1;
 			break;
 		case SDRPLAY_RSPduo_ID:
 			chParams->rspDuoTunerParams.rfDabNotchEnable = 1;
 			break;
 		case SDRPLAY_RSPdx_ID:
+		case SDRPLAY_RSPdxR2_ID:
 			devParams->devParams->rspDxParams.rfDabNotchEnable = 1;
 			break;
 		default:
@@ -257,6 +265,7 @@ static void sdrplay3_select_antenna(sdrplay_api_DeviceParamsT *devParams,
 					get_hw_descr(hwVer));
 			return;
 		case SDRPLAY_RSPdx_ID:
+		case SDRPLAY_RSPdxR2_ID:
 			if(strcmp(antenna, "A") == 0) {
 				devParams->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_A;
 			} else if(strcmp(antenna, "B") == 0) {
