@@ -1,5 +1,9 @@
 # NEWS
 
+## Version 2.6.0 (2026-02-07)
+
+* Added support for SDRPlay RSP1B and RSPdx R2.
+
 ## Version 2.5.1 (2026-01-06)
 
 * Fixed failed decoding of VDL2 blocks whose length is a multiple of 249
@@ -16,6 +20,9 @@
 * Decoding of raw frames from standard input is now done without buffering. This
   improves interaction with 3rd party message generators and simulators (thx
   @sbabbi).
+* Reduced sampling bandwidth margin to 2 x 10050 Hz. Previous value (2 x 0.1 x
+  bandwidth) might have been a bit too large for receivers with large sampling
+  rates (thx @f00b4r0).
 
 ## Version 2.4.0 (2024-10-10)
 

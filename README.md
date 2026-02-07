@@ -2,7 +2,7 @@
 
 dumpvdl2 is a VDL Mode 2 message decoder and protocol analyzer.
 
-Current stable version: 2.5.1 (released January 6, 2026)
+Current stable version: 2.6.0 (released February 7, 2026)
 
 ## Features
 
