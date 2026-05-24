@@ -651,7 +651,7 @@ la_proto_node *clnp_compressed_data_pdu_parse(uint8_t *buf, uint32_t len, uint32
 	}
 
 	bool decode_payload = true;
-	if(pdu->derived && rtables != NULL) {   // reassembly engine is enabled
+	if(pdu->derived && rtables->offsetbased != NULL) {   // reassembly engine is enabled
 		decode_payload = false;
 		reasm_table *clnp_rtable = reasm_table_lookup(rtables->offsetbased, &proto_DEF_clnp_compressed_data_pdu);
 		if(clnp_rtable == NULL) {
