@@ -23,6 +23,7 @@
  * separate at the expense of a slight code duplication.
  */
 
+#include <limits.h>                     // INT_MAX
 #include <sys/time.h>                   // struct timeval
 #include <string.h>                     // strdup
 #include <libacars/hash.h>              // la_hash
@@ -233,6 +234,13 @@ reasm_status reasm_fragment_add(reasm_table *rtable, reasm_fragment_info const *
 		return REASM_ARGS_INVALID;
 	}
 
+	// Guard against signed integer overflow before pointer arithmetic.
+	// fragment_data_len >= 1 already checked above.
+	if(finfo->offset < 0 || finfo->fragment_data_len > INT_MAX - finfo->offset) {
+		debug_print(D_MISC, "reasm: fragment offset/length overflow (offset=%d len=%d)\n",
+				finfo->offset, finfo->fragment_data_len);
+		return REASM_ARGS_INVALID;
+	}
 	int frag_end = finfo->offset + finfo->fragment_data_len - 1;
 	reasm_status ret = REASM_UNKNOWN;
 	void *lookup_key = rtable->funcs.get_tmp_key(finfo->pdu_info);
@@ -292,6 +300,7 @@ restart:
 
 	if(finfo->is_final_fragment) {
 		if(rt_entry->total_pdu_len < 1) {
+			// Overflow already checked above when computing frag_end.
 			rt_entry->total_pdu_len = finfo->offset + finfo->fragment_data_len;
 			debug_print(D_MISC, "Final fragment: offset %d fragment_data_len %d -> total_pdu_len %d\n",
 					finfo->offset, finfo->fragment_data_len, rt_entry->total_pdu_len);
@@ -311,6 +320,13 @@ restart:
 	memcpy(fragment_data, finfo->fragment_data, finfo->fragment_data_len);
 	current_fragment->data = octet_string_new(fragment_data, finfo->fragment_data_len);
 	rt_entry->fragment_list = la_list_append(rt_entry->fragment_list, current_fragment);
+	// Guard accumulator against overflow — crafted fragment streams could
+	// otherwise wrap frags_collected_total_len, bypassing the completion check.
+	if(finfo->fragment_data_len > INT_MAX - rt_entry->frags_collected_total_len) {
+		debug_print(D_MISC, "reasm: frags_collected_total_len overflow, discarding\n");
+		ret = REASM_BAD_LEN;
+		goto cleanup;
+	}
 	rt_entry->frags_collected_total_len += finfo->fragment_data_len;
 
 	// Reassembly is complete if total_pdu_len for this rt_entry is set
