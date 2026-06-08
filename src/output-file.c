@@ -98,8 +98,10 @@ static int out_file_open(out_file_ctx_t *self) {
 			fprintf(stderr, "open_outfile(): strfime returned 0\n");
 			return -1;
 		}
-		filename = XCALLOC(self->prefix_len + tlen + 2, sizeof(uint8_t));
-		sprintf(filename, "%s%s%s", self->filename_prefix, suffix, self->extension);
+		size_t ext_len = strlen(self->extension);
+		size_t filename_len = self->prefix_len + tlen + ext_len + 1;
+		filename = XCALLOC(filename_len, sizeof(uint8_t));
+		snprintf(filename, filename_len, "%s%s%s", self->filename_prefix, suffix, self->extension);
 	} else {
 		filename = strdup(self->filename_prefix);
 	}

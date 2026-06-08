@@ -101,6 +101,10 @@ la_list *tlv_parse(uint8_t *buf, size_t len, la_dict const *tag_table, size_t le
 
 		tag_len = (size_t)(*ptr);
 		if(len_octets == 2) {
+			if(len < 2) {
+				debug_print(D_PROTO, "TLV two-octet length field truncated: only %zu byte(s) remain\n", len);
+				return NULL;
+			}
 			tag_len = (tag_len << 8) | (size_t)ptr[1];
 		}
 
