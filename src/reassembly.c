@@ -311,6 +311,17 @@ restart:
 		}
 	}
 
+	// Guard accumulator against overflow — crafted fragment streams could
+	// otherwise wrap frags_collected_total_len, bypassing the completion check.
+	// Checked here, before any allocation, so a failed check can safely
+	// goto cleanup without leaking fragment_data/current_fragment->data or
+	// leaving a dangling entry in rt_entry->fragment_list.
+	if(finfo->fragment_data_len > INT_MAX - rt_entry->frags_collected_total_len) {
+		debug_print(D_MISC, "reasm: frags_collected_total_len overflow, discarding\n");
+		ret = REASM_BAD_LEN;
+		goto cleanup;
+	}
+
 	// All checks succeeded. Add the fragment to the list
 
 	debug_print(D_MISC, "Good fragment (start=%d end=%d), adding to the list\n",
@@ -320,13 +331,6 @@ restart:
 	memcpy(fragment_data, finfo->fragment_data, finfo->fragment_data_len);
 	current_fragment->data = octet_string_new(fragment_data, finfo->fragment_data_len);
 	rt_entry->fragment_list = la_list_append(rt_entry->fragment_list, current_fragment);
-	// Guard accumulator against overflow — crafted fragment streams could
-	// otherwise wrap frags_collected_total_len, bypassing the completion check.
-	if(finfo->fragment_data_len > INT_MAX - rt_entry->frags_collected_total_len) {
-		debug_print(D_MISC, "reasm: frags_collected_total_len overflow, discarding\n");
-		ret = REASM_BAD_LEN;
-		goto cleanup;
-	}
 	rt_entry->frags_collected_total_len += finfo->fragment_data_len;
 
 	// Reassembly is complete if total_pdu_len for this rt_entry is set

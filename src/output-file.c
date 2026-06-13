@@ -98,8 +98,9 @@ static int out_file_open(out_file_ctx_t *self) {
 			fprintf(stderr, "open_outfile(): strfime returned 0\n");
 			return -1;
 		}
-		size_t ext_len = strlen(self->extension);
-		size_t filename_len = self->prefix_len + tlen + ext_len + 1;
+		// self->prefix_len already includes the length of the extension
+		// (it's measured before the extension is split off in out_file_init()).
+		size_t filename_len = self->prefix_len + tlen + 1;
 		filename = XCALLOC(filename_len, sizeof(uint8_t));
 		snprintf(filename, filename_len, "%s%s%s", self->filename_prefix, suffix, self->extension);
 	} else {
