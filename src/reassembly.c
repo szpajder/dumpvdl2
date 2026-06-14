@@ -25,6 +25,7 @@
 
 #include <sys/time.h>                   // struct timeval
 #include <string.h>                     // strdup
+#include <limits.h>                     // INT_MAX
 #include <libacars/hash.h>              // la_hash
 #include <libacars/list.h>              // la_list
 #include "dumpvdl2.h"                   // NEW, XCALLOC
@@ -233,6 +234,13 @@ reasm_status reasm_fragment_add(reasm_table *rtable, reasm_fragment_info const *
 		return REASM_ARGS_INVALID;
 	}
 
+	// Guard against signed integer overflow.
+	if(finfo->fragment_data_len > INT_MAX - finfo->offset) {
+		debug_print(D_MISC, "fragment offset/length overflow (offset=%d fragment_data_len=%d)\n",
+				finfo->offset, finfo->fragment_data_len);
+		return REASM_ARGS_INVALID;
+	}
+
 	int frag_end = finfo->offset + finfo->fragment_data_len - 1;
 	reasm_status ret = REASM_UNKNOWN;
 	void *lookup_key = rtable->funcs.get_tmp_key(finfo->pdu_info);
@@ -300,6 +308,12 @@ restart:
 			ret = REASM_BOGUS_FINAL_FRAGMENT;
 			goto cleanup;
 		}
+	}
+
+	if(finfo->fragment_data_len > INT_MAX - rt_entry->frags_collected_total_len) {
+		debug_print(D_MISC, "frags_collected_total_len overflow, discarding\n");
+		ret = REASM_BAD_LEN;
+		goto cleanup;
 	}
 
 	// All checks succeeded. Add the fragment to the list
