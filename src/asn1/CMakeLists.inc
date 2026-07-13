@@ -1,10 +1,32 @@
 set(ASN_MODULE_SOURCES
-	CMAircraftMessage.c
-	CMGroundMessage.c
+	AircraftAddress.c
 	AircraftFlightIdentification.c
 	Airport.c
 	AirportDeparture.c
 	AirportDestination.c
+	AlgorithmIdentifier.c
+	Altimeter.c
+	AltimeterEnglish.c
+	AltimeterMetric.c
+	Date.c
+	DateTimeGroup.c
+	Day.c
+	FacilityDesignation.c
+	Humidity.c
+	LatitudeDirection.c
+	LongitudeDirection.c
+	Month.c
+	RTASecTolerance.c
+	SpeedMach.c
+	Time.c
+	Timehhmmss.c
+	Timehours.c
+	Timeminutes.c
+	TimeSeconds.c
+	WindDirection.c
+	Year.c
+	CMAircraftMessage.c
+	CMGroundMessage.c
 	APAddress.c
 	AEQualifier.c
 	AEQualifierVersion.c
@@ -22,22 +44,14 @@ set(ASN_MODULE_SOURCES
 	CMLogonRequest.c
 	CMLogonResponse.c
 	CMUpdate.c
-	Date.c
 	DateTime.c
 	DateTimeDepartureETD.c
-	Day.c
-	FacilityDesignation.c
 	LocSysNselTsel.c
 	LongTsap.c
-	Month.c
 	Response.c
 	RDP.c
 	ShortTsap.c
-	Time.c
-	Timehours.c
-	Timeminutes.c
 	VersionNumber.c
-	Year.c
 	ProtectedGroundPDUs.c
 	ProtectedUplinkMessage.c
 	ATCForwardMessage.c
@@ -48,7 +62,6 @@ set(ASN_MODULE_SOURCES
 	ProtectedStartDownMessage.c
 	ProtectedMode.c
 	ProtectedDownlinkMessage.c
-	AlgorithmIdentifier.c
 	CPDLCMessage.c
 	PMCPDLCUserAbortReason.c
 	PMCPDLCProviderAbortReason.c
@@ -56,92 +69,232 @@ set(ASN_MODULE_SOURCES
 	ATCUplinkMessageData.c
 	ATCDownlinkMessage.c
 	ATCDownlinkMessageData.c
+	ATCDownlinkMsgElementIdSequence.c
+	ATCDownlinkRouteClearanceConstrainedData.c
+	ATCUplinkMsgElementIdSequence.c
+	ATCUplinkRouteClearanceConstrainedData.c
+	RouteClearanceSequence.c
 	ATCMessageHeader.c
 	MsgIdentificationNumber.c
 	MsgReferenceNumber.c
 	LogicalAck.c
 	ATCUplinkMsgElementId.c
 	ATCDownlinkMsgElementId.c
-	AircraftAddress.c
-	Altimeter.c
-	AltimeterEnglish.c
-	AltimeterMetric.c
-	ATCUplinkMsgElementIdSequence.c
-	ATCDownlinkMsgElementIdSequence.c
+	AircraftIdentification.c
+	AircraftIdentificationO.c
+	AircraftIdType.c
+	AircraftMovement.c
+	AircraftType.c
+	AircraftTypeOTrafficLocationEtpO.c
+	AircraftTypeOTrafficLocationVisibility.c
+	AircraftWeight.c
+	AircraftWeightEnglish.c
+	AircraftWeightMetric.c
+	AirportOATISCode.c
+	AirportORunwayO.c
+	AirportORunwayORvr.c
+	AltimeterSetting.c
+	AppArrdata.c
+	ProcedureApproachR.c
+	ProcedureArrivalR.c
+	Apron.c
+	ApronNameNone.c
+	ApronName.c
+	AssignedNameLong.c
+	AssignedNameShort.c
+	AssignedTime.c
+	AssignedTimeO.c
+	AssignedTimeONone.c
+	AssignedTimeType.c
 	ATISCode.c
 	ATSRouteDesignator.c
 	ATWAlongTrackWaypoint.c
-	ATWAlongTrackWaypointSequence.c
+	ATWAlongTrackWaypointR.c
+	ATWDistance.c
+	ATWDistanceQualifier.c
 	ATWLevel.c
+	ATWLevelQualifier.c
+	ATWLevelS.c
 	ATWLevelSequence.c
 	ATWLevelTolerance.c
-	ATWDistance.c
-	ATWDistanceTolerance.c
-	BlockLevel.c
+	CdaNdaO.c
+	CurrentDataAuthority.c
+	NextDataAuthority.c
+	ClearanceName.c
 	ClearanceType.c
+	ClearanceTypeR.c
+	ClearanceTypeRAssignedTime.c
+	ClearanceTypeRequest.c
 	Code.c
 	CodeOctalDigit.c
 	ControlledTime.c
-	DateTimeGroup.c
+	DCLRequest.c
 	DegreeIncrement.c
 	Degrees.c
+	DegreesLat.c
+	DegreesLong.c
 	DegreesMagnetic.c
 	DegreesTrue.c
+	DeicingPosition.c
+	DeicingPositionNone.c
+	DeicingPositionStr.c
+	DepartureAdditionalInformation.c
+	ApproachProcedure.c
+	DepartureProcedure.c
+	SpecialInstructions.c
 	DepartureClearance.c
+	DepartureClearanceR.c
+	DepartureHeading.c
+	NoDelayExpected.c
+	TargetStartupApprovalTime.c
+	DepartureFrequency.c
+	DepartureLevels.c
+	InitialLevel.c
+	ExpectLevel.c
+	DepartureLevelValue.c
+	DepartureLocation.c
 	DepartureMinimumInterval.c
+	DeparturePilotPreferences.c
+	AdditionalInformation.c
+	DeparturePreferredRoute.c
+	RouteOfFlight.c
+	DepartureRoute.c
+	RouteAsFiled.c
+	DepartureRouteData.c
+	ThenAsFiled.c
+	DepartureRunwayRequested.c
+	DepartureSpeed.c
+	DepartureUntilConstraint.c
+	Depdata.c
+	DepdataOAppArrdata.c
+	DepdataOAppArrdataO.c
+	DeviationSpecified.c
+	DeviationSpecifiedODirectionSide.c
+	DeviationType.c
 	Direction.c
+	DirectionCompass.c
 	DirectionDegrees.c
+	DirectionNumberOfDegrees.c
+	DirectionPreposition.c
+	DirectionSide.c
+	DirectionSideDegrees.c
+	DirectionSideNumberOfDegrees.c
 	Distance.c
+	DistanceFeet.c
+	DistanceGround.c
 	DistanceKm.c
 	DistanceNm.c
+	DistanceMeter.c
 	DistanceSpecified.c
 	DistanceSpecifiedDirection.c
 	DistanceSpecifiedDirectionTime.c
 	DistanceSpecifiedKm.c
+	DistanceSpecifiedKmR.c
 	DistanceSpecifiedNm.c
+	DistanceSpecifiedNmR.c
+	DistanceSpecifiedR.c
+	DistanceSpecifiedRDirectionSide.c
 	ErrorInformation.c
+	ErrorInformationR.c
+	Exit.c
 	Facility.c
-	FacilityFunction.c
 	FacilityDesignationAltimeter.c
 	FacilityDesignationATISCode.c
+	FacilityDesignationOAltimeterTimeO.c
+	FacilityFunction.c
+	FacilityFunctionR.c
 	FacilityName.c
+	FIRLocationIndicator.c
 	Fix.c
 	FixName.c
 	FlightInformation.c
+	FlightPhase.c
+	FlightPhaseO.c
+	NoFlightPhase.c
 	FreeText.c
 	Frequency.c
+	FrequencyO.c
+	FrequencyR.c
 	Frequencyhf.c
 	Frequencysatchannel.c
+	FrequencysatchannelR.c
 	Frequencyuhf.c
 	Frequencyvhf.c
 	FurtherInstructions.c
+	Gate.c
+	GroundLatLong.c
+	GroundLatitude.c
+	GroundLatitudeDegrees.c
+	GroundLocation.c
+	Hangar.c
+	NamedPoint.c
+	DeicingStopPosition.c
+	NormalExit.c
+	RapidExit.c
+	Customs.c
+	GroundLocationO.c
+	GroundLocationNone.c
+	GroundLongitude.c
+	GroundLongitudeDegrees.c
 	Holdatwaypoint.c
-	HoldatwaypointSequence.c
 	HoldatwaypointSpeedLow.c
 	HoldatwaypointSpeedHigh.c
+	HoldatwaypointR.c
+	HoldSpeedLow.c
+	HoldSpeedHigh.c
 	HoldClearance.c
-	Humidity.c
-	InterceptCourseFrom.c
-	InterceptCourseFromSequence.c
-	InterceptCourseFromSelection.c
+	HoldClearanceR.c
+	HoldingBay.c
+	HoldingPoint.c
+	HoldingPointCategory.c
+	HoldingPointName.c
+	HZWXSpecification.c
+	SIGMETIdentifierSequence.c
+	SARSequence.c
 	Icing.c
+	InterceptCourseFrom.c
+	InterceptCourseFromSelection.c
+	Intersection.c
+	IntersectionRunway.c
+	IntersectionRunwayDistanceGroundO.c
+	ITPReferenceAircraft.c
+	ITPReferenceAircraftDistance.c
+	ITPReferenceAircraftDistanceList.c
+	ITPReferenceAircraftList.c
+	LackStatus.c
+	UseOfLackProhibited.c
+	LateralDeviation.c
 	Latitude.c
+	LatitudeAndLongitudeR.c
 	LatitudeDegrees.c
 	LatitudeDegreesMinutes.c
+	LatitudeDegreesMinutesR.c
 	LatitudeDegreesMinutesSeconds.c
-	LatitudeDirection.c
-	LatitudeWholeDegrees.c
 	LatitudeLongitude.c
+	LatitudeLongitudeR.c
+	LatitudeR.c
 	LatitudeReportingPoints.c
 	LatitudeType.c
-	LatLonWholeMinutes.c
+	LatitudeWholeDegrees.c
 	LatLonReportingPoints.c
+	LatLonWholeMinutes.c
+	LeaveInstruction.c
+	LeaveInstructionDescending.c
+	LeaveInstructionClimbing.c
+	LeaveInstructionO.c
+	LeaveInstructionNone.c
 	LegDistance.c
 	LegDistanceEnglish.c
+	LegDistanceEnglishR.c
 	LegDistanceMetric.c
+	LegDistanceMetricR.c
+	LegDistanceR.c
 	LegTime.c
+	LegTimeR.c
 	LegType.c
+	LegTypeR.c
 	Level.c
+	BlockLevel.c
 	LevelFeet.c
 	LevelFlightLevel.c
 	LevelFlightLevelMetric.c
@@ -152,31 +305,78 @@ set(ASN_MODULE_SOURCES
 	LevelsOfFlight.c
 	LevelSpeed.c
 	LevelSpeedSpeed.c
+	LevelS.c
+	LevelSLateralDeviation.c
+	LevelSLevelS.c
+	LevelSNumberOfMinutes.c
+	LevelSPositionATW.c
+	LevelSPositionR.c
+	LevelSProcedureNameR.c
+	LevelSsOfFlightR.c
+	LevelSSpeed.c
+	LevelSTime.c
 	LevelTime.c
 	LevelType.c
+	LocationQualifier.c
 	Longitude.c
-	LongitudeDegrees.c
 	LongitudeDegreesMinutes.c
+	LongitudeDegreesMinutesR.c
 	LongitudeDegreesMinutesSeconds.c
-	LongitudeDirection.c
+	LongitudeR.c
 	LongitudeWholeDegrees.c
+	LongitudeDegrees.c
 	LongitudeReportingPoints.c
 	LongitudeType.c
 	MinutesLatLon.c
+	MinutesLatLonR.c
+	NamedIdentifierName.c
+	NamedIdentifierR.c
+	NamedInstruction.c
 	Navaid.c
 	NavaidName.c
+	NumberOfDegrees.c
+	NumberOfMinutes.c
+	OCLRequest.c
+	OceanicEntryPoint.c
+	PreferredLevelS.c
+	MaximumLevelS.c
+	OCLRequestO.c
+	OCLRequestNone.c
 	PersonsOnBoard.c
+	PersonsOnBoardEnhanced.c
+	PersonsOnBoardUnknown.c
 	PlaceBearing.c
 	PlaceBearingDistance.c
 	PlaceBearingPlaceBearing.c
+	PlaceBearingR.c
+	PlaceBearingRDistance.c
 	Position.c
+	PositionATW.c
+	PositionATWAppArrdata.c
+	PositionATWDegrees.c
+	PositionATWDistanceSpecifiedRDirectionSide.c
+	PositionATWLevel.c
+	PositionATWLevelS.c
+	PositionATWLevelSpeed.c
+	PositionATWPositionR.c
+	PositionATWRTATimesec.c
+	PositionATWRTATimesecLevel.c
+	PositionATWRTATimesecLevelSpeed.c
+	PositionATWRTATimesecRTATimesec.c
+	PositionATWRTATimesecSpeed.c
+	PositionATWSpeed.c
 	PositionDegrees.c
 	PositionDistanceSpecifiedDirection.c
+	PositionGAUnitNameRFrequencyO.c
+	PositionGroundair.c
 	PositionLevel.c
 	PositionLevelLevel.c
 	PositionLevelSpeed.c
+	PositionO.c
 	PositionPosition.c
 	PositionProcedureName.c
+	PositionR.c
+	PositionRAppArrdataO.c
 	PositionReport.c
 	FixNext.c
 	FixNextPlusOne.c
@@ -187,7 +387,15 @@ set(ASN_MODULE_SOURCES
 	ReportedWaypointPosition.c
 	ReportedWaypointTime.c
 	ReportedWaypointLevel.c
+	PositionRDepdataO.c
+	PositionRDirectionCompassO.c
+	PositionRLevel.c
+	PositionRLevelS.c
+	PositionRNamedInstruction.c
 	PositionRouteClearanceIndex.c
+	PositionRPositionR.c
+	PositionRProcedureNameR.c
+	PositionRSpeed.c
 	PositionSpeed.c
 	PositionSpeedSpeed.c
 	PositionTime.c
@@ -195,85 +403,173 @@ set(ASN_MODULE_SOURCES
 	PositionTimeTime.c
 	PositionUnitNameFrequency.c
 	Procedure.c
-	ProcedureApproach.c
-	ProcedureArrival.c
-	ProcedureDeparture.c
+	ProcedureAdditionalInformation.c
 	ProcedureName.c
+	ProcedureNameR.c
 	ProcedureTransition.c
 	ProcedureType.c
 	PublishedIdentifier.c
+	PushbackDirection.c
+	NoPushbackDirection.c
+	FacingDirection.c
+	TailToDirection.c
+	PushbackPosition.c
+	PushbackPositionO.c
+	PushbackPositionOAssignedTimeO.c
+	Ramp.c
+	RelayInstruction.c
+	RelayResponse.c
 	RemainingFuel.c
 	RemainingFuelPersonsOnBoard.c
+	RemainingFuelPersonsOnBoardE.c
 	ReportingPoints.c
 	RevisionNumber.c
+	RevisionReason.c
+	RevisionReasonO.c
+	RevisionReasonSequence.c
 	RouteAndLevels.c
-	RouteClearanceConstrainedData.c
-	RouteClearanceSequence.c
 	RouteClearance.c
-	RouteClearanceIndex.c
-	RouteInformation.c
-	RouteInformationSequence.c
-	RouteInformationAdditional.c
-	RTARequiredTimeArrival.c
-	RTARequiredTimeArrivalSequence.c
-	RTATime.c
-	RTATolerance.c
-	Runway.c
 	RunwayArrival.c
 	RunwayDeparture.c
-	RunwayDirection.c
+	ProcedureApproach.c
+	ProcedureArrival.c
+	ProcedureDeparture.c
+	RouteInformationSequence.c
+	RouteClearanceIndex.c
+	RouteClearanceR.c
+	RouteInformation.c
+	RouteInformationAdditional.c
+	ATWAlongTrackWaypointSequence.c
+	InterceptCourseFromSequence.c
+	HoldatwaypointSequence.c
+	WaypointSpeedLevelSequence.c
+	RTARequiredTimeArrivalSequence.c
+	RouteInformationAdditionalR.c
+	ATWAlongTrackWaypointRSequence.c
+	HoldatwaypointRSequence.c
+	WaypointSpeedLevelRSequence.c
+	RTAsecRequiredTimeArrivalSequence.c
+	RouteInformationR.c
+	RTARequiredTimeArrival.c
+	RTAsecRequiredTimeArrival.c
+	RTATime.c
+	RTATimesec.c
+	RTATimesecRTATimesec.c
+	RTATolerance.c
+	Runway.c
 	RunwayConfiguration.c
+	RunwayDirection.c
+	RunwayO.c
+	RunwayOIntersectionDistanceGroundO.c
 	RunwayRVR.c
+	RunwaySpecifiedRVR.c
+	RunwayUse.c
 	RVR.c
 	RVRFeet.c
 	RVRMeters.c
+	RVRSection.c
+	RVRTouchdown.c
+	RVRMiddle.c
+	RVREnd.c
+	RVRValue.c
+	SARSpecification.c
 	SecondsLatLon.c
+	SIGMETIdentifier.c
+	SIGMETSequenceNumber.c
+	SpecifiedReasonDownlink.c
+	SpecifiedReasonUplink.c
 	Speed.c
-	SpeedIndicated.c
-	SpeedIndicatedMetric.c
+	SpeedDelta.c
 	SpeedGround.c
 	SpeedGroundMetric.c
-	SpeedMach.c
+	SpeedIAS.c
+	CPDLCSpeedIASMach.c
+	SpeedIndicated.c
+	SpeedIndicatedMetric.c
+	SpeedLimit.c
+	CPDLCSpeedQualifier.c
+	SpeedSchedule.c
 	SpeedSpeed.c
 	SpeedTime.c
 	SpeedTrue.c
 	SpeedTrueMetric.c
 	SpeedType.c
 	SpeedTypeSpeedTypeSpeedType.c
+	SpeedTypeR.c
+	SpeedTypes.c
+	SpeedTypeRSequence.c
 	SpeedTypeSpeedTypeSpeedTypeSpeed.c
+	SpeedTypesSpeed.c
+	Stand.c
+	TaxiDuration.c
+	TaxiDurationO.c
+	TaxiElement.c
+	TaxiElementStandard.c
+	Taxilane.c
+	TaxiRequest.c
+	GroundLocationFrom.c
+	GroundLocationTo.c
+	TaxiRequestO.c
+	TaxiResumeCondition.c
+	TaxiResumeConditionO.c
+	TaxiBeforeAircraft.c
+	TaxiAfterAircraft.c
+	TaxiRoute.c
+	TaxiRouteElement.c
+	Taxiway.c
 	Temperature.c
-	TimeLevel.c
+	Terminal.c
 	TimeDeparture.c
 	TimeDepAllocated.c
 	TimeDepClearanceExpected.c
 	TimeDistanceSpecifiedDirection.c
+	TimeDistanceSpecifiedRDirectionSide.c
 	TimeDistanceToFromPosition.c
-	Timehhmmss.c
-	TimeUnitNameFrequency.c
+	TimeLevel.c
+	CPDLCTimesec.c
 	TimePosition.c
 	TimePositionLevel.c
 	TimePositionLevelSpeed.c
-	TimeSeconds.c
+	TimePositionR.c
+	TimePreposition.c
+	TimeQualifier.c
+	TimerValue.c
 	TimeSpeed.c
 	TimeSpeedSpeed.c
 	TimeTime.c
 	TimeToFromPosition.c
 	TimeTolerance.c
+	TimeUnitNameRFrequencyO.c
+	TimeUnitNameFrequency.c
 	ToFrom.c
 	ToFromPosition.c
+	TrafficDescription.c
+	TrafficLocation.c
+	TrafficLocationQualifier.c
 	TrafficType.c
+	TrafficVisibility.c
+	TransferConstraints.c
+	TransferConstraintsUnitNameR.c
 	Turbulence.c
 	UnitName.c
 	UnitNameFrequency.c
+	UnitNameR.c
+	UnitNameRFrequencyO.c
+	UnitNameRFrequencyR.c
+	UnitNameRUnitNameR.c
 	DMVersionNumber.c
 	VerticalChange.c
 	VerticalDirection.c
+	VerticalDistance.c
+	VerticalDistanceFeet.c
+	VerticalDistanceMetric.c
 	VerticalRate.c
 	VerticalRateEnglish.c
 	VerticalRateMetric.c
+	WaypointLevelConstraint.c
+	WaypointSpeedConstraint.c
 	WaypointSpeedLevel.c
-	WaypointSpeedLevelSequence.c
-	WindDirection.c
+	WaypointSpeedLevelR.c
 	Winds.c
 	WindSpeed.c
 	WindSpeedEnglish.c
@@ -471,7 +767,6 @@ set(ASN_MODULE_SOURCES
 	RNPSegmentPoint.c
 	RNPValue.c
 	RTA.c
-	RTASecTolerance.c
 	RTAStatus.c
 	RTAStatusData.c
 	RTAType.c

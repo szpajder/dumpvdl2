@@ -9,8 +9,8 @@
 
 static asn_TYPE_member_t asn_MBR_Timesec_1[] = {
 	{ ATF_NOFLAGS, 0, offsetof(struct Timesec, hours),
-		(ASN_TAG_CLASS_UNIVERSAL | (2 << 2)),
-		0,
+		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
+		+1,	/* EXPLICIT tag at current level */
 		&asn_DEF_Timehours,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
@@ -18,8 +18,8 @@ static asn_TYPE_member_t asn_MBR_Timesec_1[] = {
 		"hours"
 		},
 	{ ATF_NOFLAGS, 0, offsetof(struct Timesec, minutes),
-		(ASN_TAG_CLASS_UNIVERSAL | (2 << 2)),
-		0,
+		(ASN_TAG_CLASS_CONTEXT | (1 << 2)),
+		+1,	/* EXPLICIT tag at current level */
 		&asn_DEF_Timeminutes,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
@@ -27,8 +27,8 @@ static asn_TYPE_member_t asn_MBR_Timesec_1[] = {
 		"minutes"
 		},
 	{ ATF_NOFLAGS, 0, offsetof(struct Timesec, seconds),
-		(ASN_TAG_CLASS_UNIVERSAL | (2 << 2)),
-		0,
+		(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
+		+1,	/* EXPLICIT tag at current level */
 		&asn_DEF_TimeSeconds,
 		0,	/* Defer constraints checking to the member type */
 		0,	/* No PER visible constraints */
@@ -40,9 +40,9 @@ static const ber_tlv_tag_t asn_DEF_Timesec_tags_1[] = {
 	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
 };
 static const asn_TYPE_tag2member_t asn_MAP_Timesec_tag2el_1[] = {
-    { (ASN_TAG_CLASS_UNIVERSAL | (2 << 2)), 0, 0, 2 }, /* hours */
-    { (ASN_TAG_CLASS_UNIVERSAL | (2 << 2)), 1, -1, 1 }, /* minutes */
-    { (ASN_TAG_CLASS_UNIVERSAL | (2 << 2)), 2, -2, 0 } /* seconds */
+    { (ASN_TAG_CLASS_CONTEXT | (0 << 2)), 0, 0, 0 }, /* hours */
+    { (ASN_TAG_CLASS_CONTEXT | (1 << 2)), 1, 0, 0 }, /* minutes */
+    { (ASN_TAG_CLASS_CONTEXT | (2 << 2)), 2, 0, 0 } /* seconds */
 };
 static asn_SEQUENCE_specifics_t asn_SPC_Timesec_specs_1 = {
 	sizeof(struct Timesec),
