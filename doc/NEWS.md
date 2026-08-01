@@ -1,5 +1,10 @@
 # NEWS
 
+## Version 2.7.0 (2026-08-01)
+
+* Added support for ATN-B2 CPDLC version 2
+* Fixed compilation errors with SDRPlay API older than 3.15
+
 ## Version 2.6.0 (2026-02-07)
 
 * Added support for SDRPlay RSP1B and RSPdx R2.

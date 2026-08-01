@@ -2,7 +2,7 @@
 
 dumpvdl2 is a VDL Mode 2 message decoder and protocol analyzer.
 
-Current stable version: 2.6.0 (released February 7, 2026)
+Current stable version: 2.7.0 (released August 1, 2026)
 
 ## Features
 
@@ -56,7 +56,7 @@ Current stable version: 2.6.0 (released February 7, 2026)
 - ISO 9542 End System to Intermediate System (ES-IS)
 - ISO 10747 Inter-Domain Routing Protocol (IDRP)
 - ATN-B1 Context Management
-- ATN-B1 Controller-Pilot Data Link Communications, version 1 (CPDLC)
+- ATN-B1/B2 Controller-Pilot Data Link Communications, version 1/2 (CPDLC)
 - ATN-B2 Automatic Dependent Surveillance - Contract, version 2 (ADS-C)
 - All applications and protocols handled by libacars library (full list [here](https://github.com/szpajder/libacars/blob/master/README.md#supported-message-types))
 
