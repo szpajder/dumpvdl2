@@ -98,6 +98,8 @@
 #define __OPT_MILLISECONDS           26
 #define __OPT_PRETTIFY_JSON          27
 #define __OPT_MAX_PPM                 28
+#define __OPT_SAMPLE_RATE            29
+#define __OPT_RESAMPLER              30
 
 #ifdef WITH_SDRPLAY3
 #define __OPT_SDRPLAY3               70
@@ -317,6 +319,12 @@ enum input_types {
 	INPUT_UNDEF
 };
 enum sample_formats { SFMT_U8, SFMT_S16_LE, SFMT_UNDEF };
+// How to deal with an input sample rate which is not a multiple of SYMBOL_RATE * SPS
+enum resampler_modes {
+	RESAMPLER_POLY,         // rational polyphase resampler in the input path
+	RESAMPLER_INTERP,       // fractional decimation with linear interpolation in the demodulator
+	RESAMPLER_NONE          // no conversion - bail out instead
+};
 
 typedef struct {
 	long long unsigned samplenum;
@@ -345,7 +353,9 @@ typedef struct {
 	uint32_t num_blocks;
 	uint32_t syndrome;
 	uint16_t lfsr;
-	uint16_t oversample;
+	uint16_t oversample;            // integer decimation factor (valid when frac_decim == false)
+	float oversample_f;             // decimation factor as configured (may be fractional)
+	bool frac_decim;                // use fractional decimation with interpolation
 	struct timeval tstart;
 	struct timeval burst_timestamp;
 	pthread_t demod_thread;
@@ -370,9 +380,10 @@ uint32_t reverse(uint32_t v, int numbits);
 
 // demod.c
 extern float *sbuf;
-vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample);
+vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, float oversample);
 void sincosf_lut_init();
 void input_lpf_init(uint32_t sample_rate);
+void input_resampler_init(uint32_t source_rate, uint32_t working_rate);
 void demod_sync_init();
 void process_buf_uchar_init();
 void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx);

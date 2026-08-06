@@ -15,6 +15,8 @@ Current stable version: 2.7.0 (released August 1, 2026)
   - SoapySDR (via [soapy-sdr project](https://github.com/pothosware/SoapySDR/wiki))
   - prerecorded IQ data from a file
 - Decodes multiple VDL2 channels simultaneously
+- Accepts sampling rates which are not integer multiples of 105000 samples/sec
+  (eg. Airspy), converting them internally
 - Automatically reassembles multiblock ACARS messages, MIAM file transfers,
   fragmented X.25, CLNP and COTP packets.
 - Supports various outputs and output formats (see below)
@@ -1076,6 +1078,51 @@ dumpvdl2 --iq-file iq.dat --sample-format S16_LE --oversample 13 --centerfreq 13
 processes `iq.dat` file recorded at 1365000 samples/sec using 16-bit signed
 samples, with receiver center frequency set to 136.955 MHz. VDL2 channels
 located at 136.975 and 136.725 MHz will be decoded.
+
+## Sample rates which are not a multiple of 105000
+
+Some receivers cannot produce a sampling rate which is an integer multiple of
+105000 samples/sec. Airspy R2 (10 and 2.5 Msps) and Airspy Mini (6 and 3 Msps)
+are the most common examples - none of their rates divides evenly by 105000.
+Setting `--oversample` to the nearest integer factor is *not* a workaround: the
+symbol clock free-runs after the preamble has been detected, so even a 0.25%
+error between the assumed and the actual rate accumulates into a symbol slip
+long before a full frame has been received.
+
+Use the `--sample-rate` option to tell dumpvdl2 what the actual input rate is,
+and it will do the conversion itself:
+
+```
+dumpvdl2 --soapysdr driver=airspy --sample-rate 6M --gain 20 136975000
+```
+
+`--sample-rate` accepts the same `k` / `M` / `G` suffixes as the frequency
+options. It may be used with any I/Q input - both SDR devices and `--iq-file`.
+When the given rate *is* a multiple of 105000, it simply selects the
+oversampling factor and nothing else happens.
+
+Two conversion methods are available, selected with `--resampler`:
+
+- `poly` (default) - a rational (L/M) polyphase resampler converts the input
+  stream to the working rate before it reaches the demodulators. The working
+  rate is `105000 * oversample` as usual, so with the default oversampling
+  factor a 6 Msps input is resampled down to 1050000 sps (L=7, M=40). This
+  costs a fixed amount of CPU time regardless of the number of channels being
+  decoded, and it keeps each demodulator running at the (much lower) working
+  rate. Note that only the working rate worth of bandwidth survives the
+  conversion - raise `--oversample` if the channels to decode are spread wider
+  than that. Signals in the outermost 20% of the resampled band are close to
+  the resampler's transition band and are best avoided.
+
+- `interp` - no resampling; the demodulators decimate directly from the input
+  rate by a fractional factor, interpolating between the two samples adjacent
+  to each wanted sampling instant. Nothing is thrown away and there is no fixed
+  cost, but every demodulator now runs at the full input rate, so the CPU usage
+  grows quickly with the number of channels. Cheaper than `poly` for a single
+  channel, more expensive from two channels up.
+
+- `none` - do not convert anything; fail if the input rate is not a multiple of
+  105000. Useful for making sure a rate mistake does not go unnoticed.
 
 ## Decoding raw AVLC frames from a binary file
 

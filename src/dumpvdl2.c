@@ -413,6 +413,13 @@ void usage() {
 #endif
 	fprintf(stderr, "common options:\n");
 	describe_option("--max-ppm <max_ppm>", "Set maximum allowable absolute PPM deviation for valid messages (default: 0 == unlimited)", 1);
+	describe_option("--sample-rate <sample_rate>", "Actual sample rate of the input data", 1);
+	describe_option("", "(default: 105000 * oversample_rate)", 1);
+	describe_option("", "Use this when the source cannot produce a multiple of 105000 sps (eg. Airspy)", 1);
+	describe_option("--resampler <method>", "How to convert such a rate to the working rate:", 1);
+	describe_option("poly", "polyphase rational resampler (default; best quality)", 2);
+	describe_option("interp", "fractional decimation with linear interpolation (cheapest)", 2);
+	describe_option("none", "no conversion - fail instead", 2);
 	describe_option("<freq_1> [<freq_2> [...]]", "VDL2 channel frequencies", 1);
 	fprintf(stderr, "If channel frequencies are omitted, VDL2 Common Signalling Channel (%u Hz) will be used as default.\n\n", CSC_FREQ);
 
@@ -698,6 +705,10 @@ static bool parse_frequency(char const *str, uint32_t *result) {
 int main(int argc, char **argv) {
 	vdl2_state_t ctx;
 	uint32_t centerfreq = 0, sample_rate = 0, oversample = 0, bandwidth = 0;
+	// Rate at which the demodulator threads consume samples. Equal to
+	// sample_rate unless the input stream has to be resampled.
+	uint32_t working_rate = 0;
+	enum resampler_modes resampler_mode = RESAMPLER_POLY;
 	uint32_t *freqs = NULL;
 	int num_channels = 0;
 	enum input_types input = INPUT_UNDEF;
@@ -756,6 +767,8 @@ int main(int argc, char **argv) {
 		{ "output-queue-hwm",   required_argument,  NULL,   __OPT_OUTPUT_QUEUE_HWM },
 		{ "iq-file",            required_argument,  NULL,   __OPT_IQ_FILE },
 		{ "oversample",         required_argument,  NULL,   __OPT_OVERSAMPLE },
+		{ "sample-rate",        required_argument,  NULL,   __OPT_SAMPLE_RATE },
+		{ "resampler",          required_argument,  NULL,   __OPT_RESAMPLER },
 		{ "sample-format",      required_argument,  NULL,   __OPT_SAMPLE_FORMAT },
 		{ "msg-filter",         required_argument,  NULL,   __OPT_MSG_FILTER },
 		{ "max-ppm",            required_argument,  NULL,   __OPT_MAX_PPM },
@@ -1020,6 +1033,23 @@ int main(int argc, char **argv) {
 			case __OPT_OVERSAMPLE:
 				oversample = atoi(optarg);
 				break;
+			case __OPT_SAMPLE_RATE:
+				if(parse_frequency(optarg, &sample_rate) == false) {
+					return 1;
+				}
+				break;
+			case __OPT_RESAMPLER:
+				if(!strcmp(optarg, "poly")) {
+					resampler_mode = RESAMPLER_POLY;
+				} else if(!strcmp(optarg, "interp")) {
+					resampler_mode = RESAMPLER_INTERP;
+				} else if(!strcmp(optarg, "none")) {
+					resampler_mode = RESAMPLER_NONE;
+				} else {
+					fprintf(stderr, "Invalid --resampler value: must be one of: poly, interp, none\n");
+					_exit(1);
+				}
+				break;
 #ifdef WITH_STATSD
 			case __OPT_STATSD:
 				statsd_addr = strdup(optarg);
@@ -1070,10 +1100,49 @@ int main(int argc, char **argv) {
 			freqs[0] = CSC_FREQ;
 		}
 
-		sample_rate = SYMBOL_RATE * SPS * oversample;
+		// Decimation factor from the working rate down to SPS samples per
+		// symbol. Fractional only when the demodulator is asked to do the rate
+		// conversion itself (--resampler interp).
+		float channel_oversample = (float)oversample;
+		working_rate = SYMBOL_RATE * SPS * oversample;
+		if(sample_rate == 0) {
+			// No --sample-rate given - the input runs at the working rate, as always
+			sample_rate = working_rate;
+		} else if(sample_rate < SYMBOL_RATE * SPS) {
+			fprintf(stderr, "Sampling rate must be at least %u sps\n", SYMBOL_RATE * SPS);
+			_exit(1);
+		} else if(sample_rate % (SYMBOL_RATE * SPS) == 0) {
+			// The input rate is directly usable - just decimate by an integer factor
+			working_rate = sample_rate;
+			oversample = sample_rate / (SYMBOL_RATE * SPS);
+			channel_oversample = (float)oversample;
+		} else {
+			// The input rate is not a multiple of SYMBOL_RATE * SPS (Airspy and
+			// friends). Convert it, using whichever method has been selected.
+			switch(resampler_mode) {
+				case RESAMPLER_POLY:
+					// Keep the working rate as derived from --oversample and
+					// resample the input stream down to it (set up below, once
+					// the demodulator threads are about to be started).
+					break;
+				case RESAMPLER_INTERP:
+					working_rate = sample_rate;
+					channel_oversample = (float)sample_rate / (float)(SYMBOL_RATE * SPS);
+					fprintf(stderr, "Fractional decimation enabled: %.4f samples per symbol\n",
+							channel_oversample);
+					break;
+				case RESAMPLER_NONE:
+					fprintf(stderr, "Sampling rate %u is not a multiple of %u sps. Either pick a "
+							"different rate, or let dumpvdl2 convert it (see --resampler)\n",
+							sample_rate, SYMBOL_RATE * SPS);
+					_exit(1);
+			}
+		}
 		fprintf(stderr, "Sampling rate set to %u sps\n", sample_rate);
 		if(centerfreq == 0) {
-			centerfreq = calc_centerfreq(freqs, num_channels, sample_rate);
+			// Only working_rate worth of spectrum survives the input stage, so
+			// this is what limits how far apart the channels may be.
+			centerfreq = calc_centerfreq(freqs, num_channels, working_rate);
 			if(centerfreq == 0) {
 				fprintf(stderr, "Failed to calculate center frequency\n");
 				_exit(2);
@@ -1087,7 +1156,7 @@ int main(int argc, char **argv) {
 		ctx.num_channels = num_channels;
 		ctx.channels = XCALLOC(num_channels, sizeof(vdl2_channel_t *));
 		for(int i = 0; i < num_channels; i++) {
-			if((ctx.channels[i] = vdl2_channel_init(centerfreq, freqs[i], sample_rate, oversample)) == NULL) {
+			if((ctx.channels[i] = vdl2_channel_init(centerfreq, freqs[i], working_rate, channel_oversample)) == NULL) {
 				fprintf(stderr, "Failed to initialize VDL channel\n");
 				_exit(2);
 			}
@@ -1147,7 +1216,10 @@ int main(int argc, char **argv) {
 
 	if(input_is_iq) {
 		sincosf_lut_init();
-		input_lpf_init(sample_rate);
+		// The channel filter and the demodulators run at the working rate,
+		// which is what comes out of the input resampler (if there is one).
+		input_lpf_init(working_rate);
+		input_resampler_init(sample_rate, working_rate);
 		demod_sync_init();
 		setup_barriers(&ctx);
 		start_demod_threads(&ctx);
