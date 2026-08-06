@@ -12,6 +12,7 @@ Current stable version: 2.7.0 (released August 1, 2026)
   - RTLSDR (via [rtl-sdr library](http://osmocom.org/projects/sdr/wiki/rtl-sdr))
   - Mirics SDR (via [libmirisdr-4](https://github.com/f4exb/libmirisdr-4))
   - SDRPlay RSP (native support through official driver version 2 and 3)
+  - Airspy R2 / Mini (via [airspyone_host](https://github.com/airspy/airspyone_host))
   - SoapySDR (via [soapy-sdr project](https://github.com/pothosware/SoapySDR/wiki))
   - prerecorded IQ data from a file
 - Decodes multiple VDL2 channels simultaneously
@@ -83,6 +84,7 @@ Optional dependencies:
   - librtlsdr
   - libmirisdr-4
   - SDRPlay binary driver
+  - libairspy
   - SoapySDR
 - Dependencies for optional features:
   - sqlite3 (for enriching messages with aircraft data read from SQB database)
@@ -179,16 +181,35 @@ for newer devices (like RSPdx). Older hardware works with both versions.
 You can have both versions installed simultaneously and choose either one
 when running the program.
 
+#### Airspy support (optional)
+
+Install the `libairspy` library, either from your distribution's package
+repository (`airspy` / `libairspy-dev` / `airspy-devel`, depending on the
+distribution) or from source:
+
+```
+git clone https://github.com/airspy/airspyone_host
+cd airspyone_host
+mkdir build
+cd build
+cmake ../ -DINSTALL_UDEV_RULES=ON
+make
+sudo make install
+sudo ldconfig
+```
+
 #### SoapySDR support (optional)
 
 Download and install the SoapySDR library from [here](https://github.com/pothosware/SoapySDR).
 Then install the driver module for your device. Refer to [SoapySDR wiki](https://github.com/pothosware/SoapySDR/wiki)
 for a list of all supported modules.
 
-**Note:** The device must support a sampling rate of 2100000 samples per second
-to work correctly with dumpvdl2. It is therefore not possible to use devices
-which only support predefined, fixed sampling rates (notably Airspies). This
-limitation will be removed in a future release of dumpvdl2.
+**Note:** dumpvdl2 works with any sampling rate the device supports. If the rate
+is not an integer multiple of 105000 samples per second - which is the case for
+devices with predefined, fixed rates, notably Airspies - declare the rate with
+`--sample-rate` and dumpvdl2 will convert it (see "Sample rates which are not a
+multiple of 105000"). Airspy devices are also supported natively, without going
+through SoapySDR.
 
 #### SQLite (optional)
 
@@ -523,6 +544,44 @@ options instead:
 if you want to set the gain reduction manually, specify both `--ifgr` and
 `--lna-state`. If either option is omitted, the other one is ignored and
 AGC is used instead.
+
+### Airspy
+
+Airspy R2 and Airspy Mini are supported natively through the `libairspy`
+library:
+
+```
+./dumpvdl2 --airspy 0 --linearity-gain 16 136975000 136725000
+```
+
+Devices may be selected by index or by serial number (a suffix of it is enough,
+which is what the sticker on the device usually shows). dumpvdl2 lists the
+serial numbers of all connected devices on startup.
+
+Airspies only run at a few fixed sampling rates, none of which is an integer
+multiple of 105000 samples per second. dumpvdl2 therefore always converts the
+sample stream (see "Sample rates which are not a multiple of 105000"). By
+default the lowest rate the device supports is used (2.5 Msps on an R2, 3 Msps
+on a Mini), which is the cheapest to process and still covers the whole VDL2
+band. Pick a different one with `--sample-rate`:
+
+```
+./dumpvdl2 --airspy 0 --sample-rate 10M --linearity-gain 16 136975000
+```
+
+Gain may be set either with one of the two combined controls - `--linearity-gain`
+or `--sensitivity-gain`, both taking a value of 0-21 - or by setting the LNA,
+mixer and VGA stages individually with `--lna-gain`, `--mixer-gain` and
+`--vga-gain` (0-15 each), optionally with automatic gain control enabled for the
+first two (`--lna-agc 1`, `--mixer-agc 1`). If no gain option is given,
+linearity gain 16 is used.
+
+`--packing 1` enables 12-bit sample packing, which reduces USB bandwidth usage
+and is worth enabling at the higher sampling rates. The Airspy has no frequency
+correction register, so `--correction` is applied by offsetting the tuned
+frequency instead.
+
+Type `./dumpvdl2 --help` to find out all the options and their default values.
 
 ### SoapySDR library
 

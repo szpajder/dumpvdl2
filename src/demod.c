@@ -59,6 +59,8 @@ static resampler_t *input_resampler = NULL;
 // Staging buffer holding the converted, not-yet-resampled sample block
 static float *rsbuf = NULL;
 static uint32_t rsbuf_size;
+// Current allocated length of sbuf, in floats
+static uint32_t sbuf_capacity;
 
 // phi range must be (0..1), rescaled to 0x0-0xFFFFFF
 static void sincosf_lut(uint32_t phi, float *sine, float *cosine) {
@@ -363,6 +365,18 @@ void *process_samples(void *arg) {
 	}
 }
 
+// Makes sure sbuf can hold at least float_cnt samples. Input drivers which
+// deliver fixed-size blocks size sbuf themselves, but the block size is not
+// always known in advance (libairspy picks its own), so grow it on demand.
+// MUST only be called between the demods_ready and samples_ready barriers -
+// anywhere else the demodulator threads may still be reading the buffer.
+static void sbuf_ensure_capacity(uint32_t float_cnt) {
+	if(float_cnt > sbuf_capacity) {
+		sbuf = XREALLOC(sbuf, float_cnt * sizeof(float));
+		sbuf_capacity = float_cnt;
+	}
+}
+
 // Returns a staging buffer of at least len floats, to be filled with samples
 // which are then resampled into sbuf.
 static float *staging_buf_get(uint32_t len) {
@@ -377,6 +391,7 @@ void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx) {
 	UNUSED(ctx);
 	if(len == 0) return;
 	pthread_barrier_wait(&demods_ready);
+	sbuf_ensure_capacity(len);
 	if(input_resampler != NULL) {
 		float *staging = staging_buf_get(len);
 		for(uint32_t i = 0; i < len; i++)
@@ -407,6 +422,7 @@ void process_buf_short(unsigned char *buf, uint32_t len, void *ctx) {
 	int16_t *bbuf = (int16_t *)buf;
 	pthread_barrier_wait(&demods_ready);
 	uint32_t sample_cnt = len / 2;
+	sbuf_ensure_capacity(sample_cnt);
 	if(input_resampler != NULL) {
 		float *staging = staging_buf_get(sample_cnt);
 		for(uint32_t i = 0; i < sample_cnt; i++)
