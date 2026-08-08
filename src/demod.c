@@ -22,7 +22,7 @@
 #include <stdint.h>
 #include <stdlib.h>             // calloc
 #include <math.h>               // sincosf, hypotf, atan2
-#include <string.h>             // memset
+#include <string.h>             // memset, memcpy
 #include <sys/time.h>           // gettimeofday
 #include "config.h"
 #ifdef HAVE_PTHREAD_BARRIERS
@@ -433,6 +433,28 @@ void process_buf_short(unsigned char *buf, uint32_t len, void *ctx) {
 		sbuf_len = sample_cnt;
 		for(uint32_t i = 0; i < sbuf_len; i++)
 			sbuf[i] = (float)bbuf[i] / 32768.0f;
+	}
+	pthread_barrier_wait(&samples_ready);
+}
+
+// Unlike the other two converters, this one gets samples which are already
+// interleaved floats scaled to <-1;1> (libairspyhf hands them over in that
+// form), so there is nothing to convert - they only need to be copied or
+// resampled. len is a count of floats, ie. twice the number of complex
+// samples.
+void process_buf_cf32(float *buf, uint32_t len, void *ctx) {
+	UNUSED(ctx);
+	if(len == 0) return;
+	pthread_barrier_wait(&demods_ready);
+	sbuf_ensure_capacity(len);
+	if(input_resampler != NULL) {
+		// No staging buffer here - the input is already in the layout the
+		// resampler expects, so it can be read from in place.
+		sbuf_len = resampler_process(input_resampler, buf, len, sbuf);
+		ASSERT(sbuf_len <= len);
+	} else {
+		sbuf_len = len;
+		memcpy(sbuf, buf, len * sizeof(float));
 	}
 	pthread_barrier_wait(&samples_ready);
 }

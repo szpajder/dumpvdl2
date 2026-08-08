@@ -130,7 +130,7 @@
 #define __OPT_AGC                    84
 #define __OPT_TUNER                  85
 #endif
-#if defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_AIRSPY
+#if defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_AIRSPY || defined WITH_AIRSPYHF
 #define __OPT_BIAST                  82
 #endif
 
@@ -139,6 +139,14 @@
 #define __OPT_DEVICE_SETTINGS        91
 #define __OPT_SOAPY_ANTENNA          92
 #define __OPT_SOAPY_GAIN             93
+#endif
+
+#ifdef WITH_AIRSPYHF
+#define __OPT_AIRSPYHF              110
+#define __OPT_HF_AGC                111
+#define __OPT_HF_AGC_THRESHOLD      112
+#define __OPT_HF_ATT                113
+#define __OPT_HF_LNA                114
 #endif
 
 #define __OPT_VERSION                98
@@ -329,6 +337,9 @@ enum input_types {
 #ifdef WITH_AIRSPY
 	INPUT_AIRSPY,
 #endif
+#ifdef WITH_AIRSPYHF
+	INPUT_AIRSPYHF,
+#endif
 	INPUT_IQ_FILE,
 #ifdef WITH_PROTOBUF_C
 	INPUT_RAW_FRAMES_FILE,
@@ -406,6 +417,7 @@ void process_buf_uchar_init();
 void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx);
 void process_buf_short_init();
 void process_buf_short(unsigned char *buf, uint32_t len, void *ctx);
+void process_buf_cf32(float *buf, uint32_t len, void *ctx);
 void *process_samples(void *arg);
 
 // crc.c

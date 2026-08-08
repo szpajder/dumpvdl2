@@ -13,6 +13,7 @@ Current stable version: 2.7.0 (released August 1, 2026)
   - Mirics SDR (via [libmirisdr-4](https://github.com/f4exb/libmirisdr-4))
   - SDRPlay RSP (native support through official driver version 2 and 3)
   - Airspy R2 / Mini (via [airspyone_host](https://github.com/airspy/airspyone_host))
+  - Airspy HF+ Dual Port / Discovery (via [airspyhf](https://github.com/airspy/airspyhf))
   - SoapySDR (via [soapy-sdr project](https://github.com/pothosware/SoapySDR/wiki))
   - prerecorded IQ data from a file
 - Decodes multiple VDL2 channels simultaneously
@@ -85,6 +86,7 @@ Optional dependencies:
   - libmirisdr-4
   - SDRPlay binary driver
   - libairspy
+  - libairspyhf
   - SoapySDR
 - Dependencies for optional features:
   - sqlite3 (for enriching messages with aircraft data read from SQB database)
@@ -190,6 +192,24 @@ distribution) or from source:
 ```
 git clone https://github.com/airspy/airspyone_host
 cd airspyone_host
+mkdir build
+cd build
+cmake ../ -DINSTALL_UDEV_RULES=ON
+make
+sudo make install
+sudo ldconfig
+```
+
+#### Airspy HF+ support (optional)
+
+The HF+ family (HF+ Dual Port, HF+ Discovery) uses a different library from the
+Airspy R2 and Mini - `libairspyhf`. Install it from your distribution's package
+repository (`airspyhf` / `libairspyhf-dev` / `airspyhf-devel`, depending on the
+distribution) or from source:
+
+```
+git clone https://github.com/airspy/airspyhf
+cd airspyhf
 mkdir build
 cd build
 cmake ../ -DINSTALL_UDEV_RULES=ON
@@ -580,6 +600,50 @@ linearity gain 16 is used.
 and is worth enabling at the higher sampling rates. The Airspy has no frequency
 correction register, so `--correction` is applied by offsetting the tuned
 frequency instead.
+
+Type `./dumpvdl2 --help` to find out all the options and their default values.
+
+### Airspy HF+
+
+Airspy HF+ Dual Port and HF+ Discovery are supported natively through the
+`libairspyhf` library. Their VHF range (60-260 MHz) covers the VDL2 band:
+
+```
+./dumpvdl2 --airspyhf 0 136975000 136725000
+```
+
+Devices may be selected by index or by serial number (a suffix of it is enough,
+which is what the sticker on the device usually shows). dumpvdl2 lists the
+serial numbers of all connected devices on startup.
+
+Like the other Airspies, the HF+ only runs at a few fixed sampling rates, none
+of which is an integer multiple of 105000 samples per second, so the sample
+stream is always converted (see "Sample rates which are not a multiple of
+105000"). Unlike them, it is a narrowband receiver - a Discovery tops out at
+768 ksps - which puts a ceiling on the working rate, because the input stage
+only ever decimates. By default the *highest* rate the device supports is used,
+and `--oversample` defaults to 6, giving a working rate of 630000 samples per
+second. That is enough for the whole VDL2 band (136.700-137.000 MHz) with room
+to spare.
+
+If you select a lower rate with `--sample-rate`, lower `--oversample` to match,
+so that the working rate stays at or below it - dumpvdl2 will tell you if it
+does not. Note that this narrows the span of channels which can be received at
+once:
+
+```
+./dumpvdl2 --airspyhf 0 --sample-rate 192k --oversample 1 136975000
+```
+
+Gain is handled by the automatic gain control, which is enabled by default.
+`--hf-agc-threshold` selects between the device's low (0, the default) and high
+(1) AGC threshold; which one works better depends on the signal environment, so
+try both. To set the gain manually instead, use `--hf-att` (0-8, in 6 dB steps
+from 0 to 48 dB of attenuation), which turns the AGC off unless you also pass
+`--hf-agc 1`. `--hf-lna 1` switches in the +6 dB preamp.
+
+The HF+ stores a frequency calibration of its own in flash, which dumpvdl2
+leaves alone by default; give `--correction` to override it for the run.
 
 Type `./dumpvdl2 --help` to find out all the options and their default values.
 
