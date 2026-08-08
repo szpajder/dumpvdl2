@@ -32,7 +32,6 @@
 // is a libairspy function.
 
 static struct airspy_device *airspy = NULL;
-static uint64_t last_dropped_samples;
 
 static void airspy_verbose_device_search(uint64_t *serials, int count) {
 	fprintf(stderr, "Found %d device(s):\n", count);
@@ -148,11 +147,13 @@ static int airspy_rx_callback(airspy_transfer *transfer) {
 	if(do_exit) {
 		return -1;
 	}
-	if(transfer->dropped_samples != last_dropped_samples) {
+	// dropped_samples counts the samples lost since the previous callback,
+	// not a running total - the library resets its drop counter every time
+	// it queues a buffer.
+	if(transfer->dropped_samples > 0) {
 		fprintf(stderr, "Warning: dropped %" PRIu64 " samples "
 				"(sample rate too high for this machine?)\n",
-				transfer->dropped_samples - last_dropped_samples);
-		last_dropped_samples = transfer->dropped_samples;
+				transfer->dropped_samples);
 	}
 	// AIRSPY_SAMPLE_INT16_IQ delivers two int16 values per sample, which is
 	// what process_buf_short() expects. Block sizes are decided by libairspy

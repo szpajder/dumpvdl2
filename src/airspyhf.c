@@ -31,7 +31,6 @@
 // particular), hence the input_ prefix on the entry points defined here.
 
 static struct airspyhf_device *airspyhf = NULL;
-static uint64_t last_dropped_samples;
 
 // libairspyhf has no equivalent of airspy_error_name(), so spell the few
 // result codes out here.
@@ -162,11 +161,13 @@ static int airspyhf_rx_callback(airspyhf_transfer_t *transfer) {
 	if(do_exit) {
 		return -1;
 	}
-	if(transfer->dropped_samples != last_dropped_samples) {
+	// dropped_samples counts the samples lost since the previous callback,
+	// not a running total - the library resets its drop counter every time
+	// it queues a buffer.
+	if(transfer->dropped_samples > 0) {
 		fprintf(stderr, "Warning: dropped %" PRIu64 " samples "
 				"(sample rate too high for this machine?)\n",
-				transfer->dropped_samples - last_dropped_samples);
-		last_dropped_samples = transfer->dropped_samples;
+				transfer->dropped_samples);
 	}
 	// libairspyhf delivers airspyhf_complex_float_t, ie. pairs of floats
 	// already scaled to <-1;1>, which is what process_buf_cf32() expects.
@@ -221,21 +222,35 @@ void input_airspyhf_start(vdl2_state_t *ctx, uint32_t centerfreq, int agc, int a
 	// The AGC and the attenuator are alternatives. Unless told otherwise, run
 	// the AGC - but read an explicit attenuator setting as a request for
 	// manual gain and keep the AGC out of the way.
+	//
+	// The gain commands were added to the HF+ firmware after the first
+	// devices shipped, so they may fail on old firmware. That is fatal only
+	// when it loses something the user asked for; a failure to re-assert a
+	// default (AGC on, threshold low, LNA off - which is how the firmware
+	// runs anyway) just gets a warning.
+	bool gain_requested = agc != AIRSPYHF_AGC_UNSET || att != AIRSPYHF_ATT_UNSET;
 	int agc_on = agc != AIRSPYHF_AGC_UNSET ? (agc > 0) : (att == AIRSPYHF_ATT_UNSET);
 	r = airspyhf_set_hf_agc(airspyhf, agc_on ? 1 : 0);
 	if(r != AIRSPYHF_SUCCESS) {
-		fprintf(stderr, "Failed to %s AGC: %s\n",
+		fprintf(stderr, "%s to %s AGC: %s\n", gain_requested ? "Failed" : "Warning: unable",
 				agc_on ? "enable" : "disable", airspyhf_strerror(r));
-		_exit(1);
+		if(gain_requested) {
+			_exit(1);
+		}
+	} else {
+		fprintf(stderr, "AGC %s\n", agc_on ? "enabled" : "disabled");
 	}
-	fprintf(stderr, "AGC %s\n", agc_on ? "enabled" : "disabled");
 	if(agc_on) {
 		r = airspyhf_set_hf_agc_threshold(airspyhf, agc_threshold > 0 ? 1 : 0);
 		if(r != AIRSPYHF_SUCCESS) {
-			fprintf(stderr, "Failed to set AGC threshold: %s\n", airspyhf_strerror(r));
-			_exit(1);
+			fprintf(stderr, "%s to set AGC threshold: %s\n",
+					agc_threshold > 0 ? "Failed" : "Warning: unable", airspyhf_strerror(r));
+			if(agc_threshold > 0) {
+				_exit(1);
+			}
+		} else {
+			fprintf(stderr, "AGC threshold set to %s\n", agc_threshold > 0 ? "high" : "low");
 		}
-		fprintf(stderr, "AGC threshold set to %s\n", agc_threshold > 0 ? "high" : "low");
 	}
 	if(att != AIRSPYHF_ATT_UNSET) {
 		r = airspyhf_set_hf_att(airspyhf, (uint8_t)att);
@@ -248,11 +263,14 @@ void input_airspyhf_start(vdl2_state_t *ctx, uint32_t centerfreq, int agc, int a
 
 	r = airspyhf_set_hf_lna(airspyhf, lna > 0 ? 1 : 0);
 	if(r != AIRSPYHF_SUCCESS) {
-		fprintf(stderr, "Failed to %s LNA: %s\n",
+		fprintf(stderr, "%s to %s LNA: %s\n", lna > 0 ? "Failed" : "Warning: unable",
 				lna > 0 ? "enable" : "disable", airspyhf_strerror(r));
-		_exit(1);
+		if(lna > 0) {
+			_exit(1);
+		}
+	} else {
+		fprintf(stderr, "LNA %s\n", lna > 0 ? "enabled" : "disabled");
 	}
-	fprintf(stderr, "LNA %s\n", lna > 0 ? "enabled" : "disabled");
 
 	// Not every HF+ variant has a bias tee, so a failure here is only fatal
 	// when the user has actually asked for it to be turned on.
