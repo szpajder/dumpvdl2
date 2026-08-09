@@ -163,11 +163,32 @@ static int airspy_rx_callback(airspy_transfer *transfer) {
 	return 0;
 }
 
+// Rejects gain values libairspy would silently clamp, so that a mistyped
+// setting does not turn into the maximum gain without a word.
+static void airspy_check_gain(char const *name, int value, int max) {
+	if(value != AIRSPY_GAIN_UNSET && (value < 0 || value > max)) {
+		fprintf(stderr, "%s gain setting %d is out of range (0-%d)\n", name, value, max);
+		_exit(1);
+	}
+}
+
 void airspy_start(vdl2_state_t *ctx, uint32_t centerfreq, int linearity_gain, int sensitivity_gain,
 		int lna_gain, int mixer_gain, int vga_gain, int lna_agc, int mixer_agc,
 		int correction, int biast, int packing) {
 	UNUSED(ctx);
-	ASSERT(airspy != NULL);         // airspy_open_device() runs first
+	// airspy_open_device() runs first - unless the input type was overridden
+	// by a later command line option, in which case there is no device here.
+	if(airspy == NULL) {
+		fprintf(stderr, "No Airspy device has been opened "
+				"(is --airspy preceded by another input option?)\n");
+		_exit(1);
+	}
+	airspy_check_gain("Linearity", linearity_gain, AIRSPY_COMBINED_GAIN_MAX);
+	airspy_check_gain("Sensitivity", sensitivity_gain, AIRSPY_COMBINED_GAIN_MAX);
+	airspy_check_gain("LNA", lna_gain, AIRSPY_STAGE_GAIN_MAX);
+	airspy_check_gain("Mixer", mixer_gain, AIRSPY_STAGE_GAIN_MAX);
+	airspy_check_gain("VGA", vga_gain, AIRSPY_STAGE_GAIN_MAX);
+
 	int r = airspy_set_sample_type(airspy, AIRSPY_SAMPLE_INT16_IQ);
 	if(r != AIRSPY_SUCCESS) {
 		fprintf(stderr, "Failed to set sample type: %s\n", airspy_error_name(r));

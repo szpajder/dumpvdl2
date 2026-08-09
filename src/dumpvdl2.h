@@ -75,7 +75,7 @@
 #define __OPT_GAIN                   12
 #endif
 
-#if defined WITH_MIRISDR || defined WITH_RTLSDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR || defined WITH_AIRSPY
+#if defined WITH_MIRISDR || defined WITH_RTLSDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR || defined WITH_AIRSPY || defined WITH_AIRSPYHF
 #define __OPT_CORRECTION             13
 #endif
 

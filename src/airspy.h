@@ -31,6 +31,10 @@
 // Airspy gain settings are indices into the tuner's gain tables, not decibels,
 // hence a separate "unset" marker instead of SDR_AUTO_GAIN.
 #define AIRSPY_GAIN_UNSET -1
+// Highest valid index of each gain table. libairspy clamps out-of-range values
+// silently, so they are rejected here instead.
+#define AIRSPY_COMBINED_GAIN_MAX 21
+#define AIRSPY_STAGE_GAIN_MAX 15
 // Used when the user has not requested any particular gain distribution.
 // Leaving every stage at 0 (which is how the device powers up) would make the
 // receiver deaf.

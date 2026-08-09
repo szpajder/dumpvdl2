@@ -181,7 +181,14 @@ static int airspyhf_rx_callback(airspyhf_transfer_t *transfer) {
 void input_airspyhf_start(vdl2_state_t *ctx, uint32_t centerfreq, int agc, int agc_threshold,
 		int att, int lna, int correction, int biast) {
 	UNUSED(ctx);
-	ASSERT(airspyhf != NULL);       // input_airspyhf_open_device() runs first
+	// input_airspyhf_open_device() runs first - unless the input type was
+	// overridden by a later command line option, in which case there is no
+	// device here.
+	if(airspyhf == NULL) {
+		fprintf(stderr, "No Airspy HF+ device has been opened "
+				"(is --airspyhf preceded by another input option?)\n");
+		_exit(1);
+	}
 
 	int r = airspyhf_set_freq(airspyhf, centerfreq);
 	if(r != AIRSPYHF_SUCCESS) {
