@@ -440,7 +440,8 @@ void usage() {
 	describe_option("", "Use this when the source cannot produce a multiple of 105000 sps (eg. Airspy)", 1);
 	describe_option("--resampler <method>", "How to convert such a rate to the working rate:", 1);
 	describe_option("poly", "polyphase rational resampler (default; best quality)", 2);
-	describe_option("interp", "fractional decimation with linear interpolation (cheapest)", 2);
+	describe_option("interp", "fractional decimation with linear interpolation", 2);
+	describe_option("", "(cheapest for a single channel, costlier than poly from two up)", 2);
 	describe_option("none", "no conversion - fail instead", 2);
 	describe_option("<freq_1> [<freq_2> [...]]", "VDL2 channel frequencies", 1);
 	fprintf(stderr, "If channel frequencies are omitted, VDL2 Common Signalling Channel (%u Hz) will be used as default.\n\n", CSC_FREQ);
@@ -768,6 +769,10 @@ static bool parse_frequency(char const *str, uint32_t *result) {
 int main(int argc, char **argv) {
 	vdl2_state_t ctx;
 	uint32_t centerfreq = 0, sample_rate = 0, oversample = 0, bandwidth = 0;
+	// Per-input-driver default oversampling factor. Kept separate from
+	// oversample (which only ever holds the value given with --oversample), so
+	// that the two options may be given in any order.
+	uint32_t oversample_default = 0;
 	// Rate at which the demodulator threads consume samples. Equal to
 	// sample_rate unless the input stream has to be resampled.
 	uint32_t working_rate = 0;
@@ -959,7 +964,7 @@ int main(int argc, char **argv) {
 			case __OPT_IQ_FILE:
 				infile = strdup(optarg);
 				input = INPUT_IQ_FILE;
-				oversample = FILE_OVERSAMPLE;
+				oversample_default = FILE_OVERSAMPLE;
 				sample_fmt = SFMT_U8;
 				break;
 			case __OPT_SAMPLE_FORMAT:
@@ -1038,7 +1043,7 @@ int main(int argc, char **argv) {
 			case __OPT_MIRISDR:
 				device = optarg;
 				input = INPUT_MIRISDR;
-				oversample = MIRISDR_OVERSAMPLE;
+				oversample_default = MIRISDR_OVERSAMPLE;
 				break;
 			case __OPT_HW_TYPE:
 				mirisdr_hw_flavour = atoi(optarg);
@@ -1051,7 +1056,7 @@ int main(int argc, char **argv) {
 			case __OPT_SDRPLAY:
 				device = optarg;
 				input = INPUT_SDRPLAY;
-				oversample = SDRPLAY_OVERSAMPLE;
+				oversample_default = SDRPLAY_OVERSAMPLE;
 				break;
 			case __OPT_GR:
 				sdrplay_gr = atoi(optarg);
@@ -1061,7 +1066,7 @@ int main(int argc, char **argv) {
 			case __OPT_SDRPLAY3:
 				device = optarg;
 				input = INPUT_SDRPLAY3;
-				oversample = SDRPLAY3_OVERSAMPLE;
+				oversample_default = SDRPLAY3_OVERSAMPLE;
 				break;
 			case __OPT_SDRPLAY3_IFGR:
 				sdrplay3_ifgr = atoi(optarg);
@@ -1096,7 +1101,7 @@ int main(int argc, char **argv) {
 			case __OPT_SOAPYSDR:
 				device = optarg;
 				input = INPUT_SOAPYSDR;
-				oversample = SOAPYSDR_OVERSAMPLE;
+				oversample_default = SOAPYSDR_OVERSAMPLE;
 				break;
 			case __OPT_DEVICE_SETTINGS:
 				soapysdr_settings = strdup(optarg);
@@ -1112,7 +1117,7 @@ int main(int argc, char **argv) {
 			case __OPT_RTLSDR:
 				device = optarg;
 				input = INPUT_RTLSDR;
-				oversample = RTL_OVERSAMPLE;
+				oversample_default = RTL_OVERSAMPLE;
 				break;
 			case __OPT_BIAS:
 				bias = atoi(optarg);
@@ -1122,7 +1127,7 @@ int main(int argc, char **argv) {
 			case __OPT_AIRSPY:
 				device = optarg;
 				input = INPUT_AIRSPY;
-				oversample = AIRSPY_OVERSAMPLE;
+				oversample_default = AIRSPY_OVERSAMPLE;
 				break;
 			case __OPT_LINEARITY_GAIN:
 				airspy_linearity_gain = atoi(optarg);
@@ -1153,7 +1158,7 @@ int main(int argc, char **argv) {
 			case __OPT_AIRSPYHF:
 				device = optarg;
 				input = INPUT_AIRSPYHF;
-				oversample = AIRSPYHF_OVERSAMPLE;
+				oversample_default = AIRSPYHF_OVERSAMPLE;
 				break;
 			case __OPT_HF_AGC:
 				airspyhf_agc = atoi(optarg);
@@ -1189,7 +1194,14 @@ int main(int argc, char **argv) {
 				}
 				break;
 			case __OPT_OVERSAMPLE:
-				oversample = atoi(optarg);
+				{
+					int val = atoi(optarg);
+					if(val < 1) {
+						fprintf(stderr, "Invalid --oversample value: must be a positive integer\n");
+						_exit(1);
+					}
+					oversample = (uint32_t)val;
+				}
 				break;
 			case __OPT_SAMPLE_RATE:
 				if(parse_frequency(optarg, &sample_rate) == false) {
@@ -1235,6 +1247,11 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "No input specified\n");
 		fprintf(stderr, "Use --help for help\n");
 		_exit(1);
+	}
+	// --oversample wins over the input driver's default, whichever order the
+	// two options were given in.
+	if(oversample == 0) {
+		oversample = oversample_default;
 	}
 
 // no --output given?

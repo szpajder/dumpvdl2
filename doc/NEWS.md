@@ -1,5 +1,23 @@
 # NEWS
 
+## Version 2.8.0 (unreleased)
+
+* Added native Airspy R2 / Mini support via libairspy (`--airspy` option group:
+  `--linearity-gain`, `--sensitivity-gain`, `--lna-gain`, `--mixer-gain`,
+  `--vga-gain`, `--lna-agc`, `--mixer-agc`, `--packing`, `--biast`). Previously
+  these receivers could only be used through SoapySDR.
+* Added native Airspy HF+ Dual Port / Discovery support via libairspyhf
+  (`--airspyhf` option group: `--hf-agc`, `--hf-agc-threshold`, `--hf-att`,
+  `--hf-lna`, `--biast`).
+* Added `--sample-rate <rate>` option, which tells dumpvdl2 the actual rate of
+  the input stream. Input sampling rates which are not a multiple of 105000 sps
+  (as produced by Airspy receivers, among others) are now supported - such a
+  stream is converted to the working rate automatically.
+* Added `--resampler <method>` option selecting how that conversion is done:
+  `poly` (rational polyphase resampler, the default), `interp` (fractional
+  decimation with linear interpolation in the demodulator) or `none` (fail
+  rather than convert).
+
 ## Version 2.7.0 (2026-08-01)
 
 * Added support for ATN-B2 CPDLC version 2

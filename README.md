@@ -1228,9 +1228,11 @@ Two conversion methods are available, selected with `--resampler`:
 
 - `poly` (default) - a rational (L/M) polyphase resampler converts the input
   stream to the working rate before it reaches the demodulators. The working
-  rate is `105000 * oversample` as usual, so with the default oversampling
-  factor a 6 Msps input is resampled down to 1050000 sps (L=7, M=40). This
-  costs a fixed amount of CPU time regardless of the number of channels being
+  rate is `105000 * oversample` as usual, and the default oversampling factor
+  depends on the input driver (20 for `--soapysdr`, 10 for `--airspy`), so the
+  command above resamples 6 Msps down to 2100000 sps (L=7, M=20), while
+  `--airspy 0 --sample-rate 6M` resamples it down to 1050000 sps (L=7, M=40).
+  This costs a fixed amount of CPU time regardless of the number of channels being
   decoded, and it keeps each demodulator running at the (much lower) working
   rate. Note that only the working rate worth of bandwidth survives the
   conversion - raise `--oversample` if the channels to decode are spread wider

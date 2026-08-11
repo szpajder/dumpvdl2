@@ -172,6 +172,14 @@ static void airspy_check_gain(char const *name, int value, int max) {
 	}
 }
 
+// Aborts unless the device accepted the gain setting named by what.
+static void gain_set_or_die(int result, char const *what) {
+	if(result != AIRSPY_SUCCESS) {
+		fprintf(stderr, "Failed to set %s: %s\n", what, airspy_error_name(result));
+		_exit(1);
+	}
+}
+
 void airspy_start(vdl2_state_t *ctx, uint32_t centerfreq, int linearity_gain, int sensitivity_gain,
 		int lna_gain, int mixer_gain, int vga_gain, int lna_agc, int mixer_agc,
 		int correction, int biast, int packing) {
@@ -232,20 +240,22 @@ void airspy_start(vdl2_state_t *ctx, uint32_t centerfreq, int linearity_gain, in
 	} else if(lna_gain != AIRSPY_GAIN_UNSET || mixer_gain != AIRSPY_GAIN_UNSET ||
 			vga_gain != AIRSPY_GAIN_UNSET || lna_agc > 0 || mixer_agc > 0) {
 		// Manual gain distribution. Anything left unset stays at 0, which is
-		// what the device powers up with.
-		r = airspy_set_lna_agc(airspy, lna_agc > 0 ? 1 : 0);
-		r |= airspy_set_mixer_agc(airspy, mixer_agc > 0 ? 1 : 0);
+		// what the device powers up with. Each call is checked separately -
+		// libairspy result codes are negative, so OR-ing them together would
+		// blend them into a code naming a different error than the one which
+		// actually occurred.
+		gain_set_or_die(airspy_set_lna_agc(airspy, lna_agc > 0 ? 1 : 0), "LNA AGC");
+		gain_set_or_die(airspy_set_mixer_agc(airspy, mixer_agc > 0 ? 1 : 0), "mixer AGC");
 		if(lna_agc <= 0) {
-			r |= airspy_set_lna_gain(airspy, (uint8_t)(lna_gain != AIRSPY_GAIN_UNSET ? lna_gain : 0));
+			gain_set_or_die(airspy_set_lna_gain(airspy,
+						(uint8_t)(lna_gain != AIRSPY_GAIN_UNSET ? lna_gain : 0)), "LNA gain");
 		}
 		if(mixer_agc <= 0) {
-			r |= airspy_set_mixer_gain(airspy, (uint8_t)(mixer_gain != AIRSPY_GAIN_UNSET ? mixer_gain : 0));
+			gain_set_or_die(airspy_set_mixer_gain(airspy,
+						(uint8_t)(mixer_gain != AIRSPY_GAIN_UNSET ? mixer_gain : 0)), "mixer gain");
 		}
-		r |= airspy_set_vga_gain(airspy, (uint8_t)(vga_gain != AIRSPY_GAIN_UNSET ? vga_gain : 0));
-		if(r != AIRSPY_SUCCESS) {
-			fprintf(stderr, "Failed to set gains: %s\n", airspy_error_name(r));
-			_exit(1);
-		}
+		gain_set_or_die(airspy_set_vga_gain(airspy,
+					(uint8_t)(vga_gain != AIRSPY_GAIN_UNSET ? vga_gain : 0)), "VGA gain");
 		fprintf(stderr, "Gains set to: LNA %d%s, mixer %d%s, VGA %d\n",
 				lna_gain != AIRSPY_GAIN_UNSET ? lna_gain : 0, lna_agc > 0 ? " (AGC)" : "",
 				mixer_gain != AIRSPY_GAIN_UNSET ? mixer_gain : 0, mixer_agc > 0 ? " (AGC)" : "",

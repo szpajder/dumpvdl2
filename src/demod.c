@@ -391,17 +391,14 @@ void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx) {
 	UNUSED(ctx);
 	if(len == 0) return;
 	pthread_barrier_wait(&demods_ready);
-	sbuf_ensure_capacity(len);
 	if(input_resampler != NULL) {
+		sbuf_ensure_capacity(resampler_output_len_max(input_resampler, len));
 		float *staging = staging_buf_get(len);
 		for(uint32_t i = 0; i < len; i++)
 			staging[i] = levels[buf[i]];
 		sbuf_len = resampler_process(input_resampler, staging, len, sbuf);
-		// The resampler only ever decimates (input_resampler_init() rejects
-		// the opposite case), so the result always fits in sbuf, which the
-		// input driver has sized for a full unresampled block.
-		ASSERT(sbuf_len <= len);
 	} else {
+		sbuf_ensure_capacity(len);
 		sbuf_len = len;
 		for(uint32_t i = 0; i < sbuf_len; i++)
 			sbuf[i] = levels[buf[i]];
@@ -422,14 +419,14 @@ void process_buf_short(unsigned char *buf, uint32_t len, void *ctx) {
 	int16_t *bbuf = (int16_t *)buf;
 	pthread_barrier_wait(&demods_ready);
 	uint32_t sample_cnt = len / 2;
-	sbuf_ensure_capacity(sample_cnt);
 	if(input_resampler != NULL) {
+		sbuf_ensure_capacity(resampler_output_len_max(input_resampler, sample_cnt));
 		float *staging = staging_buf_get(sample_cnt);
 		for(uint32_t i = 0; i < sample_cnt; i++)
 			staging[i] = (float)bbuf[i] / 32768.0f;
 		sbuf_len = resampler_process(input_resampler, staging, sample_cnt, sbuf);
-		ASSERT(sbuf_len <= sample_cnt);
 	} else {
+		sbuf_ensure_capacity(sample_cnt);
 		sbuf_len = sample_cnt;
 		for(uint32_t i = 0; i < sbuf_len; i++)
 			sbuf[i] = (float)bbuf[i] / 32768.0f;
@@ -446,13 +443,13 @@ void process_buf_cf32(float *buf, uint32_t len, void *ctx) {
 	UNUSED(ctx);
 	if(len == 0) return;
 	pthread_barrier_wait(&demods_ready);
-	sbuf_ensure_capacity(len);
 	if(input_resampler != NULL) {
+		sbuf_ensure_capacity(resampler_output_len_max(input_resampler, len));
 		// No staging buffer here - the input is already in the layout the
 		// resampler expects, so it can be read from in place.
 		sbuf_len = resampler_process(input_resampler, buf, len, sbuf);
-		ASSERT(sbuf_len <= len);
 	} else {
+		sbuf_ensure_capacity(len);
 		sbuf_len = len;
 		memcpy(sbuf, buf, len * sizeof(float));
 	}
