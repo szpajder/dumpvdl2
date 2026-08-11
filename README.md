@@ -12,9 +12,13 @@ Current stable version: 2.7.0 (released August 1, 2026)
   - RTLSDR (via [rtl-sdr library](http://osmocom.org/projects/sdr/wiki/rtl-sdr))
   - Mirics SDR (via [libmirisdr-4](https://github.com/f4exb/libmirisdr-4))
   - SDRPlay RSP (native support through official driver version 2 and 3)
+  - Airspy R2 / Mini (via [airspyone_host](https://github.com/airspy/airspyone_host))
+  - Airspy HF+ Dual Port / Discovery (via [airspyhf](https://github.com/airspy/airspyhf))
   - SoapySDR (via [soapy-sdr project](https://github.com/pothosware/SoapySDR/wiki))
   - prerecorded IQ data from a file
 - Decodes multiple VDL2 channels simultaneously
+- Accepts sampling rates which are not integer multiples of 105000 samples/sec
+  (eg. Airspy), converting them internally
 - Automatically reassembles multiblock ACARS messages, MIAM file transfers,
   fragmented X.25, CLNP and COTP packets.
 - Supports various outputs and output formats (see below)
@@ -81,6 +85,8 @@ Optional dependencies:
   - librtlsdr
   - libmirisdr-4
   - SDRPlay binary driver
+  - libairspy
+  - libairspyhf
   - SoapySDR
 - Dependencies for optional features:
   - sqlite3 (for enriching messages with aircraft data read from SQB database)
@@ -177,16 +183,53 @@ for newer devices (like RSPdx). Older hardware works with both versions.
 You can have both versions installed simultaneously and choose either one
 when running the program.
 
+#### Airspy support (optional)
+
+Install the `libairspy` library, either from your distribution's package
+repository (`airspy` / `libairspy-dev` / `airspy-devel`, depending on the
+distribution) or from source:
+
+```
+git clone https://github.com/airspy/airspyone_host
+cd airspyone_host
+mkdir build
+cd build
+cmake ../ -DINSTALL_UDEV_RULES=ON
+make
+sudo make install
+sudo ldconfig
+```
+
+#### Airspy HF+ support (optional)
+
+The HF+ family (HF+ Dual Port, HF+ Discovery) uses a different library from the
+Airspy R2 and Mini - `libairspyhf`. Install it from your distribution's package
+repository (`airspyhf` / `libairspyhf-dev` / `airspyhf-devel`, depending on the
+distribution) or from source:
+
+```
+git clone https://github.com/airspy/airspyhf
+cd airspyhf
+mkdir build
+cd build
+cmake ../ -DINSTALL_UDEV_RULES=ON
+make
+sudo make install
+sudo ldconfig
+```
+
 #### SoapySDR support (optional)
 
 Download and install the SoapySDR library from [here](https://github.com/pothosware/SoapySDR).
 Then install the driver module for your device. Refer to [SoapySDR wiki](https://github.com/pothosware/SoapySDR/wiki)
 for a list of all supported modules.
 
-**Note:** The device must support a sampling rate of 2100000 samples per second
-to work correctly with dumpvdl2. It is therefore not possible to use devices
-which only support predefined, fixed sampling rates (notably Airspies). This
-limitation will be removed in a future release of dumpvdl2.
+**Note:** dumpvdl2 works with any sampling rate the device supports. If the rate
+is not an integer multiple of 105000 samples per second - which is the case for
+devices with predefined, fixed rates, notably Airspies - declare the rate with
+`--sample-rate` and dumpvdl2 will convert it (see "Sample rates which are not a
+multiple of 105000"). Airspy devices are also supported natively, without going
+through SoapySDR.
 
 #### SQLite (optional)
 
@@ -521,6 +564,88 @@ options instead:
 if you want to set the gain reduction manually, specify both `--ifgr` and
 `--lna-state`. If either option is omitted, the other one is ignored and
 AGC is used instead.
+
+### Airspy
+
+Airspy R2 and Airspy Mini are supported natively through the `libairspy`
+library:
+
+```
+./dumpvdl2 --airspy 0 --linearity-gain 16 136975000 136725000
+```
+
+Devices may be selected by index or by serial number (a suffix of it is enough,
+which is what the sticker on the device usually shows). dumpvdl2 lists the
+serial numbers of all connected devices on startup.
+
+Airspies only run at a few fixed sampling rates, none of which is an integer
+multiple of 105000 samples per second. dumpvdl2 therefore always converts the
+sample stream (see "Sample rates which are not a multiple of 105000"). By
+default the lowest rate the device supports is used (2.5 Msps on an R2, 3 Msps
+on a Mini), which is the cheapest to process and still covers the whole VDL2
+band. Pick a different one with `--sample-rate`:
+
+```
+./dumpvdl2 --airspy 0 --sample-rate 10M --linearity-gain 16 136975000
+```
+
+Gain may be set either with one of the two combined controls - `--linearity-gain`
+or `--sensitivity-gain`, both taking a value of 0-21 - or by setting the LNA,
+mixer and VGA stages individually with `--lna-gain`, `--mixer-gain` and
+`--vga-gain` (0-15 each), optionally with automatic gain control enabled for the
+first two (`--lna-agc 1`, `--mixer-agc 1`). If no gain option is given,
+linearity gain 16 is used.
+
+`--packing 1` enables 12-bit sample packing, which reduces USB bandwidth usage
+and is worth enabling at the higher sampling rates. The Airspy has no frequency
+correction register, so `--correction` is applied by offsetting the tuned
+frequency instead.
+
+Type `./dumpvdl2 --help` to find out all the options and their default values.
+
+### Airspy HF+
+
+Airspy HF+ Dual Port and HF+ Discovery are supported natively through the
+`libairspyhf` library. Their VHF range (60-260 MHz) covers the VDL2 band:
+
+```
+./dumpvdl2 --airspyhf 0 136975000 136725000
+```
+
+Devices may be selected by index or by serial number (a suffix of it is enough,
+which is what the sticker on the device usually shows). dumpvdl2 lists the
+serial numbers of all connected devices on startup.
+
+Like the other Airspies, the HF+ only runs at a few fixed sampling rates, none
+of which is an integer multiple of 105000 samples per second, so the sample
+stream is always converted (see "Sample rates which are not a multiple of
+105000"). Unlike them, it is a narrowband receiver - a Discovery tops out at
+768 ksps - which puts a ceiling on the working rate, because the input stage
+only ever decimates. By default the *highest* rate the device supports is used,
+and `--oversample` defaults to 6, giving a working rate of 630000 samples per
+second. That is enough for the whole VDL2 band (136.700-137.000 MHz) with room
+to spare.
+
+If you select a lower rate with `--sample-rate`, lower `--oversample` to match,
+so that the working rate stays at or below it - dumpvdl2 will tell you if it
+does not. Note that this narrows the span of channels which can be received at
+once:
+
+```
+./dumpvdl2 --airspyhf 0 --sample-rate 192k --oversample 1 136975000
+```
+
+Gain is handled by the automatic gain control, which is enabled by default.
+`--hf-agc-threshold` selects between the device's low (0, the default) and high
+(1) AGC threshold; which one works better depends on the signal environment, so
+try both. To set the gain manually instead, use `--hf-att` (0-8, in 6 dB steps
+from 0 to 48 dB of attenuation), which turns the AGC off unless you also pass
+`--hf-agc 1`. `--hf-lna 1` switches in the +6 dB preamp.
+
+The HF+ stores a frequency calibration of its own in flash, which dumpvdl2
+leaves alone by default; give `--correction` to override it for the run.
+
+Type `./dumpvdl2 --help` to find out all the options and their default values.
 
 ### SoapySDR library
 
@@ -1076,6 +1201,53 @@ dumpvdl2 --iq-file iq.dat --sample-format S16_LE --oversample 13 --centerfreq 13
 processes `iq.dat` file recorded at 1365000 samples/sec using 16-bit signed
 samples, with receiver center frequency set to 136.955 MHz. VDL2 channels
 located at 136.975 and 136.725 MHz will be decoded.
+
+## Sample rates which are not a multiple of 105000
+
+Some receivers cannot produce a sampling rate which is an integer multiple of
+105000 samples/sec. Airspy R2 (10 and 2.5 Msps) and Airspy Mini (6 and 3 Msps)
+are the most common examples - none of their rates divides evenly by 105000.
+Setting `--oversample` to the nearest integer factor is *not* a workaround: the
+symbol clock free-runs after the preamble has been detected, so even a 0.25%
+error between the assumed and the actual rate accumulates into a symbol slip
+long before a full frame has been received.
+
+Use the `--sample-rate` option to tell dumpvdl2 what the actual input rate is,
+and it will do the conversion itself:
+
+```
+dumpvdl2 --soapysdr driver=airspy --sample-rate 6M --gain 20 136975000
+```
+
+`--sample-rate` accepts the same `k` / `M` / `G` suffixes as the frequency
+options. It may be used with any I/Q input - both SDR devices and `--iq-file`.
+When the given rate *is* a multiple of 105000, it simply selects the
+oversampling factor and nothing else happens.
+
+Two conversion methods are available, selected with `--resampler`:
+
+- `poly` (default) - a rational (L/M) polyphase resampler converts the input
+  stream to the working rate before it reaches the demodulators. The working
+  rate is `105000 * oversample` as usual, and the default oversampling factor
+  depends on the input driver (20 for `--soapysdr`, 10 for `--airspy`), so the
+  command above resamples 6 Msps down to 2100000 sps (L=7, M=20), while
+  `--airspy 0 --sample-rate 6M` resamples it down to 1050000 sps (L=7, M=40).
+  This costs a fixed amount of CPU time regardless of the number of channels being
+  decoded, and it keeps each demodulator running at the (much lower) working
+  rate. Note that only the working rate worth of bandwidth survives the
+  conversion - raise `--oversample` if the channels to decode are spread wider
+  than that. Signals in the outermost 20% of the resampled band are close to
+  the resampler's transition band and are best avoided.
+
+- `interp` - no resampling; the demodulators decimate directly from the input
+  rate by a fractional factor, interpolating between the two samples adjacent
+  to each wanted sampling instant. Nothing is thrown away and there is no fixed
+  cost, but every demodulator now runs at the full input rate, so the CPU usage
+  grows quickly with the number of channels. Cheaper than `poly` for a single
+  channel, more expensive from two channels up.
+
+- `none` - do not convert anything; fail if the input rate is not a multiple of
+  105000. Useful for making sure a rate mistake does not go unnoticed.
 
 ## Decoding raw AVLC frames from a binary file
 

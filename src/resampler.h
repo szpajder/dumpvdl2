@@ -17,26 +17,20 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _CONFIG_H
-#define _CONFIG_H
-#cmakedefine WITH_RTLSDR
-#cmakedefine WITH_MIRISDR
-#cmakedefine WITH_SDRPLAY
-#cmakedefine WITH_SDRPLAY3
-#cmakedefine WITH_SOAPYSDR
-#cmakedefine WITH_AIRSPY
-#cmakedefine WITH_AIRSPYHF
-#cmakedefine WITH_STATSD
-#cmakedefine WITH_SQLITE
-#cmakedefine WITH_ZMQ
-#cmakedefine WITH_PROTOBUF_C
-#cmakedefine WITH_PROFILING
-#cmakedefine IS_BIG_ENDIAN
-#cmakedefine HAVE_PTHREAD_BARRIERS
+#ifndef _RESAMPLER_H
+#define _RESAMPLER_H 1
+#include <stdint.h>
 
-#define LIBZMQ_VER_MAJOR_MIN @LIBZMQ_VER_MAJOR_MIN@
-#define LIBZMQ_VER_MINOR_MIN @LIBZMQ_VER_MINOR_MIN@
-#define LIBZMQ_VER_PATCH_MIN @LIBZMQ_VER_PATCH_MIN@
+// Rational (L/M) polyphase resampler for interleaved complex float samples.
+// All buffer lengths are expressed in floats (ie. twice the number of complex
+// samples), to match the layout of the sample buffers used everywhere else.
 
-#define SINCOSF @SINCOSF@
-#endif // !_CONFIG_H
+typedef struct resampler_s resampler_t;
+
+resampler_t *resampler_init(uint32_t input_rate, uint32_t output_rate);
+uint32_t resampler_output_len_max(resampler_t const *r, uint32_t input_len);
+uint32_t resampler_process(resampler_t *r, float const *in, uint32_t input_len, float *out);
+void resampler_stats(resampler_t const *r, uint32_t *interp, uint32_t *decim, uint32_t *taps_per_phase);
+void resampler_destroy(resampler_t *r);
+
+#endif // !_RESAMPLER_H

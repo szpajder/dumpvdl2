@@ -22,7 +22,7 @@
 #include <stdint.h>
 #include <stdlib.h>             // calloc
 #include <math.h>               // sincosf, hypotf, atan2
-#include <string.h>             // memset
+#include <string.h>             // memset, memcpy
 #include <sys/time.h>           // gettimeofday
 #include "config.h"
 #ifdef HAVE_PTHREAD_BARRIERS
@@ -33,6 +33,7 @@
 #include "chebyshev.h"          // chebyshev_lpf_init
 #include "decode.h"             // decode_vdl2_burst
 #include "dumpvdl2.h"
+#include "resampler.h"          // resampler_t, resampler_init(), resampler_process()
 
 #define BSLEN 32768UL
 #define PHERR_MAX 1000.f        // initial value for frame sync error (read: high)
@@ -53,6 +54,13 @@ static float sin_lut[257], cos_lut[257];
 static uint32_t sbuf_len;
 // filter coefficients
 static float *A = NULL, *B = NULL;
+// Input resampler (NULL if the source rate is directly usable)
+static resampler_t *input_resampler = NULL;
+// Staging buffer holding the converted, not-yet-resampled sample block
+static float *rsbuf = NULL;
+static uint32_t rsbuf_size;
+// Current allocated length of sbuf, in floats
+static uint32_t sbuf_capacity;
 
 // phi range must be (0..1), rescaled to 0x0-0xFFFFFF
 static void sincosf_lut(uint32_t phi, float *sine, float *cosine) {
@@ -287,6 +295,7 @@ static void demod(vdl2_channel_t *v, float re, float im) {
 
 void *process_samples(void *arg) {
 	int cnt = 0;
+	float decim_phase = 0.f;
 	float cwf, swf;
 	float re[INP_LPF_NPOLES+1], im[INP_LPF_NPOLES+1];
 	float lp_re[INP_LPF_NPOLES+1], lp_im[INP_LPF_NPOLES+1];
@@ -319,12 +328,32 @@ void *process_samples(void *arg) {
 			lp_re[0] = chebyshev_lpf_2pole(re, lp_re);
 			lp_im[0] = chebyshev_lpf_2pole(im, lp_im);
 			// decimation
-			if(++cnt == v->oversample) {
+			bool emit = false;
+			// Distance of the wanted sampling instant back from the current
+			// sample, in samples. Always 0 when the decimation factor is an
+			// integer, in which case the interpolation below is a no-op.
+			float mu = 0.f;
+			if(v->frac_decim) {
+				// Fractional decimation: the symbol clock does not line up
+				// with the sample clock, so accumulate the phase and
+				// interpolate between the two samples straddling the wanted
+				// instant. oversample_f is guaranteed to be >= 1, hence at
+				// most one output sample is produced per input sample.
+				if((decim_phase += 1.0f) >= v->oversample_f) {
+					decim_phase -= v->oversample_f;
+					mu = decim_phase;
+					emit = true;
+				}
+			} else if(++cnt == v->oversample) {
 				cnt = 0;
+				emit = true;
+			}
+			if(emit) {
 #ifdef DEBUG
 				v->samplenum++;
 #endif
-				demod(v, lp_re[0], lp_im[0]);
+				demod(v, lp_re[0] + (lp_re[1] - lp_re[0]) * mu,
+						lp_im[0] + (lp_im[1] - lp_im[0]) * mu);
 			}
 		}
 #ifdef DEBUG
@@ -336,13 +365,44 @@ void *process_samples(void *arg) {
 	}
 }
 
+// Makes sure sbuf can hold at least float_cnt samples. Input drivers which
+// deliver fixed-size blocks size sbuf themselves, but the block size is not
+// always known in advance (libairspy picks its own), so grow it on demand.
+// MUST only be called between the demods_ready and samples_ready barriers -
+// anywhere else the demodulator threads may still be reading the buffer.
+static void sbuf_ensure_capacity(uint32_t float_cnt) {
+	if(float_cnt > sbuf_capacity) {
+		sbuf = XREALLOC(sbuf, float_cnt * sizeof(float));
+		sbuf_capacity = float_cnt;
+	}
+}
+
+// Returns a staging buffer of at least len floats, to be filled with samples
+// which are then resampled into sbuf.
+static float *staging_buf_get(uint32_t len) {
+	if(len > rsbuf_size) {
+		rsbuf = XREALLOC(rsbuf, len * sizeof(float));
+		rsbuf_size = len;
+	}
+	return rsbuf;
+}
+
 void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx) {
 	UNUSED(ctx);
 	if(len == 0) return;
 	pthread_barrier_wait(&demods_ready);
-	sbuf_len = len;
-	for(uint32_t i = 0; i < sbuf_len; i++)
-		sbuf[i] = levels[buf[i]];
+	if(input_resampler != NULL) {
+		sbuf_ensure_capacity(resampler_output_len_max(input_resampler, len));
+		float *staging = staging_buf_get(len);
+		for(uint32_t i = 0; i < len; i++)
+			staging[i] = levels[buf[i]];
+		sbuf_len = resampler_process(input_resampler, staging, len, sbuf);
+	} else {
+		sbuf_ensure_capacity(len);
+		sbuf_len = len;
+		for(uint32_t i = 0; i < sbuf_len; i++)
+			sbuf[i] = levels[buf[i]];
+	}
 	pthread_barrier_wait(&samples_ready);
 }
 
@@ -358,15 +418,69 @@ void process_buf_short(unsigned char *buf, uint32_t len, void *ctx) {
 	if(len == 0) return;
 	int16_t *bbuf = (int16_t *)buf;
 	pthread_barrier_wait(&demods_ready);
-	sbuf_len = len / 2;
-	for(uint32_t i = 0; i < sbuf_len; i++)
-		sbuf[i] = (float)bbuf[i] / 32768.0f;
+	uint32_t sample_cnt = len / 2;
+	if(input_resampler != NULL) {
+		sbuf_ensure_capacity(resampler_output_len_max(input_resampler, sample_cnt));
+		float *staging = staging_buf_get(sample_cnt);
+		for(uint32_t i = 0; i < sample_cnt; i++)
+			staging[i] = (float)bbuf[i] / 32768.0f;
+		sbuf_len = resampler_process(input_resampler, staging, sample_cnt, sbuf);
+	} else {
+		sbuf_ensure_capacity(sample_cnt);
+		sbuf_len = sample_cnt;
+		for(uint32_t i = 0; i < sbuf_len; i++)
+			sbuf[i] = (float)bbuf[i] / 32768.0f;
+	}
+	pthread_barrier_wait(&samples_ready);
+}
+
+// Unlike the other two converters, this one gets samples which are already
+// interleaved floats scaled to <-1;1> (libairspyhf hands them over in that
+// form), so there is nothing to convert - they only need to be copied or
+// resampled. len is a count of floats, ie. twice the number of complex
+// samples.
+void process_buf_cf32(float *buf, uint32_t len, void *ctx) {
+	UNUSED(ctx);
+	if(len == 0) return;
+	pthread_barrier_wait(&demods_ready);
+	if(input_resampler != NULL) {
+		sbuf_ensure_capacity(resampler_output_len_max(input_resampler, len));
+		// No staging buffer here - the input is already in the layout the
+		// resampler expects, so it can be read from in place.
+		sbuf_len = resampler_process(input_resampler, buf, len, sbuf);
+	} else {
+		sbuf_ensure_capacity(len);
+		sbuf_len = len;
+		memcpy(sbuf, buf, len * sizeof(float));
+	}
 	pthread_barrier_wait(&samples_ready);
 }
 
 void input_lpf_init(uint32_t sample_rate) {
 	assert(sample_rate != 0);
 	chebyshev_lpf_init((float)INP_LPF_CUTOFF_FREQ / (float)sample_rate, INP_LPF_RIPPLE_PERCENT, INP_LPF_NPOLES, &A, &B);
+}
+
+// Sets up conversion of the input stream from source_rate (the rate at which
+// the input driver delivers samples) to working_rate (the rate at which the
+// demodulator threads consume them). A no-op when the two are equal.
+void input_resampler_init(uint32_t source_rate, uint32_t working_rate) {
+	if(source_rate == working_rate) {
+		return;
+	}
+	if(source_rate < working_rate) {
+		fprintf(stderr, "Input sampling rate (%u) is lower than the working rate (%u) - "
+				"decrease --oversample\n", source_rate, working_rate);
+		_exit(1);
+	}
+	input_resampler = resampler_init(source_rate, working_rate);
+	if(input_resampler == NULL) {
+		_exit(1);
+	}
+	uint32_t interp = 0, decim = 0, taps_per_phase = 0;
+	resampler_stats(input_resampler, &interp, &decim, &taps_per_phase);
+	fprintf(stderr, "Resampling input from %u to %u sps (L=%u, M=%u, %u taps/phase)\n",
+			source_rate, working_rate, interp, decim, taps_per_phase);
 }
 
 void sincosf_lut_init() {
@@ -376,7 +490,8 @@ void sincosf_lut_init() {
 	cos_lut[256] = cos_lut[0];
 }
 
-vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample) {
+vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, float oversample) {
+	ASSERT(oversample >= 1.0f);
 	NEW(vdl2_channel_t, v);
 	v->bs = bitstream_init(BSLEN);
 	v->frame_bs = bitstream_init(BSLEN);
@@ -385,7 +500,9 @@ vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t s
 	v->downmix_dphi = (uint32_t)(int)(((float)centerfreq - (float)freq) / (float)source_rate * 256.0f * 65536.0f);
 	debug_print(D_DEMOD, "downmix_dphi: 0x%x\n", v->downmix_dphi);
 	v->offset_tuning = (centerfreq != freq);
-	v->oversample = oversample;
+	v->oversample_f = oversample;
+	v->oversample = (uint16_t)lrintf(oversample);
+	v->frac_decim = fabsf(oversample - (float)v->oversample) > 1e-6f;
 	v->freq = freq;
 	demod_reset(v);
 	return v;

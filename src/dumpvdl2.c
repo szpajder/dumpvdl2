@@ -55,6 +55,12 @@
 #ifdef WITH_SOAPYSDR
 #include "soapysdr.h"
 #endif
+#ifdef WITH_AIRSPY
+#include "airspy.h"
+#endif
+#ifdef WITH_AIRSPYHF
+#include "airspyhf.h"
+#endif
 #include "dumpvdl2.h"
 #ifdef WITH_SQLITE
 #include "ac_data.h"
@@ -88,6 +94,12 @@ void sighandler(int sig) {
 #endif
 #ifdef WITH_SOAPYSDR
 	soapysdr_cancel();
+#endif
+#ifdef WITH_AIRSPY
+	airspy_cancel();
+#endif
+#ifdef WITH_AIRSPYHF
+	input_airspyhf_cancel();
 #endif
 }
 
@@ -397,6 +409,16 @@ void usage() {
 			"%*sdumpvdl2 [output_options] --soapysdr <device_id> [soapysdr_options] [<freq_1> [<freq_2> [...]]]\n",
 			IND(1), "");
 #endif
+#ifdef WITH_AIRSPY
+	fprintf(stderr, "\nAirspy receiver:\n\n"
+			"%*sdumpvdl2 [output_options] --airspy <device_id> [airspy_options] [<freq_1> [<freq_2> [...]]]\n",
+			IND(1), "");
+#endif
+#ifdef WITH_AIRSPYHF
+	fprintf(stderr, "\nAirspy HF+ receiver:\n\n"
+			"%*sdumpvdl2 [output_options] --airspyhf <device_id> [airspyhf_options] [<freq_1> [<freq_2> [...]]]\n",
+			IND(1), "");
+#endif
 	fprintf(stderr, "\nRead I/Q samples from a file (use \"-\" to read from standard input):\n\n"
 			"%*sdumpvdl2 [output_options] --iq-file <input_file> [file_options] [<freq_1> [<freq_2> [...]]]\n",
 			IND(1), "");
@@ -413,6 +435,14 @@ void usage() {
 #endif
 	fprintf(stderr, "common options:\n");
 	describe_option("--max-ppm <max_ppm>", "Set maximum allowable absolute PPM deviation for valid messages (default: 0 == unlimited)", 1);
+	describe_option("--sample-rate <sample_rate>", "Actual sample rate of the input data", 1);
+	describe_option("", "(default: 105000 * oversample_rate)", 1);
+	describe_option("", "Use this when the source cannot produce a multiple of 105000 sps (eg. Airspy)", 1);
+	describe_option("--resampler <method>", "How to convert such a rate to the working rate:", 1);
+	describe_option("poly", "polyphase rational resampler (default; best quality)", 2);
+	describe_option("interp", "fractional decimation with linear interpolation", 2);
+	describe_option("", "(cheapest for a single channel, costlier than poly from two up)", 2);
+	describe_option("none", "no conversion - fail instead", 2);
 	describe_option("<freq_1> [<freq_2> [...]]", "VDL2 channel frequencies", 1);
 	fprintf(stderr, "If channel frequencies are omitted, VDL2 Common Signalling Channel (%u Hz) will be used as default.\n\n", CSC_FREQ);
 
@@ -474,6 +504,47 @@ void usage() {
 	describe_option("--oversample <oversample_rate>", "Oversampling factor (sampling rate will be set to 105000 * oversample)", 1);
 	describe_option("--soapy-antenna <antenna>", "Set antenna port selection (default: RX)", 1);
 	describe_option("--soapy-gain <gain1=val1,gain2=val2,...>", "Set gain components (default: none)", 1);
+#endif
+#ifdef WITH_AIRSPY
+	fprintf(stderr, "\nairspy_options:\n");
+	describe_option("--airspy <device_id>", "Use Airspy device with specified ID or serial number (default: ID=0)", 1);
+	describe_option("--sample-rate <sample_rate>", "Device sample rate (default: lowest rate the device supports)", 1);
+	describe_option("", "No Airspy rate is a multiple of 105000, so the sample stream", 1);
+	describe_option("", "is always converted - see --resampler in common options", 1);
+	describe_option("--linearity-gain <0-21>", "Set linearity gain", 1);
+	fprintf(stderr, "%*s(used with a default of %d if no gain option is given)\n",
+			USAGE_OPT_NAME_COLWIDTH, "", AIRSPY_DEFAULT_LINEARITY_GAIN);
+	describe_option("--sensitivity-gain <0-21>", "Set sensitivity gain (alternative to --linearity-gain)", 1);
+	describe_option("--lna-gain <0-15>", "Set LNA gain manually", 1);
+	describe_option("--mixer-gain <0-15>", "Set mixer gain manually", 1);
+	describe_option("--vga-gain <0-15>", "Set VGA (IF) gain manually", 1);
+	describe_option("--lna-agc <0/1>", "LNA automatic gain control: 0 - off (default), 1 - on", 1);
+	describe_option("--mixer-agc <0/1>", "Mixer automatic gain control: 0 - off (default), 1 - on", 1);
+	describe_option("--correction <correction>", "Set freq correction (ppm)", 1);
+	describe_option("--centerfreq <center_frequency>", "Set center frequency (default: auto)", 1);
+	describe_option("--biast <0/1>", "Bias-T control: 0 - off (default), 1 - on", 1);
+	describe_option("--packing <0/1>", "USB sample packing: 0 - off (default), 1 - on", 1);
+	fprintf(stderr, "%*s(reduces USB bandwidth usage at high sample rates)\n", USAGE_OPT_NAME_COLWIDTH, "");
+#endif
+#ifdef WITH_AIRSPYHF
+	fprintf(stderr, "\nairspyhf_options:\n");
+	describe_option("--airspyhf <device_id>", "Use Airspy HF+ device with specified ID or serial number (default: ID=0)", 1);
+	describe_option("--sample-rate <sample_rate>", "Device sample rate (default: highest rate the device supports)", 1);
+	describe_option("", "No Airspy HF+ rate is a multiple of 105000, so the sample stream", 1);
+	describe_option("", "is always converted - see --resampler in common options", 1);
+	fprintf(stderr, "%*sThe default --oversample of %d caps the working rate at %u sps, so a rate\n",
+			USAGE_OPT_NAME_COLWIDTH, "", AIRSPYHF_OVERSAMPLE, SYMBOL_RATE * SPS * AIRSPYHF_OVERSAMPLE);
+	fprintf(stderr, "%*sbelow that needs --oversample lowered to match.\n", USAGE_OPT_NAME_COLWIDTH, "");
+	describe_option("--hf-agc <0/1>", "Automatic gain control: 0 - off, 1 - on", 1);
+	fprintf(stderr, "%*s(default: on, unless --hf-att is given)\n", USAGE_OPT_NAME_COLWIDTH, "");
+	describe_option("--hf-agc-threshold <0/1>", "AGC threshold: 0 - low (default), 1 - high", 1);
+	describe_option("--hf-att <0-8>", "Attenuator setting in 6 dB steps (0 - 48 dB)", 1);
+	fprintf(stderr, "%*s(disables the AGC unless --hf-agc 1 is also given)\n", USAGE_OPT_NAME_COLWIDTH, "");
+	describe_option("--hf-lna <0/1>", "LNA (preamp), +6 dB: 0 - off (default), 1 - on", 1);
+	describe_option("--correction <correction>", "Set freq correction (ppm)", 1);
+	fprintf(stderr, "%*s(default: use the calibration stored in the device)\n", USAGE_OPT_NAME_COLWIDTH, "");
+	describe_option("--centerfreq <center_frequency>", "Set center frequency (default: auto)", 1);
+	describe_option("--biast <0/1>", "Bias-T control: 0 - off (default), 1 - on", 1);
 #endif
 	fprintf(stderr, "\nfile_options:\n");
 	describe_option("--iq-file <input_file>", "Read I/Q samples from a file (use \"-\" to read from standard input)", 1);
@@ -698,6 +769,14 @@ static bool parse_frequency(char const *str, uint32_t *result) {
 int main(int argc, char **argv) {
 	vdl2_state_t ctx;
 	uint32_t centerfreq = 0, sample_rate = 0, oversample = 0, bandwidth = 0;
+	// Per-input-driver default oversampling factor. Kept separate from
+	// oversample (which only ever holds the value given with --oversample), so
+	// that the two options may be given in any order.
+	uint32_t oversample_default = 0;
+	// Rate at which the demodulator threads consume samples. Equal to
+	// sample_rate unless the input stream has to be resampled.
+	uint32_t working_rate = 0;
+	enum resampler_modes resampler_mode = RESAMPLER_POLY;
 	uint32_t *freqs = NULL;
 	int num_channels = 0;
 	enum input_types input = INPUT_UNDEF;
@@ -705,22 +784,45 @@ int main(int argc, char **argv) {
 	la_list *fmtr_list = NULL;
 	bool input_is_iq = true;
 	pthread_t decoder_thread;
-#if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR
+#if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR || defined WITH_AIRSPY || defined WITH_AIRSPYHF
 	char *device = NULL;
-	float gain = SDR_AUTO_GAIN;
 	int correction = 0;
+#endif
+#if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SOAPYSDR
+	float gain = SDR_AUTO_GAIN;
+#endif
+#ifdef WITH_RTLSDR
 	int bias = 0;
 #endif
 #ifdef WITH_MIRISDR
 	int mirisdr_hw_flavour = 0;
 	int mirisdr_usb_xfer_mode = 0;
 #endif
+// --biast is shared between SDRPlay and Airspy
+#if defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_AIRSPY || defined WITH_AIRSPYHF
+	int biast = 0;
+#endif
 #if defined WITH_SDRPLAY || defined WITH_SDRPLAY3
 	char *sdrplay_antenna = NULL;
-	int sdrplay_biast = 0;
 	int sdrplay_notch_filter = 0;
 	int sdrplay_tuner = 1;
 	int sdrplay_agc = 0;
+#endif
+#ifdef WITH_AIRSPY
+	int airspy_linearity_gain = AIRSPY_GAIN_UNSET;
+	int airspy_sensitivity_gain = AIRSPY_GAIN_UNSET;
+	int airspy_lna_gain = AIRSPY_GAIN_UNSET;
+	int airspy_mixer_gain = AIRSPY_GAIN_UNSET;
+	int airspy_vga_gain = AIRSPY_GAIN_UNSET;
+	int airspy_lna_agc = 0;
+	int airspy_mixer_agc = 0;
+	int airspy_packing = 0;
+#endif
+#ifdef WITH_AIRSPYHF
+	int airspyhf_agc = AIRSPYHF_AGC_UNSET;
+	int airspyhf_agc_threshold = 0;
+	int airspyhf_att = AIRSPYHF_ATT_UNSET;
+	int airspyhf_lna = 0;
 #endif
 #ifdef WITH_SDRPLAY
 	int sdrplay_gr = SDR_AUTO_GAIN;
@@ -756,6 +858,8 @@ int main(int argc, char **argv) {
 		{ "output-queue-hwm",   required_argument,  NULL,   __OPT_OUTPUT_QUEUE_HWM },
 		{ "iq-file",            required_argument,  NULL,   __OPT_IQ_FILE },
 		{ "oversample",         required_argument,  NULL,   __OPT_OVERSAMPLE },
+		{ "sample-rate",        required_argument,  NULL,   __OPT_SAMPLE_RATE },
+		{ "resampler",          required_argument,  NULL,   __OPT_RESAMPLER },
 		{ "sample-format",      required_argument,  NULL,   __OPT_SAMPLE_FORMAT },
 		{ "msg-filter",         required_argument,  NULL,   __OPT_MSG_FILTER },
 		{ "max-ppm",            required_argument,  NULL,   __OPT_MAX_PPM },
@@ -774,9 +878,11 @@ int main(int argc, char **argv) {
 		{ "lna-state",          required_argument,  NULL,   __OPT_SDRPLAY3_LNA_STATE },
 		{ "dab-notch-filter",   required_argument,  NULL,   __OPT_SDRPLAY3_DAB_NOTCH_FILTER },
 #endif
+#if defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_AIRSPY || defined WITH_AIRSPYHF
+		{ "biast",              required_argument,  NULL,   __OPT_BIAST },
+#endif
 #if defined WITH_SDRPLAY || defined WITH_SDRPLAY3
 		{ "antenna",            required_argument,  NULL,   __OPT_ANTENNA },
-		{ "biast",              required_argument,  NULL,   __OPT_BIAST },
 		{ "notch-filter",       required_argument,  NULL,   __OPT_NOTCH_FILTER },
 		{ "agc",                required_argument,  NULL,   __OPT_AGC },
 		{ "tuner",              required_argument,  NULL,   __OPT_TUNER },
@@ -791,10 +897,28 @@ int main(int argc, char **argv) {
 		{ "rtlsdr",             required_argument,  NULL,   __OPT_RTLSDR },
 		{ "bias",               required_argument,  NULL,   __OPT_BIAS },
 #endif
+#ifdef WITH_AIRSPY
+		{ "airspy",             required_argument,  NULL,   __OPT_AIRSPY },
+		{ "linearity-gain",     required_argument,  NULL,   __OPT_LINEARITY_GAIN },
+		{ "sensitivity-gain",   required_argument,  NULL,   __OPT_SENSITIVITY_GAIN },
+		{ "lna-gain",           required_argument,  NULL,   __OPT_LNA_GAIN },
+		{ "mixer-gain",         required_argument,  NULL,   __OPT_MIXER_GAIN },
+		{ "vga-gain",           required_argument,  NULL,   __OPT_VGA_GAIN },
+		{ "lna-agc",            required_argument,  NULL,   __OPT_LNA_AGC },
+		{ "mixer-agc",          required_argument,  NULL,   __OPT_MIXER_AGC },
+		{ "packing",            required_argument,  NULL,   __OPT_PACKING },
+#endif
+#ifdef WITH_AIRSPYHF
+		{ "airspyhf",           required_argument,  NULL,   __OPT_AIRSPYHF },
+		{ "hf-agc",             required_argument,  NULL,   __OPT_HF_AGC },
+		{ "hf-agc-threshold",   required_argument,  NULL,   __OPT_HF_AGC_THRESHOLD },
+		{ "hf-att",             required_argument,  NULL,   __OPT_HF_ATT },
+		{ "hf-lna",             required_argument,  NULL,   __OPT_HF_LNA },
+#endif
 #if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SOAPYSDR
 		{ "gain",               required_argument,  NULL,   __OPT_GAIN },
 #endif
-#if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR
+#if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR || defined WITH_AIRSPY || defined WITH_AIRSPYHF
 		{ "correction",         required_argument,  NULL,   __OPT_CORRECTION },
 #endif
 #ifdef WITH_PROTOBUF_C
@@ -840,7 +964,7 @@ int main(int argc, char **argv) {
 			case __OPT_IQ_FILE:
 				infile = strdup(optarg);
 				input = INPUT_IQ_FILE;
-				oversample = FILE_OVERSAMPLE;
+				oversample_default = FILE_OVERSAMPLE;
 				sample_fmt = SFMT_U8;
 				break;
 			case __OPT_SAMPLE_FORMAT:
@@ -919,7 +1043,7 @@ int main(int argc, char **argv) {
 			case __OPT_MIRISDR:
 				device = optarg;
 				input = INPUT_MIRISDR;
-				oversample = MIRISDR_OVERSAMPLE;
+				oversample_default = MIRISDR_OVERSAMPLE;
 				break;
 			case __OPT_HW_TYPE:
 				mirisdr_hw_flavour = atoi(optarg);
@@ -932,7 +1056,7 @@ int main(int argc, char **argv) {
 			case __OPT_SDRPLAY:
 				device = optarg;
 				input = INPUT_SDRPLAY;
-				oversample = SDRPLAY_OVERSAMPLE;
+				oversample_default = SDRPLAY_OVERSAMPLE;
 				break;
 			case __OPT_GR:
 				sdrplay_gr = atoi(optarg);
@@ -942,7 +1066,7 @@ int main(int argc, char **argv) {
 			case __OPT_SDRPLAY3:
 				device = optarg;
 				input = INPUT_SDRPLAY3;
-				oversample = SDRPLAY3_OVERSAMPLE;
+				oversample_default = SDRPLAY3_OVERSAMPLE;
 				break;
 			case __OPT_SDRPLAY3_IFGR:
 				sdrplay3_ifgr = atoi(optarg);
@@ -954,12 +1078,14 @@ int main(int argc, char **argv) {
 				sdrplay3_dab_notch_filter = atoi(optarg);
 				break;
 #endif
+#if defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_AIRSPY || defined WITH_AIRSPYHF
+			case __OPT_BIAST:
+				biast = atoi(optarg);
+				break;
+#endif
 #if defined WITH_SDRPLAY || defined WITH_SDRPLAY3
 			case __OPT_ANTENNA:
 				sdrplay_antenna = strdup(optarg);
-				break;
-			case __OPT_BIAST:
-				sdrplay_biast = atoi(optarg);
 				break;
 			case __OPT_NOTCH_FILTER:
 				sdrplay_notch_filter = atoi(optarg);
@@ -975,7 +1101,7 @@ int main(int argc, char **argv) {
 			case __OPT_SOAPYSDR:
 				device = optarg;
 				input = INPUT_SOAPYSDR;
-				oversample = SOAPYSDR_OVERSAMPLE;
+				oversample_default = SOAPYSDR_OVERSAMPLE;
 				break;
 			case __OPT_DEVICE_SETTINGS:
 				soapysdr_settings = strdup(optarg);
@@ -991,10 +1117,60 @@ int main(int argc, char **argv) {
 			case __OPT_RTLSDR:
 				device = optarg;
 				input = INPUT_RTLSDR;
-				oversample = RTL_OVERSAMPLE;
+				oversample_default = RTL_OVERSAMPLE;
 				break;
 			case __OPT_BIAS:
 				bias = atoi(optarg);
+				break;
+#endif
+#ifdef WITH_AIRSPY
+			case __OPT_AIRSPY:
+				device = optarg;
+				input = INPUT_AIRSPY;
+				oversample_default = AIRSPY_OVERSAMPLE;
+				break;
+			case __OPT_LINEARITY_GAIN:
+				airspy_linearity_gain = atoi(optarg);
+				break;
+			case __OPT_SENSITIVITY_GAIN:
+				airspy_sensitivity_gain = atoi(optarg);
+				break;
+			case __OPT_LNA_GAIN:
+				airspy_lna_gain = atoi(optarg);
+				break;
+			case __OPT_MIXER_GAIN:
+				airspy_mixer_gain = atoi(optarg);
+				break;
+			case __OPT_VGA_GAIN:
+				airspy_vga_gain = atoi(optarg);
+				break;
+			case __OPT_LNA_AGC:
+				airspy_lna_agc = atoi(optarg);
+				break;
+			case __OPT_MIXER_AGC:
+				airspy_mixer_agc = atoi(optarg);
+				break;
+			case __OPT_PACKING:
+				airspy_packing = atoi(optarg);
+				break;
+#endif
+#ifdef WITH_AIRSPYHF
+			case __OPT_AIRSPYHF:
+				device = optarg;
+				input = INPUT_AIRSPYHF;
+				oversample_default = AIRSPYHF_OVERSAMPLE;
+				break;
+			case __OPT_HF_AGC:
+				airspyhf_agc = atoi(optarg);
+				break;
+			case __OPT_HF_AGC_THRESHOLD:
+				airspyhf_agc_threshold = atoi(optarg);
+				break;
+			case __OPT_HF_ATT:
+				airspyhf_att = atoi(optarg);
+				break;
+			case __OPT_HF_LNA:
+				airspyhf_lna = atoi(optarg);
 				break;
 #endif
 #if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SOAPYSDR
@@ -1002,7 +1178,7 @@ int main(int argc, char **argv) {
 				gain = atof(optarg);
 				break;
 #endif
-#if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR
+#if defined WITH_RTLSDR || defined WITH_MIRISDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR || defined WITH_AIRSPY || defined WITH_AIRSPYHF
 			case __OPT_CORRECTION:
 				correction = atoi(optarg);
 				break;
@@ -1018,7 +1194,31 @@ int main(int argc, char **argv) {
 				}
 				break;
 			case __OPT_OVERSAMPLE:
-				oversample = atoi(optarg);
+				{
+					int val = atoi(optarg);
+					if(val < 1) {
+						fprintf(stderr, "Invalid --oversample value: must be a positive integer\n");
+						_exit(1);
+					}
+					oversample = (uint32_t)val;
+				}
+				break;
+			case __OPT_SAMPLE_RATE:
+				if(parse_frequency(optarg, &sample_rate) == false) {
+					return 1;
+				}
+				break;
+			case __OPT_RESAMPLER:
+				if(!strcmp(optarg, "poly")) {
+					resampler_mode = RESAMPLER_POLY;
+				} else if(!strcmp(optarg, "interp")) {
+					resampler_mode = RESAMPLER_INTERP;
+				} else if(!strcmp(optarg, "none")) {
+					resampler_mode = RESAMPLER_NONE;
+				} else {
+					fprintf(stderr, "Invalid --resampler value: must be one of: poly, interp, none\n");
+					_exit(1);
+				}
 				break;
 #ifdef WITH_STATSD
 			case __OPT_STATSD:
@@ -1048,6 +1248,11 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Use --help for help\n");
 		_exit(1);
 	}
+	// --oversample wins over the input driver's default, whichever order the
+	// two options were given in.
+	if(oversample == 0) {
+		oversample = oversample_default;
+	}
 
 // no --output given?
 	if(fmtr_list == NULL) {
@@ -1070,10 +1275,66 @@ int main(int argc, char **argv) {
 			freqs[0] = CSC_FREQ;
 		}
 
-		sample_rate = SYMBOL_RATE * SPS * oversample;
+#ifdef WITH_AIRSPY
+		if(input == INPUT_AIRSPY) {
+			// The Airspy runs at a few fixed rates only, none of which is a
+			// multiple of SYMBOL_RATE * SPS. Open the device up front, so that
+			// the rate it is going to deliver is known before the resampler and
+			// the demodulators are set up below.
+			sample_rate = airspy_open_device(device, sample_rate);
+		}
+#endif
+#ifdef WITH_AIRSPYHF
+		if(input == INPUT_AIRSPYHF) {
+			// Same as the Airspy above - the device only runs at a handful of
+			// fixed rates, and which one it picks has to be known before the
+			// resampler and the demodulators are set up below.
+			sample_rate = input_airspyhf_open_device(device, sample_rate);
+		}
+#endif
+		// Decimation factor from the working rate down to SPS samples per
+		// symbol. Fractional only when the demodulator is asked to do the rate
+		// conversion itself (--resampler interp).
+		float channel_oversample = (float)oversample;
+		working_rate = SYMBOL_RATE * SPS * oversample;
+		if(sample_rate == 0) {
+			// No --sample-rate given - the input runs at the working rate, as always
+			sample_rate = working_rate;
+		} else if(sample_rate < SYMBOL_RATE * SPS) {
+			fprintf(stderr, "Sampling rate must be at least %u sps\n", SYMBOL_RATE * SPS);
+			_exit(1);
+		} else if(sample_rate % (SYMBOL_RATE * SPS) == 0) {
+			// The input rate is directly usable - just decimate by an integer factor
+			working_rate = sample_rate;
+			oversample = sample_rate / (SYMBOL_RATE * SPS);
+			channel_oversample = (float)oversample;
+		} else {
+			// The input rate is not a multiple of SYMBOL_RATE * SPS (Airspy and
+			// friends). Convert it, using whichever method has been selected.
+			switch(resampler_mode) {
+				case RESAMPLER_POLY:
+					// Keep the working rate as derived from --oversample and
+					// resample the input stream down to it (set up below, once
+					// the demodulator threads are about to be started).
+					break;
+				case RESAMPLER_INTERP:
+					working_rate = sample_rate;
+					channel_oversample = (float)sample_rate / (float)(SYMBOL_RATE * SPS);
+					fprintf(stderr, "Fractional decimation enabled: %.4f samples per symbol\n",
+							channel_oversample);
+					break;
+				case RESAMPLER_NONE:
+					fprintf(stderr, "Sampling rate %u is not a multiple of %u sps. Either pick a "
+							"different rate, or let dumpvdl2 convert it (see --resampler)\n",
+							sample_rate, SYMBOL_RATE * SPS);
+					_exit(1);
+			}
+		}
 		fprintf(stderr, "Sampling rate set to %u sps\n", sample_rate);
 		if(centerfreq == 0) {
-			centerfreq = calc_centerfreq(freqs, num_channels, sample_rate);
+			// Only working_rate worth of spectrum survives the input stage, so
+			// this is what limits how far apart the channels may be.
+			centerfreq = calc_centerfreq(freqs, num_channels, working_rate);
 			if(centerfreq == 0) {
 				fprintf(stderr, "Failed to calculate center frequency\n");
 				_exit(2);
@@ -1087,7 +1348,7 @@ int main(int argc, char **argv) {
 		ctx.num_channels = num_channels;
 		ctx.channels = XCALLOC(num_channels, sizeof(vdl2_channel_t *));
 		for(int i = 0; i < num_channels; i++) {
-			if((ctx.channels[i] = vdl2_channel_init(centerfreq, freqs[i], sample_rate, oversample)) == NULL) {
+			if((ctx.channels[i] = vdl2_channel_init(centerfreq, freqs[i], working_rate, channel_oversample)) == NULL) {
 				fprintf(stderr, "Failed to initialize VDL channel\n");
 				_exit(2);
 			}
@@ -1147,7 +1408,10 @@ int main(int argc, char **argv) {
 
 	if(input_is_iq) {
 		sincosf_lut_init();
-		input_lpf_init(sample_rate);
+		// The channel filter and the demodulators run at the working rate,
+		// which is what comes out of the input resampler (if there is one).
+		input_lpf_init(working_rate);
+		input_resampler_init(sample_rate, working_rate);
 		demod_sync_init();
 		setup_barriers(&ctx);
 		start_demod_threads(&ctx);
@@ -1182,19 +1446,36 @@ int main(int argc, char **argv) {
 #ifdef WITH_SDRPLAY
 		case INPUT_SDRPLAY:
 			sdrplay_init(&ctx, device, sample_rate, sdrplay_antenna, centerfreq, sdrplay_gr, correction,
-					sdrplay_biast, sdrplay_notch_filter, sdrplay_agc, sdrplay_tuner);
+					biast, sdrplay_notch_filter, sdrplay_agc, sdrplay_tuner);
 			break;
 #endif
 #ifdef WITH_SDRPLAY3
 		case INPUT_SDRPLAY3:
 			sdrplay3_init(&ctx, device, sample_rate, sdrplay_antenna, centerfreq, sdrplay3_ifgr, sdrplay3_lna_state, correction,
-					sdrplay_biast, sdrplay_notch_filter, sdrplay3_dab_notch_filter, sdrplay_agc, sdrplay_tuner);
+					biast, sdrplay_notch_filter, sdrplay3_dab_notch_filter, sdrplay_agc, sdrplay_tuner);
 			break;
 #endif
 #ifdef WITH_SOAPYSDR
 		case INPUT_SOAPYSDR:
 			soapysdr_init(&ctx, device, sample_rate, soapysdr_antenna, centerfreq, bandwidth, gain, correction,
 					soapysdr_settings, soapysdr_gain);
+			break;
+#endif
+#ifdef WITH_AIRSPY
+		case INPUT_AIRSPY:
+			// The device has already been opened and its sample rate set by
+			// airspy_open_device().
+			airspy_start(&ctx, centerfreq, airspy_linearity_gain, airspy_sensitivity_gain,
+					airspy_lna_gain, airspy_mixer_gain, airspy_vga_gain,
+					airspy_lna_agc, airspy_mixer_agc, correction, biast, airspy_packing);
+			break;
+#endif
+#ifdef WITH_AIRSPYHF
+		case INPUT_AIRSPYHF:
+			// The device has already been opened and its sample rate set by
+			// input_airspyhf_open_device().
+			input_airspyhf_start(&ctx, centerfreq, airspyhf_agc, airspyhf_agc_threshold,
+					airspyhf_att, airspyhf_lna, correction, biast);
 			break;
 #endif
 		default:
