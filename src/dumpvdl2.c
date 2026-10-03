@@ -484,7 +484,7 @@ void usage() {
 
 	describe_option("--sample-format <sample_format>", "Input sample format. Supported formats:", 1);
 	describe_option("U8", "8-bit unsigned (eg. recorded with rtl_sdr) (default)", 2);
-	describe_option("S16LE", "16-bit signed, little-endian (eg. recorded with miri_sdr)", 2);
+	describe_option("S16_LE", "16-bit signed, little-endian (eg. recorded with miri_sdr)", 2);
 
 	fprintf(stderr, "\nOutput options:\n");
 	describe_option("--output <output_specifier>", "Output specification (default: " DEFAULT_OUTPUT ")", 1);
