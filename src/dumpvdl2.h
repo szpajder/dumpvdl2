@@ -75,7 +75,7 @@
 #define __OPT_GAIN                   12
 #endif
 
-#if defined WITH_MIRISDR || defined WITH_RTLSDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR
+#if defined WITH_MIRISDR || defined WITH_RTLSDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR || defined WITH_AIRSPY || defined WITH_AIRSPYHF
 #define __OPT_CORRECTION             13
 #endif
 
@@ -98,6 +98,20 @@
 #define __OPT_MILLISECONDS           26
 #define __OPT_PRETTIFY_JSON          27
 #define __OPT_MAX_PPM                 28
+#define __OPT_SAMPLE_RATE            29
+#define __OPT_RESAMPLER              30
+
+#ifdef WITH_AIRSPY
+#define __OPT_AIRSPY                 60
+#define __OPT_LINEARITY_GAIN         61
+#define __OPT_SENSITIVITY_GAIN       62
+#define __OPT_LNA_GAIN               63
+#define __OPT_MIXER_GAIN             64
+#define __OPT_VGA_GAIN               65
+#define __OPT_LNA_AGC                66
+#define __OPT_MIXER_AGC              67
+#define __OPT_PACKING                68
+#endif
 
 #ifdef WITH_SDRPLAY3
 #define __OPT_SDRPLAY3               70
@@ -112,10 +126,12 @@
 #endif
 #if defined WITH_SDRPLAY || defined WITH_SDRPLAY3
 #define __OPT_ANTENNA                81
-#define __OPT_BIAST                  82
 #define __OPT_NOTCH_FILTER           83
 #define __OPT_AGC                    84
 #define __OPT_TUNER                  85
+#endif
+#if defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_AIRSPY || defined WITH_AIRSPYHF
+#define __OPT_BIAST                  82
 #endif
 
 #ifdef WITH_SOAPYSDR
@@ -123,6 +139,14 @@
 #define __OPT_DEVICE_SETTINGS        91
 #define __OPT_SOAPY_ANTENNA          92
 #define __OPT_SOAPY_GAIN             93
+#endif
+
+#ifdef WITH_AIRSPYHF
+#define __OPT_AIRSPYHF              110
+#define __OPT_HF_AGC                111
+#define __OPT_HF_AGC_THRESHOLD      112
+#define __OPT_HF_ATT                113
+#define __OPT_HF_LNA                114
 #endif
 
 #define __OPT_VERSION                98
@@ -310,6 +334,12 @@ enum input_types {
 #ifdef WITH_SOAPYSDR
 	INPUT_SOAPYSDR,
 #endif
+#ifdef WITH_AIRSPY
+	INPUT_AIRSPY,
+#endif
+#ifdef WITH_AIRSPYHF
+	INPUT_AIRSPYHF,
+#endif
 	INPUT_IQ_FILE,
 #ifdef WITH_PROTOBUF_C
 	INPUT_RAW_FRAMES_FILE,
@@ -317,6 +347,12 @@ enum input_types {
 	INPUT_UNDEF
 };
 enum sample_formats { SFMT_U8, SFMT_S16_LE, SFMT_UNDEF };
+// How to deal with an input sample rate which is not a multiple of SYMBOL_RATE * SPS
+enum resampler_modes {
+	RESAMPLER_POLY,         // rational polyphase resampler in the input path
+	RESAMPLER_INTERP,       // fractional decimation with linear interpolation in the demodulator
+	RESAMPLER_NONE          // no conversion - bail out instead
+};
 
 typedef struct {
 	long long unsigned samplenum;
@@ -345,7 +381,9 @@ typedef struct {
 	uint32_t num_blocks;
 	uint32_t syndrome;
 	uint16_t lfsr;
-	uint16_t oversample;
+	uint16_t oversample;            // integer decimation factor (valid when frac_decim == false)
+	float oversample_f;             // decimation factor as configured (may be fractional)
+	bool frac_decim;                // use fractional decimation with interpolation
 	struct timeval tstart;
 	struct timeval burst_timestamp;
 	pthread_t demod_thread;
@@ -370,14 +408,16 @@ uint32_t reverse(uint32_t v, int numbits);
 
 // demod.c
 extern float *sbuf;
-vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample);
+vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, float oversample);
 void sincosf_lut_init();
 void input_lpf_init(uint32_t sample_rate);
+void input_resampler_init(uint32_t source_rate, uint32_t working_rate);
 void demod_sync_init();
 void process_buf_uchar_init();
 void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx);
 void process_buf_short_init();
 void process_buf_short(unsigned char *buf, uint32_t len, void *ctx);
+void process_buf_cf32(float *buf, uint32_t len, void *ctx);
 void *process_samples(void *arg);
 
 // crc.c

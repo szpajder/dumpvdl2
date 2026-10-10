@@ -101,6 +101,12 @@ set(WITH_SDRPLAY3 FALSE)
 option(SOAPYSDR "Enable SoapySDR support" ON)
 set(WITH_SOAPYSDR FALSE)
 
+option(AIRSPY "Enable Airspy support" ON)
+set(WITH_AIRSPY FALSE)
+
+option(AIRSPYHF "Enable Airspy HF+ support" ON)
+set(WITH_AIRSPYHF FALSE)
+
 option(ETSY_STATSD "Enable Etsy StatsD support" ON)
 set(WITH_STATSD FALSE)
 
@@ -174,6 +180,36 @@ if(SOAPYSDR)
 	endif()
 endif()
 
+if(AIRSPY)
+	message(STATUS "Checking for libairspy")
+	pkg_check_modules(AIRSPY libairspy)
+	if(AIRSPY_FOUND)
+		list(APPEND dumpvdl2_extra_sources airspy.c)
+		message(STATUS "  libairspy found, ${AIRSPY_INCLUDE_DIRS}, ${AIRSPY_LIBRARIES}")
+		list(APPEND dumpvdl2_extra_libs ${AIRSPY_LIBRARIES})
+		list(APPEND dumpvdl2_include_dirs ${AIRSPY_INCLUDE_DIRS})
+		list(APPEND link_dirs ${AIRSPY_LIBRARY_DIRS})
+		set(WITH_AIRSPY TRUE)
+	else()
+		message(STATUS "  libairspy not found")
+	endif()
+endif()
+
+if(AIRSPYHF)
+	message(STATUS "Checking for libairspyhf")
+	pkg_check_modules(AIRSPYHF libairspyhf)
+	if(AIRSPYHF_FOUND)
+		list(APPEND dumpvdl2_extra_sources airspyhf.c)
+		message(STATUS "  libairspyhf found, ${AIRSPYHF_INCLUDE_DIRS}, ${AIRSPYHF_LIBRARIES}")
+		list(APPEND dumpvdl2_extra_libs ${AIRSPYHF_LIBRARIES})
+		list(APPEND dumpvdl2_include_dirs ${AIRSPYHF_INCLUDE_DIRS})
+		list(APPEND link_dirs ${AIRSPYHF_LIBRARY_DIRS})
+		set(WITH_AIRSPYHF TRUE)
+	else()
+		message(STATUS "  libairspyhf not found")
+	endif()
+endif()
+
 if(ETSY_STATSD)
 	find_library(STATSD_FOUND statsdclient)
 	if(STATSD_FOUND)
@@ -240,6 +276,8 @@ message(STATUS "  - mirisdr:\t\t\trequested: ${MIRISDR}, enabled: ${WITH_MIRISDR
 message(STATUS "  - sdrplay v2:\t\trequested: ${SDRPLAY}, enabled: ${WITH_SDRPLAY}")
 message(STATUS "  - sdrplay v3:\t\trequested: ${SDRPLAY3}, enabled: ${WITH_SDRPLAY3}")
 message(STATUS "  - soapysdr:\t\trequested: ${SOAPYSDR}, enabled: ${WITH_SOAPYSDR}")
+message(STATUS "  - airspy:\t\t\trequested: ${AIRSPY}, enabled: ${WITH_AIRSPY}")
+message(STATUS "  - airspyhf:\t\trequested: ${AIRSPYHF}, enabled: ${WITH_AIRSPYHF}")
 message(STATUS "- Other options:")
 message(STATUS "  - Etsy StatsD:\t\trequested: ${ETSY_STATSD}, enabled: ${WITH_STATSD}")
 message(STATUS "  - SQLite:\t\t\trequested: ${SQLITE}, enabled: ${WITH_SQLITE}")
@@ -290,6 +328,7 @@ add_library (dumpvdl2_base OBJECT
 	output-file.c
 	output-udp.c
 	reassembly.c
+	resampler.c
 	rs.c
 	tlv.c
 	util.c
