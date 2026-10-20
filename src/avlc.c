@@ -433,8 +433,8 @@ static void avlc_format_json(la_vstring *vstr, void const *data) {
 		la_json_append_bool(vstr, "pf", (bool)(U_PF(f->lcf)));
 	} else {    // IS_I == true
 		la_json_append_char(vstr, "frame_type", 'I');
-		la_json_append_int64(vstr, "rseq", f->lcf.I.send_seq);
-		la_json_append_int64(vstr, "sseq", f->lcf.I.recv_seq);
+		la_json_append_int64(vstr, "rseq", f->lcf.I.recv_seq);
+		la_json_append_int64(vstr, "sseq", f->lcf.I.send_seq);
 		la_json_append_bool(vstr, "poll", (bool)(f->lcf.I.poll));
 	}
 }
