@@ -75,7 +75,7 @@
 #define __OPT_GAIN                   12
 #endif
 
-#if defined WITH_MIRISDR || defined WITH_RTLSDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR
+#if defined WITH_MIRISDR || defined WITH_RTLSDR || defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_SOAPYSDR || defined WITH_AIRSPY || defined WITH_AIRSPYHF
 #define __OPT_CORRECTION             13
 #endif
 
@@ -98,6 +98,22 @@
 #define __OPT_MILLISECONDS           26
 #define __OPT_PRETTIFY_JSON          27
 #define __OPT_MAX_PPM                 28
+#define __OPT_SAMPLE_RATE            29
+#define __OPT_RESAMPLER              30
+
+// NOTE: no option may use 63 - that is '?', which getopt_long() returns for
+// an unknown option or a missing argument.
+#ifdef WITH_AIRSPY
+#define __OPT_AIRSPY                 120
+#define __OPT_LINEARITY_GAIN         121
+#define __OPT_SENSITIVITY_GAIN       122
+#define __OPT_LNA_GAIN               123
+#define __OPT_MIXER_GAIN             124
+#define __OPT_VGA_GAIN               125
+#define __OPT_LNA_AGC                126
+#define __OPT_MIXER_AGC              127
+#define __OPT_PACKING                128
+#endif
 
 #ifdef WITH_SDRPLAY3
 #define __OPT_SDRPLAY3               70
@@ -112,10 +128,12 @@
 #endif
 #if defined WITH_SDRPLAY || defined WITH_SDRPLAY3
 #define __OPT_ANTENNA                81
-#define __OPT_BIAST                  82
 #define __OPT_NOTCH_FILTER           83
 #define __OPT_AGC                    84
 #define __OPT_TUNER                  85
+#endif
+#if defined WITH_SDRPLAY || defined WITH_SDRPLAY3 || defined WITH_AIRSPY || defined WITH_AIRSPYHF
+#define __OPT_BIAST                  82
 #endif
 
 #ifdef WITH_SOAPYSDR
@@ -123,6 +141,14 @@
 #define __OPT_DEVICE_SETTINGS        91
 #define __OPT_SOAPY_ANTENNA          92
 #define __OPT_SOAPY_GAIN             93
+#endif
+
+#ifdef WITH_AIRSPYHF
+#define __OPT_AIRSPYHF              110
+#define __OPT_HF_AGC                111
+#define __OPT_HF_AGC_THRESHOLD      112
+#define __OPT_HF_ATT                113
+#define __OPT_HF_LNA                114
 #endif
 
 #define __OPT_VERSION                98
@@ -310,6 +336,12 @@ enum input_types {
 #ifdef WITH_SOAPYSDR
 	INPUT_SOAPYSDR,
 #endif
+#ifdef WITH_AIRSPY
+	INPUT_AIRSPY,
+#endif
+#ifdef WITH_AIRSPYHF
+	INPUT_AIRSPYHF,
+#endif
 	INPUT_IQ_FILE,
 #ifdef WITH_PROTOBUF_C
 	INPUT_RAW_FRAMES_FILE,
@@ -317,6 +349,12 @@ enum input_types {
 	INPUT_UNDEF
 };
 enum sample_formats { SFMT_U8, SFMT_S16_LE, SFMT_UNDEF };
+// How to deal with an input sample rate which is not a multiple of SYMBOL_RATE * SPS
+enum resampler_modes {
+	RESAMPLER_POLY,         // rational polyphase resampler in the input path
+	RESAMPLER_INTERP,       // fractional decimation with linear interpolation in the demodulator
+	RESAMPLER_NONE          // no conversion - bail out instead
+};
 
 typedef struct {
 	long long unsigned samplenum;
@@ -345,7 +383,9 @@ typedef struct {
 	uint32_t num_blocks;
 	uint32_t syndrome;
 	uint16_t lfsr;
-	uint16_t oversample;
+	uint16_t oversample;            // integer decimation factor (valid when frac_decim == false)
+	float oversample_f;             // decimation factor as configured (may be fractional)
+	bool frac_decim;                // use fractional decimation with interpolation
 	struct timeval tstart;
 	struct timeval burst_timestamp;
 	pthread_t demod_thread;
@@ -369,15 +409,16 @@ void bitstream_destroy(bitstream_t *bs);
 uint32_t reverse(uint32_t v, int numbits);
 
 // demod.c
-extern float *sbuf;
-vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, uint32_t oversample);
+vdl2_channel_t *vdl2_channel_init(uint32_t centerfreq, uint32_t freq, uint32_t source_rate, float oversample);
 void sincosf_lut_init();
 void input_lpf_init(uint32_t sample_rate);
+void input_resampler_init(uint32_t source_rate, uint32_t working_rate);
 void demod_sync_init();
 void process_buf_uchar_init();
 void process_buf_uchar(unsigned char *buf, uint32_t len, void *ctx);
 void process_buf_short_init();
 void process_buf_short(unsigned char *buf, uint32_t len, void *ctx);
+void process_buf_cf32(float *buf, uint32_t len, void *ctx);
 void *process_samples(void *arg);
 
 // crc.c
@@ -445,6 +486,10 @@ void octet_string_destroy(octet_string_t *ostring);
 char *hexdump(uint8_t *data, size_t len);
 void append_hexdump_with_indent(la_vstring *vstr, uint8_t *data, size_t len, int indent);
 la_proto_node *unknown_proto_pdu_new(void *buf, size_t len);
+void sdr_device_list_print(uint64_t const *serials, int count);
+uint64_t sdr_serial_select(char const *dev, uint64_t const *serials, int count);
+uint32_t sdr_sample_rate_select(uint32_t const *rates, uint32_t count, uint32_t requested,
+		bool prefer_highest);
 
 // dumpvdl2.c
 extern int do_exit;

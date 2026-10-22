@@ -22,7 +22,7 @@
 #include <string.h>             // strcmp
 #include <unistd.h>             // _exit, usleep
 #include <mirsdrapi-rsp.h>
-#include "dumpvdl2.h"           // sbuf, Config
+#include "dumpvdl2.h"           // Config
 #include "sdrplay.h"
 
 #define MAX_IF_GR                59         // Upper limit of IF GR
@@ -337,7 +337,6 @@ void sdrplay_init(vdl2_state_t const *ctx, char const *dev, uint32_t sample_rate
 	fprintf(stderr, "Frequency correction set to %d ppm\n", ppm_error);
 
 	SDRPlay.sdrplay_data = XCALLOC(ASYNC_BUF_SIZE * ASYNC_BUF_NUMBER, sizeof(short));
-	sbuf = XCALLOC(ASYNC_BUF_SIZE, sizeof(float));
 
 	int gRdBsystem = gr;
 	if(gr == SDR_AUTO_GAIN) {

@@ -139,7 +139,6 @@ void soapysdr_init(vdl2_state_t *ctx, char *dev, uint32_t sample_rate, char *ant
 	int16_t *buffer = XCALLOC(SOAPYSDR_SAMPLE_PER_BUFFER, elemsize);
 	unsigned char *ring_buffer = XCALLOC(SOAPYSDR_BUFSIZE * SOAPYSDR_BUFCNT, sizeof(short));
 	unsigned char *send_buffer = XCALLOC(SOAPYSDR_BUFSIZE, sizeof(short));
-	sbuf = XCALLOC(SOAPYSDR_BUFSIZE, sizeof(float));
 
 	SoapySDRStream *rxStream;
 #if SOAPY_SDR_API_VERSION < 0x00080000

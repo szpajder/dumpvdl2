@@ -24,6 +24,9 @@
 #cmakedefine WITH_SDRPLAY
 #cmakedefine WITH_SDRPLAY3
 #cmakedefine WITH_SOAPYSDR
+#cmakedefine WITH_AIRSPY
+#cmakedefine WITH_AIRSPYHF
+#cmakedefine HAVE_AIRSPYHF_BIAS_TEE
 #cmakedefine WITH_STATSD
 #cmakedefine WITH_SQLITE
 #cmakedefine WITH_ZMQ

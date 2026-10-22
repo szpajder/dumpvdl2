@@ -22,7 +22,7 @@
 #include <unistd.h>             // _exit, usleep
 #include <sdrplay_api.h>
 #include <libacars/dict.h>      // la_dict
-#include "dumpvdl2.h"           // sbuf, Config
+#include "dumpvdl2.h"           // Config
 #include "sdrplay3.h"           // SDRPLAY3_OVERSAMPLE
 
 #define SDRPLAY3_ASYNC_BUF_NUMBER           15
@@ -483,7 +483,6 @@ void sdrplay3_init(vdl2_state_t const *ctx, char const *dev, uint32_t sample_rat
 	SDRPlay.sdrplay3_data = XCALLOC(SDRPLAY3_ASYNC_BUF_SIZE * SDRPLAY3_ASYNC_BUF_NUMBER, sizeof(short));
 	SDRPlay.data_index = 0;
 	SDRPlay.dev = device->dev;
-	sbuf = XCALLOC(SDRPLAY3_ASYNC_BUF_SIZE, sizeof(float));
 
 	err = sdrplay_api_Init(device->dev, &callbacks, &SDRPlay);
 	if(err != sdrplay_api_Success) {

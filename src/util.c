@@ -16,11 +16,13 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <inttypes.h>               // PRIx64
 #include <stdio.h>
 #include <stdarg.h>                 // va_list, etc
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>                // strcasecmp()
 #include <errno.h>
 #include <unistd.h>
 #include <libacars/libacars.h>      // la_proto_node, la_type_descriptor
@@ -335,4 +337,66 @@ la_proto_node *unknown_proto_pdu_new(void *buf, size_t len) {
 	node->data = ostring;
 	node->next = NULL;
 	return node;
+}
+
+// Device and sample rate selection shared by the Airspy and Airspy HF+
+// drivers, whose libraries enumerate devices by 64-bit serial number and
+// report the supported sample rates as a list.
+
+void sdr_device_list_print(uint64_t const *serials, int count) {
+	fprintf(stderr, "Found %d device(s):\n", count);
+	for(int i = 0; i < count; i++) {
+		fprintf(stderr, "  %d:  SN: %016" PRIx64 "\n", i, serials[i]);
+	}
+	fprintf(stderr, "\n");
+}
+
+// Picks the device selected by dev - a device index, an exact serial number,
+// or a suffix of one (which is what the device labels usually show), tried in
+// that order. Exits if nothing matches.
+uint64_t sdr_serial_select(char const *dev, uint64_t const *serials, int count) {
+	char *endptr = NULL;
+	long index = strtol(dev, &endptr, 10);
+	if(endptr[0] == '\0' && index >= 0 && index < count && strlen(dev) < 5) {
+		return serials[index];
+	}
+	size_t devlen = strlen(dev);
+	for(int i = 0; i < count; i++) {
+		char sn[17];
+		snprintf(sn, sizeof(sn), "%016" PRIx64, serials[i]);
+		if(strcasecmp(dev, sn) == 0 ||
+				(devlen < 16 && strcasecmp(dev, sn + 16 - devlen) == 0)) {
+			return serials[i];
+		}
+	}
+	fprintf(stderr, "No matching devices found.\n");
+	_exit(1);
+}
+
+// Returns requested if it is one of the rates the device supports, or exits
+// with the list of supported rates if it is not. A requested rate of 0 picks
+// the lowest or the highest supported rate, as told by prefer_highest.
+uint32_t sdr_sample_rate_select(uint32_t const *rates, uint32_t count, uint32_t requested,
+		bool prefer_highest) {
+	ASSERT(count > 0);
+	if(requested == 0) {
+		uint32_t chosen = rates[0];
+		for(uint32_t i = 1; i < count; i++) {
+			if(prefer_highest ? rates[i] > chosen : rates[i] < chosen) {
+				chosen = rates[i];
+			}
+		}
+		return chosen;
+	}
+	for(uint32_t i = 0; i < count; i++) {
+		if(rates[i] == requested) {
+			return requested;
+		}
+	}
+	fprintf(stderr, "Sample rate %u is not supported by this device. Supported rates:", requested);
+	for(uint32_t i = 0; i < count; i++) {
+		fprintf(stderr, " %u", rates[i]);
+	}
+	fprintf(stderr, "\n");
+	_exit(1);
 }

@@ -191,7 +191,6 @@ void rtl_init(vdl2_state_t *ctx, char *dev, uint32_t sample_rate, int freq, int 
 
 	rtlsdr_reset_buffer(rtl);
 	fprintf(stderr, "Device %d started\n", device);
-	sbuf = XCALLOC(RTL_BUFSIZE / sizeof(uint8_t), sizeof(float));
 	process_buf_uchar_init();
 	if(rtlsdr_read_async(rtl, process_buf_uchar, NULL, RTL_BUFCNT, RTL_BUFSIZE) < 0) {
 		fprintf(stderr, "Device #%d: async read failed\n", device);
